@@ -1,0 +1,3056 @@
+[
+  {
+    "id": "USR001",
+    "name": "Marcus Thompson",
+    "socials": {
+      "email": "marcus.thompson@email.com",
+      "phone": "+1-555-0101",
+      "facebook": "@marcusthompson",
+      "telegram": "@marcust_gaming",
+      "instagram": "@marcus_plays",
+      "x": "@marcusthompson",
+      "snapchat": "marcus.snap"
+    },
+    "tier": "Gold",
+    "tierProgress": {
+      "currentTier": "Gold",
+      "playTimeMinutes": 15420,
+      "nextTierRequirement": null,
+      "progressPercentage": 100
+    },
+    "friendsList": ["USR003", "USR007", "USR012", "USR018", "USR025"],
+    "referralsList": ["USR015", "USR022", "USR033"],
+    "source": "Instagram Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 847.5,
+      "availableBonus": 125.0,
+      "usedBonus": 722.5
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 12,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 12.0
+    },
+    "cashoutLimit": 750,
+    "transactionHistory": [
+      {
+        "id": "TXN001",
+        "type": "deposit",
+        "amount": 500.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN002",
+        "type": "bonus_credited",
+        "amount": 25.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN003",
+        "type": "cashout",
+        "amount": 650.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN004",
+        "type": "deposit",
+        "amount": 300.0,
+        "date": "2026-02-08",
+        "status": "completed"
+      },
+      {
+        "id": "TXN005",
+        "type": "bonus_credited",
+        "amount": 50.0,
+        "date": "2026-02-05",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR002",
+    "name": "Sarah Chen",
+    "socials": {
+      "email": "sarah.chen@email.com",
+      "phone": "+1-555-0102",
+      "facebook": "@sarahchen",
+      "telegram": "@sarah_c",
+      "instagram": "@sarahchen_",
+      "x": "@sarahchen",
+      "snapchat": "sarah.c"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 8940,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 74.5
+    },
+    "friendsList": ["USR001", "USR004", "USR009"],
+    "referralsList": ["USR019", "USR027"],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 456.0,
+      "availableBonus": 78.0,
+      "usedBonus": 378.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 7,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 7.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN006",
+        "type": "deposit",
+        "amount": 200.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN007",
+        "type": "bonus_credited",
+        "amount": 15.0,
+        "date": "2026-02-13",
+        "status": "completed"
+      },
+      {
+        "id": "TXN008",
+        "type": "cashout",
+        "amount": 350.0,
+        "date": "2026-02-11",
+        "status": "completed"
+      },
+      {
+        "id": "TXN009",
+        "type": "deposit",
+        "amount": 150.0,
+        "date": "2026-02-06",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR003",
+    "name": "James Rodriguez",
+    "socials": {
+      "email": "james.rodriguez@email.com",
+      "phone": "+1-555-0103",
+      "facebook": "@jamesrodriguez",
+      "telegram": "@james_r",
+      "instagram": "@jrod_gaming",
+      "x": "@jamesrodriguez",
+      "snapchat": "jrod.snap"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 2340,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 39.0
+    },
+    "friendsList": ["USR001", "USR005", "USR011"],
+    "referralsList": ["USR024"],
+    "source": "Google Search",
+    "bonusTracker": {
+      "totalBonusEarned": 145.0,
+      "availableBonus": 35.0,
+      "usedBonus": 110.0
+    },
+    "attendance": "critical",
+    "streak": {
+      "currentStreak": 3,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 3.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN010",
+        "type": "deposit",
+        "amount": 100.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN011",
+        "type": "bonus_credited",
+        "amount": 10.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN012",
+        "type": "cashout",
+        "amount": 120.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR004",
+    "name": "Emily Watson",
+    "socials": {
+      "email": "emily.watson@email.com",
+      "phone": "+1-555-0104",
+      "facebook": "@emilywatson",
+      "telegram": "@emily_w",
+      "instagram": "@emily.plays",
+      "x": "@emilywatson",
+      "snapchat": "emily.w"
+    },
+    "tier": "Gold",
+    "tierProgress": {
+      "currentTier": "Gold",
+      "playTimeMinutes": 18760,
+      "nextTierRequirement": null,
+      "progressPercentage": 100
+    },
+    "friendsList": ["USR002", "USR006", "USR013", "USR020"],
+    "referralsList": ["USR028", "USR035", "USR041"],
+    "source": "YouTube Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 1024.0,
+      "availableBonus": 156.0,
+      "usedBonus": 868.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 21,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 21.0
+    },
+    "cashoutLimit": 750,
+    "transactionHistory": [
+      {
+        "id": "TXN013",
+        "type": "deposit",
+        "amount": 600.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN014",
+        "type": "cashout",
+        "amount": 750.0,
+        "date": "2026-02-13",
+        "status": "completed"
+      },
+      {
+        "id": "TXN015",
+        "type": "bonus_credited",
+        "amount": 35.0,
+        "date": "2026-02-11",
+        "status": "completed"
+      },
+      {
+        "id": "TXN016",
+        "type": "deposit",
+        "amount": 400.0,
+        "date": "2026-02-07",
+        "status": "completed"
+      },
+      {
+        "id": "TXN017",
+        "type": "bonus_credited",
+        "amount": 40.0,
+        "date": "2026-02-03",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR005",
+    "name": "Michael Park",
+    "socials": {
+      "email": "michael.park@email.com",
+      "phone": "+1-555-0105",
+      "facebook": "@michaelpark",
+      "telegram": "@mike_p",
+      "instagram": "@mikepark",
+      "x": "@michaelpark",
+      "snapchat": "mike.park"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 6720,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 56.0
+    },
+    "friendsList": ["USR003", "USR008", "USR014"],
+    "referralsList": ["USR031"],
+    "source": "Facebook Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 312.0,
+      "availableBonus": 52.0,
+      "usedBonus": 260.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 5,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 5.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN018",
+        "type": "deposit",
+        "amount": 250.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN019",
+        "type": "bonus_credited",
+        "amount": 20.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN020",
+        "type": "cashout",
+        "amount": 280.0,
+        "date": "2026-02-08",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR006",
+    "name": "Jessica Martinez",
+    "socials": {
+      "email": "jessica.martinez@email.com",
+      "phone": "+1-555-0106",
+      "facebook": "@jessicamartinez",
+      "telegram": "@jess_m",
+      "instagram": "@jess.martinez",
+      "x": "@jessicamartinez",
+      "snapchat": "jess.m"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 1890,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 31.5
+    },
+    "friendsList": ["USR004", "USR010"],
+    "referralsList": [],
+    "source": "Twitter/X Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 89.0,
+      "availableBonus": 22.0,
+      "usedBonus": 67.0
+    },
+    "attendance": "highly-critical",
+    "streak": {
+      "currentStreak": 0,
+      "lastPlayedDate": "2026-02-10",
+      "streakBonus": 0.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN021",
+        "type": "deposit",
+        "amount": 75.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN022",
+        "type": "bonus_credited",
+        "amount": 8.0,
+        "date": "2026-02-05",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR007",
+    "name": "David Kim",
+    "socials": {
+      "email": "david.kim@email.com",
+      "phone": "+1-555-0107",
+      "facebook": "@davidkim",
+      "telegram": "@david_k",
+      "instagram": "@davidkim_",
+      "x": "@davidkim",
+      "snapchat": "david.k"
+    },
+    "tier": "Gold",
+    "tierProgress": {
+      "currentTier": "Gold",
+      "playTimeMinutes": 14280,
+      "nextTierRequirement": null,
+      "progressPercentage": 100
+    },
+    "friendsList": ["USR001", "USR009", "USR016", "USR023"],
+    "referralsList": ["USR036", "USR042"],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 765.0,
+      "availableBonus": 98.0,
+      "usedBonus": 667.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 14,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 14.0
+    },
+    "cashoutLimit": 750,
+    "transactionHistory": [
+      {
+        "id": "TXN023",
+        "type": "deposit",
+        "amount": 450.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN024",
+        "type": "bonus_credited",
+        "amount": 28.0,
+        "date": "2026-02-13",
+        "status": "completed"
+      },
+      {
+        "id": "TXN025",
+        "type": "cashout",
+        "amount": 580.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN026",
+        "type": "deposit",
+        "amount": 350.0,
+        "date": "2026-02-06",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR008",
+    "name": "Amanda Foster",
+    "socials": {
+      "email": "amanda.foster@email.com",
+      "phone": "+1-555-0108",
+      "facebook": "@amandafoster",
+      "telegram": "@amanda_f",
+      "instagram": "@amanda.foster",
+      "x": "@amandafoster",
+      "snapchat": "amanda.f"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 9840,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 82.0
+    },
+    "friendsList": ["USR005", "USR012", "USR017"],
+    "referralsList": ["USR029", "USR037"],
+    "source": "TikTok Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 498.0,
+      "availableBonus": 85.0,
+      "usedBonus": 413.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 9,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 9.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN027",
+        "type": "deposit",
+        "amount": 300.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN028",
+        "type": "cashout",
+        "amount": 420.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN029",
+        "type": "bonus_credited",
+        "amount": 25.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN030",
+        "type": "deposit",
+        "amount": 200.0,
+        "date": "2026-02-04",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR009",
+    "name": "Christopher Lee",
+    "socials": {
+      "email": "christopher.lee@email.com",
+      "phone": "+1-555-0109",
+      "facebook": "@christopherlee",
+      "telegram": "@chris_l",
+      "instagram": "@chris.lee",
+      "x": "@christopherlee",
+      "snapchat": "chris.lee"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 3120,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 52.0
+    },
+    "friendsList": ["USR002", "USR007", "USR015"],
+    "referralsList": ["USR043"],
+    "source": "Reddit",
+    "bonusTracker": {
+      "totalBonusEarned": 178.0,
+      "availableBonus": 45.0,
+      "usedBonus": 133.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 4,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 4.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN031",
+        "type": "deposit",
+        "amount": 120.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN032",
+        "type": "bonus_credited",
+        "amount": 12.0,
+        "date": "2026-02-11",
+        "status": "completed"
+      },
+      {
+        "id": "TXN033",
+        "type": "cashout",
+        "amount": 150.0,
+        "date": "2026-02-07",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR010",
+    "name": "Nicole Anderson",
+    "socials": {
+      "email": "nicole.anderson@email.com",
+      "phone": "+1-555-0110",
+      "facebook": "@nicoleanderson",
+      "telegram": "@nicole_a",
+      "instagram": "@nicole.anderson",
+      "x": "@nicoleanderson",
+      "snapchat": "nicole.a"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 7560,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 63.0
+    },
+    "friendsList": ["USR006", "USR011", "USR018"],
+    "referralsList": ["USR038"],
+    "source": "Instagram Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 389.0,
+      "availableBonus": 64.0,
+      "usedBonus": 325.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 6,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 6.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN034",
+        "type": "deposit",
+        "amount": 220.0,
+        "date": "2026-02-13",
+        "status": "completed"
+      },
+      {
+        "id": "TXN035",
+        "type": "bonus_credited",
+        "amount": 18.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN036",
+        "type": "cashout",
+        "amount": 310.0,
+        "date": "2026-02-06",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR011",
+    "name": "Ryan Taylor",
+    "socials": {
+      "email": "ryan.taylor@email.com",
+      "phone": "+1-555-0111",
+      "facebook": "@ryantaylor",
+      "telegram": "@ryan_t",
+      "instagram": "@ryan.taylor",
+      "x": "@ryantaylor",
+      "snapchat": "ryan.t"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 4320,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 72.0
+    },
+    "friendsList": ["USR003", "USR010", "USR019"],
+    "referralsList": [],
+    "source": "Google Search",
+    "bonusTracker": {
+      "totalBonusEarned": 215.0,
+      "availableBonus": 58.0,
+      "usedBonus": 157.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 8,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 8.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN037",
+        "type": "deposit",
+        "amount": 180.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN038",
+        "type": "bonus_credited",
+        "amount": 16.0,
+        "date": "2026-02-11",
+        "status": "completed"
+      },
+      {
+        "id": "TXN039",
+        "type": "cashout",
+        "amount": 200.0,
+        "date": "2026-02-08",
+        "status": "completed"
+      },
+      {
+        "id": "TXN040",
+        "type": "deposit",
+        "amount": 90.0,
+        "date": "2026-02-03",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR012",
+    "name": "Lauren White",
+    "socials": {
+      "email": "lauren.white@email.com",
+      "phone": "+1-555-0112",
+      "facebook": "@laurenwhite",
+      "telegram": "@lauren_w",
+      "instagram": "@lauren.white",
+      "x": "@laurenwhite",
+      "snapchat": "lauren.w"
+    },
+    "tier": "Gold",
+    "tierProgress": {
+      "currentTier": "Gold",
+      "playTimeMinutes": 16890,
+      "nextTierRequirement": null,
+      "progressPercentage": 100
+    },
+    "friendsList": ["USR001", "USR008", "USR014", "USR021"],
+    "referralsList": ["USR039", "USR044", "USR048"],
+    "source": "YouTube Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 923.0,
+      "availableBonus": 142.0,
+      "usedBonus": 781.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 18,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 18.0
+    },
+    "cashoutLimit": 750,
+    "transactionHistory": [
+      {
+        "id": "TXN041",
+        "type": "deposit",
+        "amount": 550.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN042",
+        "type": "cashout",
+        "amount": 720.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN043",
+        "type": "bonus_credited",
+        "amount": 38.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN044",
+        "type": "deposit",
+        "amount": 380.0,
+        "date": "2026-02-05",
+        "status": "completed"
+      },
+      {
+        "id": "TXN045",
+        "type": "bonus_credited",
+        "amount": 42.0,
+        "date": "2026-02-01",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR013",
+    "name": "Brandon Harris",
+    "socials": {
+      "email": "brandon.harris@email.com",
+      "phone": "+1-555-0113",
+      "facebook": "@brandonharris",
+      "telegram": "@brandon_h",
+      "instagram": "@brandon.harris",
+      "x": "@brandonharris",
+      "snapchat": "brandon.h"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 10320,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 86.0
+    },
+    "friendsList": ["USR004", "USR016", "USR022"],
+    "referralsList": ["USR045"],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 534.0,
+      "availableBonus": 92.0,
+      "usedBonus": 442.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 11,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 11.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN046",
+        "type": "deposit",
+        "amount": 320.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN047",
+        "type": "bonus_credited",
+        "amount": 28.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN048",
+        "type": "cashout",
+        "amount": 460.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN049",
+        "type": "deposit",
+        "amount": 240.0,
+        "date": "2026-02-05",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR014",
+    "name": "Megan Clark",
+    "socials": {
+      "email": "megan.clark@email.com",
+      "phone": "+1-555-0114",
+      "facebook": "@meganclark",
+      "telegram": "@megan_c",
+      "instagram": "@megan.clark",
+      "x": "@meganclark",
+      "snapchat": "megan.c"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 2760,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 46.0
+    },
+    "friendsList": ["USR005", "USR012", "USR020"],
+    "referralsList": [],
+    "source": "Facebook Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 156.0,
+      "availableBonus": 38.0,
+      "usedBonus": 118.0
+    },
+    "attendance": "critical",
+    "streak": {
+      "currentStreak": 2,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 2.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN050",
+        "type": "deposit",
+        "amount": 110.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN051",
+        "type": "bonus_credited",
+        "amount": 11.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN052",
+        "type": "cashout",
+        "amount": 135.0,
+        "date": "2026-02-06",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR015",
+    "name": "Kevin Moore",
+    "socials": {
+      "email": "kevin.moore@email.com",
+      "phone": "+1-555-0115",
+      "facebook": "@kevinmoore",
+      "telegram": "@kevin_m",
+      "instagram": "@kevin.moore",
+      "x": "@kevinmoore",
+      "snapchat": "kevin.m"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 8160,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 68.0
+    },
+    "friendsList": ["USR009", "USR017", "USR023"],
+    "referralsList": ["USR046"],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 423.0,
+      "availableBonus": 71.0,
+      "usedBonus": 352.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 10,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 10.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN053",
+        "type": "deposit",
+        "amount": 270.0,
+        "date": "2026-02-13",
+        "status": "completed"
+      },
+      {
+        "id": "TXN054",
+        "type": "bonus_credited",
+        "amount": 22.0,
+        "date": "2026-02-11",
+        "status": "completed"
+      },
+      {
+        "id": "TXN055",
+        "type": "cashout",
+        "amount": 340.0,
+        "date": "2026-02-08",
+        "status": "completed"
+      },
+      {
+        "id": "TXN056",
+        "type": "deposit",
+        "amount": 190.0,
+        "date": "2026-02-04",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR016",
+    "name": "Ashley Turner",
+    "socials": {
+      "email": "ashley.turner@email.com",
+      "phone": "+1-555-0116",
+      "facebook": "@ashleyturner",
+      "telegram": "@ashley_t",
+      "instagram": "@ashley.turner",
+      "x": "@ashleyturner",
+      "snapchat": "ashley.t"
+    },
+    "tier": "Gold",
+    "tierProgress": {
+      "currentTier": "Gold",
+      "playTimeMinutes": 13560,
+      "nextTierRequirement": null,
+      "progressPercentage": 100
+    },
+    "friendsList": ["USR007", "USR013", "USR024"],
+    "referralsList": ["USR047", "USR049"],
+    "source": "TikTok Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 698.0,
+      "availableBonus": 112.0,
+      "usedBonus": 586.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 15,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 15.0
+    },
+    "cashoutLimit": 750,
+    "transactionHistory": [
+      {
+        "id": "TXN057",
+        "type": "deposit",
+        "amount": 480.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN058",
+        "type": "cashout",
+        "amount": 630.0,
+        "date": "2026-02-11",
+        "status": "completed"
+      },
+      {
+        "id": "TXN059",
+        "type": "bonus_credited",
+        "amount": 32.0,
+        "date": "2026-02-08",
+        "status": "completed"
+      },
+      {
+        "id": "TXN060",
+        "type": "deposit",
+        "amount": 360.0,
+        "date": "2026-02-04",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR017",
+    "name": "Daniel Jackson",
+    "socials": {
+      "email": "daniel.jackson@email.com",
+      "phone": "+1-555-0117",
+      "facebook": "@danieljackson",
+      "telegram": "@daniel_j",
+      "instagram": "@daniel.jackson",
+      "x": "@danieljackson",
+      "snapchat": "daniel.j"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 3780,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 63.0
+    },
+    "friendsList": ["USR008", "USR015", "USR025"],
+    "referralsList": ["USR050"],
+    "source": "Reddit",
+    "bonusTracker": {
+      "totalBonusEarned": 192.0,
+      "availableBonus": 49.0,
+      "usedBonus": 143.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 7,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 7.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN061",
+        "type": "deposit",
+        "amount": 140.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN062",
+        "type": "bonus_credited",
+        "amount": 14.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN063",
+        "type": "cashout",
+        "amount": 170.0,
+        "date": "2026-02-06",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR018",
+    "name": "Stephanie Lewis",
+    "socials": {
+      "email": "stephanie.lewis@email.com",
+      "phone": "+1-555-0118",
+      "facebook": "@stephanielewis",
+      "telegram": "@steph_l",
+      "instagram": "@stephanie.lewis",
+      "x": "@stephanielewis",
+      "snapchat": "steph.l"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 9240,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 77.0
+    },
+    "friendsList": ["USR001", "USR010", "USR026"],
+    "referralsList": [],
+    "source": "Instagram Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 478.0,
+      "availableBonus": 81.0,
+      "usedBonus": 397.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 13,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 13.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN064",
+        "type": "deposit",
+        "amount": 290.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN065",
+        "type": "bonus_credited",
+        "amount": 24.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN066",
+        "type": "cashout",
+        "amount": 390.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN067",
+        "type": "deposit",
+        "amount": 210.0,
+        "date": "2026-02-05",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR019",
+    "name": "Justin Walker",
+    "socials": {
+      "email": "justin.walker@email.com",
+      "phone": "+1-555-0119",
+      "facebook": "@justinwalker",
+      "telegram": "@justin_w",
+      "instagram": "@justin.walker",
+      "x": "@justinwalker",
+      "snapchat": "justin.w"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 1560,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 26.0
+    },
+    "friendsList": ["USR011", "USR027"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 78.0,
+      "availableBonus": 19.0,
+      "usedBonus": 59.0
+    },
+    "attendance": "inactive",
+    "streak": {
+      "currentStreak": 0,
+      "lastPlayedDate": "2026-02-03",
+      "streakBonus": 0.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN068",
+        "type": "deposit",
+        "amount": 60.0,
+        "date": "2026-02-03",
+        "status": "completed"
+      },
+      {
+        "id": "TXN069",
+        "type": "bonus_credited",
+        "amount": 6.0,
+        "date": "2026-01-28",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR020",
+    "name": "Rebecca Young",
+    "socials": {
+      "email": "rebecca.young@email.com",
+      "phone": "+1-555-0120",
+      "facebook": "@rebeccayoung",
+      "telegram": "@rebecca_y",
+      "instagram": "@rebecca.young",
+      "x": "@rebeccayoung",
+      "snapchat": "rebecca.y"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 7920,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 66.0
+    },
+    "friendsList": ["USR004", "USR014", "USR028"],
+    "referralsList": [],
+    "source": "Google Search",
+    "bonusTracker": {
+      "totalBonusEarned": 412.0,
+      "availableBonus": 68.0,
+      "usedBonus": 344.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 5,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 5.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN070",
+        "type": "deposit",
+        "amount": 260.0,
+        "date": "2026-02-13",
+        "status": "completed"
+      },
+      {
+        "id": "TXN071",
+        "type": "bonus_credited",
+        "amount": 21.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN072",
+        "type": "cashout",
+        "amount": 320.0,
+        "date": "2026-02-07",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR021",
+    "name": "Matthew Hall",
+    "socials": {
+      "email": "matthew.hall@email.com",
+      "phone": "+1-555-0121",
+      "facebook": "@matthewhall",
+      "telegram": "@matt_h",
+      "instagram": "@matthew.hall",
+      "x": "@matthewhall",
+      "snapchat": "matt.h"
+    },
+    "tier": "Gold",
+    "tierProgress": {
+      "currentTier": "Gold",
+      "playTimeMinutes": 17340,
+      "nextTierRequirement": null,
+      "progressPercentage": 100
+    },
+    "friendsList": ["USR012", "USR029", "USR030"],
+    "referralsList": [],
+    "source": "YouTube Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 956.0,
+      "availableBonus": 148.0,
+      "usedBonus": 808.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 19,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 19.0
+    },
+    "cashoutLimit": 750,
+    "transactionHistory": [
+      {
+        "id": "TXN073",
+        "type": "deposit",
+        "amount": 580.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN074",
+        "type": "cashout",
+        "amount": 740.0,
+        "date": "2026-02-13",
+        "status": "completed"
+      },
+      {
+        "id": "TXN075",
+        "type": "bonus_credited",
+        "amount": 41.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN076",
+        "type": "deposit",
+        "amount": 420.0,
+        "date": "2026-02-06",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR022",
+    "name": "Jennifer Allen",
+    "socials": {
+      "email": "jennifer.allen@email.com",
+      "phone": "+1-555-0122",
+      "facebook": "@jenniferallen",
+      "telegram": "@jen_a",
+      "instagram": "@jennifer.allen",
+      "x": "@jenniferallen",
+      "snapchat": "jen.a"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 2940,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 49.0
+    },
+    "friendsList": ["USR013", "USR031"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 168.0,
+      "availableBonus": 42.0,
+      "usedBonus": 126.0
+    },
+    "attendance": "critical",
+    "streak": {
+      "currentStreak": 1,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 1.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN077",
+        "type": "deposit",
+        "amount": 125.0,
+        "date": "2026-02-16",
+        "status": "completed"
+      },
+      {
+        "id": "TXN078",
+        "type": "bonus_credited",
+        "amount": 13.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN079",
+        "type": "cashout",
+        "amount": 145.0,
+        "date": "2026-02-05",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR023",
+    "name": "Andrew King",
+    "socials": {
+      "email": "andrew.king@email.com",
+      "phone": "+1-555-0123",
+      "facebook": "@andrewking",
+      "telegram": "@andrew_k",
+      "instagram": "@andrew.king",
+      "x": "@andrewking",
+      "snapchat": "andrew.k"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 10680,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 89.0
+    },
+    "friendsList": ["USR007", "USR015", "USR032"],
+    "referralsList": [],
+    "source": "Facebook Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 556.0,
+      "availableBonus": 96.0,
+      "usedBonus": 460.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 16,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 16.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN080",
+        "type": "deposit",
+        "amount": 340.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN081",
+        "type": "bonus_credited",
+        "amount": 30.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN082",
+        "type": "cashout",
+        "amount": 480.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN083",
+        "type": "deposit",
+        "amount": 260.0,
+        "date": "2026-02-06",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR024",
+    "name": "Samantha Wright",
+    "socials": {
+      "email": "samantha.wright@email.com",
+      "phone": "+1-555-0124",
+      "facebook": "@samanthawright",
+      "telegram": "@sam_w",
+      "instagram": "@samantha.wright",
+      "x": "@samanthawright",
+      "snapchat": "sam.w"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 4680,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 78.0
+    },
+    "friendsList": ["USR016", "USR033"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 234.0,
+      "availableBonus": 61.0,
+      "usedBonus": 173.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 6,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 6.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN084",
+        "type": "deposit",
+        "amount": 195.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN085",
+        "type": "bonus_credited",
+        "amount": 18.0,
+        "date": "2026-02-11",
+        "status": "completed"
+      },
+      {
+        "id": "TXN086",
+        "type": "cashout",
+        "amount": 215.0,
+        "date": "2026-02-07",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR025",
+    "name": "Joshua Lopez",
+    "socials": {
+      "email": "joshua.lopez@email.com",
+      "phone": "+1-555-0125",
+      "facebook": "@joshualopez",
+      "telegram": "@josh_l",
+      "instagram": "@joshua.lopez",
+      "x": "@joshualopez",
+      "snapchat": "josh.l"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 6480,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 54.0
+    },
+    "friendsList": ["USR001", "USR017", "USR034"],
+    "referralsList": [],
+    "source": "TikTok Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 334.0,
+      "availableBonus": 55.0,
+      "usedBonus": 279.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 4,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 4.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN087",
+        "type": "deposit",
+        "amount": 235.0,
+        "date": "2026-02-13",
+        "status": "completed"
+      },
+      {
+        "id": "TXN088",
+        "type": "bonus_credited",
+        "amount": 19.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN089",
+        "type": "cashout",
+        "amount": 290.0,
+        "date": "2026-02-06",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR026",
+    "name": "Rachel Hill",
+    "socials": {
+      "email": "rachel.hill@email.com",
+      "phone": "+1-555-0126",
+      "facebook": "@rachelhill",
+      "telegram": "@rachel_h",
+      "instagram": "@rachel.hill",
+      "x": "@rachelhill",
+      "snapchat": "rachel.h"
+    },
+    "tier": "Gold",
+    "tierProgress": {
+      "currentTier": "Gold",
+      "playTimeMinutes": 12960,
+      "nextTierRequirement": null,
+      "progressPercentage": 100
+    },
+    "friendsList": ["USR018", "USR035", "USR036"],
+    "referralsList": [],
+    "source": "Instagram Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 645.0,
+      "availableBonus": 105.0,
+      "usedBonus": 540.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 17,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 17.0
+    },
+    "cashoutLimit": 750,
+    "transactionHistory": [
+      {
+        "id": "TXN090",
+        "type": "deposit",
+        "amount": 510.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN091",
+        "type": "cashout",
+        "amount": 680.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN092",
+        "type": "bonus_credited",
+        "amount": 34.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN093",
+        "type": "deposit",
+        "amount": 390.0,
+        "date": "2026-02-05",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR027",
+    "name": "Tyler Scott",
+    "socials": {
+      "email": "tyler.scott@email.com",
+      "phone": "+1-555-0127",
+      "facebook": "@tylerscott",
+      "telegram": "@tyler_s",
+      "instagram": "@tyler.scott",
+      "x": "@tylerscott",
+      "snapchat": "tyler.s"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 2160,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 36.0
+    },
+    "friendsList": ["USR019", "USR037"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 112.0,
+      "availableBonus": 28.0,
+      "usedBonus": 84.0
+    },
+    "attendance": "highly-critical",
+    "streak": {
+      "currentStreak": 0,
+      "lastPlayedDate": "2026-02-08",
+      "streakBonus": 0.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN094",
+        "type": "deposit",
+        "amount": 85.0,
+        "date": "2026-02-08",
+        "status": "completed"
+      },
+      {
+        "id": "TXN095",
+        "type": "bonus_credited",
+        "amount": 9.0,
+        "date": "2026-02-02",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR028",
+    "name": "Laura Green",
+    "socials": {
+      "email": "laura.green@email.com",
+      "phone": "+1-555-0128",
+      "facebook": "@lauragreen",
+      "telegram": "@laura_g",
+      "instagram": "@laura.green",
+      "x": "@lauragreen",
+      "snapchat": "laura.g"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 8520,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 71.0
+    },
+    "friendsList": ["USR020", "USR038"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 445.0,
+      "availableBonus": 74.0,
+      "usedBonus": 371.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 8,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 8.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN096",
+        "type": "deposit",
+        "amount": 280.0,
+        "date": "2026-02-13",
+        "status": "completed"
+      },
+      {
+        "id": "TXN097",
+        "type": "bonus_credited",
+        "amount": 23.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN098",
+        "type": "cashout",
+        "amount": 360.0,
+        "date": "2026-02-07",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR029",
+    "name": "Jacob Adams",
+    "socials": {
+      "email": "jacob.adams@email.com",
+      "phone": "+1-555-0129",
+      "facebook": "@jacobadams",
+      "telegram": "@jacob_a",
+      "instagram": "@jacob.adams",
+      "x": "@jacobadams",
+      "snapchat": "jacob.a"
+    },
+    "tier": "Gold",
+    "tierProgress": {
+      "currentTier": "Gold",
+      "playTimeMinutes": 15840,
+      "nextTierRequirement": null,
+      "progressPercentage": 100
+    },
+    "friendsList": ["USR021", "USR039", "USR040"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 868.0,
+      "availableBonus": 134.0,
+      "usedBonus": 734.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 20,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 20.0
+    },
+    "cashoutLimit": 750,
+    "transactionHistory": [
+      {
+        "id": "TXN099",
+        "type": "deposit",
+        "amount": 530.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN100",
+        "type": "cashout",
+        "amount": 700.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN101",
+        "type": "bonus_credited",
+        "amount": 37.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN102",
+        "type": "deposit",
+        "amount": 410.0,
+        "date": "2026-02-05",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR030",
+    "name": "Hannah Baker",
+    "socials": {
+      "email": "hannah.baker@email.com",
+      "phone": "+1-555-0130",
+      "facebook": "@hannahbaker",
+      "telegram": "@hannah_b",
+      "instagram": "@hannah.baker",
+      "x": "@hannahbaker",
+      "snapchat": "hannah.b"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 11280,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 94.0
+    },
+    "friendsList": ["USR021", "USR041"],
+    "referralsList": [],
+    "source": "Reddit",
+    "bonusTracker": {
+      "totalBonusEarned": 589.0,
+      "availableBonus": 102.0,
+      "usedBonus": 487.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 22,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 22.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN103",
+        "type": "deposit",
+        "amount": 365.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN104",
+        "type": "bonus_credited",
+        "amount": 33.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN105",
+        "type": "cashout",
+        "amount": 495.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN106",
+        "type": "deposit",
+        "amount": 275.0,
+        "date": "2026-02-06",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR031",
+    "name": "Ethan Nelson",
+    "socials": {
+      "email": "ethan.nelson@email.com",
+      "phone": "+1-555-0131",
+      "facebook": "@ethannelson",
+      "telegram": "@ethan_n",
+      "instagram": "@ethan.nelson",
+      "x": "@ethannelson",
+      "snapchat": "ethan.n"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 3360,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 56.0
+    },
+    "friendsList": ["USR022", "USR042"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 181.0,
+      "availableBonus": 46.0,
+      "usedBonus": 135.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 3,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 3.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN107",
+        "type": "deposit",
+        "amount": 155.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN108",
+        "type": "bonus_credited",
+        "amount": 15.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN109",
+        "type": "cashout",
+        "amount": 180.0,
+        "date": "2026-02-05",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR032",
+    "name": "Olivia Carter",
+    "socials": {
+      "email": "olivia.carter@email.com",
+      "phone": "+1-555-0132",
+      "facebook": "@oliviacarter",
+      "telegram": "@olivia_c",
+      "instagram": "@olivia.carter",
+      "x": "@oliviacarter",
+      "snapchat": "olivia.c"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 7200,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 60.0
+    },
+    "friendsList": ["USR023", "USR043"],
+    "referralsList": [],
+    "source": "Google Search",
+    "bonusTracker": {
+      "totalBonusEarned": 367.0,
+      "availableBonus": 62.0,
+      "usedBonus": 305.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 11,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 11.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN110",
+        "type": "deposit",
+        "amount": 245.0,
+        "date": "2026-02-13",
+        "status": "completed"
+      },
+      {
+        "id": "TXN111",
+        "type": "bonus_credited",
+        "amount": 20.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN112",
+        "type": "cashout",
+        "amount": 305.0,
+        "date": "2026-02-06",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR033",
+    "name": "Nathan Mitchell",
+    "socials": {
+      "email": "nathan.mitchell@email.com",
+      "phone": "+1-555-0133",
+      "facebook": "@nathanmitchell",
+      "telegram": "@nathan_m",
+      "instagram": "@nathan.mitchell",
+      "x": "@nathanmitchell",
+      "snapchat": "nathan.m"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 5040,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 84.0
+    },
+    "friendsList": ["USR024", "USR044"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 256.0,
+      "availableBonus": 67.0,
+      "usedBonus": 189.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 9,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 9.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN113",
+        "type": "deposit",
+        "amount": 210.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN114",
+        "type": "bonus_credited",
+        "amount": 20.0,
+        "date": "2026-02-11",
+        "status": "completed"
+      },
+      {
+        "id": "TXN115",
+        "type": "cashout",
+        "amount": 240.0,
+        "date": "2026-02-08",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR034",
+    "name": "Victoria Perez",
+    "socials": {
+      "email": "victoria.perez@email.com",
+      "phone": "+1-555-0134",
+      "facebook": "@victoriaperez",
+      "telegram": "@victoria_p",
+      "instagram": "@victoria.perez",
+      "x": "@victoriaperez",
+      "snapchat": "victoria.p"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 9600,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 80.0
+    },
+    "friendsList": ["USR025", "USR045"],
+    "referralsList": [],
+    "source": "Facebook Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 501.0,
+      "availableBonus": 87.0,
+      "usedBonus": 414.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 12,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 12.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN116",
+        "type": "deposit",
+        "amount": 305.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN117",
+        "type": "bonus_credited",
+        "amount": 26.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN118",
+        "type": "cashout",
+        "amount": 410.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN119",
+        "type": "deposit",
+        "amount": 225.0,
+        "date": "2026-02-05",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR035",
+    "name": "Austin Roberts",
+    "socials": {
+      "email": "austin.roberts@email.com",
+      "phone": "+1-555-0135",
+      "facebook": "@austinroberts",
+      "telegram": "@austin_r",
+      "instagram": "@austin.roberts",
+      "x": "@austinroberts",
+      "snapchat": "austin.r"
+    },
+    "tier": "Gold",
+    "tierProgress": {
+      "currentTier": "Gold",
+      "playTimeMinutes": 14640,
+      "nextTierRequirement": null,
+      "progressPercentage": 100
+    },
+    "friendsList": ["USR026", "USR046"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 789.0,
+      "availableBonus": 121.0,
+      "usedBonus": 668.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 14,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 14.0
+    },
+    "cashoutLimit": 750,
+    "transactionHistory": [
+      {
+        "id": "TXN120",
+        "type": "deposit",
+        "amount": 470.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN121",
+        "type": "cashout",
+        "amount": 610.0,
+        "date": "2026-02-11",
+        "status": "completed"
+      },
+      {
+        "id": "TXN122",
+        "type": "bonus_credited",
+        "amount": 31.0,
+        "date": "2026-02-08",
+        "status": "completed"
+      },
+      {
+        "id": "TXN123",
+        "type": "deposit",
+        "amount": 370.0,
+        "date": "2026-02-04",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR036",
+    "name": "Grace Turner",
+    "socials": {
+      "email": "grace.turner@email.com",
+      "phone": "+1-555-0136",
+      "facebook": "@graceturner",
+      "telegram": "@grace_t",
+      "instagram": "@grace.turner",
+      "x": "@graceturner",
+      "snapchat": "grace.t"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 6960,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 58.0
+    },
+    "friendsList": ["USR026", "USR047"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 356.0,
+      "availableBonus": 59.0,
+      "usedBonus": 297.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 5,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 5.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN124",
+        "type": "deposit",
+        "amount": 230.0,
+        "date": "2026-02-13",
+        "status": "completed"
+      },
+      {
+        "id": "TXN125",
+        "type": "bonus_credited",
+        "amount": 19.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN126",
+        "type": "cashout",
+        "amount": 285.0,
+        "date": "2026-02-06",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR037",
+    "name": "Zachary Phillips",
+    "socials": {
+      "email": "zachary.phillips@email.com",
+      "phone": "+1-555-0137",
+      "facebook": "@zacharyphillips",
+      "telegram": "@zach_p",
+      "instagram": "@zachary.phillips",
+      "x": "@zacharyphillips",
+      "snapchat": "zach.p"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 1320,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 22.0
+    },
+    "friendsList": ["USR027", "USR048"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 67.0,
+      "availableBonus": 16.0,
+      "usedBonus": 51.0
+    },
+    "attendance": "inactive",
+    "streak": {
+      "currentStreak": 0,
+      "lastPlayedDate": "2026-01-31",
+      "streakBonus": 0.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN127",
+        "type": "deposit",
+        "amount": 50.0,
+        "date": "2026-01-31",
+        "status": "completed"
+      },
+      {
+        "id": "TXN128",
+        "type": "bonus_credited",
+        "amount": 5.0,
+        "date": "2026-01-25",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR038",
+    "name": "Alexis Campbell",
+    "socials": {
+      "email": "alexis.campbell@email.com",
+      "phone": "+1-555-0138",
+      "facebook": "@alexiscampbell",
+      "telegram": "@alexis_c",
+      "instagram": "@alexis.campbell",
+      "x": "@alexiscampbell",
+      "snapchat": "alexis.c"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 8280,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 69.0
+    },
+    "friendsList": ["USR028", "USR049"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 434.0,
+      "availableBonus": 72.0,
+      "usedBonus": 362.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 7,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 7.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN129",
+        "type": "deposit",
+        "amount": 270.0,
+        "date": "2026-02-13",
+        "status": "completed"
+      },
+      {
+        "id": "TXN130",
+        "type": "bonus_credited",
+        "amount": 22.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN131",
+        "type": "cashout",
+        "amount": 350.0,
+        "date": "2026-02-07",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR039",
+    "name": "Jordan Evans",
+    "socials": {
+      "email": "jordan.evans@email.com",
+      "phone": "+1-555-0139",
+      "facebook": "@jordanevans",
+      "telegram": "@jordan_e",
+      "instagram": "@jordan.evans",
+      "x": "@jordanevans",
+      "snapchat": "jordan.e"
+    },
+    "tier": "Gold",
+    "tierProgress": {
+      "currentTier": "Gold",
+      "playTimeMinutes": 13200,
+      "nextTierRequirement": null,
+      "progressPercentage": 100
+    },
+    "friendsList": ["USR029", "USR050"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 678.0,
+      "availableBonus": 109.0,
+      "usedBonus": 569.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 13,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 13.0
+    },
+    "cashoutLimit": 750,
+    "transactionHistory": [
+      {
+        "id": "TXN132",
+        "type": "deposit",
+        "amount": 490.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN133",
+        "type": "cashout",
+        "amount": 660.0,
+        "date": "2026-02-11",
+        "status": "completed"
+      },
+      {
+        "id": "TXN134",
+        "type": "bonus_credited",
+        "amount": 33.0,
+        "date": "2026-02-08",
+        "status": "completed"
+      },
+      {
+        "id": "TXN135",
+        "type": "deposit",
+        "amount": 380.0,
+        "date": "2026-02-04",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR040",
+    "name": "Kayla Edwards",
+    "socials": {
+      "email": "kayla.edwards@email.com",
+      "phone": "+1-555-0140",
+      "facebook": "@kaylaedwards",
+      "telegram": "@kayla_e",
+      "instagram": "@kayla.edwards",
+      "x": "@kaylaedwards",
+      "snapchat": "kayla.e"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 10800,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 90.0
+    },
+    "friendsList": ["USR029"],
+    "referralsList": [],
+    "source": "TikTok Ad",
+    "bonusTracker": {
+      "totalBonusEarned": 567.0,
+      "availableBonus": 98.0,
+      "usedBonus": 469.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 15,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 15.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN136",
+        "type": "deposit",
+        "amount": 350.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN137",
+        "type": "bonus_credited",
+        "amount": 31.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN138",
+        "type": "cashout",
+        "amount": 490.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN139",
+        "type": "deposit",
+        "amount": 270.0,
+        "date": "2026-02-06",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR041",
+    "name": "Connor Collins",
+    "socials": {
+      "email": "connor.collins@email.com",
+      "phone": "+1-555-0141",
+      "facebook": "@connorcollins",
+      "telegram": "@connor_c",
+      "instagram": "@connor.collins",
+      "x": "@connorcollins",
+      "snapchat": "connor.c"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 4140,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 69.0
+    },
+    "friendsList": ["USR030"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 208.0,
+      "availableBonus": 54.0,
+      "usedBonus": 154.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 10,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 10.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN140",
+        "type": "deposit",
+        "amount": 175.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN141",
+        "type": "bonus_credited",
+        "amount": 17.0,
+        "date": "2026-02-11",
+        "status": "completed"
+      },
+      {
+        "id": "TXN142",
+        "type": "cashout",
+        "amount": 195.0,
+        "date": "2026-02-08",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR042",
+    "name": "Natalie Stewart",
+    "socials": {
+      "email": "natalie.stewart@email.com",
+      "phone": "+1-555-0142",
+      "facebook": "@nataliestewart",
+      "telegram": "@natalie_s",
+      "instagram": "@natalie.stewart",
+      "x": "@nataliestewart",
+      "snapchat": "natalie.s"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 7680,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 64.0
+    },
+    "friendsList": ["USR031"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 401.0,
+      "availableBonus": 66.0,
+      "usedBonus": 335.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 6,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 6.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN143",
+        "type": "deposit",
+        "amount": 255.0,
+        "date": "2026-02-13",
+        "status": "completed"
+      },
+      {
+        "id": "TXN144",
+        "type": "bonus_credited",
+        "amount": 21.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN145",
+        "type": "cashout",
+        "amount": 325.0,
+        "date": "2026-02-07",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR043",
+    "name": "Ian Sanchez",
+    "socials": {
+      "email": "ian.sanchez@email.com",
+      "phone": "+1-555-0143",
+      "facebook": "@iansanchez",
+      "telegram": "@ian_s",
+      "instagram": "@ian.sanchez",
+      "x": "@iansanchez",
+      "snapchat": "ian.s"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 2520,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 42.0
+    },
+    "friendsList": ["USR032"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 134.0,
+      "availableBonus": 33.0,
+      "usedBonus": 101.0
+    },
+    "attendance": "critical",
+    "streak": {
+      "currentStreak": 2,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 2.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN146",
+        "type": "deposit",
+        "amount": 105.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN147",
+        "type": "bonus_credited",
+        "amount": 10.0,
+        "date": "2026-02-08",
+        "status": "completed"
+      },
+      {
+        "id": "TXN148",
+        "type": "cashout",
+        "amount": 125.0,
+        "date": "2026-02-04",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR044",
+    "name": "Madison Morris",
+    "socials": {
+      "email": "madison.morris@email.com",
+      "phone": "+1-555-0144",
+      "facebook": "@madisonmorris",
+      "telegram": "@madison_m",
+      "instagram": "@madison.morris",
+      "x": "@madisonmorris",
+      "snapchat": "madison.m"
+    },
+    "tier": "Gold",
+    "tierProgress": {
+      "currentTier": "Gold",
+      "playTimeMinutes": 16320,
+      "nextTierRequirement": null,
+      "progressPercentage": 100
+    },
+    "friendsList": ["USR033"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 901.0,
+      "availableBonus": 139.0,
+      "usedBonus": 762.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 16,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 16.0
+    },
+    "cashoutLimit": 750,
+    "transactionHistory": [
+      {
+        "id": "TXN149",
+        "type": "deposit",
+        "amount": 540.0,
+        "date": "2026-02-15",
+        "status": "completed"
+      },
+      {
+        "id": "TXN150",
+        "type": "cashout",
+        "amount": 710.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN151",
+        "type": "bonus_credited",
+        "amount": 36.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN152",
+        "type": "deposit",
+        "amount": 400.0,
+        "date": "2026-02-05",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR045",
+    "name": "Dylan Rogers",
+    "socials": {
+      "email": "dylan.rogers@email.com",
+      "phone": "+1-555-0145",
+      "facebook": "@dylanrogers",
+      "telegram": "@dylan_r",
+      "instagram": "@dylan.rogers",
+      "x": "@dylanrogers",
+      "snapchat": "dylan.r"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 9120,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 76.0
+    },
+    "friendsList": ["USR034"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 489.0,
+      "availableBonus": 84.0,
+      "usedBonus": 405.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 8,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 8.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN153",
+        "type": "deposit",
+        "amount": 295.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN154",
+        "type": "bonus_credited",
+        "amount": 25.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN155",
+        "type": "cashout",
+        "amount": 400.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN156",
+        "type": "deposit",
+        "amount": 215.0,
+        "date": "2026-02-05",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR046",
+    "name": "Chloe Reed",
+    "socials": {
+      "email": "chloe.reed@email.com",
+      "phone": "+1-555-0146",
+      "facebook": "@chloereed",
+      "telegram": "@chloe_r",
+      "instagram": "@chloe.reed",
+      "x": "@chloereed",
+      "snapchat": "chloe.r"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 3600,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 60.0
+    },
+    "friendsList": ["USR035"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 189.0,
+      "availableBonus": 48.0,
+      "usedBonus": 141.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 4,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 4.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN157",
+        "type": "deposit",
+        "amount": 160.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN158",
+        "type": "bonus_credited",
+        "amount": 15.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN159",
+        "type": "cashout",
+        "amount": 185.0,
+        "date": "2026-02-06",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR047",
+    "name": "Sean Cook",
+    "socials": {
+      "email": "sean.cook@email.com",
+      "phone": "+1-555-0147",
+      "facebook": "@seancook",
+      "telegram": "@sean_c",
+      "instagram": "@sean.cook",
+      "x": "@seancook",
+      "snapchat": "sean.c"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 8760,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 73.0
+    },
+    "friendsList": ["USR036"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 467.0,
+      "availableBonus": 79.0,
+      "usedBonus": 388.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 9,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 9.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN160",
+        "type": "deposit",
+        "amount": 285.0,
+        "date": "2026-02-13",
+        "status": "completed"
+      },
+      {
+        "id": "TXN161",
+        "type": "bonus_credited",
+        "amount": 24.0,
+        "date": "2026-02-11",
+        "status": "completed"
+      },
+      {
+        "id": "TXN162",
+        "type": "cashout",
+        "amount": 375.0,
+        "date": "2026-02-08",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR048",
+    "name": "Maya Bailey",
+    "socials": {
+      "email": "maya.bailey@email.com",
+      "phone": "+1-555-0148",
+      "facebook": "@mayabailey",
+      "telegram": "@maya_b",
+      "instagram": "@maya.bailey",
+      "x": "@mayabailey",
+      "snapchat": "maya.b"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 1740,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 29.0
+    },
+    "friendsList": ["USR037"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 92.0,
+      "availableBonus": 23.0,
+      "usedBonus": 69.0
+    },
+    "attendance": "highly-critical",
+    "streak": {
+      "currentStreak": 0,
+      "lastPlayedDate": "2026-02-09",
+      "streakBonus": 0.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN163",
+        "type": "deposit",
+        "amount": 70.0,
+        "date": "2026-02-09",
+        "status": "completed"
+      },
+      {
+        "id": "TXN164",
+        "type": "bonus_credited",
+        "amount": 7.0,
+        "date": "2026-02-03",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR049",
+    "name": "Gabriel Rivera",
+    "socials": {
+      "email": "gabriel.rivera@email.com",
+      "phone": "+1-555-0149",
+      "facebook": "@gabrielrivera",
+      "telegram": "@gabriel_r",
+      "instagram": "@gabriel.rivera",
+      "x": "@gabrielrivera",
+      "snapchat": "gabriel.r"
+    },
+    "tier": "Silver",
+    "tierProgress": {
+      "currentTier": "Silver",
+      "playTimeMinutes": 10080,
+      "nextTierRequirement": 12000,
+      "progressPercentage": 84.0
+    },
+    "friendsList": ["USR038"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 523.0,
+      "availableBonus": 90.0,
+      "usedBonus": 433.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 14,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 14.0
+    },
+    "cashoutLimit": 500,
+    "transactionHistory": [
+      {
+        "id": "TXN165",
+        "type": "deposit",
+        "amount": 325.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN166",
+        "type": "bonus_credited",
+        "amount": 27.0,
+        "date": "2026-02-12",
+        "status": "completed"
+      },
+      {
+        "id": "TXN167",
+        "type": "cashout",
+        "amount": 445.0,
+        "date": "2026-02-10",
+        "status": "completed"
+      },
+      {
+        "id": "TXN168",
+        "type": "deposit",
+        "amount": 250.0,
+        "date": "2026-02-06",
+        "status": "completed"
+      }
+    ]
+  },
+  {
+    "id": "USR050",
+    "name": "Sophia Cooper",
+    "socials": {
+      "email": "sophia.cooper@email.com",
+      "phone": "+1-555-0150",
+      "facebook": "@sophiacooper",
+      "telegram": "@sophia_c",
+      "instagram": "@sophia.cooper",
+      "x": "@sophiacooper",
+      "snapchat": "sophia.c"
+    },
+    "tier": "Bronze",
+    "tierProgress": {
+      "currentTier": "Bronze",
+      "playTimeMinutes": 5280,
+      "nextTierRequirement": 6000,
+      "progressPercentage": 88.0
+    },
+    "friendsList": ["USR039"],
+    "referralsList": [],
+    "source": "Friend Referral",
+    "bonusTracker": {
+      "totalBonusEarned": 267.0,
+      "availableBonus": 70.0,
+      "usedBonus": 197.0
+    },
+    "attendance": "active",
+    "streak": {
+      "currentStreak": 11,
+      "lastPlayedDate": "2026-02-16",
+      "streakBonus": 11.0
+    },
+    "cashoutLimit": 250,
+    "transactionHistory": [
+      {
+        "id": "TXN169",
+        "type": "deposit",
+        "amount": 220.0,
+        "date": "2026-02-14",
+        "status": "completed"
+      },
+      {
+        "id": "TXN170",
+        "type": "bonus_credited",
+        "amount": 21.0,
+        "date": "2026-02-11",
+        "status": "completed"
+      },
+      {
+        "id": "TXN171",
+        "type": "cashout",
+        "amount": 245.0,
+        "date": "2026-02-08",
+        "status": "completed"
+      },
+      {
+        "id": "TXN172",
+        "type": "deposit",
+        "amount": 95.0,
+        "date": "2026-02-03",
+        "status": "completed"
+      }
+    ]
+  }
+]
