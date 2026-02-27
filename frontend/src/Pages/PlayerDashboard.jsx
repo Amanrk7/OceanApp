@@ -5,6 +5,7 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
+import { fmtTXTime } from '../utils/txTime';
 
 const C = {
     sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
@@ -36,6 +37,34 @@ const pill = (bg, text) => ({
     display: 'inline-flex', alignItems: 'center', padding: '3px 10px',
     borderRadius: '20px', fontSize: '11px', fontWeight: '700', background: bg, color: text
 });
+
+// ── Bonus type helpers ──────────────────────────────────────────
+const BONUS_LABEL_MAP = {
+    'streak bonus': { label: 'Streak Bonus', emoji: '🔥', bg: '#fffbeb', text: '#92400e' },
+    'referral bonus': { label: 'Referral Bonus', emoji: '👤', bg: '#f0fdf4', text: '#166534' },
+    'match bonus': { label: 'Match Bonus', emoji: '💰', bg: '#eff6ff', text: '#1d4ed8' },
+    'special bonus': { label: 'Special Bonus', emoji: '⭐', bg: '#faf5ff', text: '#6b21a8' },
+    'bonus': { label: 'Bonus', emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
+    'bonus_credited': { label: 'Bonus', emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
+};
+
+function resolveBonusInfo(tx) {
+    // tx.type can be 'Streak Bonus', 'Referral Bonus', 'Match Bonus', 'bonus_credited', etc.
+    const key = (tx.type || '').toLowerCase().trim();
+    return BONUS_LABEL_MAP[key] || BONUS_LABEL_MAP['bonus'];
+}
+
+// ── TX type map for the recent transactions table ──────────────
+const TX_TYPE_MAP = {
+    deposit: { label: 'Deposit', color: '#10b981', bg: '#f0fdf4' },
+    cashout: { label: 'Cashout', color: '#dc2626', bg: '#fff1f2' },
+    'streak bonus': { label: 'Streak Bonus', color: '#f59e0b', bg: '#fffbeb' },
+    'referral bonus': { label: 'Referral Bonus', color: '#10b981', bg: '#f0fdf4' },
+    'match bonus': { label: 'Match Bonus', color: '#3b82f6', bg: '#eff6ff' },
+    'special bonus': { label: 'Special Bonus', color: '#8b5cf6', bg: '#faf5ff' },
+    'bonus_credited': { label: 'Bonus', color: '#d97706', bg: '#fffbeb' },
+    'bonus': { label: 'Bonus', color: '#d97706', bg: '#fffbeb' },
+};
 
 function Avatar({ name = '?', size = 44, fontSize = 15 }) {
     const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -140,6 +169,26 @@ function CustomChartTooltip({ active, payload, label }) {
     );
 }
 
+// ─── People Chip (for referrals / friends) ──────────────────────────────────────
+function PeopleChip({ person, emoji = '👤' }) {
+    return (
+        <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '7px',
+            padding: '6px 12px', borderRadius: '10px',
+            background: C.bg, border: `1px solid ${C.border}`,
+            fontSize: '12px', color: C.slate,
+        }}>
+            <span>{emoji}</span>
+            <div>
+                <div style={{ fontWeight: '700' }}>{person.name || person.username}</div>
+                {person.username && person.name && (
+                    <div style={{ fontSize: '10px', color: C.grayLt }}>@{person.username}</div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN PLAYER DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════════
@@ -152,22 +201,27 @@ export default function PlayerDashboard() {
     const [error, setError] = useState('');
     const [chartDays, setChartDays] = useState(14);
     const [showDelete, setShowDelete] = useState(false);
+    const [lastUpdated, setLastUpdated] = useState(null);
 
-    // Real-time polling for player updates
-    const loadPlayer = useCallback(async () => {
+    // Real-time polling every 5 seconds
+    const loadPlayer = useCallback(async (isInitial = false) => {
         if (!playerId) return;
         try {
-            setLoading(true); setError('');
+            if (isInitial) setLoading(true);
+            setError('');
             const res = await api.players.getPlayer(parseInt(playerId));
             setPlayer(res.data);
-        } catch (err) { setError(err.message || 'Failed to load player.'); }
-        finally { setLoading(false); }
+            setLastUpdated(new Date());
+        } catch (err) {
+            setError(err.message || 'Failed to load player.');
+        } finally {
+            if (isInitial) setLoading(false);
+        }
     }, [playerId]);
 
-    useEffect(() => { 
-        loadPlayer(); 
-        // Poll for updates every 5 seconds
-        const interval = setInterval(loadPlayer, 5000);
+    useEffect(() => {
+        loadPlayer(true);
+        const interval = setInterval(() => loadPlayer(false), 5000);
         return () => clearInterval(interval);
     }, [loadPlayer]);
 
@@ -192,65 +246,44 @@ export default function PlayerDashboard() {
     const tier = TIER[player.tier] || TIER.BRONZE;
     const status = STATUS_MAP[player.status] || STATUS_MAP.ACTIVE;
 
-    // ── Calculate today's deposits/cashouts ────────────────────────────────────
+    // ── Today's deposits/cashouts ─────────────────────────────────────────────
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
     const todayTransactions = (player.transactionHistory || []).filter(tx => {
         const txDate = new Date(tx.date || tx.createdAt || tx.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
         return txDate === today;
     });
+    const todayDeposits = todayTransactions.filter(tx => tx.type === 'deposit').reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
+    const todayCashouts = todayTransactions.filter(tx => tx.type === 'cashout').reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
 
-    const todayDeposits = todayTransactions
-        .filter(tx => tx.type === 'deposit')
-        .reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
-
-    const todayCashouts = todayTransactions
-        .filter(tx => tx.type === 'cashout')
-        .reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
-
-    // ── Get granted bonuses (Referral & Streak) ────────────────────────────────
+    // ── Granted bonuses ──────────────────────────────────────────────────────
     const grantedBonuses = (player.transactionHistory || []).filter(tx => {
-        const type = (tx.type || '').toLowerCase();
-        return type.includes('bonus') || type.includes('referral') || type.includes('streak');
-    }).slice(0, 10);
-
-    const getBonusLabel = (tx) => {
-        if (tx.bonusType === 'streak') return 'Streak Bonus';
-        if (tx.bonusType === 'referral') return 'Referral Bonus';
-        if (tx.type === 'Streak Bonus') return 'Streak Bonus';
-        if (tx.type === 'Referral Bonus') return 'Referral Bonus';
-        return tx.type || 'Bonus';
-    };
-
-    const getBonusColor = (type) => {
-        if (type === 'Streak Bonus') return { bg: '#fffbeb', text: '#92400e' };
-        if (type === 'Referral Bonus') return { bg: '#f0fdf4', text: '#166534' };
-        return { bg: '#f1f5f9', text: '#475569' };
-    };
+        const t = (tx.type || '').toLowerCase();
+        return t.includes('bonus') || t.includes('referral') || t.includes('streak') || t.includes('match') || t.includes('special');
+    }).slice(0, 12);
 
     // ── Build chart data ─────────────────────────────────────────────────────
     const txMap = {};
     (player.transactionHistory || []).forEach(tx => {
         const dateKey = tx.date;
+        if (!dateKey) return;
         if (!txMap[dateKey]) txMap[dateKey] = { date: dateKey, deposits: 0, cashouts: 0 };
         if (tx.type === 'deposit') txMap[dateKey].deposits += parseFloat(tx.amount) || 0;
         if (tx.type === 'cashout') txMap[dateKey].cashouts += parseFloat(tx.amount) || 0;
     });
 
-    const sortedData = Object.values(txMap).sort((a, b) => {
-        return new Date(a.date) - new Date(b.date);
-    });
-
+    const sortedData = Object.values(txMap).sort((a, b) => new Date(a.date) - new Date(b.date));
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - chartDays);
     cutoff.setHours(0, 0, 0, 0);
-
-    const chartData = sortedData.filter(entry => {
-        const entryDate = new Date(entry.date);
-        return entryDate >= cutoff;
-    });
-
+    const chartData = sortedData.filter(e => new Date(e.date) >= cutoff);
     const finalChartData = chartData.length > 0 ? chartData : sortedData.slice(-chartDays);
+
     const progressPct = player.tierProgress?.progressPercentage || 0;
+
+    // ── Source tags ──────────────────────────────────────────────────────────
+    const sourceTags = player.source && player.source !== '—'
+        ? player.source.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1100px', margin: '0 auto', width: '100%' }}>
@@ -276,6 +309,11 @@ export default function PlayerDashboard() {
                         {i < arr.length - 1 && <span style={{ color: C.grayLt, fontSize: '16px', userSelect: 'none' }}>›</span>}
                     </React.Fragment>
                 ))}
+                {/* Live indicator */}
+                <span style={{ marginLeft: '8px', display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '10px', color: '#16a34a', fontWeight: '700' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+                    LIVE
+                </span>
             </nav>
 
             {/* ── PLAYER HEADER CARD ──────────────────────────────────────── */}
@@ -284,18 +322,28 @@ export default function PlayerDashboard() {
                     <Avatar name={player.name} size={64} fontSize={22} />
                     <div style={{ minWidth: 0 }}>
                         <h1 style={{ margin: '0 0 6px', fontSize: '22px', fontWeight: '800', color: C.slate }}>{player.name}</h1>
-                        <p style={{ margin: '0 0 8px', fontSize: '13px', color: C.grayLt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{player.username} · {player.email}</p>
+                        <p style={{ margin: '0 0 8px', fontSize: '13px', color: C.grayLt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            @{player.username} · {player.email}
+                        </p>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                             <span style={pill(tier.bg, tier.text)}>{tier.emoji} {tier.label}</span>
                             <span style={{ ...pill(status.bg, status.text), display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                                 <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: status.dot }} />{status.label}
                             </span>
-                            {player.source && <span style={pill('#f1f5f9', C.gray)}>📍 {player.source}</span>}
+                            {/* Source tags */}
+                            {sourceTags.map((src, i) => (
+                                <span key={i} style={pill('#f1f5f9', C.gray)}>📍 {src}</span>
+                            ))}
                         </div>
+
+                        {/* Referred By */}
                         {player.referredBy && (
-                            <p style={{ margin: '8px 0 0', fontSize: '12px', color: C.grayLt }}>
-                                Referred by: <strong>{player.referredBy.name}</strong>
-                            </p>
+                            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '12px', color: C.grayLt }}>Referred by:</span>
+                                <span style={{ ...pill('#f0fdf4', '#16a34a'), fontSize: '12px' }}>
+                                    👤 {player.referredBy.name || `ID ${player.referredBy.id || player.referredBy}`}
+                                </span>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -335,34 +383,69 @@ export default function PlayerDashboard() {
                 <p style={{ margin: '5px 0 0', fontSize: '11px', color: C.grayLt }}>{progressPct}% to next tier</p>
             </div>
 
-            {/* ── GRANTED BONUSES (Referral & Streak) ────────────────────────── */}
+            {/* ── REFERRALS & FRIENDS ROW ───────────────────────────────────── */}
+            {((player.referralsList?.length > 0) || (player.friendsList?.length > 0)) && (
+                <div style={{ display: 'grid', gridTemplateColumns: player.referralsList?.length && player.friendsList?.length ? '1fr 1fr' : '1fr', gap: '16px' }}>
+
+                    {/* Referrals — players this person referred */}
+                    {player.referralsList?.length > 0 && (
+                        <div style={card({ padding: '18px 22px' })}>
+                            <SectionHeader title="Referred Players" count={player.referralsList.length} />
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                {player.referralsList.map(r => (
+                                    <PeopleChip key={r.id} person={r} emoji="🎯" />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Friends */}
+                    {player.friendsList?.length > 0 && (
+                        <div style={card({ padding: '18px 22px' })}>
+                            <SectionHeader title="Friends" count={player.friendsList.length} />
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                {player.friendsList.map(f => (
+                                    <PeopleChip key={f.id} person={f} emoji="🤝" />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ── GRANTED BONUSES ──────────────────────────────────────────── */}
             <div style={card({ padding: '20px 22px' })}>
                 <SectionHeader title="Granted Bonuses" count={grantedBonuses.length} />
                 {grantedBonuses.length === 0 ? (
                     <p style={{ color: C.grayLt, fontSize: '13px', textAlign: 'center', padding: '16px 0' }}>No bonuses granted yet</p>
                 ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
                         {grantedBonuses.map((bonus, idx) => {
-                            const bonusLabel = getBonusLabel(bonus);
-                            const bonusColor = getBonusColor(bonusLabel);
+                            const info = resolveBonusInfo(bonus);
                             return (
                                 <div key={idx} style={{
-                                    padding: '12px 14px', background: C.bg,
-                                    border: `1px solid ${C.border}`, borderRadius: '9px',
-                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                    padding: '12px 14px', background: info.bg,
+                                    border: `1px solid ${C.border}`, borderRadius: '10px',
+                                    display: 'flex', flexDirection: 'column', gap: '6px',
                                 }}>
-                                    <div>
-                                        <div style={{ fontWeight: '700', fontSize: '12px', color: C.slate }}>{bonusLabel}</div>
-                                        <div style={{ fontSize: '11px', color: C.grayLt, marginTop: '2px' }}>
-                                            {new Date(bonus.date || bonus.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                        </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: '700', fontSize: '12px', color: info.text }}>
+                                            {info.emoji} {info.label}
+                                        </span>
+                                        <span style={{ fontWeight: '800', fontSize: '13px', color: info.text }}>
+                                            +${parseFloat(bonus.amount || 0).toFixed(2)}
+                                        </span>
                                     </div>
-                                    <span style={{
-                                        ...pill(bonusColor.bg, bonusColor.text),
-                                        fontSize: '12px', fontWeight: '800', flexShrink: 0
-                                    }}>
-                                        +${parseFloat(bonus.amount || 0).toFixed(2)}
-                                    </span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        {bonus.gameName && (
+                                            <span style={{ fontSize: '10px', padding: '1px 6px', background: 'rgba(0,0,0,0.06)', borderRadius: '5px', color: C.gray }}>
+                                                🎮 {bonus.gameName}
+                                            </span>
+                                        )}
+                                        <span style={{ fontSize: '11px', color: C.grayLt, marginLeft: 'auto' }}>
+                                            {bonus.date || '—'}
+                                        </span>
+                                    </div>
                                 </div>
                             );
                         })}
@@ -377,14 +460,7 @@ export default function PlayerDashboard() {
                     <div style={{ display: 'flex', gap: '6px' }}>
                         {[[7, '7d'], [14, '14d'], [30, '30d']].map(([d, lbl]) => (
                             <button key={d} onClick={() => setChartDays(d)}
-                                style={{
-                                    padding: '5px 12px', borderRadius: '7px',
-                                    border: `1px solid ${chartDays === d ? C.sky : C.border}`,
-                                    background: chartDays === d ? C.skyLt : C.white,
-                                    color: chartDays === d ? C.sky : C.gray,
-                                    fontWeight: '600', fontSize: '12px', cursor: 'pointer',
-                                    transition: 'all .15s'
-                                }}>
+                                style={{ padding: '5px 12px', borderRadius: '7px', border: `1px solid ${chartDays === d ? C.sky : C.border}`, background: chartDays === d ? C.skyLt : C.white, color: chartDays === d ? C.sky : C.gray, fontWeight: '600', fontSize: '12px', cursor: 'pointer', transition: 'all .15s' }}>
                                 {lbl}
                             </button>
                         ))}
@@ -442,6 +518,9 @@ export default function PlayerDashboard() {
                             </div>
                         );
                     })}
+                    {!Object.values(player.socials || {}).some(Boolean) && (
+                        <p style={{ color: C.grayLt, fontSize: '13px', margin: 0 }}>No social profiles linked</p>
+                    )}
                 </div>
             </div>
 
@@ -449,26 +528,21 @@ export default function PlayerDashboard() {
             <div style={card({ padding: '18px 22px' })}>
                 <SectionHeader title="Recent Transactions (Last 30 Days)" count={(player.transactionHistory || []).length} />
                 <div style={{ overflowX: 'auto', borderRadius: '10px', border: `1px solid ${C.border}` }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '480px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '580px' }}>
                         <thead>
                             <tr>
-                                {['Date', 'Type', 'Amount', 'Status'].map(h => (
+                                {['Date', 'Type', 'Amount', 'Game', 'Wallet', 'Status'].map(h => (
                                     <th key={h} style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: C.grayLt, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.4px', borderBottom: `1px solid ${C.border}`, background: C.bg, whiteSpace: 'nowrap' }}>{h}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
                             {(player.transactionHistory || []).length === 0
-                                ? <tr><td colSpan={4} style={{ padding: '28px', textAlign: 'center', color: C.grayLt }}>No transactions in last 30 days</td></tr>
+                                ? <tr><td colSpan={6} style={{ padding: '28px', textAlign: 'center', color: C.grayLt }}>No transactions in last 30 days</td></tr>
                                 : (player.transactionHistory || []).slice(0, 40).map(tx => {
-                                    const tMap = {
-                                        deposit: { label: 'Deposit', color: '#10b981', bg: '#f0fdf4' },
-                                        cashout: { label: 'Cashout', color: C.red, bg: C.redLt },
-                                        'Streak Bonus': { label: 'Streak Bonus', color: '#f59e0b', bg: '#fffbeb' },
-                                        'Referral Bonus': { label: 'Referral Bonus', color: '#10b981', bg: '#f0fdf4' },
-                                        bonus_credited: { label: 'Bonus', color: C.amber, bg: C.amberLt },
-                                    };
-                                    const t = tMap[tx.type] || { label: tx.type, color: C.gray, bg: C.bg };
+                                    const typeKey = (tx.type || '').toLowerCase();
+                                    const t = TX_TYPE_MAP[typeKey] || { label: tx.type, color: C.gray, bg: C.bg };
+                                    const isDebit = tx.type === 'cashout';
                                     const sc = tx.status === 'COMPLETED' ? '#16a34a' : tx.status === 'PENDING' ? C.amber : C.red;
                                     return (
                                         <tr key={tx.id}
@@ -478,8 +552,20 @@ export default function PlayerDashboard() {
                                             <td style={{ padding: '11px 14px', borderBottom: `1px solid ${C.border}` }}>
                                                 <span style={{ ...pill(t.bg, t.color), fontSize: '11px' }}>{t.label}</span>
                                             </td>
-                                            <td style={{ padding: '11px 14px', borderBottom: `1px solid ${C.border}`, fontWeight: '700', color: tx.type === 'cashout' ? C.red : '#10b981', fontSize: '14px', whiteSpace: 'nowrap' }}>
-                                                {tx.type === 'cashout' ? '-' : '+'}${parseFloat(tx.amount).toFixed(2)}
+                                            <td style={{ padding: '11px 14px', borderBottom: `1px solid ${C.border}`, fontWeight: '700', color: isDebit ? C.red : '#10b981', fontSize: '14px', whiteSpace: 'nowrap' }}>
+                                                {isDebit ? '-' : '+'}${parseFloat(tx.amount).toFixed(2)}
+                                            </td>
+                                            <td style={{ padding: '11px 14px', borderBottom: `1px solid ${C.border}`, fontSize: '12px', color: C.gray, whiteSpace: 'nowrap' }}>
+                                                {tx.gameName
+                                                    ? <span style={{ padding: '2px 7px', background: '#f1f5f9', borderRadius: '5px', fontWeight: '500' }}>🎮 {tx.gameName}</span>
+                                                    : <span style={{ color: C.grayLt }}>—</span>
+                                                }
+                                            </td>
+                                            <td style={{ padding: '11px 14px', borderBottom: `1px solid ${C.border}`, fontSize: '12px', color: C.gray, whiteSpace: 'nowrap' }}>
+                                                {tx.walletMethod
+                                                    ? <span style={{ padding: '2px 7px', background: '#f0f9ff', borderRadius: '5px', fontWeight: '500', color: C.sky }}>💳 {tx.walletMethod}</span>
+                                                    : <span style={{ color: C.grayLt }}>—</span>
+                                                }
                                             </td>
                                             <td style={{ padding: '11px 14px', borderBottom: `1px solid ${C.border}`, fontSize: '11px', fontWeight: '700', color: sc, whiteSpace: 'nowrap' }}>{tx.status}</td>
                                         </tr>
@@ -496,8 +582,11 @@ export default function PlayerDashboard() {
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '12px', color: C.grayLt }}>
                     <span>🆔 ID: <strong style={{ color: C.slate }}>#{player.id}</strong></span>
                     <span>📅 Joined: <strong style={{ color: C.slate }}>{player.createdAt ? new Date(player.createdAt).toLocaleDateString() : '—'}</strong></span>
-                    <span>🔐 Last Login: <strong style={{ color: C.slate }}>{player.lastLoginAt ? new Date(player.lastLoginAt).toLocaleDateString() : 'Never'}</strong></span>
-                    <span>💳 Cashout Limit: <strong style={{ color: C.slate }}>${parseFloat(player.cashoutLimit || 250).toFixed(0)}</strong></span>
+                    {/* <span>🔐 Last Login: <strong style={{ color: C.slate }}>{player.lastLoginAt ? new Date(player.lastLoginAt).toLocaleDateString() : 'Never'}</strong></span> */}
+                    {/* <span>💳 Cashout Limit: <strong style={{ color: C.slate }}>${parseFloat(player.cashoutLimit || 250).toFixed(0)}</strong></span> */}
+                    {lastUpdated && (
+                        <span>🔄 Updated: <strong style={{ color: '#16a34a' }}>{fmtTXTime(lastUpdated)}</strong></span>
+                    )}
                 </div>
             </div>
 
@@ -506,6 +595,7 @@ export default function PlayerDashboard() {
 
             <style>{`
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
             `}</style>
         </div>
     );

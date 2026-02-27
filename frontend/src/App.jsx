@@ -32,10 +32,15 @@ import { AnalysisTextLinkIcon } from '@hugeicons/core-free-icons';
 import { BitcoinWalletIcon } from '@hugeicons/core-free-icons';
 import { ManagerIcon } from '@hugeicons/core-free-icons';
 import { Logout01Icon } from '@hugeicons/core-free-icons';
+import { TaskEdit01Icon } from '@hugeicons/core-free-icons';
+import { CheckListIcon } from '@hugeicons/core-free-icons';
 import PlayerDashboard from "./Pages/PlayerDashboard.jsx";
 import { AddPlayerContext } from "./Context/addPlayer.jsx";
 import { CurrentUserContext } from "./Context/currentUser.jsx";
 import ManageWalletsPage from "./Pages/manageWallets.jsx";
+import AdminTaskPage from "./Pages/Admintaskpage .jsx";
+import TeamDashboard from "./Pages/Teamdashboard .jsx";
+import AdminReportPage from "./Pages/Adminreportpage .jsx";
 
 // ── Sidebar width constant — single source of truth ───────────────────────────
 const SIDEBAR_W = 62;
@@ -94,7 +99,7 @@ const CSS = `
     flex-direction: column;
     align-items: center;
     z-index: 100;
-    overflow: hidden;        /* never let it grow */
+    // overflow: hidden;        /* never let it grow */
     transition: none;
   }
 
@@ -287,7 +292,8 @@ const CSS = `
 
 // ── Nav items definition ───────────────────────────────────────────────────────
 const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: Home01Icon },
+  { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: true },
+  { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon },
   { id: "players", label: "Players", icon: UserGroup03Icon },
   { id: "playTime", label: "Play Time", icon: TimeQuarter02Icon },
   { id: "games", label: "Games", icon: GameboyIcon },
@@ -296,14 +302,17 @@ const NAV_ITEMS = [
   { id: "transactions", label: "All Transactions", icon: Invoice02Icon },
   { id: "balances", label: "Live Balances", icon: BalanceScaleIcon, dividerAfter: true },
   { id: "expenses", label: "Expenses", icon: Invoice03Icon, adminsOnly: true },
-  { id: "addTransactions", label: "Add Transaction", icon: AddMoneyCircleIcon, adminsOnly: true },
-  { id: "addBonus", label: "Add Bonus", icon: GiftIcon, adminsOnly: true },
-  { id: "reports", label: "Reports", icon: AnalysisTextLinkIcon, adminsOnly: true },
+  { id: "addTasks", label: "Add Tasks", icon: TaskEdit01Icon, adminsOnly: true },
+  { id: "addTransactions", label: "Add Transaction", icon: AddMoneyCircleIcon, adminsOnly: false },
+  { id: "addBonus", label: "Add Bonus", icon: GiftIcon, adminsOnly: false },
+  // { id: "reports", label: "Reports", icon: AnalysisTextLinkIcon, adminsOnly: true },
   { id: "manageWallets", label: "Manage Wallets", icon: BitcoinWalletIcon, adminsOnly: true },
-  { id: "shifts", label: "Shifts", icon: ManagerIcon, adminsOnly: true, dividerAfter: true },
+  { id: "shifts", label: "Shifts", icon: ManagerIcon, adminsOnly: false, dividerAfter: true },
+  { id: "adminReports", label: "Admin Reports", icon: AnalysisTextLinkIcon, adminsOnly: true },
+
 ];
 
-const ALLOWED_ADMINS = ["admin", "team1", "team2"];
+const ALLOWED_ADMINS = ["admin", "SUPER_ADMIN"];
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SHARED SIDEBAR COMPONENT
@@ -472,15 +481,15 @@ function AdminDashboard({ user }) {
   };
 
   const navLabels = {
-    dashboard: 'Dashboard', players: 'Players', playTime: 'Play Time', games: 'Games',
-    attendance: 'Attendance', issues: 'Issues', transactions: 'All Transactions',
+    dashboard: 'Dashboard', memberDashboard: 'Member Dashboard', players: 'Players', playTime: 'Play Time', games: 'Games', attendance: 'Attendance', issues: 'Issues', transactions: 'All Transactions',
     balances: 'Live Balances', expenses: 'Expenses', addTransactions: 'Add Transaction',
-    addBonus: 'Add Bonus', reports: 'Reports', manageWallets: 'Manage Wallets', shifts: 'Shifts',
+    addBonus: 'Add Bonus', reports: 'Reports', manageWallets: 'Manage Wallets', shifts: 'Shifts', addTasks: 'Add Tasks', adminReports: 'Admin Reports'
   };
 
   const renderPage = () => {
     switch (page) {
       case "dashboard": return <AnalyticsDashboard />;
+      case "memberDashboard": return <TeamDashboard />;
       case "players": return <Players />;
       case "attendance": return <Attendance />;
       case "games": return <Games />;
@@ -492,6 +501,9 @@ function AdminDashboard({ user }) {
       case "shifts": return <ShiftsPage />;
       case "addTransactions": return <AddTransactionsPage />;
       case "addBonus": return <AddBonusPage />;
+      case "addTasks": return <AdminTaskPage />;
+      case "adminReports": return <AdminReportPage />;
+
       default: return (
         <div className="ob-card">
           <p style={{ color: '#64748b', textAlign: 'center', padding: 40 }}>Coming Soon</p>
@@ -501,7 +513,7 @@ function AdminDashboard({ user }) {
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "black", width:"100vw" }}>
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "black", width: "100vw" }}>
       <Sidebar user={user} activePage={page} onNavigate={handleNavigate} onLogout={handleLogout} />
       <main className="ob-main">
         <div className="ob-container">
@@ -545,7 +557,7 @@ function PlayerDashboardWithSidebar({ user }) {
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "black" , width:"100vw"}}>
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "black", width: "100vw" }}>
       <Sidebar user={user} activePage="players" onNavigate={handleNavigate} onLogout={handleLogout} />
       <main className="ob-main">
         <div className="ob-container">

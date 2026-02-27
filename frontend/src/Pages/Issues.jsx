@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-
+import { fmtTXDate, fmtTXTime } from '../utils/txTime';
 export default function Issues() {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,7 +12,7 @@ export default function Issues() {
     const loadIssues = async () => {
       try {
         setLoading(true);
-        const data = await api.issues.issues.getIssues();
+        const data = await api.issues.issues.getIssues(true);
         setIssues(data.data || []);
       } catch (error) {
         console.error('Failed to load issues:', error);
@@ -79,8 +79,8 @@ export default function Issues() {
   return (
     <div style={{ padding: '24px' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: '700', margin: 0 }}>Issue Tracker</h1>
+      <div style={{ display: 'flex', justifyContent: 'end', alignItems: 'center', marginBottom: '24px' }}>
+        {/* <h1 style={{ fontSize: '22px', fontWeight: '700', margin: 0 }}>Issue Tracker</h1> */}
         <button
           onClick={() => setShowAddIssue(true)}
           style={{
@@ -145,7 +145,8 @@ export default function Issues() {
           filtered.map(issue => {
             const priorityColor = getPriorityColor(issue.priority);
             const issueDate = new Date(issue.createdAt || issue.date);
-            const dateStr = issueDate.toLocaleDateString() + ' ' + issueDate.toLocaleTimeString();
+            const dateStr = fmtTXDate(issue.createdAt || issue.date) + ' ' + fmtTXTime(issue.createdAt || issue.date);
+            // fmtTXDate(issue.createdAt |/| issue.date).
 
             return (
               <div

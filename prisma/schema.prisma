@@ -98,6 +98,9 @@ model User {
   // Friends (self-relation, NEW)
   friends         User[]    @relation("Friends")
   friendOf        User[]    @relation("Friends")
+
+  tasksCreated    Task[]     @relation("TasksCreated")
+  tasksAssigned   Task[]     @relation("TasksAssigned")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -160,7 +163,9 @@ model Transaction {
   bonus           Decimal           @default(0) @db.Decimal(10, 2)
   paymentMethod   PaymentMethod?
   status          TransactionStatus @default(PENDING)
-  
+  gameId          String?
+  game            Game?             @relation(fields: [gameId], references: [id])
+
   // Payment Details
   paymentId       String?
   paymentGateway  String?
@@ -249,16 +254,29 @@ model Attendance {
 // ISSUES SYSTEM
 // ═══════════════════════════════════════════════════════════════
 
+enum Status {
+  UNRESOLVED
+  RESOLVED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model Issue {
   id          Int       @id @default(autoincrement())
   title       String
   description String
-  playerName  String?   // Name of the player reporting the issue
+  playerName  String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  status      String    @default("UNRESOLVED") // UNRESOLVED or RESOLVED
-  priority    String    @default("MEDIUM")     // LOW, MEDIUM, HIGH
+  status      Status    @default(UNRESOLVED)
+  priority    Priority  @default(MEDIUM)
+  @@map("issue")
 }
+
 
 // ═══════════════════════════════════════════════════════════════
 // Teams SYSTEM
@@ -323,7 +341,8 @@ model Game {
   status      GameStatus  @default(HEALTHY)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-  expenses    Expense[]   // ← add this line
+  expenses    Expense[]   
+  txns        Transaction[]   
 
   @@map("games")
 }
@@ -347,6 +366,46 @@ model Wallet {
   updatedAt   DateTime @updatedAt
 
   @@map("wallets")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TASKS SYSTEM — Add these to your schema.prisma
+// ═══════════════════════════════════════════════════════════════
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// Note: Priority enum already exists in your schema — reuse it.
+// If not, add:
+// enum Priority { LOW  MEDIUM  HIGH }
+
+model Task {
+  id            Int        @id @default(autoincrement())
+  title         String
+  description   String?
+  priority      Priority   @default(MEDIUM)
+  status        TaskStatus @default(PENDING)
+
+  // Who created it (admin/super-admin)
+  createdById   Int
+  createdBy     User       @relation("TasksCreated", fields: [createdById], references: [id])
+
+  // Who it is assigned to (team member) — null = unassigned
+  assignedToId  Int?
+  assignedTo    User?      @relation("TasksAssigned", fields: [assignedToId], references: [id])
+
+  dueDate       DateTime?
+  completedAt   DateTime?
+  notes         String?
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@map("tasks")
 }
 
 // ═══════════════════════════════════════════════════════════════

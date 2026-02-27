@@ -61,11 +61,24 @@ export default function Transactions() {
   const [undoError, setUndoError] = useState('');
   const itemsPerPage = 15;
 
-  const loadTransactions = useCallback(async (page = currentPage, tab = filterTab) => {
+  // const loadTransactions = useCallback(async (page = currentPage, tab = filterTab) => {
+  //   try {
+  //     setLoading(true);
+  //     const statusFilter = tab === 'pending' ? 'PENDING' : tab === 'completed' ? 'COMPLETED' : '';
+  //     const result = await api.transactions.getTransactions(page, itemsPerPage, '', statusFilter);
+  //     setData(result);
+  //   } catch (error) {
+  //     console.error('Failed to load transactions:', error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, [currentPage, filterTab]);
+  const loadTransactions = useCallback(async (page = currentPage, tab = filterTab, forceRefresh = false) => {
     try {
       setLoading(true);
       const statusFilter = tab === 'pending' ? 'PENDING' : tab === 'completed' ? 'COMPLETED' : '';
-      const result = await api.transactions.getTransactions(page, itemsPerPage, '', statusFilter);
+      // ✅ Pass forceRefresh to API
+      const result = await api.transactions.getTransactions(page, itemsPerPage, '', statusFilter, forceRefresh);
       setData(result);
     } catch (error) {
       console.error('Failed to load transactions:', error);
@@ -73,7 +86,6 @@ export default function Transactions() {
       setLoading(false);
     }
   }, [currentPage, filterTab]);
-
   useEffect(() => { loadTransactions(currentPage, filterTab); }, [currentPage, filterTab]);
 
   const transactions = data?.data || [];
@@ -85,9 +97,24 @@ export default function Transactions() {
     const numericId = String(transactionId).replace(/\D/g, '');
     try {
       setUndoingId(transactionId);
-      await api.transactions.undoTransaction(numericId);
-      // Reload transactions immediately — the backend has already reversed the balance
-      await loadTransactions(currentPage, filterTab);
+
+      // Backend handles everything: balance reversal + game point restoration
+      const result = await api.transactions.undoTransaction(numericId);
+
+      // const selectedGame = games.find(g => g.name === addFormData.game);
+      // await api.games.updateGame(selectedGame.id, { pointStock: selectedGame.pointStock + pointsAdded });
+
+
+      // Clear cache and reload
+      api.clearCache?.();
+      await loadTransactions(currentPage, filterTab, true);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('transactionUndone', {
+          detail: { transactionId, message: result.message, timestamp: new Date().toISOString() }
+        }));
+      }
+
     } catch (error) {
       console.error('Failed to undo transaction:', error);
       setUndoError(error.message || 'Undo failed. Please try again.');
@@ -95,7 +122,6 @@ export default function Transactions() {
       setUndoingId(null);
     }
   };
-
   const filteredTransactions = transactions.filter(t => {
     if (!searchTerm.trim()) return true;
     const s = searchTerm.toLowerCase();
@@ -120,7 +146,7 @@ export default function Transactions() {
       {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 2px', color: '#0f172a' }}>Transaction History</h1>
+          {/* <h1 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 2px', color: '#0f172a' }}>Transaction History</h1> */}
           <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>All deposits, cashouts, and bonuses — with game, wallet, and balance details</p>
         </div>
         <button onClick={() => loadTransactions(currentPage, filterTab)} disabled={loading}

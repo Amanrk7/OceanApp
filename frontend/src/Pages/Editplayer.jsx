@@ -130,7 +130,7 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                 snapchat: form.snapchat.trim() || null,
                 source: form.source.trim() || null,
                 // source: form.source.trim() || null,
-                streak: form.streak.trim() || null,
+                streak: form.streak || 0,
 
             });
             setSuccess('Player updated!');

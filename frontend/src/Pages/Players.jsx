@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from "react-router-dom";
 import { api } from '../api';
 import AddNewPlayer from './AddNewPlayer';
-import EditPlayer from './EditPlayer';
+import EditPlayer from './Editplayer';
 import { AddPlayerContext } from "../Context/addPlayer";
 import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
 import { Search, Plus, RefreshCw, Eye, Pencil, Trash2, X, } from 'lucide-react';

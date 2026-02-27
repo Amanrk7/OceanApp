@@ -84,9 +84,9 @@ export const BalancesPage = () => {
                         <RefreshCw style={{ width: '14px', height: '14px', animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
                         {refreshing ? 'Refreshing…' : 'Refresh'}
                     </button>
-                    <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+                    {/* <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
                         <Plus style={{ width: '14px', height: '14px' }} /> Add Transaction
-                    </button>
+                    </button> */}
                 </div>
             </div>
 
