@@ -53,7 +53,7 @@ const fmtDate = (iso) =>
 function KpiCard({ label, value, icon: Icon, color }) {
     return (
         <div style={{
-            ...CARD, padding: '18px 20px', display: 'flex', gap: '12px', alignItems: 'flex-start', padding: '18px 9px',
+            ...CARD, padding: '18px 9px',
             display: 'flex',
             gap: '2px',
             alignItems: 'center',
