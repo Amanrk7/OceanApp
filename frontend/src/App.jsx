@@ -292,8 +292,8 @@ const CSS = `
 
 // ── Nav items definition ───────────────────────────────────────────────────────
 const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: true },
-  { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon },
+  { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: false },
+  { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon, adminsOnly: false },
   { id: "players", label: "Players", icon: UserGroup03Icon },
   { id: "playTime", label: "Play Time", icon: TimeQuarter02Icon },
   { id: "games", label: "Games", icon: GameboyIcon },
