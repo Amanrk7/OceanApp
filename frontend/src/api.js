@@ -47,11 +47,13 @@ const cache = {
 // ═══════════════════════════════════════════════════════════════
 
 async function fetchAPI(endpoint, options = {}) {
+  const token = localStorage.getItem('authToken');
   const defaultOptions = {
     credentials: 'include',
     cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers
     }
   };
@@ -94,11 +96,13 @@ export const authAPI = {
       method: 'POST',
       body: JSON.stringify({ username, password })
     });
+    if (data.token) localStorage.setItem('authToken', data.token);
     cache.set('user', data.user, 30 * 60 * 1000);
     return data;
   },
 
   logout: async () => {
+    localStorage.removeItem('authToken');
     cache.clearAll();
     return fetchAPI('/logout', { method: 'POST' });
   },
