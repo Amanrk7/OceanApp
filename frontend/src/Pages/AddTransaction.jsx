@@ -361,15 +361,22 @@ function AddTransactionsPage() {
                     notes:        form.notes,
                 };
 
-            const res = await fetch(`http://localhost:3001${endpoint}`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
+            // const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+            //     method: "POST",
+            //     credentials: "include",
+            //     headers: { "Content-Type": "application/json" },
+            //     body: JSON.stringify(payload),
+            // });
 
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Transaction failed");
+            // const data = await res.json();
+            // if (!res.ok) throw new Error(data.error || "Transaction failed");
+
+            let data;
+if (isDeposit) {
+    data = await api.transactions.deposit(payload);
+} else {
+    data = await api.transactions.cashout(payload);
+}
 
             // Append referral bonus confirmation to success message if applicable
             let msg = data.message || "Transaction recorded successfully!";
