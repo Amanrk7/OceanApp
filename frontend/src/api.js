@@ -305,7 +305,22 @@ export const transactionsAPI = {
       }));
     }
     return data;
-  }
+  }, 
+
+  deposit: async (payload) => {
+    return fetchAPI('/transactions/deposit', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  cashout: async (payload) => {
+    return fetchAPI('/transactions/cashout', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
 };
 
 // ═══════════════════════════════════════════════════════════════
