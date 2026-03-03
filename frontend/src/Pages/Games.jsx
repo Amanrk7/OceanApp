@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, useContext } from 'react';
 import { api } from '../api';
-import { CurrentUserContext } from "./Context/currentUser.jsx";
+// import { CurrentUserContext } from "./Context/currentUser.jsx";
+import { CurrentUserContext } from '../Context/currentUser';
+
 
 // ─── Helpers ──────────────────────────────────────────────────
 
