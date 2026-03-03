@@ -306,7 +306,7 @@ function AddTransactionsPage() {
 
             let msg = data.message || "Transaction recorded successfully!";
             if (data.transaction?.referralBonus) { const rb = data.transaction.referralBonus; msg += ` Referral bonus of ${fmt(rb.amount)} also sent to ${rb.referrerName}.`; }
-            if (feeAmt > 0) msg += ` Fee of ${fmt(feeAmt)} credited to wallet.`;
+            if (feeAmt > 0) msg += ` Wallet credited with ${fmt(amt - feeAmt)} (${fmt(amt)} deposit − ${fmt(feeAmt)} fee).`;
             setSuccess(msg);
             setForm(EMPTY); setQuery(""); setPlayer(null); setMatchUsedToday(false); setReferralUsedEver(false);
             api.clearCache?.();
@@ -356,7 +356,7 @@ function AddTransactionsPage() {
                         <p style={{ fontWeight: "700", color: isDeposit ? "#14532d" : "#7f1d1d", margin: "0 0 2px", fontSize: "14px" }}>{isDeposit ? "Record a Deposit" : "Record a Cashout"}</p>
                         <p style={{ color: isDeposit ? "#166534" : "#991b1b", margin: 0, fontSize: "12px", lineHeight: "1.5" }}>
                             {isDeposit
-                                ? "Player receives the full deposit amount. The fee (if any) is separate revenue credited to the selected wallet. Game stock deducted for full deposit + bonuses."
+                                ? "Player receives the full deposit amount. The wallet is credited with (deposit − fee). Game stock deducted for full deposit + bonuses."
                                 : "Cashout deducts from player balance and wallet. Cashout limit enforced (waived at 30-day streak)."}
                         </p>
                     </div>
@@ -427,14 +427,14 @@ function AddTransactionsPage() {
                                 <input type="number" placeholder="0.00" min="0" step="0.01" value={form.fee} onChange={e => set("fee", e.target.value)} style={{ ...INPUT, borderColor: feeAmt > 0 ? "#f59e0b" : "#e2e8f0" }} />
                                 {amt > 0 && (
                                     <p style={{ fontSize: "11px", marginTop: "4px", fontWeight: "600", color: feeAmt > 0 ? "#92400e" : "#94a3b8" }}>
-                                        {feeAmt > 0 ? `💰 ${fmt(feeAmt)} fee → added to our wallet` : "No fee — player gets full amount only"}
+                                        {feeAmt > 0 ? `Wallet gets: ${fmt(amt - feeAmt)} (${fmt(amt)} − ${fmt(feeAmt)} fee)` : "No fee — wallet gets full deposit amount"}
                                     </p>
                                 )}
                             </div>
                         )}
 
                         <div>
-                            <label style={LABEL}>{isDeposit ? "Wallet * (fee credited here)" : "Deduct From Wallet *"}</label>
+                            <label style={LABEL}>{isDeposit ? "Wallet * (receives deposit − fee)" : "Deduct From Wallet *"}</label>
                             <div style={{ position: "relative" }}>
                                 <select value={form.walletId} onChange={e => set("walletId", e.target.value)} style={SELECT}>
                                     <option value="">— Select wallet —</option>
@@ -443,9 +443,10 @@ function AddTransactionsPage() {
                                 <ChevronDown style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
                             </div>
                             {selWallet && amt > 0 && isDeposit && (
-                                feeAmt > 0
-                                    ? <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: "#f59e0b" }}>💰 {fmt(selWallet.balance)} → {fmt(selWallet.balance + feeAmt)} (fee added)</p>
-                                    : <p style={{ fontSize: "12px", marginTop: "4px", color: "#94a3b8" }}>No fee — wallet unchanged</p>
+                                <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: "#22c55e" }}>
+                                    ✓ {fmt(selWallet.balance)} → {fmt(selWallet.balance + amt - feeAmt)}
+                                    {feeAmt > 0 && <span style={{ fontWeight: "400", color: "#94a3b8", fontSize: "11px" }}> (deposit − fee)</span>}
+                                </p>
                             )}
                             {selWallet && amt > 0 && !isDeposit && (
                                 <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: walletInsufficient ? "#ef4444" : "#64748b" }}>
@@ -505,12 +506,17 @@ function AddTransactionsPage() {
                                                 <span style={{ color: "#166534", fontWeight: "600" }}>👤 Player receives (full amount)</span>
                                                 <span style={{ fontWeight: "800", color: "#10b981" }}>{fmt(amt)}</span>
                                             </div>
+                                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", padding: "8px 12px", background: "#f0f9ff", borderRadius: "8px", border: "1px solid #bae6fd" }}>
+                                                <span style={{ color: "#0369a1", fontWeight: "600", display: "flex", alignItems: "center", gap: "5px" }}>
+                                                    <Wallet style={{ width: "12px", height: "12px" }} /> Wallet credited
+                                                    {feeAmt > 0 && <span style={{ fontWeight: "400", fontSize: "11px", color: "#64748b" }}>(deposit − fee)</span>}
+                                                </span>
+                                                <span style={{ fontWeight: "800", color: "#0369a1" }}>{fmt(amt - feeAmt)}</span>
+                                            </div>
                                             {feeAmt > 0 && (
-                                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", padding: "8px 12px", background: "#fffbeb", borderRadius: "8px", border: "1px solid #fde68a" }}>
-                                                    <span style={{ color: "#92400e", fontWeight: "600", display: "flex", alignItems: "center", gap: "5px" }}>
-                                                        <Wallet style={{ width: "12px", height: "12px" }} /> Fee → Our wallet revenue
-                                                    </span>
-                                                    <span style={{ fontWeight: "800", color: "#92400e" }}>+ {fmt(feeAmt)}</span>
+                                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#94a3b8", paddingLeft: "4px" }}>
+                                                    <span>Fee retained</span>
+                                                    <span style={{ color: "#f59e0b", fontWeight: "600" }}>{fmt(feeAmt)}</span>
                                                 </div>
                                             )}
                                             {matchAmt > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}><span style={{ color: "#64748b" }}>Match bonus (50%)</span><span style={{ fontWeight: "700", color: "#3b82f6" }}>+ {fmt(matchAmt)}</span></div>}
