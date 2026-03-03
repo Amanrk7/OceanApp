@@ -436,7 +436,7 @@ export default function PlayerDashboard() {
       )}
     </div>
 
-    // Progress bar
+    {/* // Progress bar */}
     <div style={{ height: '10px', background: C.border, borderRadius: '99px', overflow: 'hidden', marginBottom: '10px' }}>
       <div style={{
         height: '100%',
@@ -449,7 +449,7 @@ export default function PlayerDashboard() {
       }} />
     </div>
 
-    // Tier milestone markers
+    {/* // Tier milestone markers */}
     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: C.grayLt, marginBottom: '14px' }}>
       <span>$0</span>
       {weeklyTarget && <span style={{ color: tierPct >= 50 ? C.sky : C.grayLt }}>
@@ -461,7 +461,7 @@ export default function PlayerDashboard() {
       {!weeklyTarget && <span style={{ color: '#16a34a', fontWeight: '700' }}>Max Tier 🥇</span>}
     </div>
 
-    // Cashout limits per tier (info row)
+    {/* // Cashout limits per tier (info row) */}
     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
       {Object.entries(TIER_CONFIG).map(([key, cfg]) => (
         <div key={key} style={{
