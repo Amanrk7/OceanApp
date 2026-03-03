@@ -619,7 +619,8 @@ const FILTER_TABS = [
 let toastCounter = 0;
 
 export default function Games() {
-
+  const { usr, setUsr } = useContext(CurrentUserContext);
+  const isAdmin = usr?.role === 'ADMIN' || usr?.role === 'SUPER_ADMIN';
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
