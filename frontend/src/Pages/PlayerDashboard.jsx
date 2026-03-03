@@ -189,6 +189,26 @@ function PeopleChip({ person, emoji = '👤' }) {
     );
 }
 
+const TIER_CONFIG = {
+  BRONZE: {
+    label: 'Bronze', emoji: '🥉', color: '#b45309', bg: '#fef3c7',
+    weeklyTarget: 500,      // must hit $500/week to advance
+    cashoutLimit: 250,
+    nextTier: 'SILVER',
+  },
+  SILVER: {
+    label: 'Silver', emoji: '🥈', color: '#3730a3', bg: '#e0e7ff',
+    weeklyTarget: 1000,     // must hit $1000/week to advance
+    cashoutLimit: 500,
+    nextTier: 'GOLD',
+  },
+  GOLD: {
+    label: 'Gold', emoji: '🥇', color: '#92400e', bg: '#fef3c7',
+    weeklyTarget: null,     // top tier
+    cashoutLimit: 750,
+    nextTier: null,
+  },
+};
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN PLAYER DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════════
@@ -244,6 +264,26 @@ export default function PlayerDashboard() {
     if (!player) return null;
 
     const tier = TIER[player.tier] || TIER.BRONZE;
+     // ── Weekly deposit total from transaction history ──────────────────────────
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  const weeklyDeposits = (player.transactionHistory || [])
+    .filter(tx => {
+      if (tx.type !== 'deposit') return false;
+      // tx.date is a formatted string like "Jan 5, 2025"
+      const d = new Date(tx.date || tx.timestamp || tx.createdAt);
+      return !isNaN(d.getTime()) && d >= sevenDaysAgo;
+    })
+    .reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
+
+  const tierCfg       = TIER_CONFIG[player.tier] || TIER_CONFIG.BRONZE;
+  const weeklyTarget  = tierCfg.weeklyTarget;
+  const tierPct       = weeklyTarget
+    ? Math.min(100, Math.round((weeklyDeposits / weeklyTarget) * 100))
+    : 100;
+  const amtToNext     = weeklyTarget ? Math.max(0, weeklyTarget - weeklyDeposits) : 0;
     const status = STATUS_MAP[player.status] || STATUS_MAP.ACTIVE;
 
     // ── Today's deposits/cashouts ─────────────────────────────────────────────
@@ -371,17 +411,83 @@ export default function PlayerDashboard() {
 
             {/* ── TIER PROGRESS ────────────────────────────────────────────── */}
             <div style={card({ padding: '18px 24px' })}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
-                    <p style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: C.slate }}>Tier Progress — {tier.emoji} {tier.label}</p>
-                    <p style={{ margin: 0, fontSize: '12px', color: C.grayLt }}>
-                        {(player.tierProgress?.playTimeMinutes || 0).toLocaleString()} / {player.tierProgress?.nextTierRequirement?.toLocaleString() || '∞'} min
-                    </p>
-                </div>
-                <div style={{ height: '8px', background: C.border, borderRadius: '99px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${progressPct}%`, background: `linear-gradient(90deg,${C.sky},${C.violet})`, borderRadius: '99px', transition: 'width .4s ease' }} />
-                </div>
-                <p style={{ margin: '5px 0 0', fontSize: '11px', color: C.grayLt }}>{progressPct}% to next tier</p>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+      <div>
+        <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: '700', color: C.slate }}>
+          Tier Progress — {tier.emoji} {tier.label}
+        </p>
+        <p style={{ margin: 0, fontSize: '11px', color: C.grayLt }}>
+          Based on total deposits in the last 7 days
+        </p>
+      </div>
+
+      {weeklyTarget && (
+        <div style={{ textAlign: 'right' }}>
+          <p style={{ margin: '0 0 2px', fontSize: '12px', fontWeight: '700', color: C.slate }}>
+            ${weeklyDeposits.toFixed(0)} / ${weeklyTarget.toLocaleString()}
+          </p>
+          <p style={{ margin: 0, fontSize: '11px', color: C.grayLt }}>
+            {amtToNext > 0
+              ? `$${amtToNext.toFixed(0)} more to ${TIER_CONFIG[tierCfg.nextTier]?.label}`
+              : `✓ ${tierCfg.nextTier ? `Ready for ${TIER_CONFIG[tierCfg.nextTier]?.label}` : 'Max Tier'}`
+            }
+          </p>
+        </div>
+      )}
+    </div>
+
+    // Progress bar
+    <div style={{ height: '10px', background: C.border, borderRadius: '99px', overflow: 'hidden', marginBottom: '10px' }}>
+      <div style={{
+        height: '100%',
+        width: `${tierPct}%`,
+        background: tierPct >= 100
+          ? 'linear-gradient(90deg, #16a34a, #22c55e)'
+          : 'linear-gradient(90deg, #0ea5e9, #7c3aed)',
+        borderRadius: '99px',
+        transition: 'width .4s ease',
+      }} />
+    </div>
+
+    // Tier milestone markers
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: C.grayLt, marginBottom: '14px' }}>
+      <span>$0</span>
+      {weeklyTarget && <span style={{ color: tierPct >= 50 ? C.sky : C.grayLt }}>
+        ${(weeklyTarget / 2).toFixed(0)}
+      </span>}
+      {weeklyTarget && <span style={{ fontWeight: tierPct >= 100 ? '700' : '400', color: tierPct >= 100 ? '#16a34a' : C.grayLt }}>
+        ${weeklyTarget.toLocaleString()} {tierPct >= 100 ? '✓' : ''}
+      </span>}
+      {!weeklyTarget && <span style={{ color: '#16a34a', fontWeight: '700' }}>Max Tier 🥇</span>}
+    </div>
+
+    // Cashout limits per tier (info row)
+    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+      {Object.entries(TIER_CONFIG).map(([key, cfg]) => (
+        <div key={key} style={{
+          padding: '8px 14px', borderRadius: '8px',
+          background: player.tier === key ? cfg.bg : '#f8fafc',
+          border: `1px solid ${player.tier === key ? '#e2e8f0' : '#f1f5f9'}`,
+          opacity: player.tier === key ? 1 : 0.6,
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: cfg.color, marginBottom: '2px' }}>
+            {cfg.emoji} {cfg.label}
+          </div>
+          <div style={{ fontSize: '10px', color: '#64748b' }}>
+            Cashout: ${cfg.cashoutLimit}/day
+          </div>
+          {cfg.weeklyTarget && (
+            <div style={{ fontSize: '10px', color: '#94a3b8' }}>
+              Deposits: ${cfg.weeklyTarget === 500 ? '<500' : `${cfg.weeklyTarget - 499}–${cfg.weeklyTarget}`}/week
             </div>
+          )}
+          {!cfg.weeklyTarget && (
+            <div style={{ fontSize: '10px', color: '#94a3b8' }}>Deposits: >$1000/week</div>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
 
             {/* ── REFERRALS & FRIENDS ROW ───────────────────────────────────── */}
             {((player.referralsList?.length > 0) || (player.friendsList?.length > 0)) && (
