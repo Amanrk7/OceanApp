@@ -114,13 +114,21 @@ function LedgerRow({ tx, undoingId, onUndo }) {
             <td style={{ padding: "10px 12px", fontWeight: "700", fontSize: "14px", color: positive ? "#10b981" : "#ef4444", whiteSpace: "nowrap" }}>
                 {positive ? "+" : "−"}{fmt(tx.amount)}
             </td>
+            {/* Fee */}
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
-                {isDepositRow && tx.fee != null && tx.fee > 0 ? (
-                    <div>
-                        <div style={{ color: "#f59e0b", fontWeight: "700", fontSize: "12px" }}>{fmt(tx.fee)}</div>
-                        <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "1px" }}>→ wallet</div>
-                    </div>
-                ) : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>}
+                {isDepositRow && tx.fee != null && tx.fee > 0
+                    ? <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "12px" }}>−{fmt(tx.fee)}</span>
+                    : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>
+                }
+            </td>
+            {/* Received Amt (deposit amt − fee = what we actually receive) */}
+            <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
+                {isDepositRow
+                    ? <span style={{ fontWeight: "700", fontSize: "13px", color: "#0ea5e9" }}>
+                        {fmt((parseFloat(tx.amount) || 0) - (parseFloat(tx.fee) || 0))}
+                      </span>
+                    : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>
+                }
             </td>
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
                 {tx.gameName ? <span style={{ display: "inline-block", padding: "2px 8px", background: "#f1f5f9", borderRadius: "5px", fontSize: "11px", fontWeight: "500", color: "#475569" }}>{tx.gameName}</span> : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>}
@@ -582,17 +590,18 @@ function AddTransactionsPage() {
                             <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
                                 <tr style={{ background: "#f8fafc" }}>
                                     {[
-                                        { label: "ID",      w: "60px"  },
-                                        { label: "Player",  w: "150px" },
-                                        { label: "Type",    w: "120px" },
-                                        { label: "Amount",  w: "100px" },
-                                        { label: "Fee",     w: "85px"  },
-                                        { label: "Game",    w: "110px" },
-                                        { label: "Wallet",  w: "130px" },
-                                        { label: "Balance", w: "155px" },
-                                        { label: "Status",  w: "95px"  },
-                                        { label: "Date",    w: "155px" },
-                                        { label: "",        w: "80px"  },
+                                        { label: "ID",           w: "60px"  },
+                                        { label: "Player",       w: "150px" },
+                                        { label: "Type",         w: "120px" },
+                                        { label: "Amount",       w: "100px" },
+                                        { label: "Fee",          w: "80px"  },
+                                        { label: "Received Amt", w: "110px" },
+                                        { label: "Game",         w: "110px" },
+                                        { label: "Wallet",       w: "130px" },
+                                        { label: "Balance",      w: "155px" },
+                                        { label: "Status",       w: "95px"  },
+                                        { label: "Date",         w: "155px" },
+                                        { label: "",             w: "80px"  },
                                     ].map(col => (
                                         <th key={col.label} style={{ textAlign: "left", padding: "10px 12px", fontWeight: "700", color: "#64748b", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.4px", borderBottom: "2px solid #e2e8f0", whiteSpace: "nowrap", width: col.w, minWidth: col.w, background: "#f8fafc" }}>
                                             {col.label}
