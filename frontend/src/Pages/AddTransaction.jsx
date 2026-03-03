@@ -651,7 +651,7 @@ if (isDeposit) {
                     {/* ── Game selector (deposit only) ── */}
                     {isDeposit && (
                         <div>
-                            <label style={LABEL}>Game {anyBonus ? "* required"}</label>
+                            <label style={LABEL}>Game * required}</label>
                             <div style={{ position: "relative" }}>
                                 <select value={form.gameId} onChange={e => set("gameId", e.target.value)}
                                     style={{ ...SELECT, borderColor: anyBonus && !form.gameId ? "#fca5a5" : "#e2e8f0" }}>
