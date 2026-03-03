@@ -162,7 +162,7 @@ function GameCard({ game, onUpdate, onDelete }) {
           e.currentTarget.style.color = '#ef4444';
           e.currentTarget.style.borderColor = '#fecaca';
         }}
-        disabled={
+        
       >
         ✕
       </button>
