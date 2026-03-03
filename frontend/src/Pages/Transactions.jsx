@@ -15,14 +15,14 @@ const formatDate = (tx) => {
 };
 
 const TYPE_COLORS = {
-  'Deposit':        { bg: '#dcfce7', text: '#166534' },
+  'Deposit':        { bg: '#dcfce7', text: '#166634' },
   'Cashout':        { bg: '#fee2e2', text: '#991b1b' },
   'Match Bonus':    { bg: '#eff6ff', text: '#0369a1' },
   'Special Bonus':  { bg: '#faf5ff', text: '#6b21a8' },
   'Bonus':          { bg: '#eff6ff', text: '#0369a1' },
   'Streak Bonus':   { bg: '#fffbeb', text: '#92400e' },
-  'Referral Bonus': { bg: '#f0fdf4', text: '#166534' },
-  'Win':            { bg: '#dcfce7', text: '#166534' },
+  'Referral Bonus': { bg: '#f0fdf4', text: '#166634' },
+  'Win':            { bg: '#dcfce7', text: '#166634' },
   'Loss':           { bg: '#fee2e2', text: '#991b1b' },
   'Freeplay':       { bg: '#fef3c7', text: '#92400e' },
 };
@@ -33,10 +33,9 @@ const getAmountColor = (type) => {
   return '#64748b';
 };
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
   const s = {
-    COMPLETED: { bg: '#dcfce7', text: '#166534' },
+    COMPLETED: { bg: '#dcfce7', text: '#166634' },
     PENDING:   { bg: '#fef3c7', text: '#92400e' },
     CANCELLED: { bg: '#fee2e2', text: '#991b1b' },
     REJECTED:  { bg: '#fee2e2', text: '#991b1b' },
@@ -48,9 +47,6 @@ function StatusBadge({ status }) {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// MAIN COMPONENT
-// ═════════════════════════════════════════════════════════════════════════════
 export default function Transactions() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -118,16 +114,18 @@ export default function Transactions() {
     { id: 'completed', label: 'Completed' },
   ];
 
-  // Column headers — added Fee & Received Amt between Amount and Game
-  const headers = ['ID', 'Player', 'Type', 'Deposit Amt', 'Fee', 'Received Amt', 'Game', 'Wallet', 'Balance Before → After', 'Status', 'Date', ''];
+  // Column headers
+  const headers = ['ID', 'Player', 'Type', 'Amount', 'Fee', 'Received Amt', 'Game', 'Wallet', 'Balance Before → After', 'Status', 'Date', ''];
 
   return (
     <div style={{ padding: '4px 0' }}>
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>All deposits, cashouts, and bonuses — with fee, received amount, game, wallet, and balance details</p>
+          <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
+            All deposits, cashouts, and bonuses — fee deducted, received amount shown per deposit
+          </p>
         </div>
         <button onClick={() => loadTransactions(currentPage, filterTab)} disabled={loading}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', padding: '9px 14px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}>
@@ -136,7 +134,7 @@ export default function Transactions() {
         </button>
       </div>
 
-      {/* ── Undo error banner ── */}
+      {/* Undo error banner */}
       {undoError && (
         <div style={{ padding: '11px 16px', marginBottom: '16px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#991b1b', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>⚠ {undoError}</span>
@@ -144,7 +142,7 @@ export default function Transactions() {
         </div>
       )}
 
-      {/* ── Tabs + Search ── */}
+      {/* Tabs + Search */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '0', borderBottom: '1px solid #e2e8f0', flex: 'auto' }}>
           {tabs.map(tab => (
@@ -168,7 +166,7 @@ export default function Transactions() {
         />
       </div>
 
-      {/* ── Table ── */}
+      {/* Table */}
       <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 2px 8px rgba(15,23,42,.05)' }}>
         {loading ? (
           <div style={{ padding: '48px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
@@ -187,7 +185,6 @@ export default function Transactions() {
                       textTransform: 'uppercase', fontSize: '11px',
                       letterSpacing: '0.4px', borderBottom: '1px solid #e2e8f0',
                       whiteSpace: 'nowrap',
-                      // Highlight the new columns
                       ...(h === 'Fee' || h === 'Received Amt'
                         ? { color: '#0369a1', background: '#f0f9ff' }
                         : {}),
@@ -197,11 +194,16 @@ export default function Transactions() {
               </thead>
               <tbody>
                 {filteredTransactions.length > 0 ? filteredTransactions.map(tx => {
-                  const typeStyle = TYPE_COLORS[tx.type] || { bg: '#f1f5f9', text: '#475569' };
-                  const positive  = !['Cashout', 'Loss'].includes(tx.type);
-                  const isUndoing = undoingId === tx.id;
-                  const canUndo   = (tx.status === 'COMPLETED' || tx.status === 'PENDING') && !isUndoing;
+                  const typeStyle   = TYPE_COLORS[tx.type] || { bg: '#f1f5f9', text: '#475569' };
+                  const positive    = !['Cashout', 'Loss'].includes(tx.type);
+                  const isUndoing   = undoingId === tx.id;
+                  const canUndo     = (tx.status === 'COMPLETED' || tx.status === 'PENDING') && !isUndoing;
                   const isDepositRow = tx.type === 'Deposit';
+
+                  // Received Amt = deposit amount − fee (what the wallet actually receives)
+                  const feeVal      = parseFloat(tx.fee)    || 0;
+                  const depositVal  = parseFloat(tx.amount) || 0;
+                  const receivedAmt = depositVal - feeVal;
 
                   return (
                     <tr key={tx.id}
@@ -227,30 +229,28 @@ export default function Transactions() {
                         </span>
                       </td>
 
-                      {/* Deposit Amount */}
+                      {/* Amount */}
                       <td style={{ padding: '12px 14px', fontWeight: '800', fontSize: '14px', color: getAmountColor(tx.type), whiteSpace: 'nowrap' }}>
                         {positive ? '+' : '−'}{fmt(tx.amount)}
                       </td>
 
-                      {/* Fee — deposit rows only */}
+                      {/* Fee — deposit rows only, no sub-label */}
                       <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', background: isDepositRow ? '#fafeff' : 'transparent' }}>
-                        {isDepositRow && tx.fee != null && tx.fee > 0
-                          ? <span style={{ fontWeight: '600', fontSize: '12px', color: '#ef4444' }}>−{fmt(tx.fee)}</span>
+                        {isDepositRow && feeVal > 0
+                          ? <span style={{ fontWeight: '700', fontSize: '12px', color: '#f59e0b' }}>−{fmt(feeVal)}</span>
                           : <span style={{ color: '#e2e8f0', fontSize: '12px' }}>—</span>
                         }
                       </td>
 
-                      {/* Received Amount — deposit rows only */}
+                      {/* Received Amt — deposit amt minus fee */}
                       <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', background: isDepositRow ? '#fafeff' : 'transparent' }}>
                         {isDepositRow
-                          ? <span style={{ fontWeight: '700', fontSize: '13px', color: '#0ea5e9' }}>
-                              {tx.receivedAmt != null ? fmt(tx.receivedAmt) : fmt(tx.amount)}
-                            </span>
+                          ? <span style={{ fontWeight: '700', fontSize: '13px', color: '#0ea5e9' }}>{fmt(receivedAmt)}</span>
                           : <span style={{ color: '#e2e8f0', fontSize: '12px' }}>—</span>
                         }
                       </td>
 
-                      {/* Game name */}
+                      {/* Game */}
                       <td style={{ padding: '12px 14px' }}>
                         {tx.gameName
                           ? <span style={{ display: 'inline-block', padding: '2px 8px', background: '#f1f5f9', borderRadius: '5px', fontSize: '11px', fontWeight: '500', color: '#475569', whiteSpace: 'nowrap' }}>{tx.gameName}</span>
@@ -299,13 +299,7 @@ export default function Transactions() {
                           : canUndo
                             ? <button onClick={() => handleUndo(tx.id)}
                                 title="Undo — reverses the transaction and restores all balances"
-                                style={{
-                                  background: 'none', border: '1px solid #e2e8f0', color: '#64748b',
-                                  cursor: 'pointer', fontWeight: '600', fontSize: '12px',
-                                  borderRadius: '6px', padding: '5px 10px',
-                                  display: 'flex', alignItems: 'center', gap: '4px',
-                                  whiteSpace: 'nowrap', transition: 'all .15s',
-                                }}
+                                style={{ background: 'none', border: '1px solid #e2e8f0', color: '#64748b', cursor: 'pointer', fontWeight: '600', fontSize: '12px', borderRadius: '6px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', transition: 'all .15s' }}
                                 onMouseEnter={e => { e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fff1f2'; }}
                                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.background = 'none'; }}>
                                 <RotateCcw size={12} /> Undo
@@ -328,7 +322,7 @@ export default function Transactions() {
         )}
       </div>
 
-      {/* ── Pagination ── */}
+      {/* Pagination */}
       <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
           Page {pagination.page} / {pagination.pages}
