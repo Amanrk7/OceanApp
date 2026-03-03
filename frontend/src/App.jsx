@@ -361,13 +361,18 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 
       {/* Footer */}
       <div className="ob-sidebar-footer">
-        <button
-            className="ob-navlink-ui-theme ob-navlink-drawer"
-            style={{ color: '#ef4444' }}
+    
+        <div className="ob-nav-item">
+          <button
+            className="ob-navlink"
+            aria-label="Logout"
+            style={{ color: '#fff' }}
           >
-            <HugeiconsIcon icon={DarkModeIcon} />
-            <span>Dark Mode</span>
+            <HugeiconsIcon icon={DarkModeIcon} size={20} />
           </button>
+          <span className="ob-nav-tooltip">Dark Mode</</span>
+        </div>
+      
         <div className="ob-nav-item">
           <button
             className="ob-navlink"
@@ -379,6 +384,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
           </button>
           <span className="ob-nav-tooltip">Logout</span>
         </div>
+      
         <div className="ob-user-avatar">
           {user?.name?.[0]?.toUpperCase() || 'A'}
         </div>
