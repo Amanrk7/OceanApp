@@ -34,6 +34,7 @@ import { ManagerIcon } from '@hugeicons/core-free-icons';
 import { Logout01Icon } from '@hugeicons/core-free-icons';
 import { TaskEdit01Icon } from '@hugeicons/core-free-icons';
 import { CheckListIcon } from '@hugeicons/core-free-icons';
+import { DarkModeIcon } from '@hugeicons/core-free-icons';
 import PlayerDashboard from "./Pages/PlayerDashboard.jsx";
 import { AddPlayerContext } from "./Context/addPlayer.jsx";
 import { CurrentUserContext } from "./Context/currentUser.jsx";
@@ -426,6 +427,15 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
         {/* Drawer footer */}
         <div className="ob-drawer-footer">
           <div style={{ height: '1px', background: '#1e293b', marginBottom: '4px' }} />
+           <button
+            className="ob-navlink-ui-theme"
+            {/* onClick={() => { setDrawerOpen(false); onLogout(); }} */}
+            style={{ color: '#ef4444' }}
+          >
+            <HugeiconsIcon icon={DarkModeIcon} />
+            <span>Dark Mode</span>
+          </button>
+          
           <button
             className="ob-navlink-drawer"
             onClick={() => { setDrawerOpen(false); onLogout(); }}
@@ -434,6 +444,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
             <HugeiconsIcon icon={Logout01Icon} size={18} />
             <span>Logout</span>
           </button>
+          
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 14px' }}>
             <div className="ob-user-avatar">{user?.name?.[0]?.toUpperCase() || 'A'}</div>
             <div>
@@ -492,7 +503,7 @@ function AdminDashboard({ user }) {
       case "memberDashboard": return <TeamDashboard />;
       case "players": return <Players />;
       case "attendance": return <Attendance />;
-      case "games": return <Games />;
+      case "games": return <Games user={user}/>;
       case "issues": return <Issues />;
       case "transactions": return <Transactions />;
       case "expenses": return <ExpensesPage />;
