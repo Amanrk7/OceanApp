@@ -429,7 +429,6 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
           <div style={{ height: '1px', background: '#1e293b', marginBottom: '4px' }} />
            <button
             className="ob-navlink-ui-theme"
-            {/* onClick={() => { setDrawerOpen(false); onLogout(); }} */}
             style={{ color: '#ef4444' }}
           >
             <HugeiconsIcon icon={DarkModeIcon} />
