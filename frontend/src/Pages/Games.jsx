@@ -143,30 +143,33 @@ function GameCard({ game, onUpdate, onDelete }) {
     >
       {/* Delete button — top right */}
       <button
-        onClick={() => onDelete(game)}
-        title="Delete game"
+        onClick={() => { if (isAdmin) onDelete(game); }}  // ← add isAdmin check
+        disabled={!isAdmin}                               // ← add disabled
+        title={isAdmin ? "Delete game" : "Admin only"}
         style={{
           position: 'absolute', top: 12, right: 12,
           width: 28, height: 28, borderRadius: 8,
           border: '1px solid #fecaca',
           background: '#fff5f5',
-          color: '#ef4444',
-          cursor: 'pointer',
+          color: isAdmin ? '#ef4444' : '#cbd5e1',         // ← dim when disabled
+          cursor: isAdmin ? 'pointer' : 'not-allowed',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 14, lineHeight: 1,
           transition: 'all 0.15s',
+          opacity: isAdmin ? 1 : 0.4,
         }}
         onMouseEnter={e => {
+          if (!isAdmin) return;                           // ← guard hover
           e.currentTarget.style.background = '#ef4444';
           e.currentTarget.style.color = '#fff';
           e.currentTarget.style.borderColor = '#ef4444';
         }}
         onMouseLeave={e => {
+          if (!isAdmin) return;
           e.currentTarget.style.background = '#fff5f5';
           e.currentTarget.style.color = '#ef4444';
           e.currentTarget.style.borderColor = '#fecaca';
         }}
-        
       >
         ✕
       </button>
@@ -199,32 +202,32 @@ function GameCard({ game, onUpdate, onDelete }) {
           <span>Point Stock</span>
           {!editing && (
             <button
-  onClick={startEdit}
-  disabled={!isAdmin}
-  style={{
-    background: 'none',
-    border: '1px solid #e2e8f0',
-    borderRadius: 6, padding: '2px 8px',
-    fontSize: 10, fontWeight: 600,
-    color: isAdmin ? '#6366f1' : '#cbd5e1',
-    cursor: isAdmin ? 'pointer' : 'not-allowed',
-    display: 'flex', alignItems: 'center', gap: 4,
-    transition: 'all 0.15s',
-    opacity: isAdmin ? 1 : 0.4,
-  }}
-  onMouseEnter={e => {
-    if (!isAdmin) return;
-    e.currentTarget.style.background = '#eef2ff';
-    e.currentTarget.style.borderColor = '#6366f1';
-  }}
-  onMouseLeave={e => {
-    if (!isAdmin) return;
-    e.currentTarget.style.background = 'none';
-    e.currentTarget.style.borderColor = '#e2e8f0';
-  }}
->
-  ✎ Edit
-</button>
+              onClick={startEdit}
+              disabled={!isAdmin}
+              style={{
+                background: 'none',
+                border: '1px solid #e2e8f0',
+                borderRadius: 6, padding: '2px 8px',
+                fontSize: 10, fontWeight: 600,
+                color: isAdmin ? '#6366f1' : '#cbd5e1',
+                cursor: isAdmin ? 'pointer' : 'not-allowed',
+                display: 'flex', alignItems: 'center', gap: 4,
+                transition: 'all 0.15s',
+                opacity: isAdmin ? 1 : 0.4,
+              }}
+              onMouseEnter={e => {
+                if (!isAdmin) return;
+                e.currentTarget.style.background = '#eef2ff';
+                e.currentTarget.style.borderColor = '#6366f1';
+              }}
+              onMouseLeave={e => {
+                if (!isAdmin) return;
+                e.currentTarget.style.background = 'none';
+                e.currentTarget.style.borderColor = '#e2e8f0';
+              }}
+            >
+              ✎ Edit
+            </button>
           )}
         </div>
 
@@ -284,19 +287,23 @@ function GameCard({ game, onUpdate, onDelete }) {
           </div>
         ) : (
           <div
-            onClick={startEdit}
-            title="Click to edit points"
+            onClick={() => { if (isAdmin) startEdit(); }}   // ← add isAdmin check
+            title={isAdmin ? "Click to edit points" : "Admin only"}
             style={{
               background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
               borderRadius: 10, padding: '12px 16px', textAlign: 'center',
-              cursor: 'pointer', transition: 'opacity 0.15s',
+              cursor: isAdmin ? 'pointer' : 'default',      // ← cursor feedback
+              transition: 'opacity 0.15s',
               border: '2px solid transparent',
+              opacity: isAdmin ? 1 : 0.75,                  // ← visual hint
             }}
             onMouseEnter={e => {
+              if (!isAdmin) return;                          // ← guard hover too
               e.currentTarget.style.borderColor = '#6366f1';
               e.currentTarget.style.background = 'linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)';
             }}
             onMouseLeave={e => {
+              if (!isAdmin) return;
               e.currentTarget.style.borderColor = 'transparent';
               e.currentTarget.style.background = 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
             }}
@@ -308,7 +315,9 @@ function GameCard({ game, onUpdate, onDelete }) {
             }}>
               {Number(game.pointStock).toFixed(2)}
             </span>
-            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>click to edit</div>
+            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
+              {isAdmin ? 'click to edit' : 'view only'}     {/* ← label changes */}
+            </div>
           </div>
         )}
       </div>
@@ -610,7 +619,7 @@ const FILTER_TABS = [
 let toastCounter = 0;
 
 export default function Games() {
-  
+
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
