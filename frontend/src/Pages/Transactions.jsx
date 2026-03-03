@@ -15,16 +15,16 @@ const formatDate = (tx) => {
 };
 
 const TYPE_COLORS = {
-  'Deposit': { bg: '#dcfce7', text: '#166534' },
-  'Cashout': { bg: '#fee2e2', text: '#991b1b' },
-  'Match Bonus': { bg: '#eff6ff', text: '#0369a1' },
-  'Special Bonus': { bg: '#faf5ff', text: '#6b21a8' },
-  'Bonus': { bg: '#eff6ff', text: '#0369a1' },
-  'Streak Bonus': { bg: '#fffbeb', text: '#92400e' },
+  'Deposit':        { bg: '#dcfce7', text: '#166534' },
+  'Cashout':        { bg: '#fee2e2', text: '#991b1b' },
+  'Match Bonus':    { bg: '#eff6ff', text: '#0369a1' },
+  'Special Bonus':  { bg: '#faf5ff', text: '#6b21a8' },
+  'Bonus':          { bg: '#eff6ff', text: '#0369a1' },
+  'Streak Bonus':   { bg: '#fffbeb', text: '#92400e' },
   'Referral Bonus': { bg: '#f0fdf4', text: '#166534' },
-  'Win': { bg: '#dcfce7', text: '#166534' },
-  'Loss': { bg: '#fee2e2', text: '#991b1b' },
-  'Freeplay': { bg: '#fef3c7', text: '#92400e' },
+  'Win':            { bg: '#dcfce7', text: '#166534' },
+  'Loss':           { bg: '#fee2e2', text: '#991b1b' },
+  'Freeplay':       { bg: '#fef3c7', text: '#92400e' },
 };
 
 const getAmountColor = (type) => {
@@ -37,9 +37,9 @@ const getAmountColor = (type) => {
 function StatusBadge({ status }) {
   const s = {
     COMPLETED: { bg: '#dcfce7', text: '#166534' },
-    PENDING: { bg: '#fef3c7', text: '#92400e' },
+    PENDING:   { bg: '#fef3c7', text: '#92400e' },
     CANCELLED: { bg: '#fee2e2', text: '#991b1b' },
-    REJECTED: { bg: '#fee2e2', text: '#991b1b' },
+    REJECTED:  { bg: '#fee2e2', text: '#991b1b' },
   }[status] || { bg: '#f1f5f9', text: '#475569' };
   return (
     <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', background: s.bg, color: s.text, whiteSpace: 'nowrap' }}>
@@ -61,23 +61,10 @@ export default function Transactions() {
   const [undoError, setUndoError] = useState('');
   const itemsPerPage = 15;
 
-  // const loadTransactions = useCallback(async (page = currentPage, tab = filterTab) => {
-  //   try {
-  //     setLoading(true);
-  //     const statusFilter = tab === 'pending' ? 'PENDING' : tab === 'completed' ? 'COMPLETED' : '';
-  //     const result = await api.transactions.getTransactions(page, itemsPerPage, '', statusFilter);
-  //     setData(result);
-  //   } catch (error) {
-  //     console.error('Failed to load transactions:', error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }, [currentPage, filterTab]);
   const loadTransactions = useCallback(async (page = currentPage, tab = filterTab, forceRefresh = false) => {
     try {
       setLoading(true);
       const statusFilter = tab === 'pending' ? 'PENDING' : tab === 'completed' ? 'COMPLETED' : '';
-      // ✅ Pass forceRefresh to API
       const result = await api.transactions.getTransactions(page, itemsPerPage, '', statusFilter, forceRefresh);
       setData(result);
     } catch (error) {
@@ -86,35 +73,25 @@ export default function Transactions() {
       setLoading(false);
     }
   }, [currentPage, filterTab]);
+
   useEffect(() => { loadTransactions(currentPage, filterTab); }, [currentPage, filterTab]);
 
   const transactions = data?.data || [];
   const pagination = data?.pagination || { page: 1, limit: 15, total: 0, pages: 1 };
 
-  // ── Undo with real-time balance reload ────────────────────────────────────
   const handleUndo = async (transactionId) => {
     setUndoError('');
     const numericId = String(transactionId).replace(/\D/g, '');
     try {
       setUndoingId(transactionId);
-
-      // Backend handles everything: balance reversal + game point restoration
       const result = await api.transactions.undoTransaction(numericId);
-
-      // const selectedGame = games.find(g => g.name === addFormData.game);
-      // await api.games.updateGame(selectedGame.id, { pointStock: selectedGame.pointStock + pointsAdded });
-
-
-      // Clear cache and reload
       api.clearCache?.();
       await loadTransactions(currentPage, filterTab, true);
-
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('transactionUndone', {
           detail: { transactionId, message: result.message, timestamp: new Date().toISOString() }
         }));
       }
-
     } catch (error) {
       console.error('Failed to undo transaction:', error);
       setUndoError(error.message || 'Undo failed. Please try again.');
@@ -122,6 +99,7 @@ export default function Transactions() {
       setUndoingId(null);
     }
   };
+
   const filteredTransactions = transactions.filter(t => {
     if (!searchTerm.trim()) return true;
     const s = searchTerm.toLowerCase();
@@ -135,10 +113,13 @@ export default function Transactions() {
   });
 
   const tabs = [
-    { id: 'all', label: 'All Transactions' },
-    { id: 'pending', label: 'Pending' },
+    { id: 'all',       label: 'All Transactions' },
+    { id: 'pending',   label: 'Pending' },
     { id: 'completed', label: 'Completed' },
   ];
+
+  // Column headers — added Fee & Received Amt between Amount and Game
+  const headers = ['ID', 'Player', 'Type', 'Deposit Amt', 'Fee', 'Received Amt', 'Game', 'Wallet', 'Balance Before → After', 'Status', 'Date', ''];
 
   return (
     <div style={{ padding: '4px 0' }}>
@@ -146,8 +127,7 @@ export default function Transactions() {
       {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          {/* <h1 style={{ fontSize: '20px', fontWeight: '800', margin: '0 0 2px', color: '#0f172a' }}>Transaction History</h1> */}
-          <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>All deposits, cashouts, and bonuses — with game, wallet, and balance details</p>
+          <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>All deposits, cashouts, and bonuses — with fee, received amount, game, wallet, and balance details</p>
         </div>
         <button onClick={() => loadTransactions(currentPage, filterTab)} disabled={loading}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', padding: '9px 14px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}>
@@ -200,13 +180,17 @@ export default function Transactions() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead style={{ background: '#f8fafc', position: 'sticky', top: 0 }}>
                 <tr>
-                  {['ID', 'Player', 'Type', 'Amount', 'Game', 'Wallet', 'Balance Before → After', 'Status', 'Date', ''].map(h => (
+                  {headers.map(h => (
                     <th key={h} style={{
                       textAlign: 'left', padding: '11px 14px',
                       fontWeight: '700', color: '#64748b',
                       textTransform: 'uppercase', fontSize: '11px',
                       letterSpacing: '0.4px', borderBottom: '1px solid #e2e8f0',
                       whiteSpace: 'nowrap',
+                      // Highlight the new columns
+                      ...(h === 'Fee' || h === 'Received Amt'
+                        ? { color: '#0369a1', background: '#f0f9ff' }
+                        : {}),
                     }}>{h}</th>
                   ))}
                 </tr>
@@ -214,9 +198,11 @@ export default function Transactions() {
               <tbody>
                 {filteredTransactions.length > 0 ? filteredTransactions.map(tx => {
                   const typeStyle = TYPE_COLORS[tx.type] || { bg: '#f1f5f9', text: '#475569' };
-                  const positive = !['Cashout', 'Loss'].includes(tx.type);
+                  const positive  = !['Cashout', 'Loss'].includes(tx.type);
                   const isUndoing = undoingId === tx.id;
-                  const canUndo = (tx.status === 'COMPLETED' || tx.status === 'PENDING') && !isUndoing;
+                  const canUndo   = (tx.status === 'COMPLETED' || tx.status === 'PENDING') && !isUndoing;
+                  const isDepositRow = tx.type === 'Deposit';
+
                   return (
                     <tr key={tx.id}
                       style={{ borderBottom: '1px solid #f1f5f9', opacity: tx.status === 'CANCELLED' ? 0.55 : 1 }}
@@ -241,9 +227,27 @@ export default function Transactions() {
                         </span>
                       </td>
 
-                      {/* Amount */}
+                      {/* Deposit Amount */}
                       <td style={{ padding: '12px 14px', fontWeight: '800', fontSize: '14px', color: getAmountColor(tx.type), whiteSpace: 'nowrap' }}>
                         {positive ? '+' : '−'}{fmt(tx.amount)}
+                      </td>
+
+                      {/* Fee — deposit rows only */}
+                      <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', background: isDepositRow ? '#fafeff' : 'transparent' }}>
+                        {isDepositRow && tx.fee != null && tx.fee > 0
+                          ? <span style={{ fontWeight: '600', fontSize: '12px', color: '#ef4444' }}>−{fmt(tx.fee)}</span>
+                          : <span style={{ color: '#e2e8f0', fontSize: '12px' }}>—</span>
+                        }
+                      </td>
+
+                      {/* Received Amount — deposit rows only */}
+                      <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', background: isDepositRow ? '#fafeff' : 'transparent' }}>
+                        {isDepositRow
+                          ? <span style={{ fontWeight: '700', fontSize: '13px', color: '#0ea5e9' }}>
+                              {tx.receivedAmt != null ? fmt(tx.receivedAmt) : fmt(tx.amount)}
+                            </span>
+                          : <span style={{ color: '#e2e8f0', fontSize: '12px' }}>—</span>
+                        }
                       </td>
 
                       {/* Game name */}
@@ -258,9 +262,9 @@ export default function Transactions() {
                       <td style={{ padding: '12px 14px', minWidth: '110px' }}>
                         {(tx.walletMethod || tx.walletName)
                           ? <div>
-                            <div style={{ fontSize: '12px', fontWeight: '600', color: '#0f172a' }}>{tx.walletMethod || ''}</div>
-                            <div style={{ fontSize: '11px', color: '#94a3b8' }}>{tx.walletName || ''}</div>
-                          </div>
+                              <div style={{ fontSize: '12px', fontWeight: '600', color: '#0f172a' }}>{tx.walletMethod || ''}</div>
+                              <div style={{ fontSize: '11px', color: '#94a3b8' }}>{tx.walletName || ''}</div>
+                            </div>
                           : <span style={{ color: '#e2e8f0', fontSize: '12px' }}>—</span>
                         }
                       </td>
@@ -269,11 +273,11 @@ export default function Transactions() {
                       <td style={{ padding: '12px 14px', fontSize: '12px', whiteSpace: 'nowrap' }}>
                         {tx.balanceBefore != null && tx.balanceAfter != null
                           ? <>
-                            <span style={{ color: '#94a3b8' }}>{fmt(tx.balanceBefore)}</span>
-                            <span style={{ color: positive ? '#22c55e' : '#ef4444', fontWeight: '700' }}>
-                              {' → '}{fmt(tx.balanceAfter)}
-                            </span>
-                          </>
+                              <span style={{ color: '#94a3b8' }}>{fmt(tx.balanceBefore)}</span>
+                              <span style={{ color: positive ? '#22c55e' : '#ef4444', fontWeight: '700' }}>
+                                {' → '}{fmt(tx.balanceAfter)}
+                              </span>
+                            </>
                           : <span style={{ color: '#e2e8f0' }}>—</span>
                         }
                       </td>
@@ -288,24 +292,24 @@ export default function Transactions() {
                         {formatDate(tx)}
                       </td>
 
-                      {/* Undo action */}
+                      {/* Undo */}
                       <td style={{ padding: '12px 14px' }}>
                         {isUndoing
                           ? <span style={{ fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap' }}>Reversing…</span>
                           : canUndo
                             ? <button onClick={() => handleUndo(tx.id)}
-                              title="Undo — reverses the transaction and restores all balances in real-time"
-                              style={{
-                                background: 'none', border: '1px solid #e2e8f0', color: '#64748b',
-                                cursor: 'pointer', fontWeight: '600', fontSize: '12px',
-                                borderRadius: '6px', padding: '5px 10px',
-                                display: 'flex', alignItems: 'center', gap: '4px',
-                                whiteSpace: 'nowrap', transition: 'all .15s',
-                              }}
-                              onMouseEnter={e => { e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fff1f2'; }}
-                              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.background = 'none'; }}>
-                              <RotateCcw size={12} /> Undo
-                            </button>
+                                title="Undo — reverses the transaction and restores all balances"
+                                style={{
+                                  background: 'none', border: '1px solid #e2e8f0', color: '#64748b',
+                                  cursor: 'pointer', fontWeight: '600', fontSize: '12px',
+                                  borderRadius: '6px', padding: '5px 10px',
+                                  display: 'flex', alignItems: 'center', gap: '4px',
+                                  whiteSpace: 'nowrap', transition: 'all .15s',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fff1f2'; }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.background = 'none'; }}>
+                                <RotateCcw size={12} /> Undo
+                              </button>
                             : null
                         }
                       </td>
@@ -313,7 +317,7 @@ export default function Transactions() {
                   );
                 }) : (
                   <tr>
-                    <td colSpan="10" style={{ padding: '48px 16px', textAlign: 'center', color: '#94a3b8' }}>
+                    <td colSpan={headers.length} style={{ padding: '48px 16px', textAlign: 'center', color: '#94a3b8' }}>
                       No transactions found
                     </td>
                   </tr>
