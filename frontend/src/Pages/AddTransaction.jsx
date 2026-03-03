@@ -41,7 +41,7 @@ const DEPOSIT_BONUSES = [
         label: "Match Bonus",
         icon: Gift,
         color: { bg: "#eff6ff", border: "#bfdbfe", dot: "#3b82f6", text: "#1d4ed8" },
-        subtitle: "50% of deposit amount — applied once per player per day",
+        subtitle: "50% of deposit amount — once per player per day",
         calc: (amt) => amt * 0.5,
     },
     {
@@ -49,7 +49,7 @@ const DEPOSIT_BONUSES = [
         label: "Special / Promo Bonus",
         icon: Star,
         color: { bg: "#faf5ff", border: "#e9d5ff", dot: "#a855f7", text: "#6b21a8" },
-        subtitle: "20% of deposit — for game promotions or special occasions",
+        subtitle: "20% of deposit — for promotions or special occasions",
         calc: (amt) => amt * 0.2,
     },
 ];
@@ -59,7 +59,7 @@ const REFERRAL_BONUS_DEF = {
     label: "Referral Bonus",
     icon: Users,
     color: { bg: "#f0fdf4", border: "#86efac", dot: "#22c55e", text: "#166534" },
-    subtitle: "50% of deposit — BOTH player AND their referrer each receive this amount",
+    subtitle: "50% of deposit — BOTH player AND referrer each receive this. One-time only.",
     calc: (amt) => amt * 0.5,
 };
 
@@ -94,11 +94,9 @@ function BonusToggle({ bonus, amount, player, enabled, onToggle, eligible = true
                         <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px", lineHeight: "1.4" }}>
                             {!eligible ? disabledReason : subtitle}
                         </div>
-                        {/* Extra info when referral is active — show both recipients */}
                         {enabled && canEnable && bonus.id === "referral" && player?.referredBy && (
                             <div style={{ fontSize: "11px", color: color.text, marginTop: "4px", fontWeight: "600" }}>
-                                👤 Referrer&nbsp;
-                                <strong>{player.referredBy?.name || `ID ${player.referredBy?.id || player.referredBy}`}</strong>
+                                👤 Referrer <strong>{player.referredBy?.name || `ID ${player.referredBy?.id || player.referredBy}`}</strong>
                                 &nbsp;also gets {fmt(bonusAmt)} — game deducted {fmt(bonusAmt * 2)} total
                             </div>
                         )}
@@ -111,8 +109,6 @@ function BonusToggle({ bonus, amount, player, enabled, onToggle, eligible = true
                         )}
                     </div>
                 </div>
-
-                {/* Toggle switch */}
                 <div
                     onClick={() => canEnable && onToggle(!enabled)}
                     style={{
@@ -138,17 +134,18 @@ function BonusToggle({ bonus, amount, player, enabled, onToggle, eligible = true
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════
 function AddTransactionsPage() {
-    // bonusReferral lives inside form state alongside bonusMatch / bonusSpecial
     const EMPTY = {
         txType: "deposit",
-        amount: "", gameId: "", walletId: "", notes: "",
+        amount: "", fee: "", gameId: "", walletId: "", notes: "",
         bonusMatch: false, bonusSpecial: false, bonusReferral: false,
     };
 
     const [form,          setForm]          = useState(EMPTY);
-    // player = full profile (fetched via getPlayer after search selection)
     const [player,        setPlayer]        = useState(null);
     const [eligLoading,   setEligLoading]   = useState(false);
+    // bonus eligibility flags (computed after player loads)
+    const [matchUsedToday,    setMatchUsedToday]    = useState(false);
+    const [referralUsedEver,  setReferralUsedEver]  = useState(false);
     const [games,         setGames]         = useState([]);
     const [wallets,       setWallets]       = useState([]);
     const [ledger,        setLedger]        = useState([]);
@@ -168,9 +165,7 @@ function AddTransactionsPage() {
     const [showDrop,  setShowDrop]  = useState(false);
     const dropRef = useRef(null);
 
-    // ══════════════════════════════════════════════════════════════
-    // LOAD DATA
-    // ══════════════════════════════════════════════════════════════
+    // ══ LOAD DATA ══════════════════════════════════════════════
     const loadGames = useCallback(async (force = false) => {
         try {
             if (force) {
@@ -217,16 +212,13 @@ function AddTransactionsPage() {
         loadLedger();
     }, [loadGames, loadWallets, loadLedger]);
 
-    // Auto-refresh every 10 s
     useEffect(() => {
         if (!autoRefresh) return;
         const interval = setInterval(() => loadLedger(), 10000);
         return () => clearInterval(interval);
     }, [autoRefresh, loadLedger]);
 
-    // ══════════════════════════════════════════════════════════════
-    // PLAYER SEARCH
-    // ══════════════════════════════════════════════════════════════
+    // ══ PLAYER SEARCH ══════════════════════════════════════════
     useEffect(() => {
         if (!query.trim() || query.length < 2) { setResults([]); setShowDrop(false); return; }
         const t = setTimeout(async () => {
@@ -247,18 +239,42 @@ function AddTransactionsPage() {
         return () => document.removeEventListener("mousedown", fn);
     }, []);
 
-    // Select player — fetch FULL profile so referredBy, streak etc. are available
+    // Compute bonus eligibility from player's transaction history (last 30 days)
+    const computeEligibility = (fullPlayer) => {
+        const history = fullPlayer?.transactionHistory || [];
+        const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+        // Match bonus: used today?
+        const usedMatchToday = history.some(tx => {
+            const txDate = tx.date || "";
+            return txDate === todayStr && tx.type === "Match Bonus";
+        });
+
+        // Referral bonus: used ever? (checks last 30 days — server validates all-time)
+        const usedReferralEver = history.some(tx => tx.type === "Referral Bonus");
+
+        setMatchUsedToday(usedMatchToday);
+        setReferralUsedEver(usedReferralEver);
+
+        // Auto-disable toggles if already used
+        if (usedMatchToday)   setForm(f => ({ ...f, bonusMatch:    false }));
+        if (usedReferralEver) setForm(f => ({ ...f, bonusReferral: false }));
+    };
+
     const selectPlayer = async (p) => {
         setQuery(p.name);
         setShowDrop(false);
         setResults([]);
         setPlayer(null);
-        // Reset referral bonus whenever player changes
-        setForm(f => ({ ...f, bonusReferral: false }));
+        setMatchUsedToday(false);
+        setReferralUsedEver(false);
+        setForm(f => ({ ...EMPTY, txType: f.txType }));
         setEligLoading(true);
         try {
             const r = await api.players.getPlayer(p.id);
-            setPlayer(r?.data || p);
+            const fullPlayer = r?.data || p;
+            setPlayer(fullPlayer);
+            computeEligibility(fullPlayer);
         } catch {
             setPlayer(p);
         } finally {
@@ -269,15 +285,17 @@ function AddTransactionsPage() {
     const clearPlayer = () => {
         setPlayer(null);
         setQuery("");
+        setMatchUsedToday(false);
+        setReferralUsedEver(false);
         setForm(f => ({ ...EMPTY, txType: f.txType }));
     };
 
     const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
-    // ══════════════════════════════════════════════════════════════
-    // DERIVED VALUES
-    // ══════════════════════════════════════════════════════════════
+    // ══ DERIVED VALUES ════════════════════════════════════════
     const amt        = parseFloat(form.amount) || 0;
+    const feeAmt     = parseFloat(form.fee)    || 0;
+    const receivedAmt = amt > 0 ? Math.max(0, amt - feeAmt) : 0;
     const isDeposit  = form.txType === "deposit";
     const selGame    = games.find(g => String(g.id) === String(form.gameId));
     const selWallet  = wallets.find(w => w.id === parseInt(form.walletId));
@@ -285,71 +303,62 @@ function AddTransactionsPage() {
     const streak       = player?.streak?.currentStreak ?? player?.currentStreak ?? 0;
     const cashoutLimit = parseFloat(player?.cashoutLimit ?? 250);
     const streakWaived = streak >= 30;
+    const hasReferrer  = !!(player?.referredBy);
 
-    // Referrer check — requires full profile to be loaded
-    const hasReferrer = !!(player?.referredBy);
+    const matchAmt    = (form.bonusMatch    && amt > 0)               ? amt * 0.5 : 0;
+    const specialAmt  = (form.bonusSpecial  && amt > 0)               ? amt * 0.2 : 0;
+    const referralAmt = (form.bonusReferral && hasReferrer && amt > 0) ? amt * 0.5 : 0;
 
-    // Bonus amounts
-    const matchAmt    = amt * 0.5;
-    const specialAmt  = amt * 0.2;
-    const referralAmt = amt * 0.5;
+    const totalBonus  = matchAmt + specialAmt + referralAmt;
+    const anyBonus    = totalBonus > 0;
 
-    // Player-visible bonus total (what gets credited to the player)
-    const totalBonus =
-        (form.bonusMatch    && amt > 0               ? matchAmt    : 0) +
-        (form.bonusSpecial  && amt > 0               ? specialAmt  : 0) +
-        (form.bonusReferral && hasReferrer && amt > 0 ? referralAmt : 0);
-
-    const anyBonus = totalBonus > 0;
-
-    // Points deducted from game stock
-    // Referral costs 2× because both the player AND the referrer each receive referralAmt
+    // Game stock deduction = receivedAmt + all bonuses (referral ×2)
     const stockNeeded =
-        (form.bonusMatch    && amt > 0               ? matchAmt        : 0) +
-        (form.bonusSpecial  && amt > 0               ? specialAmt      : 0) +
+        (isDeposit ? receivedAmt : 0) +
+        matchAmt +
+        specialAmt +
         (form.bonusReferral && hasReferrer && amt > 0 ? referralAmt * 2 : 0);
 
-    const stockOk            = !selGame || !anyBonus || stockNeeded <= selGame.pointStock;
+    const stockOk            = !selGame || stockNeeded <= selGame.pointStock;
     const cashoutOverLimit   = !isDeposit && !streakWaived && amt > cashoutLimit && cashoutLimit > 0;
     const walletInsufficient = !isDeposit && selWallet && amt > selWallet.balance;
+    const gameRequired       = isDeposit && !form.gameId;
 
     const canSubmit =
         !!player?.id && amt > 0 && !!form.walletId &&
-        (!anyBonus || !!form.gameId) &&
-        stockOk && !cashoutOverLimit && !walletInsufficient && !submitting;
+        (isDeposit ? !!form.gameId : true) &&
+        stockOk && !cashoutOverLimit && !walletInsufficient && !submitting &&
+        feeAmt >= 0 && feeAmt < amt;
 
-    // ══════════════════════════════════════════════════════════════
-    // SUBMIT
-    // ══════════════════════════════════════════════════════════════
+    // ══ SUBMIT ════════════════════════════════════════════════
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(""); setSuccess("");
 
-        if (!player?.id)              { setError("Please select a player."); return; }
-        if (!amt)                     { setError("Enter a valid amount."); return; }
-        if (!form.walletId)           { setError("Please select a wallet."); return; }
-        if (anyBonus && !form.gameId) { setError("Select a game for bonus deduction."); return; }
-        if (!stockOk)                 { setError(`Insufficient game stock — need ${stockNeeded.toFixed(2)} pts.`); return; }
-        if (cashoutOverLimit)         { setError(`Cashout exceeds limit of ${fmt(cashoutLimit)}.`); return; }
-        if (walletInsufficient)       { setError(`Wallet only has ${fmt(selWallet?.balance)}.`); return; }
+        if (!player?.id)    { setError("Please select a player."); return; }
+        if (!amt)           { setError("Enter a valid amount."); return; }
+        if (!form.walletId) { setError("Please select a wallet."); return; }
+        if (isDeposit && !form.gameId) { setError("Please select a game — required for all deposits."); return; }
+        if (!stockOk)       { setError(`Insufficient game stock — need ${stockNeeded.toFixed(2)} pts.`); return; }
+        if (cashoutOverLimit)     { setError(`Cashout exceeds limit of ${fmt(cashoutLimit)}.`); return; }
+        if (walletInsufficient)   { setError(`Wallet only has ${fmt(selWallet?.balance)}.`); return; }
+        if (feeAmt < 0 || feeAmt >= amt) { setError("Fee must be between $0 and the deposit amount."); return; }
 
         try {
             setSubmitting(true);
-
-            const endpoint = isDeposit ? "/api/transactions/deposit" : "/api/transactions/cashout";
 
             const payload = isDeposit
                 ? {
                     playerId:      player.id,
                     amount:        amt,
+                    fee:           feeAmt,
                     walletId:      parseInt(form.walletId),
                     walletMethod:  selWallet?.methodName || selWallet?.method || null,
                     walletName:    selWallet?.name || null,
-                    gameId:        form.gameId || null,
+                    gameId:        form.gameId,
                     notes:         form.notes,
                     bonusMatch:    form.bonusMatch   && amt > 0,
                     bonusSpecial:  form.bonusSpecial && amt > 0,
-                    // Only send referral flag if the player actually has a referrer
                     bonusReferral: form.bonusReferral && hasReferrer && amt > 0,
                 }
                 : {
@@ -361,24 +370,13 @@ function AddTransactionsPage() {
                     notes:        form.notes,
                 };
 
-            // const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-            //     method: "POST",
-            //     credentials: "include",
-            //     headers: { "Content-Type": "application/json" },
-            //     body: JSON.stringify(payload),
-            // });
-
-            // const data = await res.json();
-            // if (!res.ok) throw new Error(data.error || "Transaction failed");
-
             let data;
-if (isDeposit) {
-    data = await api.transactions.deposit(payload);
-} else {
-    data = await api.transactions.cashout(payload);
-}
+            if (isDeposit) {
+                data = await api.transactions.deposit(payload);
+            } else {
+                data = await api.transactions.cashout(payload);
+            }
 
-            // Append referral bonus confirmation to success message if applicable
             let msg = data.message || "Transaction recorded successfully!";
             if (data.transaction?.referralBonus) {
                 const rb = data.transaction.referralBonus;
@@ -389,6 +387,8 @@ if (isDeposit) {
             setForm(EMPTY);
             setQuery("");
             setPlayer(null);
+            setMatchUsedToday(false);
+            setReferralUsedEver(false);
 
             api.clearCache?.();
             await Promise.all([loadLedger(), loadGames(true), loadWallets()]);
@@ -401,36 +401,29 @@ if (isDeposit) {
         }
     };
 
-    // ══════════════════════════════════════════════════════════════
-    // UNDO
-    // ══════════════════════════════════════════════════════════════
+    // ══ UNDO ══════════════════════════════════════════════════
     const handleUndo = async (txId, playerIdFromTx) => {
         const numericId = String(txId).replace(/\D/g, "");
         try {
             setUndoingId(txId);
             setError(""); setUndoSuccess("");
-
             await api.transactions.undoTransaction(numericId);
-
             if (typeof api.clearCache === "function") api.clearCache();
             if (typeof api.games?.clearCache === "function") api.games.clearCache();
-
             await Promise.all([loadLedger(), loadWallets(), loadGames(true)]);
-
             if (player && playerIdFromTx && player.id === playerIdFromTx) {
                 try {
                     const r = await api.players.getPlayer(player.id);
-                    setPlayer(r?.data || player);
+                    const updated = r?.data || player;
+                    setPlayer(updated);
+                    computeEligibility(updated);
                 } catch (e) { console.error("Failed to refresh player:", e); }
             }
-
             window.dispatchEvent(new CustomEvent("transactionUndone", {
                 detail: { playerId: playerIdFromTx, txId, timestamp: new Date().toISOString() }
             }));
-
             setUndoSuccess(`✓ Transaction #${txId} reversed. All data synced.`);
             setTimeout(() => setUndoSuccess(""), 3000);
-
         } catch (err) {
             console.error("Undo error:", err);
             setError(err.message || "Undo failed — please try again.");
@@ -441,16 +434,14 @@ if (isDeposit) {
 
     const handleManualRefresh = async () => { await loadLedger(); };
 
-    // ══════════════════════════════════════════════════════════════
-    // RENDER
-    // ══════════════════════════════════════════════════════════════
+    // ══ RENDER ════════════════════════════════════════════════
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "28px", maxWidth: "inherit" }}>
 
             {/* ════ FORM CARD ════ */}
             <div style={CARD}>
 
-                {/* ── Tx type toggle ── */}
+                {/* Tx type toggle */}
                 <div style={{ display: "flex", gap: "10px", marginBottom: "22px" }}>
                     {[
                         { id: "deposit", label: "Deposit", Icon: ArrowDownLeft, color: "#10b981" },
@@ -472,7 +463,7 @@ if (isDeposit) {
                     ))}
                 </div>
 
-                {/* ── Info banner ── */}
+                {/* Info banner */}
                 <div style={{
                     marginBottom: "22px", padding: "14px 16px",
                     background: isDeposit ? "#f0fdf4" : "#fef2f2",
@@ -489,14 +480,14 @@ if (isDeposit) {
                         </p>
                         <p style={{ color: isDeposit ? "#166534" : "#991b1b", margin: 0, fontSize: "12px", lineHeight: "1.5" }}>
                             {isDeposit
-                                ? "Deposits credit the player and wallet in real-time. Match, Special, and Referral bonuses can be applied — points deducted from selected game."
-                                : "Cashouts deduct from player balance and wallet. Cashout limit is enforced (waived at 30-day streak). No bonuses apply to cashouts."
+                                ? "Game selection is required. Fee is optional — player receives (deposit − fee). Game stock deducted for received amount + any bonuses."
+                                : "Cashout deducts from player balance and wallet. Cashout limit enforced (waived at 30-day streak)."
                             }
                         </p>
                     </div>
                 </div>
 
-                {/* ── Alerts ── */}
+                {/* Alerts */}
                 {error && (
                     <div style={{ padding: "11px 14px", marginBottom: "18px", background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "8px", color: "#991b1b", fontSize: "13px", display: "flex", gap: "8px", alignItems: "center" }}>
                         <AlertCircle style={{ width: "14px", height: "14px", flexShrink: 0 }} /> {error}
@@ -587,10 +578,20 @@ if (isDeposit) {
                                             🔥 {streak}-day streak
                                         </span>
                                     )}
-                                    {/* Referrer pill — only appears once full profile confirms referredBy */}
                                     {hasReferrer && (
                                         <span style={{ padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166534" }}>
                                             👤 Referred by {player.referredBy?.name || `ID ${player.referredBy?.id || player.referredBy}`}
+                                        </span>
+                                    )}
+                                    {/* Bonus eligibility warnings */}
+                                    {matchUsedToday && (
+                                        <span style={{ padding: "4px 10px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#92400e" }}>
+                                            ⚠ Match bonus used today
+                                        </span>
+                                    )}
+                                    {referralUsedEver && (
+                                        <span style={{ padding: "4px 10px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#92400e" }}>
+                                            ⚠ Referral bonus already used
                                         </span>
                                     )}
                                     {!isDeposit && cashoutLimit > 0 && !streakWaived && (
@@ -608,8 +609,8 @@ if (isDeposit) {
                         </div>
                     </div>
 
-                    {/* ── Amount & Wallet ── */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                    {/* ── Amount, Fee, Wallet ── */}
+                    <div style={{ display: "grid", gridTemplateColumns: isDeposit ? "1fr 1fr 1fr" : "1fr 1fr", gap: "16px" }}>
                         <div>
                             <label style={LABEL}>
                                 {isDeposit ? "Deposit Amount ($) *" : `Cashout Amount ($) *${!streakWaived && cashoutLimit > 0 ? ` — Limit: ${fmt(cashoutLimit)}` : ""}`}
@@ -622,6 +623,26 @@ if (isDeposit) {
                                 <p style={{ color: "#ef4444", fontSize: "11px", marginTop: "4px" }}>⚠ Exceeds cashout limit of {fmt(cashoutLimit)}</p>
                             )}
                         </div>
+
+                        {/* ── Fee field (deposits only) ── */}
+                        {isDeposit && (
+                            <div>
+                                <label style={LABEL}>Fee ($) <span style={{ fontWeight: 400, fontSize: "10px", color: "#94a3b8" }}>optional</span></label>
+                                <input type="number" placeholder="0.00" min="0" step="0.01"
+                                    value={form.fee}
+                                    onChange={e => set("fee", e.target.value)}
+                                    style={{ ...INPUT, borderColor: feeAmt < 0 || (amt > 0 && feeAmt >= amt) ? "#fca5a5" : "#e2e8f0" }} />
+                                {amt > 0 && (
+                                    <p style={{ fontSize: "11px", marginTop: "4px", fontWeight: "600", color: feeAmt > 0 ? "#0ea5e9" : "#94a3b8" }}>
+                                        {feeAmt > 0
+                                            ? `Received: ${fmt(receivedAmt)} (${fmt(amt)} − ${fmt(feeAmt)} fee)`
+                                            : "No fee — full amount received"
+                                        }
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
                         <div>
                             <label style={LABEL}>{isDeposit ? "Credit Wallet *" : "Deduct From Wallet *"}</label>
                             <div style={{ position: "relative" }}>
@@ -638,7 +659,7 @@ if (isDeposit) {
                             {selWallet && amt > 0 && (
                                 <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: isDeposit ? "#22c55e" : walletInsufficient ? "#ef4444" : "#64748b" }}>
                                     {isDeposit
-                                        ? `✓ ${fmt(selWallet.balance)} → ${fmt(selWallet.balance + amt)}`
+                                        ? `✓ ${fmt(selWallet.balance)} → ${fmt(selWallet.balance + receivedAmt)}`
                                         : walletInsufficient
                                             ? `⚠ Only ${fmt(selWallet.balance)} available`
                                             : `${fmt(selWallet.balance)} → ${fmt(selWallet.balance - amt)}`
@@ -648,13 +669,13 @@ if (isDeposit) {
                         </div>
                     </div>
 
-                    {/* ── Game selector (deposit only) ── */}
+                    {/* ── Game selector (deposit only — REQUIRED) ── */}
                     {isDeposit && (
                         <div>
-                            <label style={LABEL}>Game * required</label>
+                            <label style={LABEL}>Game <span style={{ color: "#ef4444" }}>*</span> required for all deposits</label>
                             <div style={{ position: "relative" }}>
                                 <select value={form.gameId} onChange={e => set("gameId", e.target.value)}
-                                    style={{ ...SELECT, borderColor: anyBonus && !form.gameId ? "#fca5a5" : "#e2e8f0" }}>
+                                    style={{ ...SELECT, borderColor: gameRequired ? "#fca5a5" : "#e2e8f0" }}>
                                     <option value="">— Select a game —</option>
                                     {games.map(g => (
                                         <option key={g.id} value={g.id} disabled={g.pointStock <= 0}>
@@ -664,13 +685,16 @@ if (isDeposit) {
                                 </select>
                                 <ChevronDown style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
                             </div>
-                            {selGame && anyBonus && (
+                            {selGame && (
                                 <div style={{ marginTop: "8px", padding: "10px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: "500", background: !stockOk ? "#fee2e2" : "#f0fdf4", border: `1px solid ${!stockOk ? "#fca5a5" : "#86efac"}`, color: !stockOk ? "#991b1b" : "#166534" }}>
                                     {!stockOk
                                         ? `⚠ Insufficient — ${selGame.name} has ${selGame.pointStock.toFixed(2)} pts, need ${stockNeeded.toFixed(2)}`
                                         : `✓ ${selGame.name}: ${selGame.pointStock.toFixed(2)} pts → ${(selGame.pointStock - stockNeeded).toFixed(2)} pts after`
                                     }
                                 </div>
+                            )}
+                            {gameRequired && (
+                                <p style={{ color: "#ef4444", fontSize: "11px", marginTop: "4px" }}>⚠ Game is required to proceed</p>
                             )}
                         </div>
                     )}
@@ -685,58 +709,79 @@ if (isDeposit) {
                                     Deposit Bonuses
                                 </div>
                                 <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 14px" }}>
-                                    Toggle any applicable bonuses. Referral bonus requires the player to have been referred by someone.
+                                    Match bonus: once per day · Referral bonus: one-time only
                                 </p>
 
                                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                    {/* Match Bonus */}
+                                    <BonusToggle
+                                        bonus={DEPOSIT_BONUSES[0]}
+                                        amount={amt}
+                                        player={player}
+                                        enabled={form.bonusMatch}
+                                        onToggle={v => set("bonusMatch", v)}
+                                        eligible={!matchUsedToday}
+                                        disabledReason="Match bonus already used today for this player"
+                                    />
 
-                                    {/* Match & Special */}
-                                    {DEPOSIT_BONUSES.map(bonus => (
-                                        <BonusToggle
-                                            key={bonus.id}
-                                            bonus={bonus}
-                                            amount={amt}
-                                            player={player}
-                                            enabled={form[`bonus${bonus.id.charAt(0).toUpperCase() + bonus.id.slice(1)}`]}
-                                            onToggle={v => set(`bonus${bonus.id.charAt(0).toUpperCase() + bonus.id.slice(1)}`, v)}
-                                        />
-                                    ))}
+                                    {/* Special Bonus */}
+                                    <BonusToggle
+                                        bonus={DEPOSIT_BONUSES[1]}
+                                        amount={amt}
+                                        player={player}
+                                        enabled={form.bonusSpecial}
+                                        onToggle={v => set("bonusSpecial", v)}
+                                    />
 
-                                    {/* Referral — always rendered, disabled when no referrer */}
+                                    {/* Referral Bonus */}
                                     <BonusToggle
                                         bonus={REFERRAL_BONUS_DEF}
                                         amount={amt}
                                         player={player}
                                         enabled={form.bonusReferral}
                                         onToggle={v => set("bonusReferral", v)}
-                                        eligible={hasReferrer}
+                                        eligible={hasReferrer && !referralUsedEver}
                                         disabledReason={
-                                            !player       ? "Select a player first to check referral eligibility" :
+                                            !player       ? "Select a player first" :
                                             eligLoading   ? "Loading player profile…" :
-                                                            "This player was not referred by anyone — referral bonus unavailable"
+                                            referralUsedEver ? "Referral bonus already used for this player (one-time only)" :
+                                                            "This player was not referred by anyone"
                                         }
                                     />
                                 </div>
 
-                                {/* Grand total bar */}
-                                {totalBonus > 0 && (
-                                    <div style={{ marginTop: "12px", padding: "12px 16px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                        <div>
-                                            <span style={{ fontSize: "13px", fontWeight: "600", color: "#475569" }}>
-                                                Applying: {[
-                                                    form.bonusMatch                    && "Match (50%)",
-                                                    form.bonusSpecial                  && "Special (20%)",
-                                                    form.bonusReferral && hasReferrer  && "Referral (50%)",
-                                                ].filter(Boolean).join(" + ")}
-                                            </span>
-                                            {selGame && (
-                                                <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>
-                                                    Deducting {stockNeeded.toFixed(2)} pts from {selGame.name}
-                                                    {form.bonusReferral && hasReferrer ? " (referral counted ×2 — player & referrer each receive bonus)" : ""}
-                                                </div>
-                                            )}
+                                {/* Deposit summary bar */}
+                                {amt > 0 && (
+                                    <div style={{ marginTop: "12px", padding: "12px 16px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#64748b", marginBottom: "6px" }}>
+                                            <span>Deposit Amount</span>
+                                            <span style={{ fontWeight: "700", color: "#0f172a" }}>{fmt(amt)}</span>
                                         </div>
-                                        <span style={{ fontSize: "18px", fontWeight: "800", color: "#10b981" }}>+{fmt(totalBonus)}</span>
+                                        {feeAmt > 0 && (
+                                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#64748b", marginBottom: "6px" }}>
+                                                <span>Fee</span>
+                                                <span style={{ fontWeight: "700", color: "#ef4444" }}>− {fmt(feeAmt)}</span>
+                                            </div>
+                                        )}
+                                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#64748b", marginBottom: "6px", paddingTop: feeAmt > 0 ? "6px" : 0, borderTop: feeAmt > 0 ? "1px solid #e2e8f0" : "none" }}>
+                                            <span>Received by player</span>
+                                            <span style={{ fontWeight: "700", color: "#10b981" }}>{fmt(receivedAmt)}</span>
+                                        </div>
+                                        {totalBonus > 0 && (
+                                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#64748b", marginBottom: "6px" }}>
+                                                <span>Total Bonuses</span>
+                                                <span style={{ fontWeight: "700", color: "#10b981" }}>+ {fmt(totalBonus)}</span>
+                                            </div>
+                                        )}
+                                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", fontWeight: "700", paddingTop: "6px", borderTop: "1px solid #e2e8f0" }}>
+                                            <span style={{ color: "#0f172a" }}>Total credited to player</span>
+                                            <span style={{ color: "#10b981", fontSize: "16px" }}>{fmt(receivedAmt + totalBonus)}</span>
+                                        </div>
+                                        {selGame && stockNeeded > 0 && (
+                                            <div style={{ marginTop: "6px", fontSize: "11px", color: "#94a3b8" }}>
+                                                Game stock deduction: {fmt(stockNeeded)} pts from {selGame.name}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -767,10 +812,9 @@ if (isDeposit) {
                                 background: canSubmit ? (isDeposit ? "#10b981" : "#ef4444") : "#e2e8f0",
                                 color: canSubmit ? "#fff" : "#94a3b8",
                                 display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
-                                transition: "background .2s",
                             }}>
                             {submitting
-                                ? <><span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⏳</span> Processing…</>
+                                ? <span>⏳ Processing…</span>
                                 : isDeposit
                                     ? <><ArrowDownLeft style={{ width: "15px", height: "15px" }} /> Record Deposit</>
                                     : <><ArrowUpRight  style={{ width: "15px", height: "15px" }} /> Record Cashout</>
@@ -786,26 +830,22 @@ if (isDeposit) {
                     <div>
                         <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: "#0f172a" }}>All Transactions</h3>
                         <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#94a3b8" }}>
-                            Deposits · Cashouts · Bonuses — with wallet, game & balance details
+                            Deposits · Cashouts · Bonuses — with fee, received amount, wallet & game details
                         </p>
                     </div>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                         <div
                             onClick={() => setAutoRefresh(!autoRefresh)}
-                            title={autoRefresh ? "Auto-refresh ON (every 10s)" : "Auto-refresh OFF"}
-                            style={{ padding: "6px 12px", borderRadius: "8px", border: "1px solid #e2e8f0", background: autoRefresh ? "#dcfce7" : "#fff", color: autoRefresh ? "#166534" : "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px", transition: "all .2s" }}>
+                            style={{ padding: "6px 12px", borderRadius: "8px", border: "1px solid #e2e8f0", background: autoRefresh ? "#dcfce7" : "#fff", color: autoRefresh ? "#166534" : "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}>
                             <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: autoRefresh ? "#22c55e" : "#cbd5e1" }} />
                             Auto {autoRefresh ? "ON" : "OFF"}
                         </div>
                         <button onClick={handleManualRefresh} disabled={ledgerLoading}
-                            title="Refresh transaction list"
                             style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "7px 12px", cursor: "pointer", color: "#64748b", display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: "600" }}>
                             <RefreshCw style={{ width: "13px", height: "13px", animation: ledgerLoading ? "spin 1s linear infinite" : "none" }} />
                             Refresh
                         </button>
-                        <span style={{ fontSize: "11px", color: "#94a3b8", marginLeft: "4px" }}>
-                            {lastRefresh.toLocaleTimeString()}
-                        </span>
+                        <span style={{ fontSize: "11px", color: "#94a3b8", marginLeft: "4px" }}>{lastRefresh.toLocaleTimeString()}</span>
                     </div>
                 </div>
 
@@ -818,7 +858,7 @@ if (isDeposit) {
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                             <thead>
                                 <tr style={{ background: "#f8fafc" }}>
-                                    {["ID", "Player", "Type", "Amount", "Game", "Wallet Info", "Bal Before → After", "Status", "Date", ""].map(h => (
+                                    {["ID", "Player", "Type", "Deposit Amt", "Fee", "Received Amt", "Game", "Wallet", "Bal Before→After", "Status", "Date", ""].map(h => (
                                         <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontWeight: "600", color: "#64748b", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.4px", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>{h}</th>
                                     ))}
                                 </tr>
@@ -838,6 +878,7 @@ if (isDeposit) {
                                     const positive  = !["Cashout", "cashout"].includes(tx.type);
                                     const isUndoing = undoingId === tx.id;
                                     const canUndo   = (tx.status === "COMPLETED" || tx.status === "PENDING") && !isUndoing;
+                                    const isDepositRow = ["Deposit", "deposit"].includes(tx.type);
 
                                     return (
                                         <tr key={tx.id ?? i}
@@ -858,8 +899,27 @@ if (isDeposit) {
                                                 </span>
                                             </td>
 
+                                            {/* Deposit Amount */}
                                             <td style={{ padding: "11px 14px", fontWeight: "700", fontSize: "14px", color: positive ? "#10b981" : "#ef4444", whiteSpace: "nowrap" }}>
                                                 {positive ? "+" : "−"}{fmt(tx.amount)}
+                                            </td>
+
+                                            {/* Fee */}
+                                            <td style={{ padding: "11px 14px", fontSize: "12px", color: "#64748b", whiteSpace: "nowrap" }}>
+                                                {isDepositRow && tx.fee != null && tx.fee > 0
+                                                    ? <span style={{ color: "#ef4444", fontWeight: "600" }}>−{fmt(tx.fee)}</span>
+                                                    : <span style={{ color: "#cbd5e1" }}>—</span>
+                                                }
+                                            </td>
+
+                                            {/* Received Amt */}
+                                            <td style={{ padding: "11px 14px", fontSize: "13px", whiteSpace: "nowrap" }}>
+                                                {isDepositRow
+                                                    ? <span style={{ fontWeight: "700", color: "#0ea5e9" }}>
+                                                        {tx.receivedAmt != null ? fmt(tx.receivedAmt) : fmt(tx.amount)}
+                                                      </span>
+                                                    : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>
+                                                }
                                             </td>
 
                                             <td style={{ padding: "11px 14px" }}>
@@ -905,8 +965,7 @@ if (isDeposit) {
                                                 {canUndo && (
                                                     <button
                                                         onClick={() => handleUndo(tx.id, tx.playerId)}
-                                                        title="Undo — reverses transaction and syncs all data in real-time"
-                                                        style={{ background: "none", border: "1px solid #e2e8f0", color: "#64748b", cursor: "pointer", fontWeight: "600", fontSize: "12px", borderRadius: "6px", padding: "4px 10px", display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap", transition: "all .15s" }}
+                                                        style={{ background: "none", border: "1px solid #e2e8f0", color: "#64748b", cursor: "pointer", fontWeight: "600", fontSize: "12px", borderRadius: "6px", padding: "4px 10px", display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}
                                                         onMouseEnter={e => { e.currentTarget.style.borderColor = "#ef4444"; e.currentTarget.style.color = "#ef4444"; }}
                                                         onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.color = "#64748b"; }}>
                                                         ↩ Undo
@@ -923,9 +982,7 @@ if (isDeposit) {
                 )}
             </div>
 
-            <style>{`
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-            `}</style>
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 }
