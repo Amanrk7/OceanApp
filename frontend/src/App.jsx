@@ -428,7 +428,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
         <div className="ob-drawer-footer">
           <div style={{ height: '1px', background: '#1e293b', marginBottom: '4px' }} />
            <button
-            className="ob-navlink-ui-theme"
+            className="ob-navlink-ui-theme ob-navlink-drawer"
             style={{ color: '#ef4444' }}
           >
             <HugeiconsIcon icon={DarkModeIcon} />
