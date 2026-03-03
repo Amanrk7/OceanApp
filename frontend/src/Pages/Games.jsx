@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useContext } from 'react';
 import { api } from '../api';
+import { CurrentUserContext } from "./Context/currentUser.jsx";
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -75,6 +76,7 @@ function Toast({ toasts }) {
 // ─── Game Card ────────────────────────────────────────────────
 
 function GameCard({ game, onUpdate, onDelete }) {
+  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [saving, setSaving] = useState(false);
@@ -160,6 +162,7 @@ function GameCard({ game, onUpdate, onDelete }) {
           e.currentTarget.style.color = '#ef4444';
           e.currentTarget.style.borderColor = '#fecaca';
         }}
+        disabled={
       >
         ✕
       </button>
@@ -192,25 +195,32 @@ function GameCard({ game, onUpdate, onDelete }) {
           <span>Point Stock</span>
           {!editing && (
             <button
-              onClick={startEdit}
-              style={{
-                background: 'none', border: '1px solid #e2e8f0',
-                borderRadius: 6, padding: '2px 8px',
-                fontSize: 10, fontWeight: 600, color: '#6366f1',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = '#eef2ff';
-                e.currentTarget.style.borderColor = '#6366f1';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'none';
-                e.currentTarget.style.borderColor = '#e2e8f0';
-              }}
-            >
-              ✎ Edit
-            </button>
+  onClick={startEdit}
+  disabled={!isAdmin}
+  style={{
+    background: 'none',
+    border: '1px solid #e2e8f0',
+    borderRadius: 6, padding: '2px 8px',
+    fontSize: 10, fontWeight: 600,
+    color: isAdmin ? '#6366f1' : '#cbd5e1',
+    cursor: isAdmin ? 'pointer' : 'not-allowed',
+    display: 'flex', alignItems: 'center', gap: 4,
+    transition: 'all 0.15s',
+    opacity: isAdmin ? 1 : 0.4,
+  }}
+  onMouseEnter={e => {
+    if (!isAdmin) return;
+    e.currentTarget.style.background = '#eef2ff';
+    e.currentTarget.style.borderColor = '#6366f1';
+  }}
+  onMouseLeave={e => {
+    if (!isAdmin) return;
+    e.currentTarget.style.background = 'none';
+    e.currentTarget.style.borderColor = '#e2e8f0';
+  }}
+>
+  ✎ Edit
+</button>
           )}
         </div>
 
@@ -596,6 +606,7 @@ const FILTER_TABS = [
 let toastCounter = 0;
 
 export default function Games() {
+  const { usr, setUsr } = useContext(CurrentUserContext);
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
