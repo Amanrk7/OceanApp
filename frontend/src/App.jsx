@@ -365,11 +365,11 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
           <button
             className="ob-navlink"
             aria-label="Logout"
-            style={{ color: '#fff' }}
+            style={{ color: '#fffff' }}
           >
             <HugeiconsIcon icon={DarkModeIcon} size={20} />
           </button>
-          <span className="ob-nav-tooltip">Dark Mode</</span>
+          <span className="ob-nav-tooltip">Dark Mode</span>
           <button
             className="ob-navlink"
             onClick={onLogout}
