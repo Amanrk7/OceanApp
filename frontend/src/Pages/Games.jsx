@@ -719,7 +719,8 @@ export default function Games() {
           </p>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => { if (isAdmin) setShowModal(true); }}  // ← add isAdmin check
+          disabled={!isAdmin}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '10px 18px', borderRadius: 10, border: 'none',
