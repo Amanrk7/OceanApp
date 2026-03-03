@@ -78,7 +78,9 @@ function Toast({ toasts }) {
 // ─── Game Card ────────────────────────────────────────────────
 
 function GameCard({ game, onUpdate, onDelete }) {
-  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
+
+  const { usr, setUsr } = useContext(CurrentUserContext);
+  const isAdmin = usr?.role === 'ADMIN' || usr?.role === 'SUPER_ADMIN';
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [saving, setSaving] = useState(false);
@@ -608,7 +610,7 @@ const FILTER_TABS = [
 let toastCounter = 0;
 
 export default function Games() {
-  const { usr, setUsr } = useContext(CurrentUserContext);
+  
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
