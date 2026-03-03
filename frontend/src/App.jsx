@@ -361,7 +361,6 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 
       {/* Footer */}
       <div className="ob-sidebar-footer">
-    
         <div className="ob-nav-item">
           <button
             className="ob-navlink"
@@ -371,9 +370,6 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
             <HugeiconsIcon icon={DarkModeIcon} size={20} />
           </button>
           <span className="ob-nav-tooltip">Dark Mode</</span>
-        </div>
-      
-        <div className="ob-nav-item">
           <button
             className="ob-navlink"
             onClick={onLogout}
