@@ -498,7 +498,7 @@ export default function Dashboard() {
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                         <div>
-                            <h3 style={{ fontSize: 'clamp(24px, 5vw, 40px)', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>${profitGoal.toFixed(2)}</h3>
+                            <h3 style={{ fontSize: 'clamp(24px, 5vw, 40px)', fontWeight: '700', marginBottom: '12px' }}>${profitGoal.toFixed(2)}</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <TrendingDown style={{ width: '16px', height: '16px', color: '#16a34a' }} />
