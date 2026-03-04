@@ -316,7 +316,6 @@ const CSS = `
   th { text-align: left; padding: 11px 14px; font-weight: 600; color: var(--color-text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--color-border); white-space: nowrap; }
   td { padding: 12px 14px; border-bottom: 1px solid var(--color-border); color: var(--color-text); }
   tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--color-table-row-hover); }
 
   /* ── INPUTS (global — used across pages) ─────────────────────────────── */
   input, select, textarea {
