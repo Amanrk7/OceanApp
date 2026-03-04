@@ -104,7 +104,6 @@ const CSS = `
     --color-sidebar: #090d16;
     --color-sidebar-text: #64748b;
     --color-sidebar-active-text: #f1f5f9;
-    --color-hover-tab: rgba(56,189,248,.12);
     --color-input-bg: #1e293b;
     --color-table-head: #111827;
     --color-table-row-hover: #1a2236;
