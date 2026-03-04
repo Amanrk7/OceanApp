@@ -332,6 +332,9 @@ const CSS = `
   .ob-spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid var(--color-border); border-top-color: var(--brand); border-radius: 50%; animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   button:focus { outline: 2px solid rgba(255,255,255,0.2); outline-offset: 2px; }
+
+  body{
+  filter: grayscale(1);}
 `;
 
 // ── Nav items ──────────────────────────────────────────────────────────────
