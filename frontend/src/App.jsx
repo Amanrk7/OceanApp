@@ -5,7 +5,7 @@ import { AddPlayerProvider } from "./Context/addPlayer.jsx";
 import { PlayerDashboardPlayerNameProvider } from "./Context/playerDashboardPlayerNamecontext.jsx";
 import { ShiftStatusProvider } from "./Context/membershiftStatus.jsx";
 import { CurrentUserProvider } from "./Context/currentUser.jsx";
-import { ThemeProvider, useTheme } from "./Context/ThemeContext.jsx"; // ← NEW
+import { ThemeProvider, useTheme } from "./Context/Themecontext.jsx"; // ← NEW
 import AnalyticsDashboard from "./Pages/dashboard";
 import Players from "./Pages/Players";
 import Attendance from "./Pages/Attendance";
