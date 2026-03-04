@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { CheckCircle, AlertCircle, Search, X, Gift, RefreshCw, Flame, Zap } from "lucide-react";
+import { CheckCircle, AlertCircle, Search, X, Gift, RefreshCw, Flame, Tag } from "lucide-react";
 import { api } from "../api";
 import { fmtTX } from "../utils/txTime";
 
@@ -31,10 +31,10 @@ const BONUS_TYPES = [
     },
     {
         id: "other",
-        label: "Other Bonus",
-        icon: Gift,
+        label: "Custom Bonus",
+        icon: Tag,
         color: { bg: "#eff6ff", border: "#bfdbfe", dot: "#3b82f6", text: "#1d4ed8", badge: "#dbeafe" },
-        description: () => "Enter a custom bonus amount to credit to the player",
+        description: () => "Enter a label (e.g. 'Tournament Prize') and a custom amount",
     },
 ];
 
@@ -52,10 +52,11 @@ export default function BonusPage() {
     const dropRef = useRef(null);
 
     // ── Form state ────────────────────────────────────────────────────────────
-    const [bonusType, setBonusType]         = useState("streak");
-    const [amount, setAmount]               = useState("");
+    const [bonusType, setBonusType]           = useState("streak");
+    const [customLabel, setCustomLabel]       = useState("");   // only used when bonusType === "other"
+    const [amount, setAmount]                 = useState("");
     const [selectedGameId, setSelectedGameId] = useState("");
-    const [notes, setNotes]                 = useState("");
+    const [notes, setNotes]                   = useState("");
 
     // ── Data state ────────────────────────────────────────────────────────────
     const [games, setGames]                     = useState([]);
@@ -154,7 +155,8 @@ export default function BonusPage() {
     const amt          = parseFloat(amount) || 0;
     const selectedGame = games.find(g => g.id === selectedGameId) || null;
     const stockOk      = selectedGame ? amt <= selectedGame.pointStock : false;
-    const canSubmit    = !!player?.id && amt > 0 && !!selectedGameId && stockOk && !submitting;
+    const customLabelOk = bonusType === "streak" || customLabel.trim().length > 0;
+    const canSubmit    = !!player?.id && amt > 0 && !!selectedGameId && stockOk && customLabelOk && !submitting;
 
     // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = async (e) => {
@@ -164,7 +166,12 @@ export default function BonusPage() {
         if (!player?.id)       { setError("Please select a player."); return; }
         if (!selectedGameId)   { setError("Please select a game."); return; }
         if (!amt || amt <= 0)  { setError("Enter a valid bonus amount."); return; }
+        if (bonusType === "other" && !customLabel.trim()) { setError("Enter a label for the custom bonus."); return; }
         if (!stockOk)          { setError(`Insufficient game stock. ${selectedGame?.name} has ${selectedGame?.pointStock?.toFixed(0)} pts, need ${amt.toFixed(2)} pts.`); return; }
+
+        // For custom bonus: send the label text as bonusType so backend
+        // uses it as the description prefix (requires backend one-liner — see note below).
+        const bonusTypePayload = bonusType === "streak" ? "streak" : customLabel.trim();
 
         try {
             setSubmitting(true);
@@ -172,23 +179,22 @@ export default function BonusPage() {
                 playerId:  player.id,
                 amount:    amt,
                 gameId:    selectedGameId,
-                bonusType: bonusType,   // 'streak' | 'other'  (backend maps 'other' → 'CUSTOM')
+                bonusType: bonusTypePayload,
                 notes:     notes.trim() || undefined,
             });
 
-            let msg = `${fmt(amt)} ${bonusType === "streak" ? "Streak Bonus" : "Bonus"} granted to ${player.name} from ${selectedGame?.name}.`;
+            const displayLabel = bonusType === "streak" ? "Streak Bonus" : customLabel.trim();
+            let msg = `${fmt(amt)} ${displayLabel} granted to ${player.name} from ${selectedGame?.name}.`;
             if (bonusType === "streak") msg += " Streak has been reset to 0.";
             setSuccess(msg);
 
-            // Reset form
             setAmount("");
             setNotes("");
             setSelectedGameId("");
+            setCustomLabel("");
 
-            // Refresh player data (streak resets)
             const fresh = await api.players.getPlayer(player.id);
             setPlayer(fresh?.data || player);
-
             await Promise.all([loadGames(true), loadLedger()]);
         } catch (err) {
             setError(err.message || "Failed to grant bonus. Please try again.");
@@ -201,6 +207,7 @@ export default function BonusPage() {
         setAmount("");
         setNotes("");
         setSelectedGameId("");
+        setCustomLabel("");
         setError("");
         setSuccess("");
         clearPlayer();
@@ -208,13 +215,18 @@ export default function BonusPage() {
     };
 
     // ── Ledger type resolver ──────────────────────────────────────────────────
+    // Description format from backend: "<BonusLabel> from <GameName> — <notes>"
+    // For custom bonuses the label is whatever the admin typed.
     const resolveLedgerType = (b) => {
-        const raw  = (b.bonusType || "").toLowerCase();
-        const desc = (b.description || "").toLowerCase();
-        if (raw === "streak"   || desc.includes("streak"))   return { label: "Streak Bonus",   emoji: "🔥", bg: "#fffbeb", color: "#92400e" };
-        if (raw === "referral" || desc.includes("referral")) return { label: "Referral Bonus", emoji: "👤", bg: "#f0fdf4", color: "#166534" };
-        if (raw === "match"    || desc.includes("match"))    return { label: "Match Bonus",    emoji: "💰", bg: "#eff6ff", color: "#1d4ed8" };
-        return { label: "Other Bonus", emoji: "🎁", bg: "#f1f5f9", color: "#475569" };
+        const desc = (b.description || "");
+        const descLower = desc.toLowerCase();
+        if (descLower.startsWith("streak bonus"))   return { label: "Streak Bonus",   emoji: "🔥", bg: "#fffbeb", color: "#92400e" };
+        if (descLower.startsWith("referral bonus")) return { label: "Referral Bonus", emoji: "👤", bg: "#f0fdf4", color: "#166534" };
+        if (descLower.startsWith("match bonus"))    return { label: "Match Bonus",    emoji: "💰", bg: "#eff6ff", color: "#1d4ed8" };
+        // Extract custom label: everything before " from " in description
+        const fromIdx = desc.indexOf(" from ");
+        const customType = fromIdx > 0 ? desc.slice(0, fromIdx).trim() : "Custom Bonus";
+        return { label: customType, emoji: "🏷️", bg: "#f5f3ff", color: "#5b21b6" };
     };
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -368,6 +380,34 @@ export default function BonusPage() {
                                 );
                             })}
                         </div>
+
+                        {/* Custom label input — only shown when "other" is selected */}
+                        {bonusType === "other" && (
+                            <div style={{ marginTop: "12px" }}>
+                                <label style={LABEL}>
+                                    Custom Bonus Label *
+                                    <span style={{ marginLeft: "6px", fontWeight: "400", textTransform: "none", letterSpacing: 0, color: "#94a3b8" }}>
+                                        — this will appear as the bonus type in the ledger and transactions
+                                    </span>
+                                </label>
+                                <div style={{ position: "relative" }}>
+                                    <Tag style={{ position: "absolute", left: "11px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Tournament Prize, Loyalty Bonus, Weekend Promo…"
+                                        value={customLabel}
+                                        onChange={e => setCustomLabel(e.target.value)}
+                                        maxLength={60}
+                                        style={{ ...INPUT, paddingLeft: "34px", borderColor: customLabel.trim() ? "#bfdbfe" : "#e2e8f0" }}
+                                    />
+                                </div>
+                                {customLabel.trim() && (
+                                    <div style={{ marginTop: "6px", fontSize: "11px", color: "#5b21b6", fontWeight: "600" }}>
+                                        🏷️ Will display as: <strong>"{customLabel.trim()}"</strong> in ledger &amp; transactions
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* ── 3. Amount + Game row ── */}
@@ -460,7 +500,7 @@ export default function BonusPage() {
                                     {stockOk ? `✓ Ready to grant` : "⚠ Cannot grant — insufficient game stock"}
                                 </div>
                                 <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
-                                    {bonusType === "streak" ? "Streak Bonus" : "Other Bonus"} · {selectedGame.name} · {player.name}
+                                    {bonusType === "streak" ? "Streak Bonus" : (customLabel.trim() || "Custom Bonus")} · {selectedGame.name} · {player.name}
                                     {bonusType === "streak" && <span style={{ color: "#f59e0b", marginLeft: "6px" }}>· Streak resets to 0</span>}
                                 </div>
                             </div>
@@ -488,7 +528,7 @@ export default function BonusPage() {
                             }}>
                             {submitting
                                 ? <><span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⏳</span> Granting…</>
-                                : <><Gift style={{ width: "15px", height: "15px" }} /> Grant {bonusType === "streak" ? "Streak" : ""} Bonus {amt > 0 ? `(+${fmt(amt)})` : ""}</>
+                                : <><Gift style={{ width: "15px", height: "15px" }} /> Grant {bonusType === "streak" ? "Streak Bonus" : (customLabel.trim() || "Custom Bonus")} {amt > 0 ? `(+${fmt(amt)})` : ""}</>
                             }
                         </button>
                     </div>
@@ -528,7 +568,7 @@ export default function BonusPage() {
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                             <thead>
                                 <tr style={{ background: "#f8fafc", position: "sticky", top: 0, zIndex: 1 }}>
-                                    {["#", "Player", "Bonus Type", "Amount", "Game", "Wallet", "Bal. Before → After", "Date"].map(h => (
+                                    {["#", "Player", "Bonus Type", "Amount", "Game", "Bal. Before → After", "Date"].map(h => (
                                         <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontWeight: "600", color: "#64748b", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.4px", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>{h}</th>
                                     ))}
                                 </tr>
@@ -570,16 +610,6 @@ export default function BonusPage() {
                                                 {b.gameName
                                                     ? <span style={{ display: "inline-block", padding: "3px 9px", background: "#f1f5f9", borderRadius: "6px", fontSize: "12px", fontWeight: "500", color: "#475569", whiteSpace: "nowrap" }}>
                                                         🎮 {b.gameName}
-                                                    </span>
-                                                    : <span style={{ color: "#cbd5e1" }}>—</span>
-                                                }
-                                            </td>
-
-                                            {/* Wallet */}
-                                            <td style={{ padding: "11px 14px" }}>
-                                                {b.walletMethod
-                                                    ? <span style={{ display: "inline-block", padding: "3px 9px", background: "#f0f9ff", borderRadius: "6px", fontSize: "12px", fontWeight: "500", color: "#0ea5e9", whiteSpace: "nowrap" }}>
-                                                        💳 {b.walletMethod}
                                                     </span>
                                                     : <span style={{ color: "#cbd5e1" }}>—</span>
                                                 }
