@@ -45,8 +45,6 @@ const INPUT = {
 };
 
 // ─── Social handle validation rules ──────────────────────────────────────────
-// These check the *format* of handles client-side (real API verification would
-// require server-side calls due to CORS restrictions on social platform APIs).
 const SOCIAL_RULES = {
     facebook: { pattern: /^[a-zA-Z0-9.]{1,50}$/, hint: '1–50 chars: letters, numbers, dots only', url: (h) => `https://facebook.com/${h}` },
     telegram: { pattern: /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/, hint: '5–32 chars, starts with a letter, letters/numbers/underscores', url: (h) => `https://t.me/${h}` },
@@ -56,7 +54,7 @@ const SOCIAL_RULES = {
 };
 
 function validateHandle(platform, handle) {
-    if (!handle || !handle.trim()) return null; // empty = OK (optional)
+    if (!handle || !handle.trim()) return null;
     const rule = SOCIAL_RULES[platform];
     if (!rule) return null;
     return rule.pattern.test(handle.trim()) ? 'valid' : 'invalid';
@@ -161,12 +159,10 @@ function SocialField({ platform, label, value, onChange }) {
                     placeholder="handle"
                     style={{ ...INPUT, paddingLeft: '26px', paddingRight: hasVal ? '28px' : '12px', borderColor, boxShadow: focused ? `0 0 0 3px ${borderColor}22` : 'none' }}
                 />
-                {/* Status indicator dot */}
                 {hasVal && (
                     <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', width: '8px', height: '8px', borderRadius: '50%', background: status === 'valid' ? '#22c55e' : C.red, flexShrink: 0 }} />
                 )}
             </div>
-            {/* Hint shown while focused or if invalid */}
             {hasVal && (focused || status === 'invalid') && (
                 <p style={{ margin: '4px 0 0', fontSize: '10px', color: status === 'valid' ? '#16a34a' : C.red, display: 'flex', alignItems: 'flex-start', gap: '4px', lineHeight: '1.4' }}>
                     {status === 'valid'
@@ -182,7 +178,7 @@ function SocialField({ platform, label, value, onChange }) {
     );
 }
 
-// ─── Dynamic list section (Referrals / Friends / Sources) ─────────────────────
+// ─── Dynamic list section ─────────────────────────────────────────────────────
 function DynamicList({ label, items, onAdd, onChange, onRemove, placeholder, icon: IconEl }) {
     return (
         <div>
@@ -224,11 +220,11 @@ export default function AddNewPlayer({ onIssueCreated }) {
     const { shiftActive } = useContext(ShiftStatusContext);
 
     const EMPTY = {
-        name: '', username: '', password: '', email: '', phone: '',
+        name: '', username: '', email: '', phone: '',
         facebook: '', telegram: '', instagram: '', x: '', snapchat: '',
         tier: 'BRONZE',
-        playerNames: [''],   // referrals
-        friends: [''],       // friends (usernames of existing players)
+        playerNames: [''],
+        friends: [''],
         sources: [''],
     };
 
@@ -236,12 +232,10 @@ export default function AddNewPlayer({ onIssueCreated }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const [showPass, setShowPass] = useState(false);
 
     const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
     const onChange = (e) => set(e.target.name, e.target.value);
 
-    // Dynamic list helpers for any array field
     const listOf = (key) => ({
         add: () => setForm(p => ({ ...p, [key]: [...p[key], ''] })),
         change: (i, v) => setForm(p => ({ ...p, [key]: p[key].map((x, idx) => idx === i ? v : x) })),
@@ -251,12 +245,10 @@ export default function AddNewPlayer({ onIssueCreated }) {
     const frds = listOf('friends');
     const srcs = listOf('sources');
 
-    // Social handle change
     const onSocialChange = useCallback((platform, val) => {
         setForm(p => ({ ...p, [platform]: val }));
     }, []);
 
-    // Check if any social has an invalid format (non-empty + failing pattern)
     const socialWarnings = ['facebook', 'telegram', 'instagram', 'x', 'snapchat'].filter(
         (p) => form[p] && form[p].trim() && validateHandle(p, form[p]) === 'invalid'
     );
@@ -272,13 +264,9 @@ export default function AddNewPlayer({ onIssueCreated }) {
         e.preventDefault();
         setError(''); setSuccess('');
 
-        // Required field checks
         if (!form.name.trim()) return setError('Full name is required.');
         if (!form.username.trim()) return setError('Username is required.');
-        if (!form.password.trim()) return setError('Password is required.');
-        if (!form.email.trim()) return setError('Email address is required.');
 
-        // Warn if social handles have invalid format but still allow submit
         if (socialWarnings.length > 0) {
             const names = socialWarnings.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
             setError(`Please fix the format for: ${names}. Clear the field to leave it blank, or correct the handle.`);
@@ -290,8 +278,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
             await api.players.createPlayer({
                 name: form.name.trim(),
                 username: form.username.trim(),
-                password: form.password,
-                email: form.email.trim(),
+                email: form.email.trim() || null,
                 phone: form.phone.trim() || null,
                 tier: form.tier,
                 facebook: form.facebook.trim() || null,
@@ -391,24 +378,8 @@ export default function AddNewPlayer({ onIssueCreated }) {
                             </div>
                         </Field>
 
-                        <Field label="Password" required>
-                            <div style={{ position: 'relative' }}>
-                                <span style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: C.grayLt, display: 'flex', pointerEvents: 'none' }}><ILock /></span>
-                                <input
-                                    type={showPass ? 'text' : 'password'} name="password"
-                                    value={form.password} onChange={onChange}
-                                    placeholder="Set a secure password"
-                                    style={{ ...INPUT, paddingLeft: '36px', paddingRight: '70px' }} required
-                                />
-                                <button type="button" onClick={() => setShowPass(p => !p)}
-                                    style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: '4px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: '5px', padding: '3px 7px', fontSize: '10px', fontWeight: '700', color: C.gray, cursor: 'pointer' }}>
-                                    {showPass ? <><IEyeOff /> HIDE</> : <><IEye /> SHOW</>}
-                                </button>
-                            </div>
-                        </Field>
-
-                        <Field label="Email Address" required>
-                            <IconInput IconEl={IMail} type="email" name="email" value={form.email} onChange={onChange} placeholder="player@email.com" required />
+                        <Field label="Email Address" hint="Optional">
+                            <IconInput IconEl={IMail} type="email" name="email" value={form.email} onChange={onChange} placeholder="player@email.com" />
                         </Field>
 
                         <Field label="Phone Number" hint="Optional">
@@ -443,7 +414,6 @@ export default function AddNewPlayer({ onIssueCreated }) {
                         <span style={{ fontWeight: '400', fontSize: '10px', letterSpacing: 0, textTransform: 'none', color: C.grayLt, marginLeft: '6px' }}>— all optional</span>
                     </SectionHead>
 
-                    {/* Validation legend */}
                     <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', padding: '10px 14px', background: C.bg, borderRadius: '8px', border: `1px solid ${C.border}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: C.gray }}>
                             <IShield />
@@ -475,7 +445,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
                     </div>
                 </div>
 
-                {/* ══ 4 · Referrals, Friends & Sources ═════════════════════════ */}
+                {/* ══ 4 · Connections & Sources ════════════════════════════════ */}
                 <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '24px 28px' }}>
                     <SectionHead step="4">
                         Connections & Sources
