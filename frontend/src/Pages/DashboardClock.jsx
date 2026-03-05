@@ -103,6 +103,7 @@ export default function DashboardClock() {
             gap: "0",
             userSelect: "none",
             width: "100%",
+            border: 'none',
         }}>
 
             {/* ── Live clock ────────────────────────────────────────────────── */}
