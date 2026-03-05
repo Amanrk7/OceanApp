@@ -329,9 +329,9 @@ export default function PlayerDashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1100px', margin: '0 auto', width: '100%' }}>
 
             {/* ── BREADCRUMB ──────────────────────────────────────────────── */}
-            <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 14px', background: C.white, borderRadius: '10px', border: `1px solid ${C.border}`, width: 'fit-content', flexWrap: 'wrap' }}>
+            <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0px', borderRadius: '10px', width: 'fit-content', flexWrap: 'wrap' }}>
                 {[
-                    { label: '🏠 Dashboard', onClick: () => navigate('/') },
+                    { label: 'Dashboard', onClick: () => navigate('/') },
                     { label: 'Players', onClick: () => navigate('/?page=players') },
                     { label: player.name, onClick: null },
                 ].map((item, i, arr) => (
@@ -344,7 +344,7 @@ export default function PlayerDashboard() {
                                 {item.label}
                             </button>
                         ) : (
-                            <span style={{ fontWeight: '700', fontSize: '13px', color: C.slate, padding: '2px 6px' }}>{item.label}</span>
+                            <span style={{ fontWeight: '700', fontSize: '13px', padding: '2px 6px' }}>{item.label}</span>
                         )}
                         {i < arr.length - 1 && <span style={{ color: C.grayLt, fontSize: '16px', userSelect: 'none' }}>›</span>}
                     </React.Fragment>
