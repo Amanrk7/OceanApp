@@ -665,7 +665,8 @@ export default function Dashboard() {
                             background: "var(--color-cards-background)",
                             borderRadius: "14px",
                             overflow: "hidden",   // ← so the dark clock card clips to the card's border radius
-                            boxShadow: "0 2px 8px rgba(15,23,42,.08)"
+                            boxShadow: "0 2px 8px rgba(15,23,42,.08)", 
+                            border: 'none',
                         }}>
                             <DashboardClock />
                         </div>
