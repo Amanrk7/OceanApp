@@ -609,7 +609,7 @@ export default function BonusPage() {
                                             <td style={{ padding: "11px 14px" }}>
                                                 {b.gameName
                                                     ? <span style={{ display: "inline-block", padding: "3px 9px", background: "#f1f5f9", borderRadius: "6px", fontSize: "12px", fontWeight: "500", color: "#475569", whiteSpace: "nowrap" }}>
-                                                        {b.gameName}
+                                                          {b.gameName.match(/^[^-]+/)[0].trim()}
                                                     </span>
                                                     : <span style={{ color: "#cbd5e1" }}>—</span>
                                                 }
