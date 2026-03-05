@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useContext } from "react";
-import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import { api } from "./api";
 import { AddPlayerProvider } from "./Context/addPlayer.jsx";
 import { PlayerDashboardPlayerNameProvider } from "./Context/playerDashboardPlayerNamecontext.jsx";
 import { ShiftStatusProvider } from "./Context/membershiftStatus.jsx";
 import { CurrentUserProvider } from "./Context/currentUser.jsx";
-import { ThemeProvider, useTheme } from "./Context/Themecontext.jsx"; // ← NEW
+import { ThemeProvider, useTheme } from "./Context/Themecontext.jsx";
 import AnalyticsDashboard from "./Pages/dashboard";
 import Players from "./Pages/Players";
 import Attendance from "./Pages/Attendance";
@@ -35,7 +35,7 @@ import { ManagerIcon } from '@hugeicons/core-free-icons';
 import { Logout01Icon } from '@hugeicons/core-free-icons';
 import { TaskEdit01Icon } from '@hugeicons/core-free-icons';
 import { CheckListIcon } from '@hugeicons/core-free-icons';
-import { Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons'; // ← moon/sun icons
+import { Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
 import PlayerDashboard from "./Pages/PlayerDashboard.jsx";
 import { AddPlayerContext } from "./Context/addPlayer.jsx";
 import { CurrentUserContext } from "./Context/currentUser.jsx";
@@ -44,16 +44,11 @@ import AdminTaskPage from "./Pages/Admintaskpage .jsx";
 import TeamDashboard from "./Pages/Teamdashboard .jsx";
 import AdminReportPage from "./Pages/Adminreportpage .jsx";
 
-// ── Sidebar width constant ─────────────────────────────────────────────────
 const SIDEBAR_W = 62;
 
-// ══════════════════════════════════════════════════════════════════════════
-// CSS  — theme variables declared on [data-theme="dark"] and [data-theme="light"]
-// ══════════════════════════════════════════════════════════════════════════
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 
-  /* ── LIGHT THEME (default) ──────────────────────────────────────────── */
   :root, [data-theme="light"] {
     --ink: #0f172a;
     --muted: #64748b;
@@ -67,7 +62,6 @@ const CSS = `
     --amber: #f59e0b;
     --sidebar-w: ${SIDEBAR_W}px;
 
-    /* semantic aliases used across components */
     --color-bg: #f6f7fb;
     --color-cards: #ffffff;
     --color-text: #0f172a;
@@ -83,7 +77,6 @@ const CSS = `
     --color-shadow: rgba(15,23,42,.07);
   }
 
-  /* ── DARK THEME ─────────────────────────────────────────────────────── */
   [data-theme="dark"] {
     --ink: #f1f5f9;
     --muted: #94a3b8;
@@ -120,7 +113,6 @@ const CSS = `
     transition: background .25s ease, color .25s ease;
   }
 
-  /* ── LOGIN ────────────────────────────────────────────────────────────── */
   .ob-login-wrap {
     min-height: 100vh; display: flex; align-items: center; justify-content: center;
     background: var(--color-bg);
@@ -153,7 +145,6 @@ const CSS = `
   .ob-input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(14,165,233,.18); }
   .ob-input::placeholder { color: var(--color-text-muted); }
 
-  /* ── BUTTONS ──────────────────────────────────────────────────────────── */
   .ob-btn {
     display: inline-flex; align-items: center; justify-content: center;
     gap: 8px; padding: 11px 18px; border-radius: 10px;
@@ -172,7 +163,6 @@ const CSS = `
   .ob-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; border-radius: 10px; padding: 10px 14px; font-size: 14px; margin-bottom: 14px; }
   .ob-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; border-radius: 10px; padding: 10px 14px; font-size: 14px; margin-bottom: 14px; }
 
-  /* ── SIDEBAR (desktop fixed icon strip) ───────────────────────────────── */
   .ob-sidebar {
     position: fixed; left: 0; top: 0; bottom: 0;
     width: var(--sidebar-w); min-width: var(--sidebar-w); max-width: var(--sidebar-w);
@@ -184,7 +174,6 @@ const CSS = `
     transition: background .25s;
   }
 
-  /* ── SIDEBAR drawer (mobile) ──────────────────────────────────────────── */
   .ob-sidebar-drawer {
     position: fixed; left: 0; top: 0; bottom: 0;
     width: 220px;
@@ -225,13 +214,11 @@ const CSS = `
     .ob-main { margin-left: 0 !important; padding-top: 60px !important; }
   }
 
-  /* Sidebar logo */
   .ob-sidebar-logo { display: flex; align-items: center; justify-content: center; width: 100%; padding: 6px 0 18px; flex-shrink: 0; }
   .ob-avatar-sm { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg,#0ea5e9,#6366f1); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; letter-spacing: -.5px; }
   .ob-drawer-logo { display: flex; align-items: center; gap: 10px; padding: 0 16px 18px; flex-shrink: 0; }
   .ob-drawer-logo .ob-drawer-title { font-weight: 800; font-size: 15px; color: #f8fafc; letter-spacing: -.3px; }
 
-  /* Nav */
   .ob-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; width: 100%; padding: 0 8px; }
   .ob-nav-item { position: relative; width: 100%; }
 
@@ -248,7 +235,6 @@ const CSS = `
   .ob-navlink:disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
   .ob-navlink svg { width: 20px; height: 20px; flex-shrink: 0; }
 
-  /* Theme toggle button — glows the current mode's colour */
   .ob-navlink.theme-toggle { color: #94a3b8; }
   .ob-navlink.theme-toggle:hover { color: #fbbf24; background: rgba(251,191,36,.1); }
   [data-theme="light"] .ob-navlink.theme-toggle { color: #94a3b8; }
@@ -267,7 +253,6 @@ const CSS = `
   .ob-navlink-drawer:disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
   .ob-navlink-drawer svg { width: 18px; height: 18px; flex-shrink: 0; }
 
-  /* Tooltip */
   .ob-nav-tooltip {
     position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
     background: #1e293b; color: #f1f5f9;
@@ -283,13 +268,11 @@ const CSS = `
   }
   .ob-nav-item:hover .ob-nav-tooltip { opacity: 1; }
 
-  /* Sidebar footer */
   .ob-sidebar-footer { margin-top: auto; padding: 12px 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; flex-shrink: 0; }
   .ob-drawer-footer { margin-top: auto; padding: 12px 16px 4px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
   .ob-user-avatar { width: 30px; height: 30px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-weight: 700; font-size: 13px; flex-shrink: 0; }
   .ob-nav-divider { height: 1px; background: #1e293b; margin: 6px 0; width: 100%; }
 
-  /* ── MAIN CONTENT ─────────────────────────────────────────────────────── */
   .ob-main {
     margin-left: var(--sidebar-w);
     min-height: 100vh;
@@ -301,7 +284,6 @@ const CSS = `
   .ob-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
   .ob-header h1 { font-size: 14px; font-weight: 700; color: var(--color-text); }
 
-  /* ── CARDS, TABLES ────────────────────────────────────────────────────── */
   .ob-card {
     background: var(--color-cards);
     border: 1px solid var(--color-border);
@@ -317,7 +299,6 @@ const CSS = `
   td { padding: 12px 14px; border-bottom: 1px solid var(--color-border); color: var(--color-text); }
   tr:last-child td { border-bottom: none; }
 
-  /* ── INPUTS (global — used across pages) ─────────────────────────────── */
   input, select, textarea {
     background: var(--color-input-bg);
     color: var(--color-text);
@@ -335,7 +316,6 @@ const CSS = `
   filter: grayscale(1);}
 `;
 
-// ── Nav items ──────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   { id: "dashboard",        label: "Dashboard",        icon: Home01Icon,          adminsOnly: false },
   { id: "memberDashboard",  label: "Member Dashboard", icon: CheckListIcon,       adminsOnly: false },
@@ -363,11 +343,10 @@ const ALLOWED_ADMINS = ["admin", "SUPER_ADMIN"];
 export function Sidebar({ user, activePage, onNavigate, onLogout }) {
   const isAdmin = ALLOWED_ADMINS.includes(user?.username);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { theme, toggleTheme } = useTheme(); // ← consume theme
+  const { theme, toggleTheme } = useTheme();
 
   const handleNav = (id) => { onNavigate(id); setDrawerOpen(false); };
 
-  // ── Desktop ──────────────────────────────────────────────────────────────
   const DesktopSidebar = (
     <aside className="ob-sidebar">
       <div className="ob-sidebar-logo">
@@ -397,7 +376,6 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
       </nav>
 
       <div className="ob-sidebar-footer">
-        {/* ── Theme toggle ── */}
         <div className="ob-nav-item">
           <button
             className="ob-navlink theme-toggle"
@@ -411,7 +389,6 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
           </span>
         </div>
 
-        {/* ── Logout ── */}
         <div className="ob-nav-item">
           <button
             className="ob-navlink"
@@ -431,7 +408,6 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
     </aside>
   );
 
-  // ── Mobile drawer ─────────────────────────────────────────────────────────
   const MobileNav = (
     <>
       <button className="ob-hamburger" onClick={() => setDrawerOpen(true)} aria-label="Open menu">
@@ -472,7 +448,6 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
         <div className="ob-drawer-footer">
           <div style={{ height: '1px', background: '#1e293b', marginBottom: '4px' }} />
 
-          {/* Theme toggle in drawer */}
           <button
             className="ob-navlink-drawer"
             onClick={toggleTheme}
@@ -514,9 +489,30 @@ function AdminDashboard({ user }) {
   const { usr, setUsr } = useContext(CurrentUserContext);
   setUsr(user);
 
-  const [page, setPage] = useState("dashboard");
+  // ── FIX: Read ?page= query param from URL on every navigation ──────────
+  // This makes breadcrumbs work: navigate('/?page=players') → sets page to 'players'
+  const location = useLocation();
+
+  const getPageFromUrl = () => {
+    const params = new URLSearchParams(location.search);
+    return params.get('page') || 'dashboard';
+  };
+
+  const [page, setPage] = useState(getPageFromUrl);
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Sync page state whenever the URL search params change
+  // (handles back-navigation from PlayerDashboard via breadcrumbs)
+  useEffect(() => {
+    const urlPage = getPageFromUrl();
+    if (urlPage !== page) {
+      setPage(urlPage);
+      // Clear addPlayer flag when navigating away from players section
+      if (urlPage !== 'players') setAddPlayer(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   const handleLogout = async () => {
     try { setLoading(true); await api.auth.logout(); window.location.reload(); }
@@ -638,7 +634,6 @@ function LoginPage() {
 
   return (
     <div className="ob-login-wrap">
-      {/* Theme toggle on login screen */}
       <button
         onClick={toggleTheme}
         style={{ position: 'fixed', top: 16, right: 16, background: 'var(--color-cards)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '600' }}
@@ -674,10 +669,10 @@ function LoginPage() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// ROOT APP — ThemeProvider wraps everything
+// ROOT APP
 // ══════════════════════════════════════════════════════════════════════════
 export default function App() {
-  const [user, setUser]     = useState(null);
+  const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -701,7 +696,6 @@ export default function App() {
   }
 
   return (
-    // ThemeProvider is the outermost wrapper so every child can call useTheme()
     <ThemeProvider>
       <CurrentUserProvider>
         <ShiftStatusProvider>
