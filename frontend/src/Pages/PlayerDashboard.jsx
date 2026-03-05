@@ -347,7 +347,7 @@ export default function PlayerDashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1100px', margin: '0 auto', width: '100%' }}>
 
             {/* ── BREADCRUMB ──────────────────────────────────────────────── */}
-            <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0px', borderRadius: '10px', width: 'fit-content', flexWrap: 'wrap' }}>
+            <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0px', borderRadius: '10px', width: 'fit-content', flexWrap: 'wrap', backgrorund: 'none' }}>
                 {[
                     { label: 'Dashboard', onClick: () => navigate('/') },
                     { label: 'Players',   onClick: () => navigate('/?page=players') },
