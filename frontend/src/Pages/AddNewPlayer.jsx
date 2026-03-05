@@ -1,4 +1,5 @@
 import { useState, useContext, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { AddPlayerContext } from "../Context/addPlayer";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { api } from "../api";
@@ -17,8 +18,6 @@ const IUser = () => <Ico d={['M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2', 'M12 11a
 const ILock = () => <Ico d={['M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z', 'M7 11V7a5 5 0 0110 0v4']} />;
 const IMail = () => <Ico d={['M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z', 'M22 6l-10 7L2 6']} />;
 const IPhone = () => <Ico d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />;
-const IEye = () => <Ico d={['M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z', 'M12 9a3 3 0 100 6 3 3 0 000-6z']} />;
-const IEyeOff = () => <Ico d={['M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24', 'M1 1l22 22']} />;
 const IUsers = () => <Ico d={['M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2', 'M23 21v-2a4 4 0 00-3-3.87', 'M16 3.13a4 4 0 010 7.75', 'M9 7a4 4 0 100 8 4 4 0 000-8z']} />;
 const IShield = () => <Ico d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />;
 const IWarn = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} size={13} />;
@@ -46,11 +45,11 @@ const INPUT = {
 
 // ─── Social handle validation rules ──────────────────────────────────────────
 const SOCIAL_RULES = {
-    facebook: { pattern: /^[a-zA-Z0-9.]{1,50}$/, hint: '1–50 chars: letters, numbers, dots only', url: (h) => `https://facebook.com/${h}` },
-    telegram: { pattern: /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/, hint: '5–32 chars, starts with a letter, letters/numbers/underscores', url: (h) => `https://t.me/${h}` },
-    instagram: { pattern: /^[a-zA-Z0-9._]{1,30}$/, hint: '1–30 chars: letters, numbers, dots, underscores', url: (h) => `https://instagram.com/${h}` },
-    x: { pattern: /^[a-zA-Z0-9_]{1,15}$/, hint: '1–15 chars: letters, numbers, underscores', url: (h) => `https://x.com/${h}` },
-    snapchat: { pattern: /^[a-zA-Z][a-zA-Z0-9._-]{1,14}$/, hint: '2–15 chars, starts with a letter', url: (h) => `https://snapchat.com/add/${h}` },
+    facebook:  { pattern: /^[a-zA-Z0-9.]{1,50}$/,          hint: '1–50 chars: letters, numbers, dots only',                         url: (h) => `https://facebook.com/${h}` },
+    telegram:  { pattern: /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/,  hint: '5–32 chars, starts with a letter, letters/numbers/underscores',   url: (h) => `https://t.me/${h}` },
+    instagram: { pattern: /^[a-zA-Z0-9._]{1,30}$/,          hint: '1–30 chars: letters, numbers, dots, underscores',                 url: (h) => `https://instagram.com/${h}` },
+    x:         { pattern: /^[a-zA-Z0-9_]{1,15}$/,           hint: '1–15 chars: letters, numbers, underscores',                       url: (h) => `https://x.com/${h}` },
+    snapchat:  { pattern: /^[a-zA-Z][a-zA-Z0-9._-]{1,14}$/, hint: '2–15 chars, starts with a letter',                               url: (h) => `https://snapchat.com/add/${h}` },
 };
 
 function validateHandle(platform, handle) {
@@ -58,6 +57,41 @@ function validateHandle(platform, handle) {
     const rule = SOCIAL_RULES[platform];
     if (!rule) return null;
     return rule.pattern.test(handle.trim()) ? 'valid' : 'invalid';
+}
+
+// ─── Breadcrumb ───────────────────────────────────────────────────────────────
+function Breadcrumb({ onPlayersClick, onDashboardClick }) {
+    const crumbs = [
+        { label: 'Dashboard', onClick: onDashboardClick },
+        { label: 'Players',   onClick: onPlayersClick },
+        { label: 'Add New Player', onClick: null },
+    ];
+    return (
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
+            {crumbs.map((item, i) => (
+                <span key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {item.onClick ? (
+                        <button
+                            type="button"
+                            onClick={item.onClick}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.sky, fontWeight: '600', fontSize: '13px', padding: '2px 6px', borderRadius: '6px' }}
+                            onMouseEnter={e => e.currentTarget.style.background = C.skyLt}
+                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                        >
+                            {item.label}
+                        </button>
+                    ) : (
+                        <span style={{ fontWeight: '700', fontSize: '13px', padding: '2px 6px', color: C.slate }}>
+                            {item.label}
+                        </span>
+                    )}
+                    {i < crumbs.length - 1 && (
+                        <span style={{ color: C.grayLt, fontSize: '16px', userSelect: 'none' }}>›</span>
+                    )}
+                </span>
+            ))}
+        </nav>
+    );
 }
 
 // ─── Shared UI helpers ────────────────────────────────────────────────────────
@@ -102,7 +136,7 @@ function TierBadge({ tier }) {
     const map = {
         BRONZE: { bg: '#fed7aa', text: '#92400e', emoji: '🥉' },
         SILVER: { bg: '#e0e7ff', text: '#3730a3', emoji: '🥈' },
-        GOLD: { bg: '#fef3c7', text: '#92400e', emoji: '🥇' },
+        GOLD:   { bg: '#fef3c7', text: '#92400e', emoji: '🥇' },
     };
     const t = map[tier] || map.BRONZE;
     return (
@@ -126,14 +160,14 @@ function AddRowBtn({ onClick, children }) {
 // ─── Social field with live format-validation feedback ────────────────────────
 function SocialField({ platform, label, value, onChange }) {
     const [focused, setFocused] = useState(false);
-    const status = validateHandle(platform, value);
-    const rule = SOCIAL_RULES[platform];
-    const hasVal = value && value.trim().length > 0;
+    const status    = validateHandle(platform, value);
+    const rule      = SOCIAL_RULES[platform];
+    const hasVal    = value && value.trim().length > 0;
 
     const borderColor = !hasVal ? C.border
-        : status === 'valid' ? '#22c55e'
-            : status === 'invalid' ? C.red
-                : C.border;
+        : status === 'valid'   ? '#22c55e'
+        : status === 'invalid' ? C.red
+        : C.border;
 
     const profileUrl = status === 'valid' ? rule.url(value.trim()) : null;
 
@@ -217,7 +251,12 @@ function DynamicList({ label, items, onAdd, onChange, onRemove, placeholder, ico
 // ═══════════════════════════════════════════════════════════════
 export default function AddNewPlayer({ onIssueCreated }) {
     const { setAddPlayer } = useContext(AddPlayerContext);
-    const { shiftActive } = useContext(ShiftStatusContext);
+    const { shiftActive }  = useContext(ShiftStatusContext);
+    const navigate         = useNavigate();
+
+    // ── Shared breadcrumb handlers ─────────────────────────────────────────
+    const goToPlayers   = () => { setAddPlayer(false); };
+    const goToDashboard = () => { setAddPlayer(false); navigate('/'); };
 
     const EMPTY = {
         name: '', username: '', email: '', phone: '',
@@ -228,18 +267,18 @@ export default function AddNewPlayer({ onIssueCreated }) {
         sources: [''],
     };
 
-    const [form, setForm] = useState(EMPTY);
+    const [form, setForm]       = useState(EMPTY);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [error, setError]     = useState('');
     const [success, setSuccess] = useState('');
 
-    const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
-    const onChange = (e) => set(e.target.name, e.target.value);
+    const set      = (k, v) => setForm(p => ({ ...p, [k]: v }));
+    const onChange = (e)    => set(e.target.name, e.target.value);
 
     const listOf = (key) => ({
-        add: () => setForm(p => ({ ...p, [key]: [...p[key], ''] })),
+        add:    ()     => setForm(p => ({ ...p, [key]: [...p[key], ''] })),
         change: (i, v) => setForm(p => ({ ...p, [key]: p[key].map((x, idx) => idx === i ? v : x) })),
-        remove: (i) => setForm(p => ({ ...p, [key]: p[key].filter((_, idx) => idx !== i) })),
+        remove: (i)    => setForm(p => ({ ...p, [key]: p[key].filter((_, idx) => idx !== i) })),
     });
     const refs = listOf('playerNames');
     const frds = listOf('friends');
@@ -264,7 +303,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
         e.preventDefault();
         setError(''); setSuccess('');
 
-        if (!form.name.trim()) return setError('Full name is required.');
+        if (!form.name.trim())     return setError('Full name is required.');
         if (!form.username.trim()) return setError('Username is required.');
 
         if (socialWarnings.length > 0) {
@@ -276,19 +315,19 @@ export default function AddNewPlayer({ onIssueCreated }) {
         try {
             setLoading(true);
             await api.players.createPlayer({
-                name: form.name.trim(),
-                username: form.username.trim(),
-                email: form.email.trim() || null,
-                phone: form.phone.trim() || null,
-                tier: form.tier,
-                facebook: form.facebook.trim() || null,
-                telegram: form.telegram.trim() || null,
-                instagram: form.instagram.trim() || null,
-                x: form.x.trim() || null,
-                snapchat: form.snapchat.trim() || null,
+                name:      form.name.trim(),
+                username:  form.username.trim(),
+                email:     form.email.trim()    || null,
+                phone:     form.phone.trim()    || null,
+                tier:      form.tier,
+                facebook:  form.facebook.trim() || null,
+                telegram:  form.telegram.trim() || null,
+                instagram: form.instagram.trim()|| null,
+                x:         form.x.trim()        || null,
+                snapchat:  form.snapchat.trim() || null,
                 referrals: form.playerNames.filter(n => n.trim()),
-                friends: form.friends.filter(n => n.trim()),
-                sources: form.sources.filter(s => s.trim()),
+                friends:   form.friends.filter(n => n.trim()),
+                sources:   form.sources.filter(s => s.trim()),
             });
 
             setSuccess(`✓ Player "${form.name}" created successfully!`);
@@ -304,17 +343,21 @@ export default function AddNewPlayer({ onIssueCreated }) {
     };
 
     const socials = [
-        { key: 'facebook', label: 'Facebook' },
-        { key: 'telegram', label: 'Telegram' },
-        { key: 'instagram', label: 'Instagram' },
-        { key: 'x', label: 'X / Twitter' },
-        { key: 'snapchat', label: 'Snapchat' },
+        { key: 'facebook',  label: 'Facebook'    },
+        { key: 'telegram',  label: 'Telegram'    },
+        { key: 'instagram', label: 'Instagram'   },
+        { key: 'x',         label: 'X / Twitter' },
+        { key: 'snapchat',  label: 'Snapchat'    },
     ];
 
     // ── No active shift ─────────────────────────────────────────────────────────
     if (!shiftActive) {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                {/* Breadcrumb */}
+                <Breadcrumb onDashboardClick={goToDashboard} onPlayersClick={goToPlayers} />
+
                 <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                     <IAlert />
                     <div>
@@ -336,6 +379,9 @@ export default function AddNewPlayer({ onIssueCreated }) {
     // ── Active shift: show form ─────────────────────────────────────────────────
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: 'inherit' }}>
+
+            {/* Breadcrumb */}
+            <Breadcrumb onDashboardClick={goToDashboard} onPlayersClick={goToPlayers} />
 
             {/* Header */}
             <div style={{ padding: '14px 18px', background: C.skyLt, borderLeft: `4px solid ${C.sky}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
@@ -486,9 +532,9 @@ export default function AddNewPlayer({ onIssueCreated }) {
 
                 {/* ── Action bar ── */}
                 <div style={{ display: 'flex', gap: '12px' }}>
-                    <button type="button" onClick={() => setAddPlayer(false)} disabled={loading}
+                    <button type="button" onClick={goToPlayers} disabled={loading}
                         style={{ flex: 1, padding: '13px', background: C.white, border: `1px solid ${C.border}`, borderRadius: '8px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer', fontSize: '14px', color: C.slate, opacity: loading ? 0.6 : 1 }}>
-                        Cancel
+                        ← Back to Players
                     </button>
                     <button type="submit" disabled={loading}
                         onMouseEnter={e => { if (!loading) e.currentTarget.style.background = C.skyDk; }}
