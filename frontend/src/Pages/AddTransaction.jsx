@@ -86,18 +86,18 @@ function BonusToggle({ bonus, amount, player, enabled, onToggle, eligible = true
 
 function LedgerRow({ tx, undoingId, onUndo }) {
     const isUndoing = undoingId === tx.id;
-    const canUndo   = (tx.status === "COMPLETED" || tx.status === "PENDING") && !isUndoing;
+    const canUndo = (tx.status === "COMPLETED" || tx.status === "PENDING") && !isUndoing;
     const isDepositRow = ["Deposit", "deposit"].includes(tx.type);
-    const positive  = !["Cashout", "cashout"].includes(tx.type);
+    const positive = !["Cashout", "cashout"].includes(tx.type);
 
     let displayType = tx.type;
-    let typeColor   = { bg: "#f1f5f9", text: "#475569" };
-    if      (["Deposit",  "deposit"].includes(tx.type))  { displayType = "Deposit";        typeColor = { bg: "#dcfce7", text: "#166534" }; }
-    else if (["Cashout",  "cashout"].includes(tx.type))  { displayType = "Cashout";        typeColor = { bg: "#fee2e2", text: "#991b1b" }; }
-    else if (tx.bonusType === "match")                   { displayType = "Match Bonus";    typeColor = { bg: "#eff6ff", text: "#0369a1" }; }
-    else if (tx.bonusType === "special")                 { displayType = "Special Bonus";  typeColor = { bg: "#faf5ff", text: "#6b21a8" }; }
-    else if (tx.bonusType === "streak")                  { displayType = "Streak Bonus";   typeColor = { bg: "#fffbeb", text: "#92400e" }; }
-    else if (tx.bonusType === "referral")                { displayType = "Referral Bonus"; typeColor = { bg: "#f0fdf4", text: "#166534" }; }
+    let typeColor = { bg: "#f1f5f9", text: "#475569" };
+    if (["Deposit", "deposit"].includes(tx.type)) { displayType = "Deposit"; typeColor = { bg: "#dcfce7", text: "#166534" }; }
+    else if (["Cashout", "cashout"].includes(tx.type)) { displayType = "Cashout"; typeColor = { bg: "#fee2e2", text: "#991b1b" }; }
+    else if (tx.bonusType === "match") { displayType = "Match Bonus"; typeColor = { bg: "#eff6ff", text: "#0369a1" }; }
+    else if (tx.bonusType === "special") { displayType = "Special Bonus"; typeColor = { bg: "#faf5ff", text: "#6b21a8" }; }
+    else if (tx.bonusType === "streak") { displayType = "Streak Bonus"; typeColor = { bg: "#fffbeb", text: "#92400e" }; }
+    else if (tx.bonusType === "referral") { displayType = "Referral Bonus"; typeColor = { bg: "#f0fdf4", text: "#166534" }; }
 
     const statusColor = tx.status === "COMPLETED" ? { bg: "#dcfce7", text: "#166534" } : tx.status === "CANCELLED" ? { bg: "#fee2e2", text: "#991b1b" } : { bg: "#fef3c7", text: "#92400e" };
 
@@ -126,7 +126,7 @@ function LedgerRow({ tx, undoingId, onUndo }) {
                 {isDepositRow
                     ? <span style={{ fontWeight: "700", fontSize: "13px", color: "#0ea5e9" }}>
                         {fmt((parseFloat(tx.amount) || 0) - (parseFloat(tx.fee) || 0))}
-                      </span>
+                    </span>
                     : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>
                 }
             </td>
@@ -168,26 +168,26 @@ function LedgerRow({ tx, undoingId, onUndo }) {
 function AddTransactionsPage() {
     const EMPTY = { txType: "deposit", amount: "", fee: "", gameId: "", walletId: "", notes: "", bonusMatch: false, bonusSpecial: false, bonusReferral: false };
 
-    const [form,          setForm]          = useState(EMPTY);
-    const [player,        setPlayer]        = useState(null);
-    const [eligLoading,   setEligLoading]   = useState(false);
-    const [matchUsedToday,   setMatchUsedToday]   = useState(false);
+    const [form, setForm] = useState(EMPTY);
+    const [player, setPlayer] = useState(null);
+    const [eligLoading, setEligLoading] = useState(false);
+    const [matchUsedToday, setMatchUsedToday] = useState(false);
     const [referralUsedEver, setReferralUsedEver] = useState(false);
-    const [games,         setGames]         = useState([]);
-    const [wallets,       setWallets]       = useState([]);
-    const [ledger,        setLedger]        = useState([]);
-    const [submitting,    setSubmitting]    = useState(false);
-    const [success,       setSuccess]       = useState("");
-    const [error,         setError]         = useState("");
+    const [games, setGames] = useState([]);
+    const [wallets, setWallets] = useState([]);
+    const [ledger, setLedger] = useState([]);
+    const [submitting, setSubmitting] = useState(false);
+    const [success, setSuccess] = useState("");
+    const [error, setError] = useState("");
     const [ledgerLoading, setLedgerLoading] = useState(true);
-    const [undoingId,     setUndoingId]     = useState(null);
-    const [undoSuccess,   setUndoSuccess]   = useState("");
-    const [autoRefresh,   setAutoRefresh]   = useState(false);
-    const [lastRefresh,   setLastRefresh]   = useState(new Date());
-    const [query,         setQuery]         = useState("");
-    const [results,       setResults]       = useState([]);
-    const [searching,     setSearching]     = useState(false);
-    const [showDrop,      setShowDrop]      = useState(false);
+    const [undoingId, setUndoingId] = useState(null);
+    const [undoSuccess, setUndoSuccess] = useState("");
+    const [autoRefresh, setAutoRefresh] = useState(false);
+    const [lastRefresh, setLastRefresh] = useState(new Date());
+    const [query, setQuery] = useState("");
+    const [results, setResults] = useState([]);
+    const [searching, setSearching] = useState(false);
+    const [showDrop, setShowDrop] = useState(false);
     const dropRef = useRef(null);
 
     const loadGames = useCallback(async (force = false) => {
@@ -237,11 +237,11 @@ function AddTransactionsPage() {
     const computeEligibility = (fullPlayer) => {
         const history = fullPlayer?.transactionHistory || [];
         const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-        const usedMatchToday   = history.some(tx => tx.date === todayStr && tx.type === "Match Bonus");
+        const usedMatchToday = history.some(tx => tx.date === todayStr && tx.type === "Match Bonus");
         const usedReferralEver = history.some(tx => tx.type === "Referral Bonus");
         setMatchUsedToday(usedMatchToday);
         setReferralUsedEver(usedReferralEver);
-        if (usedMatchToday)   setForm(f => ({ ...f, bonusMatch:    false }));
+        if (usedMatchToday) setForm(f => ({ ...f, bonusMatch: false }));
         if (usedReferralEver) setForm(f => ({ ...f, bonusReferral: false }));
     };
 
@@ -258,36 +258,56 @@ function AddTransactionsPage() {
     const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
     // ══ DERIVED VALUES ════════════════════════════════════════
-    const amt       = parseFloat(form.amount) || 0;
-    const feeAmt    = parseFloat(form.fee)    || 0;
+    const amt = parseFloat(form.amount) || 0;
+    const feeAmt = parseFloat(form.fee) || 0;
     const isDeposit = form.txType === "deposit";
-    const selGame   = games.find(g => String(g.id) === String(form.gameId));
+    const selGame = games.find(g => String(g.id) === String(form.gameId));
     const selWallet = wallets.find(w => w.id === parseInt(form.walletId));
 
-    const streak       = player?.streak?.currentStreak ?? player?.currentStreak ?? 0;
+    const streak = player?.streak?.currentStreak ?? player?.currentStreak ?? 0;
     const cashoutLimit = parseFloat(player?.cashoutLimit ?? 250);
     const streakWaived = streak >= 30;
-    const hasReferrer  = !!(player?.referredBy);
+    const hasReferrer = !!(player?.referredBy);
 
-    const matchAmt    = (form.bonusMatch    && amt > 0)                ? amt * 0.5 : 0;
-    const specialAmt  = (form.bonusSpecial  && amt > 0)                ? amt * 0.2 : 0;
+    const matchAmt = (form.bonusMatch && amt > 0) ? amt * 0.5 : 0;
+    const specialAmt = (form.bonusSpecial && amt > 0) ? amt * 0.2 : 0;
     const referralAmt = (form.bonusReferral && hasReferrer && amt > 0) ? amt * 0.5 : 0;
-    const totalBonus  = matchAmt + specialAmt + referralAmt;
+    const totalBonus = matchAmt + specialAmt + referralAmt;
 
     // ★ Full deposit amount to player. Game stock = full amt + bonuses (NOT amt - fee)
-    const stockNeeded =
-        (isDeposit ? amt : 0) +
-        matchAmt + specialAmt +
-        (form.bonusReferral && hasReferrer && amt > 0 ? referralAmt * 2 : 0);
+    // const stockNeeded =
+    //     (isDeposit ? amt : 0) +
+    //     matchAmt + specialAmt +
+    //     (form.bonusReferral && hasReferrer && amt > 0 ? referralAmt * 2 : 0);
 
-    const stockOk            = !selGame || stockNeeded <= selGame.pointStock;
-    const cashoutOverLimit   = !isDeposit && !streakWaived && amt > cashoutLimit && cashoutLimit > 0;
+    const stockNeeded = isDeposit
+        ? amt + matchAmt + specialAmt + (form.bonusReferral && hasReferrer && amt > 0 ? referralAmt * 2 : 0)
+        : amt;
+
+    // const stockOk            = !selGame || stockNeeded <= selGame.pointStock;
+    // const cashoutOverLimit   = !isDeposit && !streakWaived && amt > cashoutLimit && cashoutLimit > 0;
+    // const walletInsufficient = !isDeposit && selWallet && amt > selWallet.balance;
+    // const gameRequired       = isDeposit && !form.gameId;
+
+    const stockOk = !selGame || stockNeeded <= selGame.pointStock;
+    const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const todayCashoutTotal = (!isDeposit && player)
+        ? (player.transactionHistory || [])
+            .filter(t => t.date === todayStr && ["cashout", "Cashout"].includes(t.type) && t.status === "COMPLETED")
+            .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0)
+        : 0;
+    const cashoutOverLimit = !isDeposit && !streakWaived && cashoutLimit > 0 && (todayCashoutTotal + amt) > cashoutLimit;
     const walletInsufficient = !isDeposit && selWallet && amt > selWallet.balance;
-    const gameRequired       = isDeposit && !form.gameId;
+    const gameRequired = !form.gameId;
+
+    // const canSubmit =
+    //     !!player?.id && amt > 0 && !!form.walletId &&
+    //     (isDeposit ? !!form.gameId : true) &&
+    //     stockOk && !cashoutOverLimit && !walletInsufficient && !submitting &&
+    //     feeAmt >= 0 && (amt === 0 || feeAmt <= amt);
 
     const canSubmit =
-        !!player?.id && amt > 0 && !!form.walletId &&
-        (isDeposit ? !!form.gameId : true) &&
+        !!player?.id && amt > 0 && !!form.walletId && !!form.gameId &&
         stockOk && !cashoutOverLimit && !walletInsufficient && !submitting &&
         feeAmt >= 0 && (amt === 0 || feeAmt <= amt);
 
@@ -295,12 +315,12 @@ function AddTransactionsPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(""); setSuccess("");
-        if (!player?.id)    { setError("Please select a player."); return; }
-        if (!amt)           { setError("Enter a valid amount."); return; }
+        if (!player?.id) { setError("Please select a player."); return; }
+        if (!amt) { setError("Enter a valid amount."); return; }
         if (!form.walletId) { setError("Please select a wallet."); return; }
         if (isDeposit && !form.gameId) { setError("Please select a game — required for all deposits."); return; }
-        if (!stockOk)       { setError(`Insufficient game stock — need ${stockNeeded.toFixed(2)} pts.`); return; }
-        if (cashoutOverLimit)   { setError(`Cashout exceeds limit of ${fmt(cashoutLimit)}.`); return; }
+        if (!stockOk) { setError(`Insufficient game stock — need ${stockNeeded.toFixed(2)} pts.`); return; }
+        if (cashoutOverLimit) { setError(`Cashout exceeds limit of ${fmt(cashoutLimit)}.`); return; }
         if (walletInsufficient) { setError(`Wallet only has ${fmt(selWallet?.balance)}.`); return; }
         if (feeAmt < 0 || feeAmt > amt) { setError("Fee must be between $0 and the deposit amount."); return; }
 
@@ -308,7 +328,8 @@ function AddTransactionsPage() {
             setSubmitting(true);
             const payload = isDeposit
                 ? { playerId: player.id, amount: amt, fee: feeAmt, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, gameId: form.gameId, notes: form.notes, bonusMatch: form.bonusMatch && amt > 0, bonusSpecial: form.bonusSpecial && amt > 0, bonusReferral: form.bonusReferral && hasReferrer && amt > 0 }
-                : { playerId: player.id, amount: amt, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, notes: form.notes };
+                // : { playerId: player.id, amount: amt, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, notes: form.notes };
+                : { playerId: player.id, amount: amt, gameId: form.gameId, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, notes: form.notes };
 
             const data = isDeposit ? await api.transactions.deposit(payload) : await api.transactions.cashout(payload);
 
@@ -332,7 +353,7 @@ function AddTransactionsPage() {
             api.clearCache?.(); api.games?.clearCache?.();
             await Promise.all([loadLedger(), loadWallets(), loadGames(true)]);
             if (player && playerIdFromTx && player.id === playerIdFromTx) {
-                try { const r = await api.players.getPlayer(player.id); const u = r?.data || player; setPlayer(u); computeEligibility(u); } catch {}
+                try { const r = await api.players.getPlayer(player.id); const u = r?.data || player; setPlayer(u); computeEligibility(u); } catch { }
             }
             window.dispatchEvent(new CustomEvent("transactionUndone", { detail: { playerId: playerIdFromTx, txId, timestamp: new Date().toISOString() } }));
             setUndoSuccess(`✓ Transaction #${txId} reversed. All data synced.`);
@@ -371,9 +392,9 @@ function AddTransactionsPage() {
                 </div>
 
                 {/* Alerts */}
-                {error       && <div style={{ padding: "11px 14px", marginBottom: "18px", background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "8px", color: "#991b1b", fontSize: "13px", display: "flex", gap: "8px", alignItems: "center" }}><AlertCircle style={{ width: "14px", height: "14px", flexShrink: 0 }} /> {error}</div>}
-                {success     && <div style={{ padding: "11px 14px", marginBottom: "18px", background: "#dcfce7", border: "1px solid #86efac", borderRadius: "8px", color: "#166534", fontSize: "13px", display: "flex", gap: "8px", alignItems: "center" }}><CheckCircle style={{ width: "14px", height: "14px", flexShrink: 0 }} /> {success}</div>}
-                {undoSuccess  && <div style={{ padding: "11px 14px", marginBottom: "18px", background: "#dcfce7", border: "1px solid #86efac", borderRadius: "8px", color: "#166534", fontSize: "13px", display: "flex", gap: "8px", alignItems: "center" }}><CheckCircle style={{ width: "14px", height: "14px", flexShrink: 0 }} /> {undoSuccess}</div>}
+                {error && <div style={{ padding: "11px 14px", marginBottom: "18px", background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "8px", color: "#991b1b", fontSize: "13px", display: "flex", gap: "8px", alignItems: "center" }}><AlertCircle style={{ width: "14px", height: "14px", flexShrink: 0 }} /> {error}</div>}
+                {success && <div style={{ padding: "11px 14px", marginBottom: "18px", background: "#dcfce7", border: "1px solid #86efac", borderRadius: "8px", color: "#166534", fontSize: "13px", display: "flex", gap: "8px", alignItems: "center" }}><CheckCircle style={{ width: "14px", height: "14px", flexShrink: 0 }} /> {success}</div>}
+                {undoSuccess && <div style={{ padding: "11px 14px", marginBottom: "18px", background: "#dcfce7", border: "1px solid #86efac", borderRadius: "8px", color: "#166534", fontSize: "13px", display: "flex", gap: "8px", alignItems: "center" }}><CheckCircle style={{ width: "14px", height: "14px", flexShrink: 0 }} /> {undoSuccess}</div>}
 
                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
@@ -414,7 +435,8 @@ function AddTransactionsPage() {
                                     {hasReferrer && <span style={{ padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166534" }}>👤 Referred by {player.referredBy?.name || `ID ${player.referredBy?.id || player.referredBy}`}</span>}
                                     {matchUsedToday && <span style={{ padding: "4px 10px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#92400e" }}>⚠ Match bonus used today</span>}
                                     {referralUsedEver && <span style={{ padding: "4px 10px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#92400e" }}>⚠ Referral bonus already used</span>}
-                                    {!isDeposit && cashoutLimit > 0 && !streakWaived && <span style={{ padding: "4px 10px", background: cashoutOverLimit ? "#fee2e2" : "#fef2f2", border: `1px solid ${cashoutOverLimit ? "#fca5a5" : "#fecaca"}`, borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#991b1b" }}>Cashout limit: {fmt(cashoutLimit)}</span>}
+                                    {/* {!isDeposit && cashoutLimit > 0 && !streakWaived && <span style={{ padding: "4px 10px", background: cashoutOverLimit ? "#fee2e2" : "#fef2f2", border: `1px solid ${cashoutOverLimit ? "#fca5a5" : "#fecaca"}`, borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#991b1b" }}>Cashout limit: {fmt(cashoutLimit)}</span>} */}
+                                    {!isDeposit && cashoutLimit > 0 && !streakWaived && <span style={{ padding: "4px 10px", background: cashoutOverLimit ? "#fee2e2" : "#fef2f2", border: `1px solid ${cashoutOverLimit ? "#fca5a5" : "#fecaca"}`, borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#991b1b" }}>Daily limit: {fmt(cashoutLimit - todayCashoutTotal)} remaining (of {fmt(cashoutLimit)})</span>}
                                     {!isDeposit && streakWaived && <span style={{ padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166534" }}>✓ Limit waived (30-day streak)</span>}
                                 </div>
                             )}
@@ -464,10 +486,14 @@ function AddTransactionsPage() {
                         </div>
                     </div>
 
-                    {/* Game selector */}
+                    {/* Game selector
                     {isDeposit && (
                         <div>
-                            <label style={LABEL}>Game <span style={{ color: "#ef4444" }}>*</span> required for all deposits</label>
+                            <label style={LABEL}>Game <span style={{ color: "#ef4444" }}>*</span> required for all deposits</label> */}
+                    {/* Game selector */}
+                    {(
+                        <div>
+                            <label style={LABEL}>Game <span style={{ color: "#ef4444" }}>*</span> required for all transactions</label>
                             <div style={{ position: "relative" }}>
                                 <select value={form.gameId} onChange={e => set("gameId", e.target.value)} style={{ ...SELECT, borderColor: gameRequired ? "#fca5a5" : "#e2e8f0" }}>
                                     <option value="">— Select a game —</option>
@@ -480,12 +506,13 @@ function AddTransactionsPage() {
                                     {!stockOk ? `⚠ Insufficient — ${selGame.name} has ${selGame.pointStock.toFixed(2)} pts, need ${stockNeeded.toFixed(2)}` : `✓ ${selGame.name}: ${selGame.pointStock.toFixed(2)} pts → ${(selGame.pointStock - stockNeeded).toFixed(2)} pts after`}
                                 </div>
                             )}
+
                             {gameRequired && <p style={{ color: "#ef4444", fontSize: "11px", marginTop: "4px" }}>⚠ Game is required to proceed</p>}
-                        </div>
-                    )}
+                        </div>)}
 
                     {/* Bonus section */}
                     {isDeposit && (
+
                         <>
                             <div style={DIVIDER} />
                             <div>
@@ -590,18 +617,18 @@ function AddTransactionsPage() {
                             <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
                                 <tr style={{ background: "#f8fafc" }}>
                                     {[
-                                        { label: "ID",           w: "60px"  },
-                                        { label: "Player",       w: "150px" },
-                                        { label: "Type",         w: "120px" },
-                                        { label: "Amount",       w: "100px" },
-                                        { label: "Fee",          w: "80px"  },
+                                        { label: "ID", w: "60px" },
+                                        { label: "Player", w: "150px" },
+                                        { label: "Type", w: "120px" },
+                                        { label: "Amount", w: "100px" },
+                                        { label: "Fee", w: "80px" },
                                         { label: "Received Amt", w: "110px" },
-                                        { label: "Game",         w: "110px" },
-                                        { label: "Wallet",       w: "130px" },
-                                        { label: "Balance",      w: "155px" },
-                                        { label: "Status",       w: "95px"  },
-                                        { label: "Date",         w: "155px" },
-                                        { label: "",             w: "80px"  },
+                                        { label: "Game", w: "110px" },
+                                        { label: "Wallet", w: "130px" },
+                                        { label: "Balance", w: "155px" },
+                                        { label: "Status", w: "95px" },
+                                        { label: "Date", w: "155px" },
+                                        { label: "", w: "80px" },
                                     ].map(col => (
                                         <th key={col.label} style={{ textAlign: "left", padding: "10px 12px", fontWeight: "700", color: "#64748b", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.4px", borderBottom: "2px solid #e2e8f0", whiteSpace: "nowrap", width: col.w, minWidth: col.w, background: "#f8fafc" }}>
                                             {col.label}
