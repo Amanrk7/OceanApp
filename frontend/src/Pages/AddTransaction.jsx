@@ -329,7 +329,7 @@ function AddTransactionsPage() {
             const payload = isDeposit
                 ? { playerId: player.id, amount: amt, fee: feeAmt, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, gameId: form.gameId, notes: form.notes, bonusMatch: form.bonusMatch && amt > 0, bonusSpecial: form.bonusSpecial && amt > 0, bonusReferral: form.bonusReferral && hasReferrer && amt > 0 }
                 // : { playerId: player.id, amount: amt, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, notes: form.notes };
-                : { playerId: player.id, amount: amt, gameId: form.gameId, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, notes: form.notes };
+                : { playerId: player.id, amount: amt, fee: feeAmt, gameId: form.gameId, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, notes: form.notes };
 
             const data = isDeposit ? await api.transactions.deposit(payload) : await api.transactions.cashout(payload);
 
@@ -444,24 +444,28 @@ function AddTransactionsPage() {
                     </div>
 
                     {/* Amount + Fee + Wallet */}
-                    <div style={{ display: "grid", gridTemplateColumns: isDeposit ? "1fr 1fr 1fr" : "1fr 1fr", gap: "16px" }}>
+                    {/* <div style={{ display: "grid", gridTemplateColumns: isDeposit ? "1fr 1fr 1fr" : "1fr 1fr", gap: "16px" }}> */}
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
                         <div>
                             <label style={LABEL}>{isDeposit ? "Deposit Amount ($) *" : `Cashout Amount ($) *${!streakWaived && cashoutLimit > 0 ? ` — Limit: ${fmt(cashoutLimit)}` : ""}`}</label>
                             <input type="number" placeholder="0.00" min="0.01" step="0.01" value={form.amount} onChange={e => set("amount", e.target.value)} style={{ ...INPUT, borderColor: cashoutOverLimit ? "#fca5a5" : "#e2e8f0" }} />
                             {cashoutOverLimit && <p style={{ color: "#ef4444", fontSize: "11px", marginTop: "4px" }}>⚠ Exceeds cashout limit of {fmt(cashoutLimit)}</p>}
                         </div>
 
-                        {isDeposit && (
-                            <div>
-                                <label style={LABEL}>Fee ($) <span style={{ fontWeight: 400, fontSize: "10px", color: "#f59e0b" }}>optional — goes to our wallet</span></label>
-                                <input type="number" placeholder="0.00" min="0" step="0.01" value={form.fee} onChange={e => set("fee", e.target.value)} style={{ ...INPUT, borderColor: feeAmt > 0 ? "#f59e0b" : "#e2e8f0" }} />
-                                {amt > 0 && (
-                                    <p style={{ fontSize: "11px", marginTop: "4px", fontWeight: "600", color: feeAmt > 0 ? "#92400e" : "#94a3b8" }}>
-                                        {feeAmt > 0 ? `Wallet gets: ${fmt(amt - feeAmt)} (${fmt(amt)} − ${fmt(feeAmt)} fee)` : "No fee — wallet gets full deposit amount"}
-                                    </p>
-                                )}
-                            </div>
-                        )}
+                        <div>
+                            <label style={LABEL}>Fee ($) <span style={{ fontWeight: 400, fontSize: "10px", color: "#f59e0b" }}>optional — retained as revenue</span></label>
+                            <input type="number" placeholder="0.00" min="0" step="0.01" value={form.fee} onChange={e => set("fee", e.target.value)} style={{ ...INPUT, borderColor: feeAmt > 0 ? "#f59e0b" : "#e2e8f0" }} />
+                            {amt > 0 && (
+                                <p style={{ fontSize: "11px", marginTop: "4px", fontWeight: "600", color: feeAmt > 0 ? "#92400e" : "#94a3b8" }}>
+                                    {feeAmt > 0
+                                        ? isDeposit
+                                            ? `Wallet gets: ${fmt(amt - feeAmt)} (${fmt(amt)} − ${fmt(feeAmt)} fee)`
+                                            : `Wallet pays: ${fmt(amt + feeAmt)} (${fmt(amt)} cashout + ${fmt(feeAmt)} bank fee)`
+                                        : isDeposit ? "No fee — wallet gets full deposit amount" : "No fee — wallet pays exact cashout amount"}
+                                </p>
+                            )}
+                        </div>
 
                         <div>
                             <label style={LABEL}>{isDeposit ? "Wallet * (receives deposit − fee)" : "Deduct From Wallet *"}</label>
