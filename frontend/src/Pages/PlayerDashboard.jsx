@@ -20,13 +20,13 @@ const C = {
 const TIER = {
     BRONZE: { bg: '#fed7aa', text: '#92400e', emoji: '🥉', label: 'Bronze' },
     SILVER: { bg: '#e0e7ff', text: '#3730a3', emoji: '🥈', label: 'Silver' },
-    GOLD: { bg: '#fef3c7', text: '#92400e', emoji: '🥇', label: 'Gold' },
+    GOLD:   { bg: '#fef3c7', text: '#92400e', emoji: '🥇', label: 'Gold' },
 };
 const STATUS_MAP = {
-    ACTIVE: { bg: '#dcfce7', text: '#166534', dot: '#16a34a', label: 'Active' },
-    CRITICAL: { bg: '#fef9c3', text: '#854d0e', dot: '#d97706', label: 'Critical' },
+    ACTIVE:          { bg: '#dcfce7', text: '#166534', dot: '#16a34a', label: 'Active' },
+    CRITICAL:        { bg: '#fef9c3', text: '#854d0e', dot: '#d97706', label: 'Critical' },
     HIGHLY_CRITICAL: { bg: '#ffedd5', text: '#9a3412', dot: '#ea580c', label: 'High Critical' },
-    INACTIVE: { bg: '#fee2e2', text: '#991b1b', dot: '#dc2626', label: 'Inactive' },
+    INACTIVE:        { bg: '#fee2e2', text: '#991b1b', dot: '#dc2626', label: 'Inactive' },
 };
 
 const card = (extra = {}) => ({
@@ -40,30 +40,29 @@ const pill = (bg, text) => ({
 
 // ── Bonus type helpers ──────────────────────────────────────────
 const BONUS_LABEL_MAP = {
-    'streak bonus': { label: 'Streak Bonus', emoji: '🔥', bg: '#fffbeb', text: '#92400e' },
-    'referral bonus': { label: 'Referral Bonus', emoji: '👤', bg: '#f0fdf4', text: '#166534' },
-    'match bonus': { label: 'Match Bonus', emoji: '💰', bg: '#eff6ff', text: '#1d4ed8' },
-    'special bonus': { label: 'Special Bonus', emoji: '⭐', bg: '#faf5ff', text: '#6b21a8' },
-    'bonus': { label: 'Bonus', emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
-    'bonus_credited': { label: 'Bonus', emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
+    'streak bonus':   { label: 'Streak Bonus',   emoji: '🔥', bg: '#fffbeb', text: '#92400e' },
+    'referral bonus': { label: 'Referral Bonus',  emoji: '👤', bg: '#f0fdf4', text: '#166534' },
+    'match bonus':    { label: 'Match Bonus',     emoji: '💰', bg: '#eff6ff', text: '#1d4ed8' },
+    'special bonus':  { label: 'Special Bonus',   emoji: '⭐', bg: '#faf5ff', text: '#6b21a8' },
+    'bonus':          { label: 'Bonus',           emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
+    'bonus_credited': { label: 'Bonus',           emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
 };
 
 function resolveBonusInfo(tx) {
-    // tx.type can be 'Streak Bonus', 'Referral Bonus', 'Match Bonus', 'bonus_credited', etc.
     const key = (tx.type || '').toLowerCase().trim();
     return BONUS_LABEL_MAP[key] || BONUS_LABEL_MAP['bonus'];
 }
 
 // ── TX type map for the recent transactions table ──────────────
 const TX_TYPE_MAP = {
-    deposit: { label: 'Deposit', color: '#10b981', bg: '#f0fdf4' },
-    cashout: { label: 'Cashout', color: '#dc2626', bg: '#fff1f2' },
-    'streak bonus': { label: 'Streak Bonus', color: '#f59e0b', bg: '#fffbeb' },
-    'referral bonus': { label: 'Referral Bonus', color: '#10b981', bg: '#f0fdf4' },
-    'match bonus': { label: 'Match Bonus', color: '#3b82f6', bg: '#eff6ff' },
-    'special bonus': { label: 'Special Bonus', color: '#8b5cf6', bg: '#faf5ff' },
-    'bonus_credited': { label: 'Bonus', color: '#d97706', bg: '#fffbeb' },
-    'bonus': { label: 'Bonus', color: '#d97706', bg: '#fffbeb' },
+    deposit:          { label: 'Deposit',        color: '#10b981', bg: '#f0fdf4' },
+    cashout:          { label: 'Cashout',         color: '#dc2626', bg: '#fff1f2' },
+    'streak bonus':   { label: 'Streak Bonus',    color: '#f59e0b', bg: '#fffbeb' },
+    'referral bonus': { label: 'Referral Bonus',  color: '#10b981', bg: '#f0fdf4' },
+    'match bonus':    { label: 'Match Bonus',     color: '#3b82f6', bg: '#eff6ff' },
+    'special bonus':  { label: 'Special Bonus',   color: '#8b5cf6', bg: '#faf5ff' },
+    'bonus_credited': { label: 'Bonus',           color: '#d97706', bg: '#fffbeb' },
+    'bonus':          { label: 'Bonus',           color: '#d97706', bg: '#fffbeb' },
 };
 
 function Avatar({ name = '?', size = 44, fontSize = 15 }) {
@@ -190,25 +189,26 @@ function PeopleChip({ person, emoji = '👤' }) {
 }
 
 const TIER_CONFIG = {
-  BRONZE: {
-    label: 'Bronze', emoji: '🥉', color: '#b45309', bg: '#fef3c7',
-    weeklyTarget: 500,      // must hit $500/week to advance
-    cashoutLimit: 250,
-    nextTier: 'SILVER',
-  },
-  SILVER: {
-    label: 'Silver', emoji: '🥈', color: '#3730a3', bg: '#e0e7ff',
-    weeklyTarget: 1000,     // must hit $1000/week to advance
-    cashoutLimit: 500,
-    nextTier: 'GOLD',
-  },
-  GOLD: {
-    label: 'Gold', emoji: '🥇', color: '#92400e', bg: '#fef3c7',
-    weeklyTarget: null,     // top tier
-    cashoutLimit: 750,
-    nextTier: null,
-  },
+    BRONZE: {
+        label: 'Bronze', emoji: '🥉', color: '#b45309', bg: '#fef3c7',
+        weeklyTarget: 500,
+        cashoutLimit: 250,
+        nextTier: 'SILVER',
+    },
+    SILVER: {
+        label: 'Silver', emoji: '🥈', color: '#3730a3', bg: '#e0e7ff',
+        weeklyTarget: 1000,
+        cashoutLimit: 500,
+        nextTier: 'GOLD',
+    },
+    GOLD: {
+        label: 'Gold', emoji: '🥇', color: '#92400e', bg: '#fef3c7',
+        weeklyTarget: null,
+        cashoutLimit: 750,
+        nextTier: null,
+    },
 };
+
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN PLAYER DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════════
@@ -257,39 +257,52 @@ export default function PlayerDashboard() {
     if (error) return (
         <div style={{ padding: '40px', textAlign: 'center' }}>
             <p style={{ color: C.red, fontSize: '15px', marginBottom: '12px' }}>{error}</p>
-            <button onClick={() => navigate('/')} style={{ padding: '10px 20px', background: C.sky, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>← Back</button>
+            <button onClick={() => navigate('/?page=players')} style={{ padding: '10px 20px', background: C.sky, color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>← Back to Players</button>
         </div>
     );
 
     if (!player) return null;
 
-    const tier = TIER[player.tier] || TIER.BRONZE;
-     // ── Weekly deposit total from transaction history ──────────────────────────
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  sevenDaysAgo.setHours(0, 0, 0, 0);
+    const tier       = TIER[player.tier] || TIER.BRONZE;
+    const tierCfg    = TIER_CONFIG[player.tier] || TIER_CONFIG.BRONZE;
+    const weeklyTarget = tierCfg.weeklyTarget;
 
-  const weeklyDeposits = (player.transactionHistory || [])
-    .filter(tx => {
-      if (tx.type !== 'deposit') return false;
-      // tx.date is a formatted string like "Jan 5, 2025"
-      const d = new Date(tx.date || tx.timestamp || tx.createdAt);
-      return !isNaN(d.getTime()) && d >= sevenDaysAgo;
-    })
-    .reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
+    // ── Weekly deposit total ───────────────────────────────────────────────
+    // PRIMARY: use the backend-computed value attached to each transaction
+    // (the backend computes this once and stamps it on every tx in the history)
+    // FALLBACK: parse dates from the formatted date strings
+    const weeklyDeposits = (() => {
+        const backendVal = (player.transactionHistory || []).find(
+            tx => tx.weeklyDepositTotal != null
+        )?.weeklyDepositTotal;
+        if (backendVal != null) return backendVal;
 
-  const tierCfg       = TIER_CONFIG[player.tier] || TIER_CONFIG.BRONZE;
-  const weeklyTarget  = tierCfg.weeklyTarget;
-  const tierPct       = weeklyTarget
-    ? Math.min(100, Math.round((weeklyDeposits / weeklyTarget) * 100))
-    : 100;
-  const amtToNext     = weeklyTarget ? Math.max(0, weeklyTarget - weeklyDeposits) : 0;
+        // Fallback calculation
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 7);
+        cutoff.setHours(0, 0, 0, 0);
+        return (player.transactionHistory || [])
+            .filter(tx => {
+                if (tx.type !== 'deposit') return false;
+                const d = new Date(tx.date);
+                return !isNaN(d.getTime()) && d >= cutoff;
+            })
+            .reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
+    })();
+
+    // Progress toward NEXT tier (0–100, capped at 100)
+    const tierPct   = weeklyTarget
+        ? Math.min(100, Math.round((weeklyDeposits / weeklyTarget) * 100))
+        : 100;
+    const amtToNext = weeklyTarget ? Math.max(0, weeklyTarget - weeklyDeposits) : 0;
+
     const status = STATUS_MAP[player.status] || STATUS_MAP.ACTIVE;
 
-    // ── Today's deposits/cashouts ─────────────────────────────────────────────
+    // ── Today's deposits/cashouts ─────────────────────────────────────────
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
     const todayTransactions = (player.transactionHistory || []).filter(tx => {
-        const txDate = new Date(tx.date || tx.createdAt || tx.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        const txDate = new Date(tx.date || tx.createdAt || tx.timestamp)
+            .toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
         return txDate === today;
     });
     const todayDeposits = todayTransactions.filter(tx => tx.type === 'deposit').reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
@@ -318,12 +331,17 @@ export default function PlayerDashboard() {
     const chartData = sortedData.filter(e => new Date(e.date) >= cutoff);
     const finalChartData = chartData.length > 0 ? chartData : sortedData.slice(-chartDays);
 
-    const progressPct = player.tierProgress?.progressPercentage || 0;
-
     // ── Source tags ──────────────────────────────────────────────────────────
     const sourceTags = player.source && player.source !== '—'
         ? player.source.split(',').map(s => s.trim()).filter(Boolean)
         : [];
+
+    // ── Tier progress bar colour ─────────────────────────────────────────────
+    const barGradient = tierPct >= 100
+        ? 'linear-gradient(90deg, #16a34a, #22c55e)'
+        : player.tier === 'GOLD'
+            ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+            : 'linear-gradient(90deg, #0ea5e9, #7c3aed)';
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1100px', margin: '0 auto', width: '100%' }}>
@@ -332,7 +350,7 @@ export default function PlayerDashboard() {
             <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0px', borderRadius: '10px', width: 'fit-content', flexWrap: 'wrap' }}>
                 {[
                     { label: 'Dashboard', onClick: () => navigate('/') },
-                    { label: 'Players', onClick: () => navigate('/?page=players') },
+                    { label: 'Players',   onClick: () => navigate('/?page=players') },
                     { label: player.name, onClick: null },
                 ].map((item, i, arr) => (
                     <React.Fragment key={i}>
@@ -370,13 +388,11 @@ export default function PlayerDashboard() {
                             <span style={{ ...pill(status.bg, status.text), display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                                 <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: status.dot }} />{status.label}
                             </span>
-                            {/* Source tags */}
                             {sourceTags.map((src, i) => (
                                 <span key={i} style={pill('#f1f5f9', C.gray)}>📍 {src}</span>
                             ))}
                         </div>
 
-                        {/* Referred By */}
                         {player.referredBy && (
                             <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <span style={{ fontSize: '12px', color: C.grayLt }}>Referred by:</span>
@@ -388,7 +404,8 @@ export default function PlayerDashboard() {
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', flexShrink: 0, flexWrap: 'wrap', alignSelf: 'flex-start' }}>
-                    <button onClick={() => navigate('/?page=addTransactions')}
+                    {/* Pass the player id so AddTransaction can pre-fill */}
+                    <button onClick={() => navigate(`/?page=addTransactions&playerId=${player.id}`)}
                         style={{ padding: '9px 16px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '9px', color: '#166534', fontWeight: '700', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                         + Add Transaction
                     </button>
@@ -401,99 +418,111 @@ export default function PlayerDashboard() {
 
             {/* ── STAT ROW ────────────────────────────────────────────────── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px' }}>
-                <StatCard label="Balance" value={`$${parseFloat(player.balance || 0).toFixed(2)}`} color="#10b981" />
-                <StatCard label="Cashout Limit" value={`$${parseFloat(player.cashoutLimit || 250).toFixed(0)}`} color={C.amber} />
-                <StatCard label="Streak" value={`${player.streak?.currentStreak || 0} days`} color={C.violet} sub={`Last: ${player.streak?.lastPlayedDate || '—'}`} />
-                <StatCard label="Today's Deposits" value={`$${todayDeposits.toFixed(2)}`} color="#10b981" />
-                <StatCard label="Today's Cashouts" value={`$${todayCashouts.toFixed(2)}`} color={C.red} />
-                <StatCard label="Available Bonus" value={`$${parseFloat(player.bonusTracker?.availableBonus || 0).toFixed(2)}`} color="#10b981" />
+                <StatCard label="Balance"          value={`$${parseFloat(player.balance || 0).toFixed(2)}`}                              color="#10b981" />
+                <StatCard label="Cashout Limit"    value={`$${parseFloat(player.cashoutLimit || 250).toFixed(0)}`}                       color={C.amber} />
+                <StatCard label="Streak"           value={`${player.streak?.currentStreak || 0} days`}                                   color={C.violet} sub={`Last: ${player.streak?.lastPlayedDate || '—'}`} />
+                <StatCard label="Today's Deposits" value={`$${todayDeposits.toFixed(2)}`}                                                color="#10b981" />
+                <StatCard label="Today's Cashouts" value={`$${todayCashouts.toFixed(2)}`}                                                color={C.red} />
+                <StatCard label="Available Bonus"  value={`$${parseFloat(player.bonusTracker?.availableBonus || 0).toFixed(2)}`}         color="#10b981" />
             </div>
 
             {/* ── TIER PROGRESS ────────────────────────────────────────────── */}
             <div style={card({ padding: '18px 24px' })}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-      <div>
-        <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: '700', color: C.slate }}>
-          Tier Progress — {tier.emoji} {tier.label}
-        </p>
-        <p style={{ margin: 0, fontSize: '11px', color: C.grayLt }}>
-          Based on total deposits in the last 7 days
-        </p>
-      </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                        <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: '700', color: C.slate }}>
+                            Tier Progress — {tier.emoji} {tier.label}
+                        </p>
+                        <p style={{ margin: 0, fontSize: '11px', color: C.grayLt }}>
+                            Based on total deposits in the last 7 days
+                        </p>
+                    </div>
 
-      {weeklyTarget && (
-        <div style={{ textAlign: 'right' }}>
-          <p style={{ margin: '0 0 2px', fontSize: '12px', fontWeight: '700', color: C.slate }}>
-            ${weeklyDeposits.toFixed(0)} / ${weeklyTarget.toLocaleString()}
-          </p>
-          <p style={{ margin: 0, fontSize: '11px', color: C.grayLt }}>
-            {amtToNext > 0
-              ? `$${amtToNext.toFixed(0)} more to ${TIER_CONFIG[tierCfg.nextTier]?.label}`
-              : `✓ ${tierCfg.nextTier ? `Ready for ${TIER_CONFIG[tierCfg.nextTier]?.label}` : 'Max Tier'}`
-            }
-          </p>
-        </div>
-      )}
-    </div>
+                    {/* Right side: amount info */}
+                    <div style={{ textAlign: 'right' }}>
+                        {weeklyTarget ? (
+                            <>
+                                <p style={{ margin: '0 0 2px', fontSize: '12px', fontWeight: '700', color: C.slate }}>
+                                    ${weeklyDeposits.toFixed(0)} / ${weeklyTarget.toLocaleString()}
+                                </p>
+                                <p style={{ margin: 0, fontSize: '11px', color: amtToNext === 0 ? '#16a34a' : C.grayLt }}>
+                                    {amtToNext > 0
+                                        ? `$${amtToNext.toFixed(0)} more to ${TIER_CONFIG[tierCfg.nextTier]?.label}`
+                                        : `✓ Eligible for ${TIER_CONFIG[tierCfg.nextTier]?.label}`
+                                    }
+                                </p>
+                            </>
+                        ) : (
+                            <p style={{ margin: 0, fontSize: '12px', fontWeight: '700', color: '#f59e0b' }}>
+                                🥇 Maximum Tier Reached
+                            </p>
+                        )}
+                    </div>
+                </div>
 
-    {/* // Progress bar */}
-    <div style={{ height: '10px', background: C.border, borderRadius: '99px', overflow: 'hidden', marginBottom: '10px' }}>
-      <div style={{
-        height: '100%',
-        width: `${tierPct}%`,
-        background: tierPct >= 100
-          ? 'linear-gradient(90deg, #16a34a, #22c55e)'
-          : 'linear-gradient(90deg, #0ea5e9, #7c3aed)',
-        borderRadius: '99px',
-        transition: 'width .4s ease',
-      }} />
-    </div>
+                {/* Progress bar */}
+                <div style={{ height: '10px', background: C.border, borderRadius: '99px', overflow: 'hidden', marginBottom: '8px' }}>
+                    <div style={{
+                        height: '100%',
+                        width: `${tierPct}%`,
+                        background: barGradient,
+                        borderRadius: '99px',
+                        transition: 'width .4s ease',
+                    }} />
+                </div>
 
-    {/* // Tier milestone markers */}
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: C.grayLt, marginBottom: '14px' }}>
-      <span>$0</span>
-      {weeklyTarget && <span style={{ color: tierPct >= 50 ? C.sky : C.grayLt }}>
-        ${(weeklyTarget / 2).toFixed(0)}
-      </span>}
-      {weeklyTarget && <span style={{ fontWeight: tierPct >= 100 ? '700' : '400', color: tierPct >= 100 ? '#16a34a' : C.grayLt }}>
-        ${weeklyTarget.toLocaleString()} {tierPct >= 100 ? '✓' : ''}
-      </span>}
-      {!weeklyTarget && <span style={{ color: '#16a34a', fontWeight: '700' }}>Max Tier 🥇</span>}
-    </div>
+                {/* Milestone markers */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: C.grayLt, marginBottom: '14px' }}>
+                    <span>$0</span>
+                    {weeklyTarget && (
+                        <span style={{ color: tierPct >= 50 ? C.sky : C.grayLt }}>
+                            ${(weeklyTarget / 2).toLocaleString()}
+                        </span>
+                    )}
+                    {weeklyTarget && (
+                        <span style={{ fontWeight: tierPct >= 100 ? '700' : '400', color: tierPct >= 100 ? '#16a34a' : C.grayLt }}>
+                            ${weeklyTarget.toLocaleString()} {tierPct >= 100 ? '✓' : ''}
+                        </span>
+                    )}
+                    {!weeklyTarget && (
+                        <span style={{ color: '#f59e0b', fontWeight: '700' }}>Top Tier 🥇</span>
+                    )}
+                </div>
 
-    {/* // Cashout limits per tier (info row) */}
-    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-      {Object.entries(TIER_CONFIG).map(([key, cfg]) => (
-        <div key={key} style={{
-          padding: '8px 14px', borderRadius: '8px',
-          background: player.tier === key ? cfg.bg : '#f8fafc',
-          border: `1px solid ${player.tier === key ? '#e2e8f0' : '#f1f5f9'}`,
-          opacity: player.tier === key ? 1 : 0.6,
-        }}>
-          <div style={{ fontSize: '11px', fontWeight: '700', color: cfg.color, marginBottom: '2px' }}>
-            {cfg.emoji} {cfg.label}
-          </div>
-          <div style={{ fontSize: '10px', color: '#64748b' }}>
-            Cashout: ${cfg.cashoutLimit}/day
-          </div>
-          {cfg.weeklyTarget && (
-            <div style={{ fontSize: '10px', color: '#94a3b8' }}>
-              Deposits: ${cfg.weeklyTarget === 500 ? '<500' : `${cfg.weeklyTarget - 499}–${cfg.weeklyTarget}`}/week
+                {/* Tier info boxes — one per tier */}
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    {Object.entries(TIER_CONFIG).map(([key, cfg]) => {
+                        const isActive = player.tier === key;
+                        return (
+                            <div key={key} style={{
+                                padding: '8px 14px', borderRadius: '8px',
+                                background: isActive ? cfg.bg : '#f8fafc',
+                                border: `1px solid ${isActive ? '#d1d5db' : '#f1f5f9'}`,
+                                opacity: isActive ? 1 : 0.55,
+                                transition: 'opacity .2s',
+                            }}>
+                                <div style={{ fontSize: '11px', fontWeight: '700', color: cfg.color, marginBottom: '3px' }}>
+                                    {cfg.emoji} {cfg.label}
+                                    {isActive && <span style={{ marginLeft: '5px', fontSize: '9px', background: cfg.color, color: '#fff', borderRadius: '4px', padding: '1px 5px' }}>CURRENT</span>}
+                                </div>
+                                <div style={{ fontSize: '10px', color: '#64748b' }}>
+                                    Cashout: ${cfg.cashoutLimit}/day
+                                </div>
+                                <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>
+                                    {cfg.nextTier
+                                        ? `Need $${cfg.weeklyTarget?.toLocaleString()}/wk → ${TIER_CONFIG[cfg.nextTier]?.label}`
+                                        : 'Max Tier — no limit 🏆'
+                                    }
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
-          )}
-          {!cfg.weeklyTarget && (
-            <div style={{ fontSize: '10px', color: '#94a3b8' }}>Deposits: >$1000/week</div>
-          )}
-        </div>
-      ))}
-    </div>
-  </div>
 
             {/* ── REFERRALS & FRIENDS ROW ───────────────────────────────────── */}
             {((player.referralsList?.length > 0) || (player.friendsList?.length > 0)) && (
                 <div style={{ display: 'grid', gridTemplateColumns: player.referralsList?.length && player.friendsList?.length ? '1fr 1fr' : '1fr', gap: '16px' }}>
-
-                    {/* Referrals — players this person referred */}
                     {player.referralsList?.length > 0 && (
                         <div style={card({ padding: '18px 22px' })}>
                             <SectionHeader title="Referred Players" count={player.referralsList.length} />
@@ -504,8 +533,6 @@ export default function PlayerDashboard() {
                             </div>
                         </div>
                     )}
-
-                    {/* Friends */}
                     {player.friendsList?.length > 0 && (
                         <div style={card({ padding: '18px 22px' })}>
                             <SectionHeader title="Friends" count={player.friendsList.length} />
@@ -577,11 +604,11 @@ export default function PlayerDashboard() {
                         <AreaChart data={finalChartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="dGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
+                                    <stop offset="5%"  stopColor="#10b981" stopOpacity={0.25} />
                                     <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                 </linearGradient>
                                 <linearGradient id="cGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor={C.red} stopOpacity={0.2} />
+                                    <stop offset="5%"  stopColor={C.red} stopOpacity={0.2} />
                                     <stop offset="95%" stopColor={C.red} stopOpacity={0} />
                                 </linearGradient>
                             </defs>
@@ -589,9 +616,9 @@ export default function PlayerDashboard() {
                             <XAxis dataKey="date" tick={{ fontSize: 11, fill: C.grayLt }} tickLine={false} axisLine={false} />
                             <YAxis tick={{ fontSize: 11, fill: C.grayLt }} tickLine={false} axisLine={false} tickFormatter={v => `$${v}`} />
                             <Tooltip content={<CustomChartTooltip />} />
-                            <Legend formatter={(value) => (<span style={{ fontSize: '12px', color: C.gray, fontWeight: '600' }}>{value}</span>)} />
+                            <Legend formatter={value => (<span style={{ fontSize: '12px', color: C.gray, fontWeight: '600' }}>{value}</span>)} />
                             <Area type="monotone" dataKey="deposits" stroke="#10b981" strokeWidth={2.5} fill="url(#dGrad)" name="Deposits" dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
-                            <Area type="monotone" dataKey="cashouts" stroke={C.red} strokeWidth={2.5} fill="url(#cGrad)" name="Cashouts" dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
+                            <Area type="monotone" dataKey="cashouts" stroke={C.red}    strokeWidth={2.5} fill="url(#cGrad)" name="Cashouts" dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
                         </AreaChart>
                     </ResponsiveContainer>
                 ) : (
@@ -606,13 +633,13 @@ export default function PlayerDashboard() {
                 <SectionHeader title="Social Media" />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                     {[
-                        { key: 'email', label: 'Email', emoji: '📧', prefix: '' },
-                        { key: 'phone', label: 'Phone', emoji: '📱', prefix: '' },
-                        { key: 'facebook', label: 'Facebook', emoji: '📘', prefix: '@' },
-                        { key: 'telegram', label: 'Telegram', emoji: '✈️', prefix: '@' },
+                        { key: 'email',     label: 'Email',     emoji: '📧', prefix: '' },
+                        { key: 'phone',     label: 'Phone',     emoji: '📱', prefix: '' },
+                        { key: 'facebook',  label: 'Facebook',  emoji: '📘', prefix: '@' },
+                        { key: 'telegram',  label: 'Telegram',  emoji: '✈️',  prefix: '@' },
                         { key: 'instagram', label: 'Instagram', emoji: '📸', prefix: '@' },
-                        { key: 'x', label: 'X', emoji: '🐦', prefix: '@' },
-                        { key: 'snapchat', label: 'Snapchat', emoji: '👻', prefix: '@' },
+                        { key: 'x',         label: 'X',         emoji: '🐦', prefix: '@' },
+                        { key: 'snapchat',  label: 'Snapchat',  emoji: '👻', prefix: '@' },
                     ].map(({ key, label, emoji, prefix }) => {
                         const val = player.socials?.[key];
                         if (!val) return null;
@@ -688,8 +715,6 @@ export default function PlayerDashboard() {
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '12px', color: C.grayLt }}>
                     <span>🆔 ID: <strong style={{ color: C.slate }}>#{player.id}</strong></span>
                     <span>📅 Joined: <strong style={{ color: C.slate }}>{player.createdAt ? new Date(player.createdAt).toLocaleDateString() : '—'}</strong></span>
-                    {/* <span>🔐 Last Login: <strong style={{ color: C.slate }}>{player.lastLoginAt ? new Date(player.lastLoginAt).toLocaleDateString() : 'Never'}</strong></span> */}
-                    {/* <span>💳 Cashout Limit: <strong style={{ color: C.slate }}>${parseFloat(player.cashoutLimit || 250).toFixed(0)}</strong></span> */}
                     {lastUpdated && (
                         <span>🔄 Updated: <strong style={{ color: '#16a34a' }}>{fmtTXTime(lastUpdated)}</strong></span>
                     )}
@@ -697,10 +722,10 @@ export default function PlayerDashboard() {
             </div>
 
             {/* ── MODALS ───────────────────────────────────────────────────── */}
-            {showDelete && <DeleteModal player={player} onClose={() => setShowDelete(false)} onDeleted={() => { setShowDelete(false); navigate('/'); }} />}
+            {showDelete && <DeleteModal player={player} onClose={() => setShowDelete(false)} onDeleted={() => { setShowDelete(false); navigate('/?page=players'); }} />}
 
             <style>{`
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes spin  { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
             `}</style>
         </div>
