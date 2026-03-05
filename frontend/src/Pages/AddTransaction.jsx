@@ -116,7 +116,11 @@ function LedgerRow({ tx, undoingId, onUndo }) {
             </td>
             {/* Fee */}
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
-                {isDepositRow && tx.fee != null && tx.fee > 0
+                {/* {isDepositRow && tx.fee != null && tx.fee > 0
+                    ? <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "12px" }}>−{fmt(tx.fee)}</span>
+                    : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>
+                } */}
+                {tx.fee != null && tx.fee > 0
                     ? <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "12px" }}>−{fmt(tx.fee)}</span>
                     : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>
                 }
