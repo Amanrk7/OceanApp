@@ -663,7 +663,7 @@ export default function PlayerDashboard() {
                                             </td>
                                             <td style={{ padding: '11px 14px', borderBottom: `1px solid ${C.border}`, fontSize: '12px', color: C.gray, whiteSpace: 'nowrap' }}>
                                                 {tx.gameName
-                                                    ? <span style={{ padding: '2px 7px', background: '#f1f5f9', borderRadius: '5px', fontWeight: '500' }}>{(tx.gameName)[0]}</span>
+                                                    ? <span style={{ padding: '2px 7px', background: '#f1f5f9', borderRadius: '5px', fontWeight: '500' }}>{tx.gameName.match(/^[^-]+/)[0].trim()}</span>
                                                     : <span style={{ color: C.grayLt }}>—</span>
                                                 }
                                             </td>
