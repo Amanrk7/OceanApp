@@ -64,9 +64,10 @@ async function fetchAPI(endpoint, options = {}) {
       ...options
     });
 
-    // ✅ FIX: Always try to parse as JSON safely.
-    // Render free tier returns HTML 502/503 during cold-start spin-up.
-    // Calling response.json() on HTML throws "Unexpected token '<', <!DOCTYPE..."
+    // ✅ BUG FIX #1: Render free tier spins down on inactivity and returns
+    // an HTML 502/503 page when waking up. Calling .json() on that HTML throws:
+    // "Unexpected token '<', <!DOCTYPE..." — which is the error you were seeing.
+    // We now check content-type before trying to parse JSON.
     if (!response.ok) {
       let errorMsg = `Server error (${response.status})`;
       try {
@@ -75,22 +76,21 @@ async function fetchAPI(endpoint, options = {}) {
           const error = await response.json();
           errorMsg = error.error || error.message || errorMsg;
         } else {
-          // HTML error page (e.g. Render 502 during cold start)
-          errorMsg = response.status === 502 || response.status === 503
-            ? 'Backend is starting up — please try again in a moment'
+          errorMsg = (response.status === 502 || response.status === 503)
+            ? 'Backend is starting up — please wait a moment and try again'
             : `Server error (${response.status})`;
         }
-      } catch {
-        // json() itself threw — response was not parseable
+      } catch (_) {
+        // .json() itself threw — body was not parseable at all
       }
       throw new Error(errorMsg);
     }
 
-    // ✅ FIX: Also guard the success-path json() in case of unexpected HTML
+    // Also guard the success path — in rare cases Render may return HTML on 200 during startup
     try {
       return await response.json();
-    } catch {
-      throw new Error('Server returned an unexpected response. The backend may be starting up — please try again.');
+    } catch (_) {
+      throw new Error('Backend returned an unexpected response. It may still be starting up — please try again.');
     }
 
   } catch (error) {
@@ -345,7 +345,7 @@ export const transactionsAPI = {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// GAMES API — Never cached (stock changes constantly)
+// GAMES API
 // ═══════════════════════════════════════════════════════════════
 
 export const gamesAPI = {
@@ -505,7 +505,7 @@ export const issuesAPI = {
 export const shiftApi = {
   getShifts: (role) => fetchAPI(`/shifts/${role}`),
 
-  // ✅ FIX: Was using hardcoded relative '/api/shifts' instead of API_BASE_URL
+  // ✅ Was using hardcoded relative '/api/shifts' bypassing API_BASE_URL
   createShift: async (shiftData) => {
     const { teamRole, startTime, endTime, duration, isActive } = shiftData;
     if (!teamRole) throw new Error('teamRole is required');
@@ -527,16 +527,29 @@ export const shiftApi = {
 export const tasksAPI = {
   getTasks: async (opts = {}) => {
     const params = new URLSearchParams();
-    if (opts.assignedTo !== undefined && opts.assignedTo !== null) params.set("assignedTo", opts.assignedTo);
+    // ✅ BUG FIX #2: Frontend was sending "assignedTo" but backend reads "assignedToId"
+    // This caused member filtering to silently return ALL tasks instead of filtered ones
+    if (opts.assignedTo !== undefined && opts.assignedTo !== null) params.set("assignedToId", opts.assignedTo);
     if (opts.unassigned) params.set("unassigned", "true");
     if (opts.status) params.set("status", opts.status);
+    if (opts.myTasks) params.set("myTasks", "true");
     const qs = params.toString() ? `?${params}` : "";
     return fetchAPI(`/tasks${qs}`);
   },
+
   createTask: async (taskData) => fetchAPI("/tasks", { method: "POST", body: JSON.stringify(taskData) }),
   updateTask: async (taskId, updates) => fetchAPI(`/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify(updates) }),
   deleteTask: async (taskId) => fetchAPI(`/tasks/${taskId}`, { method: "DELETE" }),
   getTeamMembers: async () => fetchAPI("/team-members"),
+
+  // ✅ SSE: Use this in your AdminTaskPage / MemberTasksSection for real-time updates.
+  // EventSource doesn't support custom headers, so we rely on the httpOnly cookie
+  // (which is sent automatically with withCredentials: true).
+  connectSSE: () => {
+    const sseUrl = `${API_BASE_URL}/tasks/events`;
+    const es = new EventSource(sseUrl, { withCredentials: true });
+    return es;
+  },
 };
 
 export const reportsAPI = {
