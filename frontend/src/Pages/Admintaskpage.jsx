@@ -5,21 +5,20 @@ import {
   ChevronDown, ChevronUp, Zap, User, Calendar, Tag
 } from 'lucide-react';
 
-// ============================================================
-// AdminTaskPage — Full task management for admins
-// Supports: STANDARD, DAILY_CHECKLIST, PLAYER_ADDITION, REVENUE_TARGET
-// Real-time updates via SSE
-// ============================================================
+// ─── ONE CHANGE: point all fetches at your real backend ───────────
+// Set VITE_API_URL in your Vercel environment variables, e.g.:
+//   VITE_API_URL = https://your-backend.railway.app
+const API = import.meta.env.VITE_API_URL ?? '';
 
 const TASK_TYPES = [
-  { value: 'STANDARD',        label: 'Standard Task',      icon: List,        desc: 'Custom task with optional notes and due date', color: '#64748b' },
-  { value: 'DAILY_CHECKLIST', label: 'Daily Checklist',    icon: CheckCircle, desc: 'Recurring daily checklist for all or specific members', color: '#0ea5e9' },
-  { value: 'PLAYER_ADDITION', label: 'Player Addition',    icon: Users,       desc: 'Assign a player-addition goal with per-member tracking', color: '#8b5cf6' },
-  { value: 'REVENUE_TARGET',  label: 'Revenue Target',     icon: TrendingUp,  desc: 'Set a profit goal with member sub-allocations', color: '#22c55e' },
+  { value: 'STANDARD',        label: 'Standard Task',   icon: List,        desc: 'Custom task with optional notes and due date',           color: '#64748b' },
+  { value: 'DAILY_CHECKLIST', label: 'Daily Checklist', icon: CheckCircle, desc: 'Recurring daily checklist for all or specific members',  color: '#0ea5e9' },
+  { value: 'PLAYER_ADDITION', label: 'Player Addition', icon: Users,       desc: 'Assign a player-addition goal with per-member tracking', color: '#8b5cf6' },
+  { value: 'REVENUE_TARGET',  label: 'Revenue Target',  icon: TrendingUp,  desc: 'Set a profit goal with member sub-allocations',          color: '#22c55e' },
 ];
 
-const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
-const STATUS_TABS = ['ALL', 'PENDING', 'IN_PROGRESS', 'COMPLETED'];
+const PRIORITIES   = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+const STATUS_TABS  = ['ALL', 'PENDING', 'IN_PROGRESS', 'COMPLETED'];
 
 const C = {
   border: '#e2e8f0', text: '#0f172a', muted: '#64748b', faint: '#94a3b8',
@@ -36,28 +35,20 @@ const INPUT = {
   fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
   color: C.text,
 };
-
-const LABEL = {
-  fontSize: '12px', fontWeight: '600', color: '#374151',
-  display: 'block', marginBottom: '5px',
-};
+const LABEL = { fontSize: '12px', fontWeight: '600', color: '#374151', display: 'block', marginBottom: '5px' };
 
 export default function AdminTaskPage() {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [teamMembers, setTeamMembers] = useState([]);
-  const [showForm, setShowForm] = useState(false);
+  const [tasks,        setTasks]        = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [teamMembers,  setTeamMembers]  = useState([]);
+  const [showForm,     setShowForm]     = useState(false);
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [typeFilter, setTypeFilter] = useState('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Form state
-  const [form, setForm] = useState(emptyForm());
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState('');
+  const [typeFilter,   setTypeFilter]   = useState('ALL');
+  const [searchQuery,  setSearchQuery]  = useState('');
+  const [form,         setForm]         = useState(emptyForm());
+  const [submitting,   setSubmitting]   = useState(false);
+  const [formError,    setFormError]    = useState('');
   const [expandedTask, setExpandedTask] = useState(null);
-
-  // SSE ref
   const sseRef = useRef(null);
 
   function emptyForm() {
@@ -75,9 +66,9 @@ export default function AdminTaskPage() {
     return () => sseRef.current?.close();
   }, []);
 
+  // ── SSE: now pointing at the correct server endpoint ──────────────
   function setupSSE() {
-    // Replace /api/events with your actual SSE endpoint
-    const sse = new EventSource('/api/events', { withCredentials: true });
+    const sse = new EventSource(`${API}/api/tasks/events`, { withCredentials: true });
     sse.onmessage = (e) => {
       try {
         const { type, data } = JSON.parse(e.data);
@@ -99,15 +90,16 @@ export default function AdminTaskPage() {
   async function loadTasks() {
     setLoading(true);
     try {
-      const res = await fetch('/api/tasks', { credentials: 'include' });
+      const res  = await fetch(`${API}/api/tasks`, { credentials: 'include' });
       const data = await res.json();
       setTasks(data.data || []);
-    } catch (_) {} finally { setLoading(false); }
+    } catch (_) {}
+    finally { setLoading(false); }
   }
 
   async function loadMembers() {
     try {
-      const res = await fetch('/api/team-members', { credentials: 'include' });
+      const res  = await fetch(`${API}/api/team-members`, { credentials: 'include' });
       const data = await res.json();
       setTeamMembers(data.data || data || []);
     } catch (_) {}
@@ -121,7 +113,7 @@ export default function AdminTaskPage() {
     setFormError('');
     setSubmitting(true);
     try {
-      const res = await fetch('/api/tasks', {
+      const res  = await fetch(`${API}/api/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -141,13 +133,13 @@ export default function AdminTaskPage() {
   async function handleDelete(taskId) {
     if (!confirm('Delete this task?')) return;
     try {
-      await fetch(`/api/tasks/${taskId}`, { method: 'DELETE', credentials: 'include' });
+      await fetch(`${API}/api/tasks/${taskId}`, { method: 'DELETE', credentials: 'include' });
     } catch (_) {}
   }
 
   async function handleStatusChange(taskId, status) {
     try {
-      await fetch(`/api/tasks/${taskId}`, {
+      await fetch(`${API}/api/tasks/${taskId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -158,19 +150,20 @@ export default function AdminTaskPage() {
 
   async function handleDailyReset() {
     if (!confirm('Reset all daily checklist tasks for today?')) return;
-    await fetch('/api/tasks/daily-reset', { method: 'POST', credentials: 'include' });
-    loadTasks();
+    try {
+      await fetch(`${API}/api/tasks/daily-reset`, { method: 'POST', credentials: 'include' });
+      loadTasks();
+    } catch (_) {}
   }
 
-  // Filter tasks
+  // ── Filtering ────────────────────────────────────────────────────
   const filtered = tasks.filter(t => {
     if (statusFilter !== 'ALL' && t.status !== statusFilter) return false;
-    if (typeFilter !== 'ALL' && t.taskType !== typeFilter) return false;
+    if (typeFilter   !== 'ALL' && t.taskType !== typeFilter)  return false;
     if (searchQuery && !t.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
 
-  // Group by type
   const grouped = {
     DAILY_CHECKLIST: filtered.filter(t => t.taskType === 'DAILY_CHECKLIST'),
     PLAYER_ADDITION: filtered.filter(t => t.taskType === 'PLAYER_ADDITION'),
@@ -180,7 +173,8 @@ export default function AdminTaskPage() {
 
   return (
     <div style={{ padding: '24px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Page Header */}
+
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '800', color: C.text, margin: 0 }}>Task Management</h1>
@@ -200,12 +194,12 @@ export default function AdminTaskPage() {
         </div>
       </div>
 
-      {/* Stats row */}
+      {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px', marginBottom: '20px' }}>
         {TASK_TYPES.map(tt => {
           const count = tasks.filter(t => t.taskType === tt.value).length;
-          const done = tasks.filter(t => t.taskType === tt.value && t.status === 'COMPLETED').length;
-          const Icon = tt.icon;
+          const done  = tasks.filter(t => t.taskType === tt.value && t.status === 'COMPLETED').length;
+          const Icon  = tt.icon;
           return (
             <div key={tt.value} style={{ padding: '12px 14px', border: `1px solid ${tt.color}25`, borderRadius: '12px', background: `${tt.color}08` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -232,7 +226,7 @@ export default function AdminTaskPage() {
             <button key={s} onClick={() => setStatusFilter(s)} style={{
               ...FILTER_BTN,
               background: statusFilter === s ? C.text : '#f8fafc',
-              color: statusFilter === s ? '#fff' : C.muted,
+              color:      statusFilter === s ? '#fff'  : C.muted,
             }}>
               {s.replace('_', ' ')}
             </button>
@@ -244,7 +238,7 @@ export default function AdminTaskPage() {
         </select>
       </div>
 
-      {/* Task list — grouped by type */}
+      {/* Task list */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px', color: C.faint }}>Loading tasks...</div>
       ) : filtered.length === 0 ? (
@@ -303,12 +297,12 @@ export default function AdminTaskPage() {
             </div>
 
             <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {/* Task Type Selector */}
+              {/* Task Type */}
               <div>
                 <label style={LABEL}>Task Type</label>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   {TASK_TYPES.map(tt => {
-                    const Icon = tt.icon;
+                    const Icon     = tt.icon;
                     const selected = form.taskType === tt.value;
                     return (
                       <button key={tt.value} onClick={() => setForm(f => ({ ...f, taskType: tt.value }))} style={{
@@ -354,7 +348,7 @@ export default function AdminTaskPage() {
                 </div>
               </div>
 
-              {/* Target Value — for PLAYER_ADDITION / REVENUE_TARGET */}
+              {/* Target value */}
               {['PLAYER_ADDITION', 'REVENUE_TARGET'].includes(form.taskType) && (
                 <div>
                   <label style={LABEL}>
@@ -392,7 +386,7 @@ export default function AdminTaskPage() {
                 )}
               </div>
 
-              {/* Daily toggle for DAILY_CHECKLIST */}
+              {/* Daily toggle */}
               {form.taskType === 'DAILY_CHECKLIST' && (
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                   <input type="checkbox" checked={form.isDaily} onChange={e => setForm(f => ({ ...f, isDaily: e.target.checked }))} />
@@ -403,7 +397,7 @@ export default function AdminTaskPage() {
                 </label>
               )}
 
-              {/* Checklist Builder */}
+              {/* Checklist builder */}
               {['DAILY_CHECKLIST', 'STANDARD'].includes(form.taskType) && (
                 <div>
                   <label style={LABEL}>Checklist Items</label>
@@ -478,13 +472,13 @@ export default function AdminTaskPage() {
                 </div>
               )}
 
-              {/* Notes */}
+              {/* Admin Notes */}
               <div>
                 <label style={LABEL}>Admin Notes</label>
                 <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} style={{ ...INPUT, minHeight: '60px', resize: 'vertical' }} placeholder="Internal notes (not shown to members)..." />
               </div>
 
-              {formError && <div style={{ padding: '10px 12px', background: '#fff1f2', border: `1px solid #fecaca`, borderRadius: '8px', fontSize: '13px', color: C.red }}>{formError}</div>}
+              {formError && <div style={{ padding: '10px 12px', background: '#fff1f2', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '13px', color: C.red }}>{formError}</div>}
             </div>
 
             <div style={{ padding: '12px 20px 20px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: '8px', position: 'sticky', bottom: 0, background: '#fff' }}>
@@ -500,14 +494,14 @@ export default function AdminTaskPage() {
   );
 }
 
-// ── Admin task row component ─────────────────────────────────
+// ── Task row ─────────────────────────────────────────────────────
 function AdminTaskRow({ task, expanded, onExpand, onStatusChange, onDelete, teamMembers }) {
   const pMeta = { URGENT: '#ef4444', HIGH: '#f97316', MEDIUM: '#eab308', LOW: '#22c55e' };
   const tMeta = TASK_TYPES.find(t => t.value === task.taskType) || TASK_TYPES[0];
-  const TypeIcon = tMeta.icon;
+  const TypeIcon    = tMeta.icon;
   const isCompleted = task.status === 'COMPLETED';
 
-  const pct = task.targetValue > 0 ? Math.min(100, Math.round((task.currentValue / task.targetValue) * 100)) : null;
+  const pct       = task.targetValue > 0 ? Math.min(100, Math.round((task.currentValue / task.targetValue) * 100)) : null;
   const checklist = task.checklistItems || [];
   const checkedPct = checklist.length > 0 ? Math.round((checklist.filter(i => i.done).length / checklist.length) * 100) : null;
 
@@ -520,14 +514,12 @@ function AdminTaskRow({ task, expanded, onExpand, onStatusChange, onDelete, team
       overflow: 'hidden',
     }}>
       <div style={{ padding: '12px 14px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-        {/* Status toggle */}
         <button onClick={() => onStatusChange(task.id, isCompleted ? 'PENDING' : 'COMPLETED')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }}>
           {isCompleted
             ? <CheckCircle style={{ width: '18px', height: '18px', color: '#22c55e' }} />
             : <Circle style={{ width: '18px', height: '18px', color: '#cbd5e1' }} />}
         </button>
 
-        {/* Title + badges */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '13px', fontWeight: '700', color: isCompleted ? C.faint : C.text, textDecoration: isCompleted ? 'line-through' : 'none' }}>
@@ -536,25 +528,12 @@ function AdminTaskRow({ task, expanded, onExpand, onStatusChange, onDelete, team
             <span style={{ padding: '2px 7px', borderRadius: '5px', fontSize: '10px', fontWeight: '700', background: `${tMeta.color}18`, color: tMeta.color, display: 'flex', alignItems: 'center', gap: '3px' }}>
               <TypeIcon style={{ width: '9px', height: '9px' }} /> {tMeta.label}
             </span>
-            {task.assignToAll && (
-              <span style={{ padding: '2px 7px', borderRadius: '5px', fontSize: '10px', fontWeight: '700', background: '#f5f3ff', color: '#7c3aed' }}>
-                All Members
-              </span>
-            )}
-            {task.isDaily && (
-              <span style={{ padding: '2px 7px', borderRadius: '5px', fontSize: '10px', fontWeight: '700', background: '#eff6ff', color: '#2563eb' }}>
-                Daily
-              </span>
-            )}
+            {task.assignToAll && <span style={{ padding: '2px 7px', borderRadius: '5px', fontSize: '10px', fontWeight: '700', background: '#f5f3ff', color: '#7c3aed' }}>All Members</span>}
+            {task.isDaily    && <span style={{ padding: '2px 7px', borderRadius: '5px', fontSize: '10px', fontWeight: '700', background: '#eff6ff', color: '#2563eb' }}>Daily</span>}
           </div>
-          {task.assignedTo && (
-            <div style={{ fontSize: '11px', color: C.faint, marginTop: '2px' }}>
-              → {task.assignedTo.name} ({task.assignedTo.role})
-            </div>
-          )}
+          {task.assignedTo && <div style={{ fontSize: '11px', color: C.faint, marginTop: '2px' }}>→ {task.assignedTo.name} ({task.assignedTo.role})</div>}
         </div>
 
-        {/* Progress indicators */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
           {pct !== null && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -564,14 +543,9 @@ function AdminTaskRow({ task, expanded, onExpand, onStatusChange, onDelete, team
               <span style={{ fontSize: '11px', fontWeight: '700', color: pct >= 100 ? '#22c55e' : C.muted }}>{pct}%</span>
             </div>
           )}
-          {checkedPct !== null && (
-            <span style={{ fontSize: '11px', color: C.muted }}>
-              {checklist.filter(i => i.done).length}/{checklist.length} ✓
-            </span>
-          )}
+          {checkedPct !== null && <span style={{ fontSize: '11px', color: C.muted }}>{checklist.filter(i => i.done).length}/{checklist.length} ✓</span>}
         </div>
 
-        {/* Actions */}
         <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
           <button onClick={onExpand} style={{ ...ICON_BTN, color: C.muted }}>
             {expanded ? <ChevronUp style={{ width: '14px', height: '14px' }} /> : <ChevronDown style={{ width: '14px', height: '14px' }} />}
@@ -582,12 +556,10 @@ function AdminTaskRow({ task, expanded, onExpand, onStatusChange, onDelete, team
         </div>
       </div>
 
-      {/* Expanded details */}
       {expanded && (
-        <div style={{ borderTop: `1px solid #f1f5f9`, padding: '12px 14px', background: '#fafbfc' }}>
+        <div style={{ borderTop: '1px solid #f1f5f9', padding: '12px 14px', background: '#fafbfc' }}>
           {task.description && <p style={{ fontSize: '12px', color: C.muted, margin: '0 0 10px', lineHeight: '1.5' }}>{task.description}</p>}
 
-          {/* Full progress bar */}
           {pct !== null && (
             <div style={{ marginBottom: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: C.muted, marginBottom: '3px' }}>
@@ -600,12 +572,9 @@ function AdminTaskRow({ task, expanded, onExpand, onStatusChange, onDelete, team
             </div>
           )}
 
-          {/* Sub-tasks */}
           {task.subTasks?.length > 0 && (
             <div style={{ marginBottom: '10px' }}>
-              <div style={{ fontSize: '10px', fontWeight: '700', color: C.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
-                Member Allocations
-              </div>
+              <div style={{ fontSize: '10px', fontWeight: '700', color: C.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Member Allocations</div>
               {task.subTasks.map(st => (
                 <div key={st.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', marginBottom: '4px' }}>
                   <span style={{ flex: 1, color: C.muted }}>{st.assignedTo?.name || 'Unassigned'}</span>
@@ -616,7 +585,6 @@ function AdminTaskRow({ task, expanded, onExpand, onStatusChange, onDelete, team
             </div>
           )}
 
-          {/* Checklist */}
           {checklist.length > 0 && (
             <div>
               <div style={{ fontSize: '10px', fontWeight: '700', color: C.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
@@ -634,12 +602,9 @@ function AdminTaskRow({ task, expanded, onExpand, onStatusChange, onDelete, team
             </div>
           )}
 
-          {/* Progress logs */}
           {task.progressLogs?.length > 0 && (
             <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: `1px solid ${C.border}` }}>
-              <div style={{ fontSize: '10px', fontWeight: '700', color: C.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
-                Activity Log
-              </div>
+              <div style={{ fontSize: '10px', fontWeight: '700', color: C.faint, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Activity Log</div>
               {task.progressLogs.slice(0, 5).map((log, i) => (
                 <div key={i} style={{ display: 'flex', gap: '6px', fontSize: '11px', color: C.muted, marginBottom: '3px' }}>
                   <Zap style={{ width: '10px', height: '10px', color: '#8b5cf6', flexShrink: 0, marginTop: '1px' }} />
@@ -665,20 +630,16 @@ const BTN_PRIMARY = {
   border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
   cursor: 'pointer', fontFamily: 'inherit',
 };
-
 const BTN_SECONDARY = {
   display: 'flex', alignItems: 'center', gap: '6px',
   padding: '8px 14px', background: '#fff', color: '#374151',
   border: `1px solid ${C.border}`, borderRadius: '10px', fontSize: '13px', fontWeight: '600',
   cursor: 'pointer', fontFamily: 'inherit',
 };
-
 const FILTER_BTN = {
   padding: '6px 12px', borderRadius: '8px', border: `1px solid ${C.border}`,
   fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit',
-  transition: 'all 0.15s',
 };
-
 const ICON_BTN = {
   background: 'none', border: 'none', cursor: 'pointer', padding: '4px',
   borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
