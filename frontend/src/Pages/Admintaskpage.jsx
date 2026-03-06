@@ -69,12 +69,11 @@ const TASK_TYPES = [
   },
 ];
 
-const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "URGENT"];
+const PRIORITIES = ["LOW", "MEDIUM", "HIGH"];
 const PRIORITY_COLORS = {
   LOW:    { bg: "#f0fdf4", text: "#16a34a", border: "#86efac" },
   MEDIUM: { bg: "#fffbeb", text: "#b45309", border: "#fde68a" },
   HIGH:   { bg: "#fff7ed", text: "#c2410c", border: "#fed7aa" },
-  URGENT: { bg: "#fee2e2", text: "#991b1b", border: "#fca5a5" },
 };
 const STATUS_COLORS = {
   PENDING:     { bg: "#f1f5f9", text: "#475569" },
