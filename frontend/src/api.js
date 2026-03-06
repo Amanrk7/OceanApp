@@ -64,12 +64,35 @@ async function fetchAPI(endpoint, options = {}) {
       ...options
     });
 
+    // ✅ FIX: Always try to parse as JSON safely.
+    // Render free tier returns HTML 502/503 during cold-start spin-up.
+    // Calling response.json() on HTML throws "Unexpected token '<', <!DOCTYPE..."
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || `API Error: ${response.status}`);
+      let errorMsg = `Server error (${response.status})`;
+      try {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const error = await response.json();
+          errorMsg = error.error || error.message || errorMsg;
+        } else {
+          // HTML error page (e.g. Render 502 during cold start)
+          errorMsg = response.status === 502 || response.status === 503
+            ? 'Backend is starting up — please try again in a moment'
+            : `Server error (${response.status})`;
+        }
+      } catch {
+        // json() itself threw — response was not parseable
+      }
+      throw new Error(errorMsg);
     }
 
-    return await response.json();
+    // ✅ FIX: Also guard the success-path json() in case of unexpected HTML
+    try {
+      return await response.json();
+    } catch {
+      throw new Error('Server returned an unexpected response. The backend may be starting up — please try again.');
+    }
+
   } catch (error) {
     console.error(`API Error [${endpoint}]:`, error);
     throw error;
@@ -220,7 +243,6 @@ export const playersAPI = {
   },
 
   getPlayer: async (id) => {
-    // ✅ Never cache individual player — always fresh for real-time dashboard
     const data = await fetchAPI(`/players/${id}`);
     return data;
   },
@@ -305,7 +327,7 @@ export const transactionsAPI = {
       }));
     }
     return data;
-  }, 
+  },
 
   deposit: async (payload) => {
     return fetchAPI('/transactions/deposit', {
@@ -320,7 +342,6 @@ export const transactionsAPI = {
       body: JSON.stringify(payload)
     });
   },
-
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -388,15 +409,6 @@ export const expensesAPI = {
 // ═══════════════════════════════════════════════════════════════
 
 export const bonusesAPI = {
-  /**
-   * Grant a bonus to a player.
-   * @param {object} grant
-   * @param {number} grant.playerId
-   * @param {number} grant.amount        - bonus amount (already calculated)
-   * @param {string} grant.gameId
-   * @param {string} grant.bonusType     - 'streak' | 'referral' | 'match' | 'special'
-   * @param {string} [grant.notes]
-   */
   grantBonus: async ({ playerId, amount, gameId, bonusType, notes }) => {
     const data = await fetchAPI('/bonuses', {
       method: 'POST',
@@ -492,19 +504,17 @@ export const issuesAPI = {
 
 export const shiftApi = {
   getShifts: (role) => fetchAPI(`/shifts/${role}`),
+
+  // ✅ FIX: Was using hardcoded relative '/api/shifts' instead of API_BASE_URL
   createShift: async (shiftData) => {
-    try {
-      const { teamRole, startTime, endTime, duration, isActive } = shiftData;
-      if (!teamRole) throw new Error('teamRole is required');
-      const response = await fetch('/api/shifts', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ teamRole, startTime, endTime, duration, isActive })
-      });
-      if (!response.ok) { const error = await response.json(); throw new Error(error.error || 'Failed to record shift'); }
-      return await response.json();
-    } catch (error) { console.error('API Error:', error); throw error; }
+    const { teamRole, startTime, endTime, duration, isActive } = shiftData;
+    if (!teamRole) throw new Error('teamRole is required');
+    return fetchAPI('/shifts', {
+      method: 'POST',
+      body: JSON.stringify({ teamRole, startTime, endTime, duration, isActive })
+    });
   },
+
   getActiveShift: (teamRole) => fetchAPI(`/shifts/active/${teamRole}`),
   startShift: (body) => fetchAPI('/shifts/start', { method: 'POST', body: JSON.stringify(body) }),
   endShift: (shiftId) => fetchAPI(`/shifts/${shiftId}/end`, { method: 'PATCH' }),
