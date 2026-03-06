@@ -39,7 +39,7 @@ const isOverdue = (dueDate, status) =>
     status !== "COMPLETED" && status !== "CANCELLED";
 
 // ─── Task Card ─────────────────────────────────────────────────────
-function TaskCard({ task, onStatusChange, onClaim, isUnassigned = false }) {
+function TaskCard({ task, onStatusChange, onClaim, onChecklistToggle, isUnassigned = false }) {
     const [updating, setUpdating] = useState(false);
     const p = PRIORITY_META[task.priority] || PRIORITY_META.MEDIUM;
     const s = STATUS_META[task.status] || STATUS_META.PENDING;
@@ -58,6 +58,12 @@ function TaskCard({ task, onStatusChange, onClaim, isUnassigned = false }) {
         finally { setUpdating(false); }
     };
 
+    const progress = task.targetValue
+    ? Math.min(100, Math.round((task.currentValue / task.targetValue) * 100))
+    : null;
+
+  const checklist = task.checklistItems || [];
+  const checkedCount = checklist.filter(i => i.done).length;
     return (
         <div
             style={{
@@ -127,6 +133,78 @@ function TaskCard({ task, onStatusChange, onClaim, isUnassigned = false }) {
                 )}
             </div>
 
+
+            {/* Progress bar for PLAYER_ADDITION / REVENUE_TARGET */}
+      {task.targetValue > 0 && (
+        <div style={{ marginBottom:'12px' }}>
+          <div style={{ display:'flex', justifyContent:'space-between',
+            fontSize:'11px', color:'#64748b', marginBottom:'4px' }}>
+            <span>
+              {task.taskType === 'REVENUE_TARGET'
+                ? `$${task.currentValue.toFixed(2)} / $${task.targetValue.toFixed(2)}`
+                : `${task.currentValue} / ${task.targetValue} players`}
+            </span>
+            <span style={{ fontWeight:'700',
+              color: progress >= 100 ? '#16a34a' : '#0f172a' }}>
+              {progress}%
+            </span>
+          </div>
+          <div style={{ height:'6px', background:'#f1f5f9', borderRadius:'999px', overflow:'hidden' }}>
+            <div style={{
+              height:'100%', borderRadius:'999px', transition:'width .3s',
+              background: progress >= 100 ? '#22c55e' : progress >= 50 ? '#3b82f6' : '#f59e0b',
+              width: `${progress}%`,
+            }} />
+          </div>
+          {/* Sub-tasks breakdown */}
+          {task.subTasks?.length > 0 && (
+            <div style={{ marginTop:'8px', display:'flex', flexDirection:'column', gap:'4px' }}>
+              {task.subTasks.map(st => {
+                const stProg = st.targetValue
+                  ? Math.min(100, Math.round((st.currentValue/st.targetValue)*100)) : 0;
+                return (
+                  <div key={st.id} style={{ display:'flex', alignItems:'center',
+                    gap:'8px', fontSize:'11px', color:'#64748b' }}>
+                    <div style={{ width:'6px', height:'6px', borderRadius:'50%',
+                      background: st.status==='COMPLETED' ? '#22c55e' : '#94a3b8', flexShrink:0 }} />
+                    <span style={{ flex:1 }}>{st.assignedTo?.name || 'Unassigned'}</span>
+                    <span style={{ fontWeight:'600' }}>{st.currentValue} / {st.targetValue}</span>
+                    <div style={{ width:'60px', height:'4px', background:'#f1f5f9',
+                      borderRadius:'999px', overflow:'hidden' }}>
+                      <div style={{ height:'100%', background:'#3b82f6',
+                        width:`${stProg}%`, borderRadius:'999px' }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Checklist */}
+      {checklist.length > 0 && (
+        <div style={{ marginBottom:'12px', display:'flex', flexDirection:'column', gap:'6px' }}>
+          <div style={{ fontSize:'11px', fontWeight:'700', color:'#64748b',
+            textTransform:'uppercase', letterSpacing:'0.4px', marginBottom:'4px' }}>
+            Checklist ({checkedCount}/{checklist.length})
+          </div>
+          {checklist.map(item => (
+            <label key={item.id} style={{ display:'flex', alignItems:'center',
+              gap:'8px', cursor:'pointer', fontSize:'12px',
+              color: item.done ? '#94a3b8' : '#0f172a' }}>
+              <input type="checkbox" checked={!!item.done}
+                onChange={() => onChecklistToggle(task.id, item.id, !item.done)}
+                style={{ width:'14px', height:'14px', cursor:'pointer' }} />
+              <span style={{ textDecoration: item.done ? 'line-through' : 'none' }}>
+                {item.label}
+                {item.required && <span style={{ color:'#ef4444', marginLeft:'2px' }}>*</span>}
+              </span>
+            </label>
+          ))}
+        </div>
+      )}
+            
             {/* Actions */}
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 {isUnassigned ? (
