@@ -43,6 +43,7 @@ import ManageWalletsPage from "./Pages/manageWallets.jsx";
 import AdminTaskPage from "./Pages/Admintaskpage .jsx";
 import TeamDashboard from "./Pages/Teamdashboard .jsx";
 import AdminReportPage from "./Pages/Adminreportpage .jsx";
+import MissingPlayersPage from "./Pages/Missingplayerspage .jsx";
 
 const SIDEBAR_W = 62;
 
@@ -317,22 +318,23 @@ const CSS = `
 `;
 
 const NAV_ITEMS = [
-  { id: "dashboard",        label: "Dashboard",        icon: Home01Icon,          adminsOnly: false },
-  { id: "memberDashboard",  label: "Member Dashboard", icon: CheckListIcon,       adminsOnly: false },
-  { id: "players",          label: "Players",          icon: UserGroup03Icon },
-  { id: "playTime",         label: "Play Time",        icon: TimeQuarter02Icon },
-  { id: "games",            label: "Games",            icon: GameboyIcon },
-  { id: "attendance",       label: "Attendance",       icon: Notebook02Icon },
-  { id: "issues",           label: "Issues",           icon: SettingError04Icon },
-  { id: "transactions",     label: "All Transactions", icon: Invoice02Icon },
-  { id: "balances",         label: "Live Balances",    icon: BalanceScaleIcon,    dividerAfter: true },
-  { id: "expenses",         label: "Expenses",         icon: Invoice03Icon,       adminsOnly: true },
-  { id: "addTasks",         label: "Add Tasks",        icon: TaskEdit01Icon,      adminsOnly: true },
-  { id: "addTransactions",  label: "Add Transaction",  icon: AddMoneyCircleIcon,  adminsOnly: false },
-  { id: "addBonus",         label: "Add Bonus",        icon: GiftIcon,            adminsOnly: false },
-  { id: "manageWallets",    label: "Manage Wallets",   icon: BitcoinWalletIcon,   adminsOnly: true },
-  { id: "shifts",           label: "Shifts",           icon: ManagerIcon,         adminsOnly: false, dividerAfter: true },
-  { id: "adminReports",     label: "Admin Reports",    icon: AnalysisTextLinkIcon,adminsOnly: true },
+  { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: false },
+  { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon, adminsOnly: false },
+  { id: "players", label: "Players", icon: UserGroup03Icon },
+  { id: "missingPlayersPage", label: "Missing Players", icon: UserGroup03Icon },
+  { id: "playTime", label: "Play Time", icon: TimeQuarter02Icon },
+  { id: "games", label: "Games", icon: GameboyIcon },
+  { id: "attendance", label: "Attendance", icon: Notebook02Icon },
+  { id: "issues", label: "Issues", icon: SettingError04Icon },
+  { id: "transactions", label: "All Transactions", icon: Invoice02Icon },
+  { id: "balances", label: "Live Balances", icon: BalanceScaleIcon, dividerAfter: true },
+  { id: "expenses", label: "Expenses", icon: Invoice03Icon, adminsOnly: true },
+  { id: "addTasks", label: "Add Tasks", icon: TaskEdit01Icon, adminsOnly: true },
+  { id: "addTransactions", label: "Add Transaction", icon: AddMoneyCircleIcon, adminsOnly: false },
+  { id: "addBonus", label: "Add Bonus", icon: GiftIcon, adminsOnly: false },
+  { id: "manageWallets", label: "Manage Wallets", icon: BitcoinWalletIcon, adminsOnly: true },
+  { id: "shifts", label: "Shifts", icon: ManagerIcon, adminsOnly: false, dividerAfter: true },
+  { id: "adminReports", label: "Admin Reports", icon: AnalysisTextLinkIcon, adminsOnly: true },
 ];
 
 const ALLOWED_ADMINS = ["admin", "SUPER_ADMIN"];
@@ -527,6 +529,7 @@ function AdminDashboard({ user }) {
 
   const navLabels = {
     dashboard: 'Dashboard', memberDashboard: 'Member Dashboard', players: 'Players',
+    missingPlayersPage: 'Daily Task',
     playTime: 'Play Time', games: 'Games', attendance: 'Attendance', issues: 'Issues',
     transactions: 'All Transactions', balances: 'Live Balances', expenses: 'Expenses',
     addTransactions: 'Add Transaction', addBonus: 'Add Bonus', reports: 'Reports',
@@ -536,21 +539,22 @@ function AdminDashboard({ user }) {
 
   const renderPage = () => {
     switch (page) {
-      case "dashboard":       return <AnalyticsDashboard />;
+      case "dashboard": return <AnalyticsDashboard />;
       case "memberDashboard": return <TeamDashboard />;
-      case "players":         return <Players />;
-      case "attendance":      return <Attendance />;
-      case "games":           return <Games user={user} />;
-      case "issues":          return <Issues />;
-      case "transactions":    return <Transactions />;
-      case "expenses":        return <ExpensesPage />;
-      case "balances":        return <BalancesPage />;
-      case "manageWallets":   return <ManageWalletsPage />;
-      case "shifts":          return <ShiftsPage />;
+      case "players": return <Players />;
+      case "missingPlayersPage": return <MissingPlayersPage />;
+      case "attendance": return <Attendance />;
+      case "games": return <Games user={user} />;
+      case "issues": return <Issues />;
+      case "transactions": return <Transactions />;
+      case "expenses": return <ExpensesPage />;
+      case "balances": return <BalancesPage />;
+      case "manageWallets": return <ManageWalletsPage />;
+      case "shifts": return <ShiftsPage />;
       case "addTransactions": return <AddTransactionsPage />;
-      case "addBonus":        return <AddBonusPage />;
-      case "addTasks":        return <AdminTaskPage />;
-      case "adminReports":    return <AdminReportPage />;
+      case "addBonus": return <AddBonusPage />;
+      case "addTasks": return <AdminTaskPage />;
+      case "adminReports": return <AdminReportPage />;
       default: return (
         <div className="ob-card">
           <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: 40 }}>Coming Soon</p>
@@ -617,9 +621,9 @@ function PlayerDashboardWithSidebar({ user }) {
 function LoginPage() {
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("");
-  const [error, setError]       = useState("");
-  const [loading, setLoading]   = useState(false);
-  const { theme, toggleTheme }  = useTheme();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setError(""); setLoading(true);
@@ -672,7 +676,7 @@ function LoginPage() {
 // ROOT APP
 // ══════════════════════════════════════════════════════════════════════════
 export default function App() {
-  const [user, setUser]       = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
