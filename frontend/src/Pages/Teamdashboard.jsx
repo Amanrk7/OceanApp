@@ -4,9 +4,9 @@ import {
   TrendingUp, DollarSign, Users, Activity, ChevronDown, ChevronUp,
   Wifi, WifiOff, Bell
 } from 'lucide-react';
-import TaskCard from './TaskCard';
-import ShiftStartModal from './ShiftStartModal';
-import ShiftEndModal from './ShiftEndModal';
+import TaskCard from './Taskcard';
+import ShiftStartModal from './Shiftstartmodal';
+import ShiftEndModal from './Shiftendmodal';
 
 // ─── Colours ───────────────────────────────────────────────────────────────
 const C = {
