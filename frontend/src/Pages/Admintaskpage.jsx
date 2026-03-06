@@ -9,6 +9,7 @@ import {
   ChevronUp, Zap, Tag, Calendar, Edit2, Eye, ArrowDownLeft,
   ArrowUpRight, Gift, Star,
 } from "lucide-react";
+import { tasksAPI } from "../api";
 
 // ── Style tokens (identical to AddTransactionsPage) ───────────────
 const LABEL = {
@@ -161,7 +162,7 @@ function AdminTaskRow({ task, onDelete, onStatusChange, teamMembers, onRefresh }
     if (!logValue || parseFloat(logValue) <= 0) return;
     setLogging(true);
     try {
-      await fetch(`${API}/api/tasks/${task.id}/progress`, {
+      await fetch(`${API}/tasks/${task.id}/progress`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -431,34 +432,10 @@ export default function AdminTaskPage() {
     if (error) { const t = setTimeout(() => setError(""), 5000); return () => clearTimeout(t); }
   }, [error]);
   
-  useEffect(() => {
-    const es = tasksAPI.connectSSE();
-
-    es.addEventListener('task_created', (e) => {
-      const { data: newTask } = JSON.parse(e.data);
-      setTasks(prev => [newTask, ...prev]);
-    });
-
-    es.addEventListener('task_updated', (e) => {
-      const { data: updated } = JSON.parse(e.data);
-      setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
-    });
-
-    es.addEventListener('task_deleted', (e) => {
-      const { data: { id } } = JSON.parse(e.data);
-      setTasks(prev => prev.filter(t => t.id !== id));
-    });
-
-    es.onerror = () => {
-      // SSE auto-reconnects — no action needed
-      console.warn('SSE disconnected, will auto-reconnect');
-    };
-
-    return () => es.close(); // cleanup on unmount
-  }, []);
+  
 
   function setupSSE() {
-    const sse = new EventSource(`${API}/api/tasks/events`, { withCredentials: true });
+    const sse = new EventSource(`${API}/tasks/events`, { withCredentials: true });
     sse.onmessage = (e) => {
       try {
         const { type, data } = JSON.parse(e.data);
@@ -473,7 +450,7 @@ export default function AdminTaskPage() {
   async function loadTasks() {
     setLoading(true);
     try {
-      const res  = await fetch(`${API}/api/tasks`, { credentials: "include" });
+      const res  = await fetch(`${API}/tasks`, { credentials: "include" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load tasks");
       setTasks(data.data || []);
@@ -486,7 +463,7 @@ export default function AdminTaskPage() {
 
   async function loadMembers() {
     try {
-      const res  = await fetch(`${API}/api/team-members`, { credentials: "include" });
+      const res  = await fetch(`${API}/team-members`, { credentials: "include" });
       const data = await res.json();
       setTeamMembers(data.data || data || []);
     } catch (_) {}
@@ -511,7 +488,7 @@ export default function AdminTaskPage() {
         targetValue: form.targetValue ? parseFloat(form.targetValue) : undefined,
         subTasks: form.subTasks.map(st => ({ ...st, targetValue: parseFloat(st.targetValue) })),
       };
-      const res  = await fetch(`${API}/api/tasks`, {
+      const res  = await fetch(`${API}/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -532,7 +509,7 @@ export default function AdminTaskPage() {
   async function handleDelete(taskId) {
     if (!confirm("Delete this task? This cannot be undone.")) return;
     try {
-      const res = await fetch(`${API}/api/tasks/${taskId}`, { method: "DELETE", credentials: "include" });
+      const res = await fetch(`${API}/tasks/${taskId}`, { method: "DELETE", credentials: "include" });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
       setSuccess("Task deleted.");
     } catch (e) {
@@ -542,7 +519,7 @@ export default function AdminTaskPage() {
 
   async function handleStatusChange(taskId, status) {
     try {
-      const res = await fetch(`${API}/api/tasks/${taskId}`, {
+      const res = await fetch(`${API}/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -556,7 +533,7 @@ export default function AdminTaskPage() {
   async function handleDailyReset() {
     if (!confirm("Reset all daily checklist tasks for today? Members will see fresh checklists.")) return;
     try {
-      const res = await fetch(`${API}/api/tasks/daily-reset`, { method: "POST", credentials: "include" });
+      const res = await fetch(`${API}/tasks/daily-reset`, { method: "POST", credentials: "include" });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
       setSuccess("Daily checklists reset successfully.");
       loadTasks();
