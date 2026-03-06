@@ -284,6 +284,12 @@ export default function AdminTaskPage() {
     const [filterPriority, setFilterPriority] = useState("ALL");
     const [search, setSearch] = useState("");
 
+    const [taskType, setTaskType] = useState('STANDARD');
+const [targetValue, setTargetValue] = useState('');
+const [assignToAll, setAssignToAll] = useState(false);
+const [checklistItems, setChecklistItems] = useState([]);
+const [subTasks, setSubTasks] = useState([]);
+const [isDaily, setIsDaily] = useState(false);
     const eventSourceRef = useRef(null);
 
     const loadData = useCallback(async () => {
@@ -476,6 +482,109 @@ export default function AdminTaskPage() {
                                     <option value="LOW">Low</option>
                                 </select>
                             </div>
+                            <div>
+  <label style={LABEL}>Task Type</label>
+  <select value={taskType} onChange={e => setTaskType(e.target.value)} style={INPUT}>
+    <option value="STANDARD">Standard Task</option>
+    <option value="DAILY_CHECKLIST">Daily Checklist</option>
+    <option value="PLAYER_ADDITION">Player Addition Goal</option>
+    <option value="REVENUE_TARGET">Revenue/Profit Target</option>
+  </select>
+</div>
+                            {/* Target value for PLAYER_ADDITION / REVENUE_TARGET */}
+{['PLAYER_ADDITION','REVENUE_TARGET'].includes(taskType) && (
+  <div>
+    <label style={LABEL}>
+      {taskType === 'PLAYER_ADDITION' ? 'Total Players to Add' : 'Revenue Target ($)'}
+    </label>
+    <input type="number" value={targetValue}
+      onChange={e => setTargetValue(e.target.value)} style={INPUT}
+      placeholder={taskType === 'PLAYER_ADDITION' ? 'e.g. 5' : 'e.g. 1000'} />
+  </div>
+)}
+
+{/* Assign to all toggle */}
+<label style={{ display:'flex', alignItems:'center', gap:'8px', cursor:'pointer' }}>
+  <input type="checkbox" checked={assignToAll}
+    onChange={e => setAssignToAll(e.target.checked)} />
+  <span style={{ fontSize:'13px', fontWeight:'600', color:'#0f172a' }}>
+    Assign to ALL team members
+  </span>
+</label>
+
+{/* Daily checklist builder */}
+{taskType === 'DAILY_CHECKLIST' && (
+  <div>
+    <label style={LABEL}>Checklist Items</label>
+    {checklistItems.map((item, i) => (
+      <div key={i} style={{ display:'flex', gap:'8px', marginBottom:'6px' }}>
+        <input value={item.label}
+          onChange={e => setChecklistItems(prev =>
+            prev.map((it, idx) => idx === i ? {...it, label: e.target.value} : it)
+          )}
+          style={{ ...INPUT, flex:1 }} placeholder={`Item ${i+1}`} />
+        <label style={{ display:'flex', alignItems:'center', gap:'4px', fontSize:'11px' }}>
+          <input type="checkbox" checked={item.required}
+            onChange={e => setChecklistItems(prev =>
+              prev.map((it, idx) => idx === i ? {...it, required: e.target.checked} : it)
+            )} /> Required
+        </label>
+        <button onClick={() => setChecklistItems(p => p.filter((_,idx)=>idx!==i))}
+          style={{ padding:'6px', border:'1px solid #fca5a5', borderRadius:'6px',
+            background:'#fff', color:'#ef4444', cursor:'pointer' }}>
+          <X style={{ width:'12px', height:'12px' }} />
+        </button>
+      </div>
+    ))}
+    <button type="button"
+      onClick={() => setChecklistItems(p => [...p, {
+        id: Date.now().toString(), label:'', required:true, done:false
+      }])}
+      style={{ fontSize:'12px', color:'#3b82f6', background:'none',
+        border:'1px dashed #bfdbfe', padding:'5px 10px', borderRadius:'6px', cursor:'pointer' }}>
+      + Add item
+    </button>
+  </div>
+)}
+
+{/* Sub-task allocations for PLAYER_ADDITION / REVENUE_TARGET */}
+{['PLAYER_ADDITION','REVENUE_TARGET'].includes(taskType) && (
+  <div>
+    <label style={LABEL}>Member Allocations (optional)</label>
+    {subTasks.map((st, i) => (
+      <div key={i} style={{ display:'flex', gap:'8px', marginBottom:'6px' }}>
+        <select value={st.assignedToId}
+          onChange={e => setSubTasks(p => p.map((s,idx) =>
+            idx===i ? {...s, assignedToId: e.target.value} : s
+          ))}
+          style={{ ...INPUT, flex:2 }}>
+          <option value="">Select member</option>
+          {teamMembers.map(m => (
+            <option key={m.id} value={m.id}>{m.name}</option>
+          ))}
+        </select>
+        <input type="number" value={st.targetValue} placeholder={
+          taskType==='REVENUE_TARGET' ? '$200' : '1 player'
+        }
+          onChange={e => setSubTasks(p => p.map((s,idx) =>
+            idx===i ? {...s, targetValue: e.target.value} : s
+          ))}
+          style={{ ...INPUT, width:'100px' }} />
+        <button onClick={() => setSubTasks(p => p.filter((_,idx)=>idx!==i))}
+          style={{ padding:'6px', border:'1px solid #fca5a5', borderRadius:'6px',
+            background:'#fff', color:'#ef4444', cursor:'pointer' }}>
+          <X style={{ width:'12px', height:'12px' }} />
+        </button>
+      </div>
+    ))}
+    <button type="button"
+      onClick={() => setSubTasks(p => [...p, {assignedToId:'', targetValue:'', label:''}])}
+      style={{ fontSize:'12px', color:'#3b82f6', background:'none',
+        border:'1px dashed #bfdbfe', padding:'5px 10px', borderRadius:'6px', cursor:'pointer' }}>
+      + Add allocation
+    </button>
+  </div>
+)}
                             <div>
                                 <label style={LABEL}>Assign To (optional)</label>
                                 <select value={assignedToId} onChange={e => setAssignedToId(e.target.value)}
