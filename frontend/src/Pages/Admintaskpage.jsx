@@ -430,6 +430,32 @@ export default function AdminTaskPage() {
   useEffect(() => {
     if (error) { const t = setTimeout(() => setError(""), 5000); return () => clearTimeout(t); }
   }, [error]);
+  
+  useEffect(() => {
+    const es = tasksAPI.connectSSE();
+
+    es.addEventListener('task_created', (e) => {
+      const { data: newTask } = JSON.parse(e.data);
+      setTasks(prev => [newTask, ...prev]);
+    });
+
+    es.addEventListener('task_updated', (e) => {
+      const { data: updated } = JSON.parse(e.data);
+      setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
+    });
+
+    es.addEventListener('task_deleted', (e) => {
+      const { data: { id } } = JSON.parse(e.data);
+      setTasks(prev => prev.filter(t => t.id !== id));
+    });
+
+    es.onerror = () => {
+      // SSE auto-reconnects — no action needed
+      console.warn('SSE disconnected, will auto-reconnect');
+    };
+
+    return () => es.close(); // cleanup on unmount
+  }, []);
 
   function setupSSE() {
     const sse = new EventSource(`${API}/api/tasks/events`, { withCredentials: true });
