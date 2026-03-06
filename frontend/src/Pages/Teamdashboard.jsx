@@ -1,686 +1,691 @@
-import { useState, useEffect, useRef } from 'react';
+// components/MemberTasksSection.jsx
+// Drop this into TeamDashboard.jsx — replaces the current task list.
+// Members can: tick checklist items, log progress on player/revenue tasks, mark standard tasks done.
+// Props: currentUser, activeShift (to gate certain actions)
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  LogIn, LogOut, CheckCircle, Clock, AlertCircle, RefreshCw,
-  TrendingUp, DollarSign, Users, Activity, ChevronDown, ChevronUp,
-  Wifi, WifiOff, Bell
-} from 'lucide-react';
-import TaskCard from './Taskcard';
-import ShiftStartModal from './Shiftstartmodal';
-import ShiftEndModal from './Shiftendmodal';
+  CheckCircle, Circle, Clock, AlertCircle, RefreshCw,
+  TrendingUp, Users, List, ChevronDown, ChevronUp, Zap,
+  Calendar, Plus, X, Check,
+} from "lucide-react";
 
-// ─── Colours ───────────────────────────────────────────────────────────────
-const C = {
-  bg: '#f8fafc',
-  card: '#ffffff',
-  border: '#e2e8f0',
-  text: '#0f172a',
-  muted: '#64748b',
-  faint: '#94a3b8',
-  green: '#16a34a',
-  greenBg: '#f0fdf4',
-  red: '#dc2626',
-  redBg: '#fef2f2',
-  amber: '#d97706',
-  amberBg: '#fffbeb',
-  blue: '#2563eb',
-  blueBg: '#eff6ff',
-  purple: '#7c3aed',
-  purpleBg: '#f5f3ff',
+// ── Style tokens (same as AddTransactionsPage) ─────────────────────
+const LABEL = {
+  display: "block", fontSize: "11px", fontWeight: "700",
+  color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px",
+};
+const INPUT = {
+  width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0",
+  borderRadius: "8px", fontSize: "14px", fontFamily: "inherit",
+  boxSizing: "border-box", background: "#fff", color: "#0f172a", outline: "none",
+};
+const CARD = {
+  background: "#fff", borderRadius: "14px", border: "1px solid #e2e8f0",
+  boxShadow: "0 2px 12px rgba(15,23,42,.07)",
+};
+const DIVIDER = { height: "1px", background: "#f1f5f9", margin: "16px 0" };
+
+const API = import.meta.env.VITE_API_URL ?? "";
+
+// ── Constants ──────────────────────────────────────────────────────
+const TASK_TYPES = [
+  { value: "STANDARD",        label: "Standard",         icon: List,        color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1" },
+  { value: "DAILY_CHECKLIST", label: "Daily Checklist",  icon: CheckCircle, color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd" },
+  { value: "PLAYER_ADDITION", label: "Player Addition",  icon: Users,       color: "#8b5cf6", bg: "#f5f3ff", border: "#ddd6fe" },
+  { value: "REVENUE_TARGET",  label: "Revenue Target",   icon: TrendingUp,  color: "#22c55e", bg: "#f0fdf4", border: "#86efac" },
+];
+
+const PRIORITY_BAR = {
+  LOW:    "#22c55e",
+  MEDIUM: "#f59e0b",
+  HIGH:   "#f97316",
+  URGENT: "#ef4444",
 };
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-function fmtMoney(v) {
-  const n = parseFloat(v) || 0;
-  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// ── Helpers ────────────────────────────────────────────────────────
+function fmtTime(iso) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 }
-function fmtTime(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-}
-function fmtDuration(start, end) {
-  if (!start) return '—';
-  const ms = (end ? new Date(end) : new Date()) - new Date(start);
-  const h = Math.floor(ms / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  return `${h}h ${m}m`;
+function fmtDue(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  const now = new Date();
+  const isOverdue = d < now;
+  const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " + fmtTime(iso);
+  return { label, isOverdue };
 }
 
-// ─── Sub-components ─────────────────────────────────────────────────────────
-function KpiCard({ icon: Icon, label, value, color = C.blue, bg = C.blueBg }) {
+function ProgressBar({ pct, color, thin }) {
+  const h = thin ? "5px" : "8px";
   return (
-    <div style={{
-      background: C.card, border: `1px solid ${C.border}`,
-      borderRadius: '14px', padding: '16px 18px',
-      display: 'flex', alignItems: 'center', gap: '12px',
-    }}>
-      <div style={{
-        width: '40px', height: '40px', borderRadius: '10px',
-        background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0,
-      }}>
-        <Icon style={{ width: '18px', height: '18px', color }} />
-      </div>
-      <div>
-        <div style={{ fontSize: '11px', color: C.faint, fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-          {label}
-        </div>
-        <div style={{ fontSize: '18px', fontWeight: '800', color: C.text, marginTop: '1px' }}>
-          {value}
-        </div>
-      </div>
+    <div style={{ height: h, background: "#e2e8f0", borderRadius: "999px", overflow: "hidden" }}>
+      <div style={{ height: "100%", width: `${Math.min(100, pct)}%`, background: pct >= 100 ? "#22c55e" : color, borderRadius: "999px", transition: "width .3s" }} />
     </div>
   );
 }
 
-function StatusDot({ online }) {
+function TypeBadge({ taskType }) {
+  const meta = TASK_TYPES.find(t => t.value === taskType) || TASK_TYPES[0];
+  const Icon = meta.icon;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-      <div style={{
-        width: '7px', height: '7px', borderRadius: '50%',
-        background: online ? '#22c55e' : '#ef4444',
-        boxShadow: online ? '0 0 0 2px #dcfce7' : 'none',
-      }} />
-      <span style={{ fontSize: '11px', color: C.muted }}>
-        {online ? 'Live' : 'Offline'}
-      </span>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "2px 8px", borderRadius: "5px", fontSize: "10px", fontWeight: "700", background: meta.bg, color: meta.color, border: `1px solid ${meta.border}` }}>
+      <Icon style={{ width: "9px", height: "9px" }} /> {meta.label}
+    </span>
+  );
+}
+
+// ── Daily Checklist Card ───────────────────────────────────────────
+function DailyChecklistCard({ task, onChecklistToggle, currentUserId }) {
+  const [expanded, setExpanded] = useState(true);
+  const [toggling, setToggling] = useState(null);
+
+  const checklist = task.checklistItems || [];
+  const doneItems = checklist.filter(i => i.done).length;
+  const pct = checklist.length > 0 ? Math.round((doneItems / checklist.length) * 100) : 0;
+  const allDone = doneItems === checklist.length && checklist.length > 0;
+
+  const due = fmtDue(task.dueDate);
+
+  async function toggle(item) {
+    setToggling(item.id);
+    await onChecklistToggle(task.id, item.id, !item.done);
+    setToggling(null);
+  }
+
+  return (
+    <div style={{ ...CARD, overflow: "hidden", border: `1px solid ${allDone ? "#86efac" : "#bae6fd"}`, borderLeft: `4px solid ${allDone ? "#22c55e" : "#0ea5e9"}` }}>
+      {/* Header */}
+      <div style={{ padding: "14px 16px", display: "flex", gap: "12px", alignItems: "center" }}>
+        <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: allDone ? "#dcfce7" : "#f0f9ff", border: `1px solid ${allDone ? "#86efac" : "#bae6fd"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          {allDone
+            ? <CheckCircle style={{ width: "17px", height: "17px", color: "#22c55e" }} />
+            : <CheckCircle style={{ width: "17px", height: "17px", color: "#0ea5e9" }} />}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a" }}>{task.title}</span>
+            <TypeBadge taskType="DAILY_CHECKLIST" />
+            {task.isDaily && <span style={{ padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: "700", background: "#eff6ff", color: "#2563eb" }}>Auto-Daily</span>}
+          </div>
+          <div style={{ display: "flex", gap: "12px", marginTop: "5px", alignItems: "center" }}>
+            <div style={{ flex: 1, maxWidth: "200px" }}>
+              <ProgressBar pct={pct} color="#0ea5e9" thin />
+            </div>
+            <span style={{ fontSize: "12px", fontWeight: "700", color: allDone ? "#22c55e" : "#64748b", whiteSpace: "nowrap" }}>
+              {doneItems}/{checklist.length} {allDone ? "✓ All done!" : "completed"}
+            </span>
+          </div>
+        </div>
+        <button onClick={() => setExpanded(v => !v)} style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: "7px", cursor: "pointer", padding: "6px", color: "#64748b", display: "flex" }}>
+          {expanded ? <ChevronUp style={{ width: "14px", height: "14px" }} /> : <ChevronDown style={{ width: "14px", height: "14px" }} />}
+        </button>
+      </div>
+
+      {/* Checklist items */}
+      {expanded && (
+        <div style={{ padding: "0 16px 16px" }}>
+          {task.description && (
+            <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 12px", lineHeight: "1.5" }}>{task.description}</p>
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {checklist.map(item => (
+              <label key={item.id} style={{ display: "flex", alignItems: "center", gap: "10px", cursor: toggling === item.id ? "wait" : "pointer", padding: "9px 12px", borderRadius: "8px", background: item.done ? "#f0fdf4" : "#fafafa", border: `1px solid ${item.done ? "#86efac" : "#e2e8f0"}`, transition: "all .15s" }}>
+                <div style={{ width: "20px", height: "20px", borderRadius: "6px", border: `2px solid ${item.done ? "#22c55e" : "#cbd5e1"}`, background: item.done ? "#22c55e" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all .15s" }}
+                  onClick={() => toggle(item)}>
+                  {item.done && <Check style={{ width: "11px", height: "11px", color: "#fff" }} />}
+                  {toggling === item.id && <RefreshCw style={{ width: "10px", height: "10px", color: "#cbd5e1", animation: "spin 0.8s linear infinite" }} />}
+                </div>
+                <span style={{ flex: 1, fontSize: "13px", fontWeight: "500", color: item.done ? "#94a3b8" : "#0f172a", textDecoration: item.done ? "line-through" : "none" }}>{item.label}</span>
+                {item.required && !item.done && <span style={{ fontSize: "10px", color: "#ef4444", fontWeight: "700", flexShrink: 0 }}>required</span>}
+                {item.done && item.doneBy && <span style={{ fontSize: "10px", color: "#94a3b8", flexShrink: 0 }}>✓ {item.doneBy}</span>}
+              </label>
+            ))}
+          </div>
+          {due && (
+            <p style={{ fontSize: "11px", color: due.isOverdue ? "#dc2626" : "#94a3b8", marginTop: "10px", display: "flex", alignItems: "center", gap: "4px" }}>
+              <Calendar style={{ width: "10px", height: "10px" }} /> Due: {due.label}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Main Component ─────────────────────────────────────────────────────────
-export default function TeamDashboard() {
-  // ── Auth / user ──────────────────────────────────────────────
-  const [currentUser, setCurrentUser] = useState(null);
+// ── Player Addition Card ───────────────────────────────────────────
+function PlayerAdditionCard({ task, currentUserId, onProgressLog }) {
+  const [logVal, setLogVal] = useState("");
+  const [logging, setLogging] = useState(false);
+  const [logSuccess, setLogSuccess] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
-  // ── Shift state ──────────────────────────────────────────────
-  const [activeShift, setActiveShift] = useState(null);
-  const [shiftLoading, setShiftLoading] = useState(true);
-  const [startingShift, setStartingShift] = useState(false);
-  const [endingShift, setEndingShift] = useState(false);
-  const [shiftError, setShiftError] = useState('');
+  const pct = task.targetValue > 0 ? Math.min(100, Math.round(((task.currentValue ?? 0) / task.targetValue) * 100)) : 0;
+  const allDone = pct >= 100;
+  const due = fmtDue(task.dueDate);
 
-  // ── Shift modals ─────────────────────────────────────────────
-  const [showStartModal, setShowStartModal] = useState(false);
-  const [showEndModal, setShowEndModal] = useState(false);
-  const [liveBalance, setLiveBalance] = useState(null);
+  // My sub-task
+  const mySubTask = (task.subTasks || []).find(st => st.assignedToId === currentUserId || st.assignedTo?.id === currentUserId);
+  const myPct = mySubTask?.targetValue > 0
+    ? Math.min(100, Math.round(((mySubTask.currentValue ?? 0) / mySubTask.targetValue) * 100))
+    : null;
 
-  // ── Stats ─────────────────────────────────────────────────────
-  const [stats, setStats] = useState(null);
+  async function handleLog() {
+    if (!logVal || parseFloat(logVal) <= 0) return;
+    setLogging(true);
+    await onProgressLog(task.id, parseFloat(logVal));
+    setLogVal("");
+    setLogging(false);
+    setLogSuccess(true);
+    setTimeout(() => setLogSuccess(false), 2000);
+  }
 
-  // ── Tasks ─────────────────────────────────────────────────────
-  const [tasks, setTasks] = useState([]);
-  const [tasksLoading, setTasksLoading] = useState(true);
-  const [taskFilter, setTaskFilter] = useState('all'); // 'all' | 'pending' | 'done'
+  return (
+    <div style={{ ...CARD, overflow: "hidden", border: `1px solid ${allDone ? "#86efac" : "#ddd6fe"}`, borderLeft: `4px solid ${allDone ? "#22c55e" : "#8b5cf6"}` }}>
+      {/* Header */}
+      <div style={{ padding: "14px 16px", display: "flex", gap: "12px", alignItems: "center" }}>
+        <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: allDone ? "#dcfce7" : "#f5f3ff", border: `1px solid ${allDone ? "#86efac" : "#ddd6fe"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Users style={{ width: "17px", height: "17px", color: allDone ? "#22c55e" : "#8b5cf6" }} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a" }}>{task.title}</span>
+            <TypeBadge taskType="PLAYER_ADDITION" />
+            {task.assignToAll && <span style={{ padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: "700", background: "#f5f3ff", color: "#7c3aed" }}>All Members</span>}
+          </div>
+          {/* Overall progress */}
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", marginTop: "5px" }}>
+            <div style={{ flex: 1, maxWidth: "200px" }}>
+              <ProgressBar pct={pct} color="#8b5cf6" thin />
+            </div>
+            <span style={{ fontSize: "12px", fontWeight: "700", color: allDone ? "#22c55e" : "#64748b", whiteSpace: "nowrap" }}>
+              {task.currentValue ?? 0}/{task.targetValue} players ({pct}%)
+            </span>
+          </div>
+        </div>
+        <button onClick={() => setExpanded(v => !v)} style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: "7px", cursor: "pointer", padding: "6px", color: "#64748b", display: "flex" }}>
+          {expanded ? <ChevronUp style={{ width: "14px", height: "14px" }} /> : <ChevronDown style={{ width: "14px", height: "14px" }} />}
+        </button>
+      </div>
 
-  // ── SSE ───────────────────────────────────────────────────────
-  const [sseOnline, setSseOnline] = useState(false);
+      {expanded && (
+        <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+          {task.description && <p style={{ fontSize: "12px", color: "#64748b", margin: 0, lineHeight: "1.5" }}>{task.description}</p>}
+
+          {/* My allocation */}
+          {mySubTask && (
+            <div style={{ padding: "12px 14px", background: "#f5f3ff", border: "1px solid #ddd6fe", borderRadius: "10px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "700", color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "8px" }}>My Target</div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px", fontSize: "12px" }}>
+                <span style={{ color: "#64748b" }}>My progress</span>
+                <span style={{ fontWeight: "800", color: myPct >= 100 ? "#22c55e" : "#8b5cf6" }}>
+                  {mySubTask.currentValue ?? 0} / {mySubTask.targetValue} players ({myPct ?? 0}%)
+                </span>
+              </div>
+              <ProgressBar pct={myPct ?? 0} color="#8b5cf6" />
+            </div>
+          )}
+
+          {/* All members breakdown */}
+          {(task.subTasks || []).length > 0 && (
+            <div style={{ padding: "12px 14px", background: "#fafafa", border: "1px solid #e2e8f0", borderRadius: "10px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "10px" }}>Team Progress</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {task.subTasks.map(st => {
+                  const sPct = st.targetValue > 0 ? Math.min(100, Math.round(((st.currentValue ?? 0) / st.targetValue) * 100)) : 0;
+                  const isMe = st.assignedToId === currentUserId || st.assignedTo?.id === currentUserId;
+                  return (
+                    <div key={st.id} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <span style={{ fontSize: "12px", fontWeight: isMe ? "700" : "500", color: isMe ? "#8b5cf6" : "#0f172a", minWidth: "90px" }}>
+                        {isMe ? "⭐ You" : (st.assignedTo?.name || "Member")}
+                      </span>
+                      <div style={{ flex: 1 }}>
+                        <ProgressBar pct={sPct} color={isMe ? "#8b5cf6" : "#94a3b8"} thin />
+                      </div>
+                      <span style={{ fontSize: "12px", fontWeight: "700", color: sPct >= 100 ? "#22c55e" : "#0f172a", whiteSpace: "nowrap", minWidth: "70px", textAlign: "right" }}>
+                        {st.currentValue ?? 0}/{st.targetValue}
+                        {sPct >= 100 && <CheckCircle style={{ width: "11px", height: "11px", color: "#22c55e", marginLeft: "4px", verticalAlign: "middle" }} />}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Log progress input */}
+          {!allDone && (
+            <div style={{ padding: "12px 14px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "10px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "700", color: "#166534", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "8px" }}>
+                Log Players Added
+              </div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  type="number" min="1" step="1"
+                  value={logVal}
+                  onChange={e => setLogVal(e.target.value)}
+                  style={{ ...INPUT, flex: 1, borderColor: "#86efac" }}
+                  placeholder="How many players did you add?"
+                  onKeyDown={e => e.key === "Enter" && handleLog()}
+                />
+                <button
+                  onClick={handleLog}
+                  disabled={logging || !logVal || parseFloat(logVal) <= 0}
+                  style={{ padding: "10px 18px", background: logging ? "#e2e8f0" : "#22c55e", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "700", fontSize: "13px", cursor: logging || !logVal ? "not-allowed" : "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "5px" }}
+                >
+                  {logging ? <RefreshCw style={{ width: "13px", height: "13px", animation: "spin 0.8s linear infinite" }} /> : <Plus style={{ width: "13px", height: "13px" }} />}
+                  {logSuccess ? "✓ Logged!" : "Log"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {due && (
+            <p style={{ fontSize: "11px", color: due.isOverdue ? "#dc2626" : "#94a3b8", margin: 0, display: "flex", alignItems: "center", gap: "4px" }}>
+              <Calendar style={{ width: "10px", height: "10px" }} /> Due: {due.label}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Revenue Target Card ────────────────────────────────────────────
+function RevenueTargetCard({ task, currentUserId, onProgressLog }) {
+  const [logVal, setLogVal] = useState("");
+  const [logging, setLogging] = useState(false);
+  const [logSuccess, setLogSuccess] = useState(false);
+  const [expanded, setExpanded] = useState(true);
+
+  const pct = task.targetValue > 0 ? Math.min(100, Math.round(((task.currentValue ?? 0) / task.targetValue) * 100)) : 0;
+  const allDone = pct >= 100;
+
+  const mySubTask = (task.subTasks || []).find(st => st.assignedToId === currentUserId || st.assignedTo?.id === currentUserId);
+  const myPct = mySubTask?.targetValue > 0
+    ? Math.min(100, Math.round(((mySubTask.currentValue ?? 0) / mySubTask.targetValue) * 100))
+    : null;
+
+  const due = fmtDue(task.dueDate);
+
+  async function handleLog() {
+    if (!logVal || parseFloat(logVal) <= 0) return;
+    setLogging(true);
+    await onProgressLog(task.id, parseFloat(logVal));
+    setLogVal("");
+    setLogging(false);
+    setLogSuccess(true);
+    setTimeout(() => setLogSuccess(false), 2000);
+  }
+
+  return (
+    <div style={{ ...CARD, overflow: "hidden", border: `1px solid ${allDone ? "#86efac" : "#86efac"}`, borderLeft: `4px solid ${allDone ? "#22c55e" : "#22c55e"}` }}>
+      <div style={{ padding: "14px 16px", display: "flex", gap: "12px", alignItems: "center" }}>
+        <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: allDone ? "#dcfce7" : "#f0fdf4", border: "1px solid #86efac", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <TrendingUp style={{ width: "17px", height: "17px", color: "#22c55e" }} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a" }}>{task.title}</span>
+            <TypeBadge taskType="REVENUE_TARGET" />
+            {task.assignToAll && <span style={{ padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: "700", background: "#f5f3ff", color: "#7c3aed" }}>All Members</span>}
+          </div>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", marginTop: "5px" }}>
+            <div style={{ flex: 1, maxWidth: "200px" }}>
+              <ProgressBar pct={pct} color="#22c55e" thin />
+            </div>
+            <span style={{ fontSize: "12px", fontWeight: "700", color: allDone ? "#22c55e" : "#64748b", whiteSpace: "nowrap" }}>
+              ${(task.currentValue ?? 0).toFixed(2)} / ${task.targetValue} ({pct}%)
+            </span>
+          </div>
+        </div>
+        <button onClick={() => setExpanded(v => !v)} style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: "7px", cursor: "pointer", padding: "6px", color: "#64748b", display: "flex" }}>
+          {expanded ? <ChevronUp style={{ width: "14px", height: "14px" }} /> : <ChevronDown style={{ width: "14px", height: "14px" }} />}
+        </button>
+      </div>
+
+      {expanded && (
+        <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+          {task.description && <p style={{ fontSize: "12px", color: "#64748b", margin: 0, lineHeight: "1.5" }}>{task.description}</p>}
+
+          {mySubTask && (
+            <div style={{ padding: "12px 14px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "10px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "700", color: "#166534", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "8px" }}>My Revenue Target</div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px", fontSize: "12px" }}>
+                <span style={{ color: "#64748b" }}>My progress</span>
+                <span style={{ fontWeight: "800", color: myPct >= 100 ? "#22c55e" : "#16a34a" }}>
+                  ${(mySubTask.currentValue ?? 0).toFixed(2)} / ${mySubTask.targetValue} ({myPct ?? 0}%)
+                </span>
+              </div>
+              <ProgressBar pct={myPct ?? 0} color="#22c55e" />
+            </div>
+          )}
+
+          {(task.subTasks || []).length > 0 && (
+            <div style={{ padding: "12px 14px", background: "#fafafa", border: "1px solid #e2e8f0", borderRadius: "10px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "10px" }}>Team Revenue Breakdown</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {task.subTasks.map(st => {
+                  const sPct = st.targetValue > 0 ? Math.min(100, Math.round(((st.currentValue ?? 0) / st.targetValue) * 100)) : 0;
+                  const isMe = st.assignedToId === currentUserId || st.assignedTo?.id === currentUserId;
+                  return (
+                    <div key={st.id} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <span style={{ fontSize: "12px", fontWeight: isMe ? "700" : "500", color: isMe ? "#22c55e" : "#0f172a", minWidth: "90px" }}>
+                        {isMe ? "⭐ You" : (st.assignedTo?.name || "Member")}
+                      </span>
+                      <div style={{ flex: 1 }}>
+                        <ProgressBar pct={sPct} color={isMe ? "#22c55e" : "#94a3b8"} thin />
+                      </div>
+                      <span style={{ fontSize: "12px", fontWeight: "700", color: sPct >= 100 ? "#22c55e" : "#0f172a", whiteSpace: "nowrap", minWidth: "100px", textAlign: "right" }}>
+                        ${(st.currentValue ?? 0).toFixed(2)} / ${st.targetValue}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {!allDone && (
+            <div style={{ padding: "12px 14px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "10px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "700", color: "#166534", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "8px" }}>
+                Log Revenue Achieved ($)
+              </div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  type="number" min="0.01" step="0.01"
+                  value={logVal}
+                  onChange={e => setLogVal(e.target.value)}
+                  style={{ ...INPUT, flex: 1, borderColor: "#86efac" }}
+                  placeholder="Enter amount achieved…"
+                  onKeyDown={e => e.key === "Enter" && handleLog()}
+                />
+                <button
+                  onClick={handleLog}
+                  disabled={logging || !logVal || parseFloat(logVal) <= 0}
+                  style={{ padding: "10px 18px", background: logging ? "#e2e8f0" : "#22c55e", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "700", fontSize: "13px", cursor: logging || !logVal ? "not-allowed" : "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "5px" }}
+                >
+                  {logging ? <RefreshCw style={{ width: "13px", height: "13px", animation: "spin 0.8s linear infinite" }} /> : <TrendingUp style={{ width: "13px", height: "13px" }} />}
+                  {logSuccess ? "✓ Logged!" : "Log Revenue"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {due && (
+            <p style={{ fontSize: "11px", color: due.isOverdue ? "#dc2626" : "#94a3b8", margin: 0, display: "flex", alignItems: "center", gap: "4px" }}>
+              <Calendar style={{ width: "10px", height: "10px" }} /> Due: {due.label}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Standard Task Card ─────────────────────────────────────────────
+function StandardTaskCard({ task, onStatusChange, onChecklistToggle, currentUserId }) {
+  const [expanded, setExpanded] = useState(false);
+  const [toggling, setToggling] = useState(null);
+
+  const isCompleted = task.status === "COMPLETED";
+  const checklist = task.checklistItems || [];
+  const doneItems = checklist.filter(i => i.done).length;
+  const due = fmtDue(task.dueDate);
+  const barColor = PRIORITY_BAR[task.priority] || "#64748b";
+
+  async function toggle(item) {
+    setToggling(item.id);
+    await onChecklistToggle(task.id, item.id, !item.done);
+    setToggling(null);
+  }
+
+  return (
+    <div style={{ ...CARD, overflow: "hidden", borderLeft: `4px solid ${isCompleted ? "#22c55e" : barColor}`, opacity: isCompleted ? 0.75 : 1 }}>
+      <div style={{ padding: "13px 16px", display: "flex", gap: "10px", alignItems: "center" }}>
+        <button onClick={() => onStatusChange(task.id, isCompleted ? "PENDING" : "COMPLETED")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}>
+          {isCompleted
+            ? <CheckCircle style={{ width: "20px", height: "20px", color: "#22c55e" }} />
+            : <Circle style={{ width: "20px", height: "20px", color: "#cbd5e1" }} />}
+        </button>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: isCompleted ? "#94a3b8" : "#0f172a", textDecoration: isCompleted ? "line-through" : "none" }}>
+              {task.title}
+            </span>
+            <TypeBadge taskType="STANDARD" />
+            {due?.isOverdue && !isCompleted && <span style={{ padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: "700", background: "#fee2e2", color: "#dc2626" }}>Overdue</span>}
+          </div>
+          {checklist.length > 0 && !isCompleted && (
+            <div style={{ fontSize: "11px", color: "#64748b", marginTop: "3px" }}>
+              {doneItems}/{checklist.length} checklist items done
+            </div>
+          )}
+        </div>
+        {due && <span style={{ fontSize: "11px", color: due.isOverdue ? "#dc2626" : "#94a3b8", whiteSpace: "nowrap", flexShrink: 0 }}>{due.label}</span>}
+        {checklist.length > 0 && (
+          <button onClick={() => setExpanded(v => !v)} style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: "7px", cursor: "pointer", padding: "5px", color: "#64748b", display: "flex" }}>
+            {expanded ? <ChevronUp style={{ width: "13px", height: "13px" }} /> : <ChevronDown style={{ width: "13px", height: "13px" }} />}
+          </button>
+        )}
+      </div>
+
+      {expanded && checklist.length > 0 && (
+        <div style={{ padding: "0 16px 14px", display: "flex", flexDirection: "column", gap: "5px" }}>
+          {task.description && <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 8px", lineHeight: "1.5" }}>{task.description}</p>}
+          {checklist.map(item => (
+            <label key={item.id} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", padding: "7px 10px", borderRadius: "7px", background: item.done ? "#f0fdf4" : "#fafafa", border: `1px solid ${item.done ? "#86efac" : "#e2e8f0"}` }}>
+              <div style={{ width: "18px", height: "18px", borderRadius: "5px", border: `2px solid ${item.done ? "#22c55e" : "#cbd5e1"}`, background: item.done ? "#22c55e" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                onClick={() => !toggling && toggle(item)}>
+                {item.done && <Check style={{ width: "10px", height: "10px", color: "#fff" }} />}
+              </div>
+              <span style={{ flex: 1, fontSize: "13px", color: item.done ? "#94a3b8" : "#0f172a", textDecoration: item.done ? "line-through" : "none" }}>{item.label}</span>
+              {item.required && !item.done && <span style={{ fontSize: "10px", color: "#ef4444" }}>*</span>}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════
+export default function TeamDashboard({ currentUser, activeShift }) {
+  const [tasks, setTasks]           = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState("");
+  const [taskFilter, setTaskFilter] = useState("all"); // all | pending | done
   const sseRef = useRef(null);
 
-  // ── Notifications ─────────────────────────────────────────────
-  const [notifications, setNotifications] = useState([]);
-
-  // ─── Bootstrap ────────────────────────────────────────────────
-  useEffect(() => {
-    loadCurrentUser();
+  const loadTasks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res  = await fetch(`${API}/api/tasks?myTasks=true`, { credentials: "include" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load tasks");
+      setTasks(data.data || []);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    if (!currentUser) return;
-    loadShift();
     loadTasks();
     connectSSE();
     return () => sseRef.current?.close();
-  }, [currentUser]);
+  }, [loadTasks]);
 
-  // Poll shift stats every 30s while on shift
-  useEffect(() => {
-    if (!activeShift) return;
-    loadShiftStats(activeShift.id);
-    const iv = setInterval(() => loadShiftStats(activeShift.id), 30000);
-    return () => clearInterval(iv);
-  }, [activeShift?.id]);
-
-  // ─── Data loaders ─────────────────────────────────────────────
-  async function loadCurrentUser() {
-    try {
-      const res = await fetch('/api/auth/me', { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setCurrentUser(data.user || data.data);
-      }
-    } catch (_) {}
-  }
-
-  async function loadShift() {
-    setShiftLoading(true);
-    try {
-      const res = await fetch('/api/shifts/active', { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setActiveShift(data.data || null);
-      } else {
-        setActiveShift(null);
-      }
-    } catch (_) {
-      setActiveShift(null);
-    } finally {
-      setShiftLoading(false);
-    }
-  }
-
-  async function loadShiftStats(shiftId) {
-    try {
-      const res = await fetch(`/api/shifts/${shiftId}/stats`, { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data.data || data);
-      }
-    } catch (_) {}
-  }
-
-  async function loadTasks() {
-    setTasksLoading(true);
-    try {
-      const res = await fetch('/api/tasks?myTasks=true', { credentials: 'include' });
-      const data = await res.json();
-      setTasks(data.data || []);
-    } catch (_) {}
-    finally { setTasksLoading(false); }
-  }
-
-  // ─── SSE connection ───────────────────────────────────────────
   function connectSSE() {
     if (sseRef.current) sseRef.current.close();
-    const es = new EventSource('/api/events', { withCredentials: true });
-    sseRef.current = es;
-
-    es.onopen = () => setSseOnline(true);
-    es.onerror = () => setSseOnline(false);
-
+    const es = new EventSource(`${API}/api/tasks/events`, { withCredentials: true });
     es.onmessage = (e) => {
       try {
         const { type, data } = JSON.parse(e.data);
-        switch (type) {
-          case 'task_created':
-            setTasks(prev => {
-              const exists = prev.find(t => t.id === data.id);
-              if (exists) return prev.map(t => t.id === data.id ? data : t);
-              if (data.assignToAll || data.assignedToId === currentUser?.id) {
-                addNotification(`New task assigned: "${data.title}"`);
-                return [data, ...prev];
-              }
-              return prev;
-            });
-            break;
-          case 'task_updated':
-            setTasks(prev => prev.map(t => t.id === data.id ? data : t));
-            break;
-          case 'task_deleted':
-            setTasks(prev => prev.filter(t => t.id !== data.id));
-            break;
-          case 'shift_started':
-            if (data.userId === currentUser?.id) setActiveShift(data);
-            break;
-          case 'shift_ended':
-            if (data.userId === currentUser?.id) {
-              setActiveShift(null);
-              setStats(null);
-            }
-            break;
-          default:
-            break;
+        if (type === "task_created") {
+          setTasks(prev => {
+            const exists = prev.find(t => t.id === data.id);
+            if (exists) return prev.map(t => t.id === data.id ? data : t);
+            if (data.assignToAll || data.assignedToId === currentUser?.id) return [data, ...prev];
+            return prev;
+          });
         }
+        if (type === "task_updated") setTasks(prev => prev.map(t => t.id === data.id ? data : t));
+        if (type === "task_deleted") setTasks(prev => prev.filter(t => t.id !== data.id));
       } catch (_) {}
     };
+    sseRef.current = es;
   }
 
-  function addNotification(message) {
-    const id = Date.now();
-    setNotifications(prev => [...prev, { id, message }]);
-    setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    }, 4000);
-  }
-
-  // ─── Shift actions ────────────────────────────────────────────
-  async function handleStartShift() {
-    setStartingShift(true);
-    setShiftError('');
-    try {
-      const res = await fetch('/api/shifts/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to start shift');
-
-      const shift = data.data || data;
-      setActiveShift(shift);
-
-      // Fetch live balance and check if confirmation needed
-      try {
-        const [checkinRes, balRes] = await Promise.all([
-          fetch(`/api/shifts/${shift.id}/checkin`, { credentials: 'include' }),
-          fetch('/api/balance/live', { credentials: 'include' }),
-        ]);
-        const checkinData = await checkinRes.json();
-        const balData = await balRes.json();
-        setLiveBalance(balData.balance ?? balData.data?.balance ?? null);
-
-        if (!checkinData.data?.balanceConfirmedAt) {
-          setShowStartModal(true);
-        }
-      } catch (_) {
-        // Balance check failed — show modal anyway
-        setShowStartModal(true);
-      }
-    } catch (err) {
-      setShiftError(err.message);
-    } finally {
-      setStartingShift(false);
-    }
-  }
-
-  async function handleEndShift() {
-    // Show the end-of-shift form modal instead of ending immediately
-    setShowEndModal(true);
-  }
-
-  async function doEndShift() {
-    setEndingShift(true);
-    try {
-      const res = await fetch('/api/shifts/end', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error || 'Failed to end shift');
-      }
-      setActiveShift(null);
-      setStats(null);
-      setShowEndModal(false);
-    } catch (err) {
-      setShiftError(err.message);
-    } finally {
-      setEndingShift(false);
-    }
-  }
-
-  // ─── Task handlers ────────────────────────────────────────────
+  // ── Task action handlers ───────────────────────────────────────
   async function handleChecklistToggle(taskId, itemId, done) {
+    // Optimistic update
+    setTasks(prev => prev.map(t => {
+      if (t.id !== taskId) return t;
+      return { ...t, checklistItems: (t.checklistItems || []).map(i => i.id === itemId ? { ...i, done, doneBy: currentUser?.name } : i) };
+    }));
     try {
-      const res = await fetch(`/api/tasks/${taskId}/checklist`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      const res = await fetch(`${API}/api/tasks/${taskId}/checklist`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ itemId, done }),
       });
       const data = await res.json();
-      if (res.ok) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
+      if (res.ok && data.data) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
     } catch (_) {}
   }
 
   async function handleStatusChange(taskId, status) {
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
     try {
-      const res = await fetch(`/api/tasks/${taskId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      const res = await fetch(`${API}/api/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ status }),
       });
       const data = await res.json();
-      if (res.ok) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
+      if (res.ok && data.data) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
     } catch (_) {}
   }
 
   async function handleProgressLog(taskId, value) {
     try {
-      const res = await fetch(`/api/tasks/${taskId}/progress`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ value, action: 'MANUAL_PROGRESS' }),
+      const res = await fetch(`${API}/api/tasks/${taskId}/progress`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ value, action: "MEMBER_LOG" }),
       });
       const data = await res.json();
-      if (res.ok) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
+      if (res.ok && data.data) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
     } catch (_) {}
   }
 
-  // ─── Derived values ───────────────────────────────────────────
-  const filteredTasks = tasks.filter(t => {
-    if (taskFilter === 'pending') return t.status !== 'COMPLETED';
-    if (taskFilter === 'done') return t.status === 'COMPLETED';
+  // ── Derived ────────────────────────────────────────────────────
+  const filtered = tasks.filter(t => {
+    if (taskFilter === "pending") return t.status !== "COMPLETED";
+    if (taskFilter === "done")    return t.status === "COMPLETED";
     return true;
   });
 
-  const dailyTasks = filteredTasks.filter(t => t.taskType === 'DAILY_CHECKLIST');
-  const otherTasks = filteredTasks.filter(t => t.taskType !== 'DAILY_CHECKLIST');
-  const completedCount = tasks.filter(t => t.status === 'COMPLETED').length;
-  const overdueCount = tasks.filter(t =>
-    t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'COMPLETED'
-  ).length;
+  const daily   = filtered.filter(t => t.taskType === "DAILY_CHECKLIST");
+  const players = filtered.filter(t => t.taskType === "PLAYER_ADDITION");
+  const revenue = filtered.filter(t => t.taskType === "REVENUE_TARGET");
+  const standard = filtered.filter(t => t.taskType === "STANDARD");
 
-  // ─── Render ───────────────────────────────────────────────────
+  const completedCount = tasks.filter(t => t.status === "COMPLETED").length;
+  const overdueCount   = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length;
+
   return (
-    <div style={{
-      minHeight: '100vh', background: C.bg,
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      color: C.text,
-    }}>
-      {/* ── Modals ── */}
-      {showStartModal && activeShift && (
-        <ShiftStartModal
-          shift={activeShift}
-          currentBalance={liveBalance}
-          onConfirm={() => setShowStartModal(false)}
-        />
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <h2 style={{ fontSize: "16px", fontWeight: "800", color: "#0f172a", margin: 0 }}>My Tasks</h2>
+          <span style={{ padding: "3px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: "700", background: "#eff6ff", color: "#2563eb" }}>
+            {completedCount}/{tasks.length} done
+          </span>
+          {overdueCount > 0 && (
+            <span style={{ padding: "3px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: "700", background: "#fee2e2", color: "#dc2626", display: "flex", alignItems: "center", gap: "4px" }}>
+              <AlertCircle style={{ width: "10px", height: "10px" }} /> {overdueCount} overdue
+            </span>
+          )}
+        </div>
+        <div style={{ display: "flex", gap: "4px" }}>
+          {["all", "pending", "done"].map(f => (
+            <button key={f} onClick={() => setTaskFilter(f)} style={{ padding: "6px 12px", border: "1px solid", borderColor: taskFilter === f ? "#0f172a" : "#e2e8f0", borderRadius: "8px", fontSize: "11px", fontWeight: "700", background: taskFilter === f ? "#0f172a" : "#fff", color: taskFilter === f ? "#fff" : "#64748b", cursor: "pointer", textTransform: "capitalize" }}>
+              {f}
+            </button>
+          ))}
+          <button onClick={loadTasks} style={{ padding: "6px 10px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", cursor: "pointer", color: "#64748b", display: "flex", alignItems: "center" }}>
+            <RefreshCw style={{ width: "12px", height: "12px" }} />
+          </button>
+        </div>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div style={{ padding: "10px 14px", background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "8px", color: "#991b1b", fontSize: "13px", display: "flex", gap: "8px", alignItems: "center" }}>
+          <AlertCircle style={{ width: "13px", height: "13px", flexShrink: 0 }} /> {error}
+        </div>
       )}
-      {showEndModal && activeShift && (
-        <ShiftEndModal
-          shift={activeShift}
-          onSubmit={async () => {
-            await doEndShift();
-          }}
-          onCancel={() => setShowEndModal(false)}
-        />
+
+      {/* Loading */}
+      {loading ? (
+        <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>
+          <Clock style={{ width: "20px", height: "20px", margin: "0 auto 8px", display: "block", opacity: 0.4 }} />
+          Loading tasks…
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ padding: "40px 24px", textAlign: "center", color: "#94a3b8", fontSize: "13px", background: "#fff", borderRadius: "14px", border: "1px solid #e2e8f0" }}>
+          <CheckCircle style={{ width: "24px", height: "24px", margin: "0 auto 8px", display: "block", opacity: 0.3 }} />
+          {taskFilter === "done" ? "No completed tasks yet" : taskFilter === "pending" ? "All tasks completed! 🎉" : "No tasks assigned to you"}
+        </div>
+      ) : (
+        <>
+          {/* Daily checklists */}
+          {daily.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "0 2px" }}>📋 Daily Checklists</div>
+              {daily.map(task => <DailyChecklistCard key={task.id} task={task} onChecklistToggle={handleChecklistToggle} currentUserId={currentUser?.id} />)}
+            </div>
+          )}
+
+          {/* Player addition */}
+          {players.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "0 2px" }}>👥 Player Addition Goals</div>
+              {players.map(task => <PlayerAdditionCard key={task.id} task={task} currentUserId={currentUser?.id} onProgressLog={handleProgressLog} />)}
+            </div>
+          )}
+
+          {/* Revenue targets */}
+          {revenue.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "0 2px" }}>💰 Revenue Targets</div>
+              {revenue.map(task => <RevenueTargetCard key={task.id} task={task} currentUserId={currentUser?.id} onProgressLog={handleProgressLog} />)}
+            </div>
+          )}
+
+          {/* Standard tasks */}
+          {standard.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {(daily.length > 0 || players.length > 0 || revenue.length > 0) && (
+                <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "8px 2px 0" }}>📌 Other Tasks</div>
+              )}
+              {standard.map(task => <StandardTaskCard key={task.id} task={task} onStatusChange={handleStatusChange} onChecklistToggle={handleChecklistToggle} currentUserId={currentUser?.id} />)}
+            </div>
+          )}
+        </>
       )}
 
-      {/* ── Toast Notifications ── */}
-      <div style={{
-        position: 'fixed', top: '16px', right: '16px', zIndex: 9000,
-        display: 'flex', flexDirection: 'column', gap: '8px',
-      }}>
-        {notifications.map(n => (
-          <div key={n.id} style={{
-            padding: '10px 16px', background: '#0f172a', color: '#fff',
-            borderRadius: '10px', fontSize: '13px', fontWeight: '500',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-            animation: 'slideIn 0.2s ease',
-            display: 'flex', alignItems: 'center', gap: '8px',
-          }}>
-            <Bell style={{ width: '13px', height: '13px', color: '#94a3b8' }} />
-            {n.message}
-          </div>
-        ))}
-      </div>
-
-      {/* ── Top bar ── */}
-      <div style={{
-        background: C.card, borderBottom: `1px solid ${C.border}`,
-        padding: '0 24px', height: '56px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        position: 'sticky', top: 0, zIndex: 100,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '28px', height: '28px', borderRadius: '8px',
-            background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Activity style={{ width: '14px', height: '14px', color: '#fff' }} />
-          </div>
-          <span style={{ fontSize: '15px', fontWeight: '700' }}>Team Dashboard</span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <StatusDot online={sseOnline} />
-          {currentUser && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{
-                width: '30px', height: '30px', borderRadius: '50%',
-                background: '#e0e7ff', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: '#4338ca',
-              }}>
-                {(currentUser.name || 'U')[0].toUpperCase()}
-              </div>
-              <span style={{ fontSize: '13px', fontWeight: '600', color: C.muted }}>
-                {currentUser.name}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Main content ── */}
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-        {/* ── Shift Card ── */}
-        <div style={{
-          background: activeShift
-            ? 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)'
-            : C.card,
-          border: activeShift ? 'none' : `1px solid ${C.border}`,
-          borderRadius: '18px',
-          padding: '20px 24px',
-          color: activeShift ? '#fff' : C.text,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-            <div>
-              {shiftLoading ? (
-                <div style={{ fontSize: '14px', opacity: 0.6 }}>Loading shift...</div>
-              ) : activeShift ? (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <div style={{
-                      width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e',
-                      boxShadow: '0 0 0 3px rgba(34,197,94,0.3)',
-                    }} />
-                    <span style={{ fontSize: '12px', opacity: 0.7, fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Shift Active
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '22px', fontWeight: '800' }}>
-                    {fmtDuration(activeShift.startTime)}
-                  </div>
-                  <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '2px' }}>
-                    Started at {fmtTime(activeShift.startTime)}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div style={{ fontSize: '16px', fontWeight: '700', color: C.text }}>No Active Shift</div>
-                  <div style={{ fontSize: '13px', color: C.muted, marginTop: '2px' }}>Start your shift to begin tracking</div>
-                </>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              {activeShift && (
-                <button
-                  onClick={() => loadShiftStats(activeShift.id)}
-                  style={{
-                    background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
-                    color: '#fff', borderRadius: '10px', padding: '8px 12px',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
-                    fontSize: '12px', fontWeight: '600',
-                  }}
-                >
-                  <RefreshCw style={{ width: '12px', height: '12px' }} />
-                  Refresh
-                </button>
-              )}
-
-              {activeShift ? (
-                <button
-                  onClick={handleEndShift}
-                  disabled={endingShift}
-                  style={{
-                    background: '#ef4444', color: '#fff', border: 'none',
-                    borderRadius: '10px', padding: '10px 18px', fontSize: '13px', fontWeight: '700',
-                    cursor: endingShift ? 'not-allowed' : 'pointer', opacity: endingShift ? 0.6 : 1,
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                  }}
-                >
-                  <LogOut style={{ width: '14px', height: '14px' }} />
-                  End Shift
-                </button>
-              ) : (
-                <button
-                  onClick={handleStartShift}
-                  disabled={startingShift}
-                  style={{
-                    background: '#0f172a', color: '#fff', border: 'none',
-                    borderRadius: '10px', padding: '10px 18px', fontSize: '13px', fontWeight: '700',
-                    cursor: startingShift ? 'not-allowed' : 'pointer', opacity: startingShift ? 0.6 : 1,
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                  }}
-                >
-                  <LogIn style={{ width: '14px', height: '14px' }} />
-                  {startingShift ? 'Starting...' : 'Start Shift'}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {shiftError && (
-            <div style={{
-              marginTop: '12px', padding: '8px 12px', background: '#fef2f2',
-              border: '1px solid #fecaca', borderRadius: '8px',
-              fontSize: '12px', color: '#dc2626',
-            }}>
-              {shiftError}
-            </div>
-          )}
-        </div>
-
-        {/* ── Stats grid (only while on shift) ── */}
-        {activeShift && stats && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
-            <KpiCard icon={TrendingUp} label="Net Profit" value={fmtMoney(stats.netProfit)}
-              color={parseFloat(stats.netProfit) >= 0 ? C.green : C.red}
-              bg={parseFloat(stats.netProfit) >= 0 ? C.greenBg : C.redBg} />
-            <KpiCard icon={DollarSign} label="Deposits" value={fmtMoney(stats.totalDeposits)} color={C.green} bg={C.greenBg} />
-            <KpiCard icon={DollarSign} label="Cashouts" value={fmtMoney(stats.totalCashouts)} color={C.red} bg={C.redBg} />
-            <KpiCard icon={Users} label="Players Added" value={stats.playersAdded ?? 0} color={C.purple} bg={C.purpleBg} />
-            <KpiCard icon={CheckCircle} label="Tasks Done" value={stats.tasksCompleted ?? 0} color={C.blue} bg={C.blueBg} />
-            <KpiCard icon={Activity} label="Transactions" value={stats.transactionCount ?? 0} color={C.muted} bg={C.bg} />
-          </div>
-        )}
-
-        {/* ── Tasks Section ── */}
-        <div>
-          {/* Tasks header */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            marginBottom: '12px', flexWrap: 'wrap', gap: '8px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h2 style={{ fontSize: '16px', fontWeight: '700', margin: 0 }}>My Tasks</h2>
-              <span style={{
-                padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: '700',
-                background: C.blueBg, color: C.blue,
-              }}>
-                {completedCount}/{tasks.length} done
-              </span>
-              {overdueCount > 0 && (
-                <span style={{
-                  padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: '700',
-                  background: C.redBg, color: C.red, display: 'flex', alignItems: 'center', gap: '4px',
-                }}>
-                  <AlertCircle style={{ width: '10px', height: '10px' }} />
-                  {overdueCount} overdue
-                </span>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {['all', 'pending', 'done'].map(f => (
-                <button
-                  key={f}
-                  onClick={() => setTaskFilter(f)}
-                  style={{
-                    padding: '5px 12px', border: '1px solid',
-                    borderColor: taskFilter === f ? '#0f172a' : C.border,
-                    borderRadius: '8px', fontSize: '11px', fontWeight: '600',
-                    background: taskFilter === f ? '#0f172a' : C.card,
-                    color: taskFilter === f ? '#fff' : C.muted,
-                    cursor: 'pointer', textTransform: 'capitalize',
-                  }}
-                >
-                  {f}
-                </button>
-              ))}
-              <button
-                onClick={loadTasks}
-                style={{
-                  padding: '5px 10px', border: `1px solid ${C.border}`,
-                  borderRadius: '8px', background: C.card, cursor: 'pointer',
-                  color: C.muted, display: 'flex', alignItems: 'center',
-                }}
-              >
-                <RefreshCw style={{ width: '12px', height: '12px' }} />
-              </button>
-            </div>
-          </div>
-
-          {/* Tasks list */}
-          {tasksLoading ? (
-            <div style={{
-              padding: '40px 0', textAlign: 'center', color: C.faint,
-              fontSize: '13px',
-            }}>
-              <Clock style={{ width: '20px', height: '20px', margin: '0 auto 8px', display: 'block', opacity: 0.4 }} />
-              Loading tasks...
-            </div>
-          ) : filteredTasks.length === 0 ? (
-            <div style={{
-              padding: '40px 24px', textAlign: 'center', color: C.faint,
-              fontSize: '13px', background: C.card, borderRadius: '14px',
-              border: `1px solid ${C.border}`,
-            }}>
-              <CheckCircle style={{ width: '24px', height: '24px', margin: '0 auto 8px', display: 'block', opacity: 0.3 }} />
-              {taskFilter === 'done' ? 'No completed tasks yet' :
-               taskFilter === 'pending' ? 'All tasks completed! 🎉' :
-               'No tasks assigned to you'}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {/* Daily checklists always first */}
-              {dailyTasks.length > 0 && (
-                <>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: C.faint, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '0 2px' }}>
-                    Daily Checklists
-                  </div>
-                  {dailyTasks.map(task => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      onStatusChange={handleStatusChange}
-                      onChecklistToggle={handleChecklistToggle}
-                      onProgressLog={handleProgressLog}
-                      currentUserId={currentUser?.id}
-                    />
-                  ))}
-                </>
-              )}
-
-              {/* Other tasks */}
-              {otherTasks.length > 0 && (
-                <>
-                  {dailyTasks.length > 0 && (
-                    <div style={{ fontSize: '11px', fontWeight: '700', color: C.faint, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '8px 2px 0' }}>
-                      Other Tasks
-                    </div>
-                  )}
-                  {otherTasks.map(task => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      onStatusChange={handleStatusChange}
-                      onChecklistToggle={handleChecklistToggle}
-                      onProgressLog={handleProgressLog}
-                      currentUserId={currentUser?.id}
-                    />
-                  ))}
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-      </div>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
