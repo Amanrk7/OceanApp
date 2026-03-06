@@ -40,10 +40,10 @@ import PlayerDashboard from "./Pages/PlayerDashboard.jsx";
 import { AddPlayerContext } from "./Context/addPlayer.jsx";
 import { CurrentUserContext } from "./Context/currentUser.jsx";
 import ManageWalletsPage from "./Pages/manageWallets.jsx";
-import AdminTaskPage from "./Pages/Admintaskpage .jsx";
-import TeamDashboard from "./Pages/Teamdashboard .jsx";
-import AdminReportPage from "./Pages/Adminreportpage .jsx";
-import MissingPlayersPage from "./Pages/Missingplayerspage .jsx";
+import AdminTaskPage from "./Pages/Admintaskpage.jsx";
+import TeamDashboard from "./Pages/Teamdashboard.jsx";
+import AdminReportPage from "./Pages/Adminreportpage.jsx";
+import MissingPlayersPage from "./Pages/Missingplayerspage.jsx";
 
 const SIDEBAR_W = 62;
 
