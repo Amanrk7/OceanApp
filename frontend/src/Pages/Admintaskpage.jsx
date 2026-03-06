@@ -461,14 +461,22 @@ export default function AdminTaskPage() {
     }
   }
 
-  async function loadMembers() {
-    try {
-      const res  = await fetch(`${API}/team-members`, { credentials: "include" });
-      const data = await res.json();
-      setTeamMembers(data.data || data || []);
-    } catch (_) {}
-  }
-
+  // async function loadMembers() {
+  //   try {
+  //     const res  = await fetch(`${API}/team-members`, { credentials: "include" });
+  //     const data = await res.json();
+  //     setTeamMembers(data.data || data || []);
+  //   } catch (_) {}
+  // }
+async function loadMembers() {
+  try {
+    const res = await fetch(`${API}/team-members`, { credentials: "include" });
+    const data = await res.json();
+    if (!res.ok) return; // bail early, don't touch state
+    const members = data.data ?? data;
+    setTeamMembers(Array.isArray(members) ? members : []);
+  } catch (_) {}
+}
   // ── Submit new task ───────────────────────────────────────────
   async function handleSubmit() {
     setFormError("");
