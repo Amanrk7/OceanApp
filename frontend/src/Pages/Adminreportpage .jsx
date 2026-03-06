@@ -174,8 +174,18 @@ function Pill({ label, value, bg, text, bold }) {
 function ShiftDetail({ shift, index, total }) {
     const [showTxns, setShowTxns] = useState(false);
     const [showTasks, setShowTasks] = useState(false);
-    const s = shift.stats || {};
+    const [activeTab, setActiveTab] = useState('overview');
     const isLast = index === total - 1;
+    const s = shift.stats || {};
+
+    const tabs = [
+        { id: 'overview', label: 'Overview' },
+        { id: 'transactions', label: `Transactions (${shift.transactions?.length || 0})` },
+        { id: 'tasks', label: `Tasks (${shift.tasks?.length || 0})` },
+        { id: 'players', label: `Players Added (${shift.playersAdded?.length || 0})` },
+        { id: 'bonuses', label: `Bonuses (${shift.bonusesGranted?.length || 0})` },
+        { id: 'issues', label: `Issues (${shift.issueActivity?.length || 0})` },
+    ];
 
     return (
         <div style={{ borderBottom: isLast ? 'none' : `1px solid #f1f5f9` }}>
@@ -310,6 +320,264 @@ function ShiftDetail({ shift, index, total }) {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            )}
+
+            {/* Tab navigation */}
+            <div style={{
+                display: 'flex', gap: '2px', padding: '0 24px',
+                borderBottom: `1px solid #f1f5f9`, background: '#fafbfc'
+            }}>
+                {tabs.map(t => (
+                    <button key={t.id} onClick={() => setActiveTab(t.id)}
+                        style={{
+                            padding: '8px 14px', border: 'none', fontSize: '11px', fontWeight: '600',
+                            cursor: 'pointer', fontFamily: 'inherit',
+                            background: activeTab === t.id ? '#fff' : 'transparent',
+                            color: activeTab === t.id ? '#0f172a' : '#94a3b8',
+                            borderBottom: activeTab === t.id ? '2px solid #0f172a' : '2px solid transparent',
+                        }}>
+                        {t.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Overview tab */}
+            {activeTab === 'overview' && (
+                <div style={{ padding: '20px 24px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: '10px' }}>
+                        <MiniKpi icon={ArrowUpRight} label="Deposits" value={fmtMoney(s.totalDeposits)} color={C.green} highlight={C.greenBg} />
+                        <MiniKpi icon={ArrowDownRight} label="Cashouts" value={fmtMoney(s.totalCashouts)} color={C.red} highlight={C.redBg} />
+                        <MiniKpi icon={Gift} label="Bonuses" value={fmtMoney(s.totalBonuses)} color={C.amber} highlight={C.amberBg} />
+                        <MiniKpi icon={TrendingUp} label="Net Profit" value={fmtMoney(s.netProfit)}
+                            color={s.netProfit >= 0 ? C.green : C.red} highlight={s.netProfit >= 0 ? C.greenBg : C.redBg} />
+                        <MiniKpi icon={Users} label="Players Added" value={s.playersAdded} color={C.blue} highlight={C.blueBg} />
+                        <MiniKpi icon={CheckCircle} label="Tasks Done" value={s.tasksCompleted} color={C.slate} highlight={C.slateBg} />
+                        <MiniKpi icon={Gift} label="Bonuses Granted" value={s.bonusesGranted} color={C.amber} highlight={C.amberBg} />
+                        <MiniKpi icon={Activity} label="Transactions" value={s.transactionCount} color={C.slate} highlight={C.slateBg} />
+                    </div>
+
+                    {/* Player deposit breakdown */}
+                    {shift.playerDepositBreakdown?.length > 0 && (
+                        <div style={{ marginTop: '16px' }}>
+                            <div style={{
+                                fontSize: '11px', fontWeight: '700', color: C.muted,
+                                textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '8px'
+                            }}>
+                                Top Depositing Players This Shift
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {shift.playerDepositBreakdown
+                                    .sort((a, b) => b.total - a.total)
+                                    .slice(0, 5)
+                                    .map((p, i) => (
+                                        <div key={i} style={{
+                                            display: 'flex', alignItems: 'center',
+                                            gap: '10px', fontSize: '12px'
+                                        }}>
+                                            <span style={{ width: '16px', color: C.faint, fontWeight: '700' }}>
+                                                #{i + 1}
+                                            </span>
+                                            <span style={{ flex: 1, fontWeight: '500' }}>{p.name}</span>
+                                            <span style={{ color: C.muted }}>{p.count} txns</span>
+                                            <span style={{ fontWeight: '700', color: C.green }}>
+                                                {fmtMoney(p.total)}
+                                            </span>
+                                        </div>
+                                    ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Transactions tab */}
+            {activeTab === 'transactions' && shift.transactions?.length > 0 && (
+                <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead><tr>
+                            {['Time', 'Player', 'Type', 'Game', 'Method', 'Amount', 'Balance After'].map(h => (
+                                <th key={h} style={{ ...TH, padding: '8px 12px', fontSize: '10px' }}>{h}</th>
+                            ))}
+                        </tr></thead>
+                        <tbody>
+                            {shift.transactions.map(t => {
+                                const noteBalAfter = t.notes?.match(/balanceAfter:([\d.]+)/)?.[1];
+                                return (
+                                    <tr key={t.id}
+                                        onMouseEnter={e => e.currentTarget.style.background = '#fafbfc'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                        <td style={{ ...TD, padding: '9px 12px', fontSize: '11px', color: C.muted }}>
+                                            {fmtTime(t.createdAt)}
+                                        </td>
+                                        <td style={{ ...TD, padding: '9px 12px', fontSize: '12px', fontWeight: '500' }}>
+                                            {t.user?.name || `#${t.userId}`}
+                                        </td>
+                                        <td style={{ ...TD, padding: '9px 12px' }}>
+                                            <TypeBadge type={t.type} description={t.description} />
+                                        </td>
+                                        <td style={{ ...TD, padding: '9px 12px', fontSize: '11px', color: C.muted }}>
+                                            {t.game?.name || '—'}
+                                        </td>
+                                        <td style={{ ...TD, padding: '9px 12px', fontSize: '11px', color: C.muted }}>
+                                            {t.description?.match(/via ([^ ]+)/)?.[1] || '—'}
+                                        </td>
+                                        <td style={{
+                                            ...TD, padding: '9px 12px', fontWeight: '700', fontSize: '13px',
+                                            color: t.type === 'DEPOSIT' ? C.green : t.type === 'WITHDRAWAL' ? C.red : C.amber
+                                        }}>
+                                            {fmtMoney(t.amount)}
+                                        </td>
+                                        <td style={{ ...TD, padding: '9px 12px', fontSize: '12px', color: C.muted }}>
+                                            {noteBalAfter ? fmtMoney(parseFloat(noteBalAfter)) : '—'}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {/* Players Added tab */}
+            {activeTab === 'players' && (
+                <div style={{ padding: '16px 24px' }}>
+                    {shift.playersAdded?.length === 0
+                        ? <p style={{ color: C.faint, fontSize: '13px', textAlign: 'center', padding: '20px 0' }}>
+                            No players added this shift
+                        </p>
+                        : (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: '10px' }}>
+                                {shift.playersAdded.map(p => (
+                                    <div key={p.id} style={{
+                                        padding: '12px 14px', border: `1px solid ${C.border}`,
+                                        borderRadius: '10px', background: '#fafbfc'
+                                    }}>
+                                        <div style={{ fontWeight: '600', fontSize: '13px', color: C.text }}>{p.name}</div>
+                                        <div style={{ fontSize: '11px', color: C.muted, marginTop: '2px' }}>@{p.username}</div>
+                                        <div style={{ display: 'flex', gap: '6px', marginTop: '8px', alignItems: 'center' }}>
+                                            <span style={{
+                                                padding: '2px 7px', borderRadius: '4px', fontSize: '10px',
+                                                fontWeight: '700', background: C.amberBg, color: C.amber
+                                            }}>{p.tier}</span>
+                                            <span style={{ fontSize: '11px', color: C.faint }}>
+                                                {fmtTime(p.createdAt)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                </div>
+            )}
+
+            {/* Bonuses tab */}
+            {activeTab === 'bonuses' && (
+                <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead><tr>
+                            {['Time', 'Player', 'Bonus Type', 'Game', 'Amount'].map(h => (
+                                <th key={h} style={{ ...TH, padding: '8px 12px', fontSize: '10px' }}>{h}</th>
+                            ))}
+                        </tr></thead>
+                        <tbody>
+                            {(shift.bonusesGranted || []).map(b => (
+                                <tr key={b.id}
+                                    onMouseEnter={e => e.currentTarget.style.background = '#fafbfc'}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                    <td style={{ ...TD, padding: '9px 12px', fontSize: '11px', color: C.muted }}>
+                                        {fmtTime(b.createdAt)}
+                                    </td>
+                                    <td style={{ ...TD, padding: '9px 12px', fontSize: '12px', fontWeight: '500' }}>
+                                        {b.user?.name}
+                                    </td>
+                                    <td style={{ ...TD, padding: '9px 12px' }}>
+                                        <TypeBadge type="BONUS" description={b.description} />
+                                    </td>
+                                    <td style={{ ...TD, padding: '9px 12px', fontSize: '11px', color: C.muted }}>
+                                        {b.description?.match(/from ([^—\n]+?)(?:\s*—|$)/)?.[1]?.trim() || '—'}
+                                    </td>
+                                    <td style={{ ...TD, padding: '9px 12px', fontWeight: '700', color: C.amber }}>
+                                        {fmtMoney(b.amount)}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {/* Tasks tab */}
+            {activeTab === 'tasks' && (
+                <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {(shift.tasks || []).length === 0
+                        ? <p style={{ color: C.faint, fontSize: '13px', textAlign: 'center' }}>
+                            No tasks completed this shift
+                        </p>
+                        : shift.tasks.map(t => (
+                            <div key={t.id} style={{
+                                padding: '12px 16px', border: `1px solid ${C.border}`,
+                                borderRadius: '10px', display: 'flex', gap: '12px', alignItems: 'flex-start'
+                            }}>
+                                <CheckCircle style={{
+                                    width: '14px', height: '14px', color: C.green,
+                                    flexShrink: 0, marginTop: '1px'
+                                }} />
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: '600', fontSize: '13px' }}>{t.title}</div>
+                                    {t.description && <div style={{ fontSize: '11px', color: C.faint, marginTop: '2px' }}>
+                                        {t.description}
+                                    </div>}
+                                    {/* Progress logs */}
+                                    {t.progressLogs?.length > 0 && (
+                                        <div style={{ marginTop: '8px', fontSize: '11px', color: C.muted }}>
+                                            {t.progressLogs.map((log, i) => (
+                                                <div key={i}>{log.user?.name} — {log.action} +{log.value}
+                                                    {log.metadata?.playerName ? ` (${log.metadata.playerName})` : ''}</div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div style={{ fontSize: '11px', color: C.muted, flexShrink: 0 }}>
+                                    {fmtTime(t.completedAt)}
+                                </div>
+                                <PriorityBadge priority={t.priority} />
+                            </div>
+                        ))}
+                </div>
+            )}
+
+            {/* Issues tab */}
+            {activeTab === 'issues' && (
+                <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {(shift.issueActivity || []).length === 0
+                        ? <p style={{ color: C.faint, fontSize: '13px', textAlign: 'center' }}>
+                            No issue activity this shift
+                        </p>
+                        : shift.issueActivity.map(issue => (
+                            <div key={issue.id} style={{
+                                padding: '12px 16px', border: `1px solid ${C.border}`,
+                                borderRadius: '10px', display: 'flex', gap: '10px', alignItems: 'center'
+                            }}>
+                                <div style={{
+                                    width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
+                                    background: issue.status === 'RESOLVED' ? C.green : C.red
+                                }} />
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: '600', fontSize: '12px' }}>{issue.title}</div>
+                                    <div style={{ fontSize: '11px', color: C.muted }}>{issue.playerName}</div>
+                                </div>
+                                <PriorityBadge priority={issue.priority} />
+                                <span style={{
+                                    padding: '2px 7px', borderRadius: '4px', fontSize: '10px',
+                                    fontWeight: '700',
+                                    background: issue.status === 'RESOLVED' ? C.greenBg : C.redBg,
+                                    color: issue.status === 'RESOLVED' ? C.green : C.red
+                                }}>
+                                    {issue.status}
+                                </span>
+                            </div>
+                        ))}
                 </div>
             )}
         </div>
