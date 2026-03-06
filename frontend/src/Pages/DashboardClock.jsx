@@ -30,7 +30,7 @@ function useTexasTime() {
     const sync = useCallback(async () => {
         try {
             const t1 = Date.now();
-            const res = await fetch("/api/time");
+            const res = await fetch(`${API}/time`);
             const t4 = Date.now();
             const { timestamp: t3 } = await res.json();
             offsetRef.current = smoothOffset(t3 + (t4 - t1) / 2 - t4);
@@ -103,7 +103,6 @@ export default function DashboardClock() {
             gap: "0",
             userSelect: "none",
             width: "100%",
-            border: 'none',
         }}>
 
             {/* ── Live clock ────────────────────────────────────────────────── */}
