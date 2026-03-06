@@ -518,6 +518,32 @@ export default function TeamDashboard({ currentUser, activeShift }) {
     connectSSE();
     return () => sseRef.current?.close();
   }, [loadTasks]);
+  
+  useEffect(() => {
+    const es = tasksAPI.connectSSE();
+
+    es.addEventListener('task_created', (e) => {
+      const { data: newTask } = JSON.parse(e.data);
+      setTasks(prev => [newTask, ...prev]);
+    });
+
+    es.addEventListener('task_updated', (e) => {
+      const { data: updated } = JSON.parse(e.data);
+      setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
+    });
+
+    es.addEventListener('task_deleted', (e) => {
+      const { data: { id } } = JSON.parse(e.data);
+      setTasks(prev => prev.filter(t => t.id !== id));
+    });
+
+    es.onerror = () => {
+      // SSE auto-reconnects — no action needed
+      console.warn('SSE disconnected, will auto-reconnect');
+    };
+
+    return () => es.close(); // cleanup on unmount
+  }, []);
 
   function connectSSE() {
     if (sseRef.current) sseRef.current.close();
