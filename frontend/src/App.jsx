@@ -287,7 +287,6 @@ const CSS = `
   .ob-header h1 { font-size: 14px; font-weight: 700; color: var(--color-text); }
 
   .ob-card {
-    background: var(--color-cards);
     border: 1px solid var(--color-border);
     border-radius: 14px; padding: 20px;
     box-shadow: 0 4px 12px var(--color-shadow);
