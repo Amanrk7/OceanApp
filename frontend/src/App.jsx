@@ -314,7 +314,8 @@ const CSS = `
   @keyframes spin { to { transform: rotate(360deg); } }
   button:focus { outline: 2px solid rgba(255,255,255,0.2); outline-offset: 2px; }
 
-  body[data-theme="dark"] {
+
+[data-theme="dark"] body {
   filter: grayscale(1);
 }
 `;
