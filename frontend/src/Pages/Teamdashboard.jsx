@@ -480,7 +480,7 @@ export default function TeamDashboard({ currentUser, activeShift }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <h2 style={{ fontSize: "16px", fontWeight: "800", color: "#0f172a", margin: 0 }}>My Tasks</h2>
+          <h2 style={{ fontSize: "16px", fontWeight: "800", margin: 0 }}>My Tasks</h2>
           <span style={{ padding: "3px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: "700", background: "#eff6ff", color: "#2563eb" }}>{completedCount}/{tasks.length} done</span>
           {overdueCount > 0 && (
             <span style={{ padding: "3px 9px", borderRadius: "999px", fontSize: "11px", fontWeight: "700", background: "#fee2e2", color: "#dc2626", display: "flex", alignItems: "center", gap: "4px" }}>
