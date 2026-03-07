@@ -209,7 +209,7 @@ function GameCard({ game, onUpdate, onDelete }) {
                 border: '1px solid #e2e8f0',
                 borderRadius: 6, padding: '2px 8px',
                 fontSize: 10, fontWeight: 600,
-                color: isAdmin ? '#6366f1' : '#cbd5e1',
+                color: isAdmin ? 'rgb(14, 165, 233)' : '#cbd5e1',
                 cursor: isAdmin ? 'pointer' : 'not-allowed',
                 display: 'flex', alignItems: 'center', gap: 4,
                 transition: 'all 0.15s',
@@ -218,7 +218,7 @@ function GameCard({ game, onUpdate, onDelete }) {
               onMouseEnter={e => {
                 if (!isAdmin) return;
                 e.currentTarget.style.background = '#eef2ff';
-                e.currentTarget.style.borderColor = '#6366f1';
+                e.currentTarget.style.borderColor = 'rgb(14, 165, 233) ';
               }}
               onMouseLeave={e => {
                 if (!isAdmin) return;
@@ -299,8 +299,8 @@ function GameCard({ game, onUpdate, onDelete }) {
             }}
             onMouseEnter={e => {
               if (!isAdmin) return;                          // ← guard hover too
-              e.currentTarget.style.borderColor = '#6366f1';
-              e.currentTarget.style.background = 'rgb(14, 165, 233)';
+              e.currentTarget.style.borderColor = 'rgb(14, 165, 233) ';
+              e.currentTarget.style.background = 'linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)';
             }}
             onMouseLeave={e => {
               if (!isAdmin) return;
