@@ -178,7 +178,7 @@ function GameCard({ game, onUpdate, onDelete }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingRight: 32 }}>
         <div style={{
           width: 42, height: 42, borderRadius: 10, flexShrink: 0,
-          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+          background: 'rgb(14, 165, 233)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: '#fff', fontWeight: 700, fontSize: 15,
         }}>
@@ -332,7 +332,7 @@ function FilterTab({ label, active, onClick }) {
     <button onClick={onClick} style={{
       padding: '6px 16px', borderRadius: 8, cursor: 'pointer',
       border: active ? 'none' : '1px solid #e5e7eb',
-      background: active ? '#6366f1' : '#fff',
+      background: active ? 'rgb(14, 165, 233)' : '#fff',
       color: active ? '#fff' : '#6b7280',
       fontWeight: 600, fontSize: 13, transition: 'all 0.15s',
     }}>
