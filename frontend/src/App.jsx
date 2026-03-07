@@ -116,7 +116,7 @@ const CSS = `
   }
 
   .ob-login-wrap {
-    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center;
     background: var(--color-bg);
     padding: 16px;
     transition: background .25s;
@@ -131,7 +131,7 @@ const CSS = `
     transition: background .25s, border-color .25s;
   }
   .ob-login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; justify-content: center; }
-  .ob-avatar-lg { width: 44px; height: 44px; border-radius: 50%; background: var(--ink); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
+  .ob-avatar-lg { width: 44px; height: 44px; border-radius: 50%; linear-gradient(135deg,#0ea5e9,#6366f1); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
   .ob-login-logo .ob-title { font-weight: 700; font-size: 22px; color: var(--color-text); }
   .ob-login-logo .ob-sub { font-size: 13px; color: var(--color-text-muted); }
   .ob-label { font-size: 13px; font-weight: 600; color: var(--color-text-muted); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: .5px; }
