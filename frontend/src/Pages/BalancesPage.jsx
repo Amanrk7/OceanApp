@@ -179,7 +179,7 @@ export const BalancesPage = () => {
                                                 <img src={game.iconUrl} alt={game.name} style={{ width: '28px', height: '28px', borderRadius: '7px', objectFit: 'cover' }} />
                                             ) : (
                                                 <div style={{ width: '28px', height: '28px', background: '#faf5ff', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    <Gamepad2 style={{ width: '14px', height: '14px', color: '#7c3aed' }} />
+                                                    <Gamepad2 style={{ width: '14px', height: '14px', color: 'rgb(14, 165, 233)' }} />
                                                 </div>
                                             )}
                                             <span style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{game.name}</span>
