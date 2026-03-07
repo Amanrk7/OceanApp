@@ -524,8 +524,7 @@ export default function Dashboard() {
                 {/* Stat Cards Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                     {statCards.map((stat, idx) => (
-                        <div style={{
-                            background: "var(--color-cards-background)", borderRadius: "14px",
+                        <div style={{ borderRadius: "14px",
                             padding: "20px 5px 5px 5px",
                             boxShadow: "0 2px 8px rgba(15,23,42,.08)"
                         }}>
