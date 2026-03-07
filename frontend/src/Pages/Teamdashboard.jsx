@@ -375,8 +375,7 @@ export default function TeamDashboard({ currentUser, activeShift }) {
   const loadTasks = useCallback(async () => {
     setLoading(true);
     try {
-      // ✅ FIX 2 applied here: /tasks not /api/tasks (API already contains /api)
-      const res  = await fetch(`${API}/tasks?myTasks=true`, { credentials: "include" });
+      const res = await fetch(`${API}/tasks?myTasks=true`, { credentials: "include", headers: getAuthHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load tasks");
       setTasks(data.data || []);
@@ -426,11 +425,10 @@ export default function TeamDashboard({ currentUser, activeShift }) {
       return { ...t, checklistItems: (t.checklistItems || []).map(i => i.id === itemId ? { ...i, done, doneBy: currentUser?.name } : i) };
     }));
     try {
-      // ✅ FIX 2 applied: /tasks/... not /api/tasks/...
       const res = await fetch(`${API}/tasks/${taskId}/checklist`, {
-        method: "PATCH", headers: { "Content-Type": "application/json" },
-        credentials: "include", body: JSON.stringify({ itemId, done }),
-      });
+  method: "PATCH", headers: getAuthHeaders(true),
+  credentials: "include", body: JSON.stringify({ itemId, done }),
+});
       const data = await res.json();
       if (res.ok && data.data) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
     } catch (_) {}
@@ -439,10 +437,11 @@ export default function TeamDashboard({ currentUser, activeShift }) {
   async function handleStatusChange(taskId, status) {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
     try {
+      
       const res = await fetch(`${API}/tasks/${taskId}`, {
-        method: "PATCH", headers: { "Content-Type": "application/json" },
-        credentials: "include", body: JSON.stringify({ status }),
-      });
+  method: "PATCH", headers: getAuthHeaders(true),
+  credentials: "include", body: JSON.stringify({ status }),
+});
       const data = await res.json();
       if (res.ok && data.data) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
     } catch (_) {}
@@ -451,9 +450,9 @@ export default function TeamDashboard({ currentUser, activeShift }) {
   async function handleProgressLog(taskId, value) {
     try {
       const res = await fetch(`${API}/tasks/${taskId}/progress`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        credentials: "include", body: JSON.stringify({ value, action: "MEMBER_LOG" }),
-      });
+  method: "POST", headers: getAuthHeaders(true),
+  credentials: "include", body: JSON.stringify({ value, action: "MEMBER_LOG" }),
+});
       const data = await res.json();
       if (res.ok && data.data) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
     } catch (_) {}
