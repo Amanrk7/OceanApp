@@ -158,7 +158,7 @@ export const BalancesPage = () => {
                 <div style={CARD}>
                     <h3 style={{ margin: '0 0 18px', fontSize: '15px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', background: '#faf5ff', borderRadius: '8px' }}>
-                            <Gamepad2 style={{ width: '14px', height: '14px', color: '#7c3aed' }} />
+                            <Gamepad2 style={{ width: '14px', height: '14px', color: 'rgb(14, 165, 233)' }} />
                         </span>
                         Game Point Stock
                     </h3>
