@@ -36,7 +36,7 @@ import { Logout01Icon } from '@hugeicons/core-free-icons';
 import { TaskEdit01Icon } from '@hugeicons/core-free-icons';
 import { CheckListIcon } from '@hugeicons/core-free-icons';
 import { Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
-import { FolderDotIcon } from '@hugeicons/core-free-icons';
+import { FolderOpenIcon } from '@hugeicons/core-free-icons';
 import PlayerDashboard from "./Pages/PlayerDashboard.jsx";
 import { AddPlayerContext } from "./Context/addPlayer.jsx";
 import { CurrentUserContext } from "./Context/currentUser.jsx";
@@ -322,7 +322,7 @@ const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: false },
   { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon, adminsOnly: false },
   { id: "players", label: "Players", icon: UserGroup03Icon },
-  { id: "dailyCheckups", label: "Daily Checkups", icon: FolderDotIcon },
+  { id: "dailyCheckups", label: "Daily Checkups", icon: FolderOpenIcon },
   { id: "playTime", label: "Play Time", icon: TimeQuarter02Icon },
   { id: "games", label: "Games", icon: GameboyIcon },
   { id: "attendance", label: "Attendance", icon: Notebook02Icon },
