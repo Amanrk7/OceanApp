@@ -322,7 +322,7 @@ const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: false },
   { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon, adminsOnly: false },
   { id: "players", label: "Players", icon: UserGroup03Icon },
-  { id: "missingPlayersPage", label: "Daily Checkups", icon: ClipboardClockIcon },
+  { id: "dailyCheckups", label: "Daily Checkups", icon: ClipboardClockIcon },
   { id: "playTime", label: "Play Time", icon: TimeQuarter02Icon },
   { id: "games", label: "Games", icon: GameboyIcon },
   { id: "attendance", label: "Attendance", icon: Notebook02Icon },
@@ -530,7 +530,7 @@ function AdminDashboard({ user }) {
 
   const navLabels = {
     dashboard: 'Dashboard', memberDashboard: 'Member Dashboard', players: 'Players',
-    missingPlayersPage: 'Daily Task',
+    dailyCheckups: 'Daily Checkups',
     playTime: 'Play Time', games: 'Games', attendance: 'Attendance', issues: 'Issues',
     transactions: 'All Transactions', balances: 'Live Balances', expenses: 'Expenses',
     addTransactions: 'Add Transaction', addBonus: 'Add Bonus', reports: 'Reports',
@@ -543,7 +543,7 @@ function AdminDashboard({ user }) {
       case "dashboard": return <AnalyticsDashboard />;
       case "memberDashboard": return <TeamDashboard />;
       case "players": return <Players />;
-      case "missingPlayersPage": return <MissingPlayersPage />;
+      case "dailyCheckups": return <MissingPlayersPage />;
       case "attendance": return <Attendance />;
       case "games": return <Games user={user} />;
       case "issues": return <Issues />;
