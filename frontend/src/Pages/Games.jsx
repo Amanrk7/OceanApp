@@ -725,7 +725,7 @@ export default function Games() {
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '10px 18px', borderRadius: 10, border: 'none',
-            background: rgb(14, 165, 233),
+            background: 'rgb(14, 165, 233)',
                 
             color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer',
             boxShadow: '0 4px 14px rgba(99,102,241,0.35)',
