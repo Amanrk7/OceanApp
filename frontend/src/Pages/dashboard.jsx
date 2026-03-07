@@ -492,7 +492,7 @@ export default function Dashboard() {
 
                 {/* Today's Profit Goal Card */}
                 <div className="ob-card" style={{ marginBottom: '24px' }}>
-                    <h2 style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: '12px' }}>
+                    <h2 style={{ fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: '12px' }}>
                         Today's Profit Goal
                     </h2>
 
@@ -576,7 +576,7 @@ export default function Dashboard() {
 
 
                     {/* Player Activity Summary Card */}
-                    <div className="ob-card bg-white rounded-lg shadow p-6">
+                    <div className="ob-card rounded-lg shadow p-6">
                         {/* Header */}
                         <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
                             Player Activity (7D)
