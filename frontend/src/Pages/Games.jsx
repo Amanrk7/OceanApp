@@ -243,7 +243,7 @@ function GameCard({ game, onUpdate, onDelete }) {
                 disabled={saving}
                 style={{
                   width: '100%', padding: '10px 14px',
-                  borderRadius: 10, border: '2px solid #6366f1',
+                  borderRadius: 10, border: '2px solid rgb(14, 165, 233)',
                   fontSize: 20, fontWeight: 700,
                   fontFamily: "'DM Mono', 'Fira Code', monospace",
                   color: getStockColor(parseFloat(inputValue) || 0),
@@ -260,7 +260,7 @@ function GameCard({ game, onUpdate, onDelete }) {
                 disabled={saving}
                 style={{
                   flex: 1, padding: '8px 0', borderRadius: 8, border: 'none',
-                  background: saving ? '#a5b4fc' : '#6366f1',
+                  background: saving ? '#a5b4fc' : 'rgb(14, 165, 233)',
                   color: '#fff', fontWeight: 700, fontSize: 13,
                   cursor: saving ? 'not-allowed' : 'pointer',
                   transition: 'background 0.15s',
@@ -437,7 +437,7 @@ function DeleteModal({ game, onClose, onDeleted }) {
               fontSize: 14, outline: 'none', boxSizing: 'border-box',
               fontFamily: 'inherit', transition: 'border-color 0.15s',
             }}
-            onFocus={e => e.target.style.borderColor = '#6366f1'}
+            onFocus={e => e.target.style.borderColor = 'rgb(14, 165, 233)'}
             onBlur={e => e.target.style.borderColor = error ? '#f87171' : '#e5e7eb'}
           />
           {error && (
@@ -596,7 +596,7 @@ function NewGameModal({ onClose, onCreated }) {
             style={{
               padding: '9px 20px', borderRadius: 8, border: 'none',
               background: loading ? '#a5b4fc' : '#6366f1',
-              color: '#fff', fontWeight: 700, fontSize: 14,
+              color: 'rgb(14, 165, 233)', fontWeight: 700, fontSize: 14,
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
