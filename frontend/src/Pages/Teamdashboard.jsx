@@ -24,11 +24,15 @@ const CARD = {
   boxShadow: "0 2px 12px rgba(15,23,42,.07)",
 };
 
-// ✅ FIX 2: API base has no trailing /api — fetch calls below use /tasks (not /api/tasks)
-// VITE_API_URL = "https://oceanappbackend.onrender.com/api"
-// So fetch(`${API}/tasks`) → https://oceanappbackend.onrender.com/api/tasks  ✓
-// Previously: fetch(`${API}/api/tasks`) → .../api/api/tasks  ✗
+
 const API = import.meta.env.VITE_API_URL ?? "";
+function getAuthHeaders(includeContentType = false) {
+  const token = localStorage.getItem('authToken');
+  const headers = {};
+  if (includeContentType) headers['Content-Type'] = 'application/json';
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
 
 const TASK_TYPES = [
   { value: "STANDARD",        label: "Standard",         icon: List,        color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1" },
