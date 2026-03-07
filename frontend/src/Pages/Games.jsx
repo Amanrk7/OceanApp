@@ -300,7 +300,7 @@ function GameCard({ game, onUpdate, onDelete }) {
             onMouseEnter={e => {
               if (!isAdmin) return;                          // ← guard hover too
               e.currentTarget.style.borderColor = '#6366f1';
-              e.currentTarget.style.background = 'linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)';
+              e.currentTarget.style.background = 'rgb(14, 165, 233)';
             }}
             onMouseLeave={e => {
               if (!isAdmin) return;
