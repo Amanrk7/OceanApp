@@ -29,7 +29,13 @@ const CARD = {
 const DIVIDER = { height: "1px", background: "#f1f5f9", margin: "20px 0" };
 
 const API = import.meta.env.VITE_API_URL ?? "";
-
+function getAuthHeaders(includeContentType = false) {
+  const token = localStorage.getItem('authToken'); // ← change 'token' to match your key from Step 1
+  const headers = {};
+  if (includeContentType) headers['Content-Type'] = 'application/json';
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
 // ── Constants ─────────────────────────────────────────────────────
 const TASK_TYPES = [
   {
@@ -162,12 +168,14 @@ function AdminTaskRow({ task, onDelete, onStatusChange, teamMembers, onRefresh }
     if (!logValue || parseFloat(logValue) <= 0) return;
     setLogging(true);
     try {
+  
       await fetch(`${API}/tasks/${task.id}/progress`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ value: parseFloat(logValue), memberId: logMemberId || undefined, action: "ADMIN_LOG" }),
-      });
+  method: "POST",
+  headers: getAuthHeaders(true),
+  credentials: "include",
+                body: JSON.stringify({ value: parseFloat(logValue), memberId: logMemberId || undefined, action: "ADMIN_LOG" }),
+
+});
       setLogValue("");
       onRefresh();
     } catch (_) {}
@@ -450,7 +458,7 @@ export default function AdminTaskPage() {
   async function loadTasks() {
     setLoading(true);
     try {
-      const res  = await fetch(`${API}/tasks`, { credentials: "include" });
+      const res = await fetch(`${API}/tasks`, { credentials: "include", headers: getAuthHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load tasks");
       setTasks(data.data || []);
@@ -470,7 +478,7 @@ export default function AdminTaskPage() {
   // }
 async function loadMembers() {
   try {
-    const res = await fetch(`${API}/team-members`, { credentials: "include" });
+    const res = await fetch(`${API}/team-members`, { credentials: "include", headers: getAuthHeaders() });
     const data = await res.json();
     if (!res.ok) return; // bail early, don't touch state
     const members = data.data ?? data;
@@ -496,12 +504,12 @@ async function loadMembers() {
         targetValue: form.targetValue ? parseFloat(form.targetValue) : undefined,
         subTasks: form.subTasks.map(st => ({ ...st, targetValue: parseFloat(st.targetValue) })),
       };
-      const res  = await fetch(`${API}/tasks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(body),
-      });
+      const res = await fetch(`${API}/tasks`, {
+  method: "POST",
+  headers: getAuthHeaders(true),
+  credentials: "include",
+  body: JSON.stringify(body),
+});
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create task");
       setSuccess(`Task "${data.data?.title || form.title}" created successfully!`);
@@ -517,7 +525,7 @@ async function loadMembers() {
   async function handleDelete(taskId) {
     if (!confirm("Delete this task? This cannot be undone.")) return;
     try {
-      const res = await fetch(`${API}/tasks/${taskId}`, { method: "DELETE", credentials: "include" });
+      const res = await fetch(`${API}/tasks/${taskId}`, { method: "DELETE", credentials: "include", headers: getAuthHeaders() });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
       setSuccess("Task deleted.");
     } catch (e) {
@@ -528,11 +536,11 @@ async function loadMembers() {
   async function handleStatusChange(taskId, status) {
     try {
       const res = await fetch(`${API}/tasks/${taskId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ status }),
-      });
+  method: "PATCH",
+  headers: getAuthHeaders(true),
+  credentials: "include",
+  body: JSON.stringify({ status }),
+});
       const data = await res.json();
       if (res.ok) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
     } catch (_) {}
@@ -541,7 +549,7 @@ async function loadMembers() {
   async function handleDailyReset() {
     if (!confirm("Reset all daily checklist tasks for today? Members will see fresh checklists.")) return;
     try {
-      const res = await fetch(`${API}/tasks/daily-reset`, { method: "POST", credentials: "include" });
+      const res = await fetch(`${API}/tasks/daily-reset`, { method: "POST", credentials: "include", headers: getAuthHeaders() });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
       setSuccess("Daily checklists reset successfully.");
       loadTasks();
