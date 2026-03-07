@@ -583,7 +583,7 @@ export default function Dashboard() {
 
                         {/* Summary */}
                         <div className="text-center mb-6">
-                            <p className="text-3xl font-bold text-slate-900">
+                            <p className="text-3xl font-bold">
                                 ${totalDepositsWeek.toLocaleString()}
                             </p>
                             <p className="text-sm text-slate-500 mt-1">
