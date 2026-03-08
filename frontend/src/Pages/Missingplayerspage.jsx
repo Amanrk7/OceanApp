@@ -226,7 +226,7 @@ function PlayerCard({ player }) {
                 <span style={{ fontSize: '10px', color: '#94a3b8' }}>
                     Added {new Date(player.createdAt).toLocaleDateString()}
                 </span>
-                <span
+                <button
                     onClick={() => navigate(`/playerDashboard/${player.id}`)} 
                     style={{
                         fontSize: '11px', color: '#3b82f6', fontWeight: '600',
@@ -234,7 +234,7 @@ function PlayerCard({ player }) {
                     }}
                 >
                     Edit <ExternalLink style={{ width: '10px', height: '10px' }} />
-                </span>
+                </button>
             </div>
         </div>
     );
@@ -351,6 +351,7 @@ const S = {
         color: '#94a3b8', fontSize: '14px',
     },
 };
+
 
 
 
