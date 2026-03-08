@@ -608,7 +608,7 @@ async function loadMembers() {
             </button>
             <button
               onClick={() => { setForm(emptyForm()); setFormError(""); setShowForm(true); }}
-              style={{ display: "flex", alignItems: "center", gap: "7px", padding: "10px 18px", background: "#0f172a", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "700", fontSize: "13px", cursor: "pointer" }}
+              style={{ display: "flex", alignItems: "center", gap: "7px", padding: "10px 18px", background: "rgb(14, 165, 233)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "700", fontSize: "13px", cursor: "pointer" }}
             >
               <Plus style={{ width: "15px", height: "15px" }} /> New Task
             </button>
@@ -657,7 +657,7 @@ async function loadMembers() {
           </div>
           <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
             {["ALL", "PENDING", "IN_PROGRESS", "COMPLETED"].map(s => (
-              <button key={s} onClick={() => setStatusFilter(s)} style={{ padding: "8px 14px", borderRadius: "8px", border: "1px solid", borderColor: statusFilter === s ? "#0f172a" : "#e2e8f0", background: statusFilter === s ? "#0f172a" : "#fff", color: statusFilter === s ? "#fff" : "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit" }}>
+              <button key={s} onClick={() => setStatusFilter(s)} style={{ padding: "8px 14px", borderRadius: "8px", border: "1px solid", borderColor: statusFilter === s ? "#0f172a" : "#e2e8f0", background: statusFilter === s ? "rgb(14, 165, 233)" : "#fff", color: statusFilter === s ? "#fff" : "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit" }}>
                 {s.replace("_", " ")}
               </button>
             ))}
