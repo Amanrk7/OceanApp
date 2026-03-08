@@ -254,8 +254,8 @@ export const playersAPI = {
       referrals, friends, sources,
     } = playerData;
 
-    if (!name || !username || !password || !email) {
-      throw new Error('Name, username, password, and email are required');
+    if (!name || !username) {
+      throw new Error('Name and username are required');
     }
 
     const data = await fetchAPI('/create-new-player', {
