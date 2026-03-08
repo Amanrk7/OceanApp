@@ -224,7 +224,7 @@ function PlayerCard({ player }) {
                     Added {new Date(player.createdAt).toLocaleDateString()}
                 </span>
                 <a
-                    href={`/players/${player.id}`}
+                    href={`/playerDashboard/${player.id}`}
                     style={{
                         fontSize: '11px', color: '#3b82f6', fontWeight: '600',
                         textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px'
@@ -348,4 +348,5 @@ const S = {
         color: '#94a3b8', fontSize: '14px',
     },
 };
+
 
