@@ -261,7 +261,7 @@ export const playersAPI = {
     const data = await fetchAPI('/create-new-player', {
       method: 'POST',
       body: JSON.stringify({
-        name, username, password, email,
+        name, username, password, email: email || null,
         phone: phone || null,
         tier: tier || 'BRONZE',
         facebook: facebook || null,
