@@ -40,7 +40,7 @@ function AssignTaskModal({ player, onClose, onAssigned }) {
     const [success, setSuccess] = useState(false);
 
     useEffect(() => {
-        fetch(`${API}/api/team-members`, { credentials: 'include', headers: authHeaders() })
+        fetch(`${API}/team-members`, { credentials: 'include', headers: authHeaders() })
             .then(r => r.json())
             .then(d => setTeamMembers(d.data || []))
             .catch(() => {});
@@ -50,7 +50,7 @@ function AssignTaskModal({ player, onClose, onAssigned }) {
         setSaving(true);
         setError(null);
         try {
-            const res = await fetch(`${API}/api/players/${player.id}/assign-missing-info-task`, {
+            const res = await fetch(`${API}/players/${player.id}/assign-missing-info-task`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: authHeaders(true),
@@ -555,7 +555,7 @@ export default function MissingPlayersPage({ currentUser }) {
 
     // ── Load existing MISSING_INFO tasks ──────────────────────
     useEffect(() => {
-        fetch(`${API}/api/tasks?taskType=MISSING_INFO`, {
+        fetch(`${API}/tasks?taskType=MISSING_INFO`, {
             credentials: 'include',
             headers: authHeaders(),
         })
@@ -578,7 +578,7 @@ export default function MissingPlayersPage({ currentUser }) {
     // ── SSE — real-time task updates ──────────────────────────
     useEffect(() => {
         const token = localStorage.getItem('authToken');
-        const url   = `${API}/api/tasks/events`;
+        const url   = `${API}/tasks/events`;
         const es    = new EventSource(token ? `${url}?token=${token}` : url, { withCredentials: true });
         sseRef.current = es;
 
