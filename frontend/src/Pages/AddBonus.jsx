@@ -33,7 +33,7 @@ const BONUS_TYPES = [
         id: "other",
         label: "Custom Bonus",
         icon: Tag,
-        color: { bg: "#eff6ff", border: "#bfdbfe", dot: "#3b82f6", text: "#1d4ed8", badge: "#dbeafe" },
+        color: { bg: "#eff6ff", border: "#bfdbfe", dot: "rgb(14, 165, 233)", text: "rgb(14, 165, 233)", badge: "#dbeafe" },
         description: () => "Enter a label (e.g. 'Tournament Prize') and a custom amount",
     },
 ];
@@ -222,7 +222,7 @@ export default function BonusPage() {
         const descLower = desc.toLowerCase();
         if (descLower.startsWith("streak bonus"))   return { label: "Streak Bonus",   emoji: "🔥", bg: "#fffbeb", color: "#92400e" };
         if (descLower.startsWith("referral bonus")) return { label: "Referral Bonus", emoji: "👤", bg: "#f0fdf4", color: "#166534" };
-        if (descLower.startsWith("match bonus"))    return { label: "Match Bonus",    emoji: "💰", bg: "#eff6ff", color: "#1d4ed8" };
+        if (descLower.startsWith("match bonus"))    return { label: "Match Bonus",    emoji: "💰", bg: "#eff6ff", color: "rgb(14, 165, 233)" };
         // Extract custom label: everything before " from " in description
         const fromIdx = desc.indexOf(" from ");
         const customType = fromIdx > 0 ? desc.slice(0, fromIdx).trim() : "Custom Bonus";
@@ -336,7 +336,7 @@ export default function BonusPage() {
                                                 🔥 No active streak
                                             </span>
                                         )}
-                                        <span style={{ padding: "5px 12px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "#1d4ed8" }}>
+                                        <span style={{ padding: "5px 12px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "rgb(14, 165, 233)" }}>
                                             {player.tier}
                                         </span>
                                     </div>
