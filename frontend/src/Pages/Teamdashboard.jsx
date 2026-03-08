@@ -166,7 +166,7 @@ function PlayerAdditionCard({ task, currentUserId, onProgressLog }) {
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
             <span style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a" }}>{task.title}</span>
             <TypeBadge taskType="PLAYER_ADDITION" />
-            {task.assignToAll && <span style={{ padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: "700", background: "#f5f3ff", color: "#7c3aed" }}>All Members</span>}
+            {task.assignToAll && <span style={{ padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: "700", background: "#f5f3ff", color: "rgb(14, 165, 233)" }}>All Members</span>}
           </div>
           <div style={{ display: "flex", gap: "10px", alignItems: "center", marginTop: "5px" }}>
             <div style={{ flex: 1, maxWidth: "200px" }}><ProgressBar pct={pct} color="#8b5cf6" thin /></div>
@@ -184,7 +184,7 @@ function PlayerAdditionCard({ task, currentUserId, onProgressLog }) {
           {task.description && <p style={{ fontSize: "12px", color: "#64748b", margin: 0, lineHeight: "1.5" }}>{task.description}</p>}
           {mySubTask && (
             <div style={{ padding: "12px 14px", background: "#f5f3ff", border: "1px solid #ddd6fe", borderRadius: "10px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "700", color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "8px" }}>My Target</div>
+              <div style={{ fontSize: "11px", fontWeight: "700", color: "rgb(14, 165, 233)", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "8px" }}>My Target</div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px", fontSize: "12px" }}>
                 <span style={{ color: "#64748b" }}>My progress</span>
                 <span style={{ fontWeight: "800", color: myPct >= 100 ? "#22c55e" : "#8b5cf6" }}>
@@ -490,7 +490,7 @@ export default function TeamDashboard({ currentUser, activeShift }) {
         </div>
         <div style={{ display: "flex", gap: "4px" }}>
           {["all", "pending", "done"].map(f => (
-            <button key={f} onClick={() => setTaskFilter(f)} style={{ padding: "6px 12px", border: "1px solid", borderColor: taskFilter === f ? "#0f172a" : "#e2e8f0", borderRadius: "8px", fontSize: "11px", fontWeight: "700", background: taskFilter === f ? "#0f172a" : "#fff", color: taskFilter === f ? "#fff" : "#64748b", cursor: "pointer", textTransform: "capitalize" }}>{f}</button>
+            <button key={f} onClick={() => setTaskFilter(f)} style={{ padding: "6px 12px", border: "1px solid", borderColor: taskFilter === f ? "#0f172a" : "#e2e8f0", borderRadius: "8px", fontSize: "11px", fontWeight: "700", background: taskFilter === f ? "#0f172a" : "#fff", color: taskFilter === f ? "#fff" : "rgb(14, 165, 233)", cursor: "pointer", textTransform: "capitalize" }}>{f}</button>
           ))}
           <button onClick={loadTasks} style={{ padding: "6px 10px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", cursor: "pointer", color: "#64748b", display: "flex", alignItems: "center" }}>
             <RefreshCw style={{ width: "12px", height: "12px" }} />
