@@ -677,7 +677,7 @@ export default function AdminReportPage() {
       <div style={{ ...CARD, padding: "22px 28px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            <div style={{ width: "46px", height: "46px", background: "#0f172a", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div style={{ width: "46px", height: "46px", background: "rgb(14, 165, 233)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <FileText style={{ width: "22px", height: "22px", color: "#fff" }} />
             </div>
             <div>
@@ -723,7 +723,7 @@ export default function AdminReportPage() {
             <button
               onClick={() => report && printReport(report, report.date)}
               disabled={!report || loading}
-              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "10px 18px", border: "none", borderRadius: "9px", background: "#0f172a", color: "#fff", fontSize: "13px", fontWeight: "700", cursor: report ? "pointer" : "not-allowed", opacity: report ? 1 : 0.5 }}
+              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "10px 18px", border: "none", borderRadius: "9px", background: "rgb(14, 165, 233)", color: "#fff", fontSize: "13px", fontWeight: "700", cursor: report ? "pointer" : "not-allowed", opacity: report ? 1 : 0.5 }}
             >
               <Download style={{ width: "14px", height: "14px" }} />
               Export PDF
