@@ -214,7 +214,7 @@ const ManageWalletsPage = () => {
                         <RefreshCw style={{ width: '14px', height: '14px', animation: refreshing ? 'spin 1s linear infinite' : 'none' }} /> Refresh
                     </button>
                     <button onClick={() => { setShowAdd(true); setAddError(null); }}
-                        style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: 'rgb(14, 165, 233)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
                         <Plus style={{ width: '14px', height: '14px' }} /> Add New Wallet
                     </button>
                 </div>
@@ -314,7 +314,7 @@ const ManageWalletsPage = () => {
                                                 </div>
                                                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
                                                     <button onClick={() => openEdit(wallet)}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', background: '#eff6ff', color: '#2563eb', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+                                                        style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', background: 'rgb(14, 165, 233)', color: '#2563eb', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
                                                         <Edit2 style={{ width: '11px', height: '11px' }} /> Edit
                                                     </button>
                                                     <button onClick={() => setDeleteTarget(wallet)}
@@ -328,7 +328,7 @@ const ManageWalletsPage = () => {
                                         {/* Quick-add inside group */}
                                         <div style={{ padding: '12px 24px', borderTop: '1px solid #f1f5f9' }}>
                                             <button onClick={() => { setAddForm(f => ({ ...f, method: group.method })); setShowAdd(true); setAddError(null); }}
-                                                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: '#2563eb', fontSize: '12px', fontWeight: '600', cursor: 'pointer', padding: 0 }}>
+                                                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: 'rgb(14, 165, 233)', fontSize: '12px', fontWeight: '600', cursor: 'pointer', padding: 0 }}>
                                                 <Plus style={{ width: '13px', height: '13px' }} /> Add {group.method} wallet
                                             </button>
                                         </div>
@@ -361,7 +361,7 @@ const ManageWalletsPage = () => {
                     <div style={{ display: 'flex', gap: '12px', paddingTop: '4px', borderTop: '1px solid #f1f5f9', marginTop: '4px' }}>
                         <button type="button" onClick={() => setShowAdd(false)} style={{ flex: 1, padding: '12px', background: '#f1f5f9', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '14px', color: '#475569' }}>Cancel</button>
                         <button type="submit" disabled={addLoading}
-                            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '12px', background: addLoading ? '#e2e8f0' : '#2563eb', color: addLoading ? '#94a3b8' : '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: addLoading ? 'wait' : 'pointer', fontSize: '14px' }}>
+                            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', padding: '12px', background: addLoading ? '#e2e8f0' : 'rgb(14, 165, 233)', color: addLoading ? '#94a3b8' : '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: addLoading ? 'wait' : 'pointer', fontSize: '14px' }}>
                             {addLoading ? <><RefreshCw style={{ width: '14px', height: '14px', animation: 'spin 1s linear infinite' }} /> Creating…</> : <><Plus style={{ width: '14px', height: '14px' }} /> Create Wallet</>}
                         </button>
                     </div>
