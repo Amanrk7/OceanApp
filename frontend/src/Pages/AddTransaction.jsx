@@ -458,7 +458,7 @@ function AddTransactionsPage() {
                         </div>
 
                         <div>
-                            <label style={LABEL}>Fee ($) <span style={{ fontWeight: 400, fontSize: "10px", color: "#f59e0b" }}>optional — retained as revenue</span></label>
+                            <label style={LABEL}>Fee ($) <span style={{ fontWeight: 400, fontSize: "10px", color: "#f59e0b" }}>optional</span></label>
                             <input type="number" placeholder="0.00" min="0" step="0.01" value={form.fee} onChange={e => set("fee", e.target.value)} style={{ ...INPUT, borderColor: feeAmt > 0 ? "#f59e0b" : "#e2e8f0" }} />
                             {amt > 0 && (
                                 <p style={{ fontSize: "11px", marginTop: "4px", fontWeight: "600", color: feeAmt > 0 ? "#92400e" : "#94a3b8" }}>
