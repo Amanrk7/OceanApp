@@ -67,7 +67,7 @@ export default function WalletsPage() {
                                         {wallet.identifier}
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        <button className="text-blue-600 hover:text-blue-700 font-medium">
+                                        <button className="font-medium ">
                                             Edit
                                         </button>
                                     </td>
