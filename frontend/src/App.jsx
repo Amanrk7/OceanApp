@@ -544,7 +544,7 @@ function AdminDashboard({ user }) {
       case "dashboard": return <AnalyticsDashboard />;
       case "memberDashboard": return <TeamDashboard />;
       case "players": return <Players />;
-      case "dailyCheckups": return <MissingPlayersPage />;
+      case "dailyCheckups": return <MissingPlayersPage user={user}/>;
       case "attendance": return <Attendance />;
       case "games": return <Games user={user} />;
       case "issues": return <Issues />;
