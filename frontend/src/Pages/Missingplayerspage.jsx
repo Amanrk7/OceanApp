@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import {
-    AlertTriangle, Search, RefreshCw, Filter, User,
+    AlertTriangle, Search, RefreshCw, User,
     Phone, Mail, Camera, Instagram, Send, Users, ExternalLink
 } from 'lucide-react';
+import api from '../api'; // ✅ adjust path to match your project structure
 
 // ============================================================
 // MissingPlayersPage — Shows players with missing/critical info
-// Add this as a route: /admin/missing-info or /admin/critical
-//
 // Flags players missing: email, phone, snapchat, instagram,
 // telegram, assigned member.
 // "Critical" = 2+ fields missing.
@@ -26,20 +25,25 @@ export default function MissingPlayersPage() {
     const [players, setPlayers] = useState([]);
     const [stats, setStats] = useState({});
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [search, setSearch] = useState('');
-    const [filter, setFilter] = useState('all'); // 'all' | 'critical' | field name
+    const [filter, setFilter] = useState('all');
     const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
         async function load() {
             setLoading(true);
+            setError(null);
             try {
-                const res = await fetch('/api/players/missing-info', { credentials: 'include' });
-                const data = await res.json();
+                // ✅ FIX: was using raw fetch('/api/players/missing-info') which
+                // hit the frontend server. Now uses fetchAPI via api.js which
+                // correctly targets VITE_API_URL (the backend on Render).
+                const data = await api.players.getMissingInfo(true);
                 setPlayers(data.data || []);
                 setStats(data.stats || {});
             } catch (err) {
-                console.error(err);
+                console.error('Failed to load missing info:', err);
+                setError(err.message || 'Failed to load data');
             } finally {
                 setLoading(false);
             }
@@ -82,48 +86,12 @@ export default function MissingPlayersPage() {
 
             {/* Stats row */}
             <div style={S.statsGrid}>
-                <StatCard
-                    label="Total Players"
-                    value={stats.total || 0}
-                    color="#64748b"
-                    bg="#f8fafc"
-                    icon={Users}
-                />
-                <StatCard
-                    label="Critical (2+ missing)"
-                    value={stats.critical || 0}
-                    color="#dc2626"
-                    bg="#fff1f2"
-                    icon={AlertTriangle}
-                />
-                <StatCard
-                    label="Missing Snapchat"
-                    value={stats.missingSnapchat || 0}
-                    color="#eab308"
-                    bg="#fefce8"
-                    icon={Camera}
-                />
-                <StatCard
-                    label="Missing Phone"
-                    value={stats.missingPhone || 0}
-                    color="#8b5cf6"
-                    bg="#f5f3ff"
-                    icon={Phone}
-                />
-                <StatCard
-                    label="Missing Email"
-                    value={stats.missingEmail || 0}
-                    color="#3b82f6"
-                    bg="#eff6ff"
-                    icon={Mail}
-                />
-                <StatCard
-                    label="Unassigned"
-                    value={stats.unassigned || 0}
-                    color="#ef4444"
-                    bg="#fff1f2"
-                    icon={User}
-                />
+                <StatCard label="Total Players" value={stats.total || 0} color="#64748b" bg="#f8fafc" icon={Users} />
+                <StatCard label="Critical (2+ missing)" value={stats.critical || 0} color="#dc2626" bg="#fff1f2" icon={AlertTriangle} />
+                <StatCard label="Missing Snapchat" value={stats.missingSnapchat || 0} color="#eab308" bg="#fefce8" icon={Camera} />
+                <StatCard label="Missing Phone" value={stats.missingPhone || 0} color="#8b5cf6" bg="#f5f3ff" icon={Phone} />
+                <StatCard label="Missing Email" value={stats.missingEmail || 0} color="#3b82f6" bg="#eff6ff" icon={Mail} />
+                <StatCard label="Unassigned" value={stats.unassigned || 0} color="#ef4444" bg="#fff1f2" icon={User} />
             </div>
 
             {/* Filter + Search */}
@@ -164,6 +132,10 @@ export default function MissingPlayersPage() {
             {/* Player list */}
             {loading ? (
                 <div style={S.empty}>Loading...</div>
+            ) : error ? (
+                <div style={{ ...S.empty, color: '#ef4444' }}>
+                    ⚠️ {error}
+                </div>
             ) : filtered.length === 0 ? (
                 <div style={S.empty}>
                     {search || filter !== 'all'
@@ -182,8 +154,8 @@ export default function MissingPlayersPage() {
 }
 
 function PlayerCard({ player }) {
-    const tierColors = { VIP: '#f59e0b', HIGH: '#8b5cf6', MEDIUM: '#3b82f6', LOW: '#64748b' };
-    const tierBg = { VIP: '#fef3c7', HIGH: '#f5f3ff', MEDIUM: '#eff6ff', LOW: '#f8fafc' };
+    const tierColors = { BRONZE: '#b45309', SILVER: '#64748b', GOLD: '#d97706' };
+    const tierBg = { BRONZE: '#fef3c7', SILVER: '#f8fafc', GOLD: '#fffbeb' };
 
     return (
         <div style={{
@@ -191,7 +163,6 @@ function PlayerCard({ player }) {
             border: player.isCritical ? '1.5px solid #fca5a5' : '1px solid #e2e8f0',
             background: player.isCritical ? '#fffbfb' : '#fff',
         }}>
-            {/* Critical badge */}
             {player.isCritical && (
                 <div style={S.criticalBadge}>
                     <AlertTriangle style={{ width: '10px', height: '10px' }} />
@@ -199,7 +170,6 @@ function PlayerCard({ player }) {
                 </div>
             )}
 
-            {/* Player info */}
             <div style={S.playerHeader}>
                 <div style={S.avatar}>{(player.name || '?')[0].toUpperCase()}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -215,7 +185,6 @@ function PlayerCard({ player }) {
                 </div>
             </div>
 
-            {/* Assigned member */}
             <div style={S.assignedRow}>
                 <User style={{ width: '11px', height: '11px', color: player.assignedTo ? '#22c55e' : '#ef4444' }} />
                 <span style={{ fontSize: '11px', color: player.assignedTo ? '#374151' : '#ef4444' }}>
@@ -223,7 +192,6 @@ function PlayerCard({ player }) {
                 </span>
             </div>
 
-            {/* Missing fields */}
             <div style={S.missingSection}>
                 <div style={S.missingSectionTitle}>
                     Missing Fields ({player.missingFields.length})
@@ -251,7 +219,6 @@ function PlayerCard({ player }) {
                 </div>
             </div>
 
-            {/* Footer */}
             <div style={S.playerFooter}>
                 <span style={{ fontSize: '10px', color: '#94a3b8' }}>
                     Added {new Date(player.createdAt).toLocaleDateString()}
@@ -313,9 +280,7 @@ const S = {
         gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
         gap: '12px', marginBottom: '24px',
     },
-    statCard: {
-        padding: '14px 16px', borderRadius: '12px',
-    },
+    statCard: { padding: '14px 16px', borderRadius: '12px' },
     toolbar: {
         display: 'flex', flexDirection: 'column', gap: '10px',
         marginBottom: '12px',
@@ -332,18 +297,13 @@ const S = {
         fontSize: '13px', fontFamily: 'inherit', outline: 'none',
         boxSizing: 'border-box',
     },
-    filterRow: {
-        display: 'flex', gap: '6px', flexWrap: 'wrap',
-    },
+    filterRow: { display: 'flex', gap: '6px', flexWrap: 'wrap' },
     filterBtn: {
         padding: '5px 12px', borderRadius: '8px',
         fontSize: '11px', fontWeight: '600', cursor: 'pointer',
         fontFamily: 'inherit', transition: 'all 0.15s',
     },
-    resultsCount: {
-        fontSize: '12px', color: '#64748b',
-        marginBottom: '12px',
-    },
+    resultsCount: { fontSize: '12px', color: '#64748b', marginBottom: '12px' },
     playerGrid: {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
@@ -372,15 +332,11 @@ const S = {
     },
     playerName: { fontSize: '14px', fontWeight: '700', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     playerUsername: { fontSize: '11px', color: '#94a3b8', marginTop: '1px' },
-    assignedRow: {
-        display: 'flex', alignItems: 'center', gap: '5px',
-        marginBottom: '10px',
-    },
+    assignedRow: { display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px' },
     missingSection: { marginBottom: '10px' },
     missingSectionTitle: {
         fontSize: '10px', fontWeight: '700', color: '#94a3b8',
-        textTransform: 'uppercase', letterSpacing: '0.5px',
-        marginBottom: '6px',
+        textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px',
     },
     fieldTags: { display: 'flex', flexWrap: 'wrap', gap: '5px' },
     playerFooter: {
