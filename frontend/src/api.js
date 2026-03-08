@@ -64,10 +64,6 @@ async function fetchAPI(endpoint, options = {}) {
       ...options
     });
 
-    // ✅ BUG FIX #1: Render free tier spins down on inactivity and returns
-    // an HTML 502/503 page when waking up. Calling .json() on that HTML throws:
-    // "Unexpected token '<', <!DOCTYPE..." — which is the error you were seeing.
-    // We now check content-type before trying to parse JSON.
     if (!response.ok) {
       let errorMsg = `Server error (${response.status})`;
       try {
@@ -86,7 +82,6 @@ async function fetchAPI(endpoint, options = {}) {
       throw new Error(errorMsg);
     }
 
-    // Also guard the success path — in rare cases Render may return HTML on 200 during startup
     try {
       return await response.json();
     } catch (_) {
@@ -244,6 +239,16 @@ export const playersAPI = {
 
   getPlayer: async (id) => {
     const data = await fetchAPI(`/players/${id}`);
+    return data;
+  },
+
+  // ✅ FIX: was using raw relative fetch('/api/players/missing-info') in the component
+  // which hits the frontend server instead of the backend. Now routed through fetchAPI.
+  getMissingInfo: async (forceRefresh = false) => {
+    const cacheKey = 'players_missing_info';
+    if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
+    const data = await fetchAPI('/players/missing-info');
+    cache.set(cacheKey, data, 2 * 60 * 1000);
     return data;
   },
 
@@ -505,7 +510,6 @@ export const issuesAPI = {
 export const shiftApi = {
   getShifts: (role) => fetchAPI(`/shifts/${role}`),
 
-  // ✅ Was using hardcoded relative '/api/shifts' bypassing API_BASE_URL
   createShift: async (shiftData) => {
     const { teamRole, startTime, endTime, duration, isActive } = shiftData;
     if (!teamRole) throw new Error('teamRole is required');
@@ -527,8 +531,6 @@ export const shiftApi = {
 export const tasksAPI = {
   getTasks: async (opts = {}) => {
     const params = new URLSearchParams();
-    // ✅ BUG FIX #2: Frontend was sending "assignedTo" but backend reads "assignedToId"
-    // This caused member filtering to silently return ALL tasks instead of filtered ones
     if (opts.assignedTo !== undefined && opts.assignedTo !== null) params.set("assignedToId", opts.assignedTo);
     if (opts.unassigned) params.set("unassigned", "true");
     if (opts.status) params.set("status", opts.status);
@@ -542,9 +544,6 @@ export const tasksAPI = {
   deleteTask: async (taskId) => fetchAPI(`/tasks/${taskId}`, { method: "DELETE" }),
   getTeamMembers: async () => fetchAPI("/team-members"),
 
-  // ✅ SSE: Use this in your AdminTaskPage / MemberTasksSection for real-time updates.
-  // EventSource doesn't support custom headers, so we rely on the httpOnly cookie
-  // (which is sent automatically with withCredentials: true).
   connectSSE: () => {
     const sseUrl = `${API_BASE_URL}/tasks/events`;
     const es = new EventSource(sseUrl, { withCredentials: true });
