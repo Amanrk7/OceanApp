@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     AlertTriangle, Search, RefreshCw, User,
     Phone, Mail, Camera, Instagram, Send, Users, ExternalLink
@@ -22,6 +23,8 @@ const FIELD_META = {
 };
 
 export default function MissingPlayersPage() {
+    const { playerId } = useParams();
+    const navigate = useNavigate();
     const [players, setPlayers] = useState([]);
     const [stats, setStats] = useState({});
     const [loading, setLoading] = useState(true);
@@ -36,7 +39,7 @@ export default function MissingPlayersPage() {
             setError(null);
             try {
                 // ✅ FIX: was using raw fetch('/api/players/missing-info') which
-                // hit the frontend server. Now uses fetchAPI via api.js which
+                // hit tedhe frontend server. Now uses fetchAPI via api.js which
                 // correctly targets VITE_API_URL (the backend on Render).
                 const data = await api.players.getMissingInfo(true);
                 setPlayers(data.data || []);
@@ -223,15 +226,15 @@ function PlayerCard({ player }) {
                 <span style={{ fontSize: '10px', color: '#94a3b8' }}>
                     Added {new Date(player.createdAt).toLocaleDateString()}
                 </span>
-                <a
-                    href={`/playerDashboard/${player.id}`}
+                <span
+                    onClick={() => navigate(`/playerDashboard/${player.id}`)} 
                     style={{
                         fontSize: '11px', color: '#3b82f6', fontWeight: '600',
                         textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px'
                     }}
                 >
                     Edit <ExternalLink style={{ width: '10px', height: '10px' }} />
-                </a>
+                </span>
             </div>
         </div>
     );
@@ -348,5 +351,6 @@ const S = {
         color: '#94a3b8', fontSize: '14px',
     },
 };
+
 
 
