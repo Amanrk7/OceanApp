@@ -405,7 +405,7 @@ export const ExpensesPage = () => {
                     <CheckCircle style={{ width: '15px', height: '15px' }} /> Make Payment
                 </button>
                 <button onClick={() => { setError(null); setShowAddModal(true); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '9px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(37,99,235,.3)' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '10px 20px', background: 'rgb(14, 165, 233)', color: '#fff', border: 'none', borderRadius: '9px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(37,99,235,.3)' }}
                     onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
                     onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
                     <Plus style={{ width: '15px', height: '15px' }} /> Add Expense
@@ -467,7 +467,7 @@ export const ExpensesPage = () => {
                         return (
                             <button key={tab} onClick={() => setCategoryFilter(tab)} style={{
                                 padding: '5px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', transition: 'all .15s',
-                                background: active ? (isPayTab ? '#16a34a' : '#2563eb') : 'transparent',
+                                background: active ? (isPayTab ? '#16a34a' : 'rgb(14, 165, 233)') : 'transparent',
                                 color:      active ? '#fff' : '#64748b',
                                 border:     active ? 'none' : '1px solid #e2e8f0',
                             }}>
