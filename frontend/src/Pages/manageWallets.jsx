@@ -314,7 +314,7 @@ const ManageWalletsPage = () => {
                                                 </div>
                                                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
                                                     <button onClick={() => openEdit(wallet)}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', background: 'rgb(14, 165, 233)', color: '#2563eb', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+                                                        style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', background: 'rgb(14, 165, 233)', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
                                                         <Edit2 style={{ width: '11px', height: '11px' }} /> Edit
                                                     </button>
                                                     <button onClick={() => setDeleteTarget(wallet)}
