@@ -123,7 +123,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
   // Fetch team members for assigned_member field
   useEffect(() => {
     if (missingFields.includes("assigned_member") && isClaimedByMe) {
-      fetch(`${API}/api/team-members`, { credentials: "include", headers: getAuthHeaders() })
+      fetch(`${API}/team-members`, { credentials: "include", headers: getAuthHeaders() })
         .then(r => r.json())
         .then(d => setTeamMembers(d.data || []))
         .catch(() => {});
@@ -136,7 +136,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
     setClaiming(true);
     setError("");
     try {
-      const res = await fetch(`${API}/api/tasks/${task.id}/claim`, {
+      const res = await fetch(`${API}/tasks/${task.id}/claim`, {
         method: "POST",
         credentials: "include",
         headers: getAuthHeaders(true),
@@ -166,7 +166,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
         }
       });
 
-      const res = await fetch(`${API}/api/tasks/${task.id}/submit-missing-info`, {
+      const res = await fetch(`${API}/tasks/${task.id}/submit-missing-info`, {
         method: "POST",
         credentials: "include",
         headers: getAuthHeaders(true),
@@ -716,7 +716,7 @@ export default function TeamDashboard({ currentUser, activeShift }) {
   const loadTasks = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/api/tasks?myTasks=true`, { credentials: "include", headers: getAuthHeaders() });
+      const res = await fetch(`${API}/tasks?myTasks=true`, { credentials: "include", headers: getAuthHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load tasks");
       setTasks(data.data || []);
@@ -777,7 +777,7 @@ export default function TeamDashboard({ currentUser, activeShift }) {
       return { ...t, checklistItems: (t.checklistItems || []).map(i => i.id === itemId ? { ...i, done, doneBy: currentUser?.name } : i) };
     }));
     try {
-      const res = await fetch(`${API}/api/tasks/${taskId}/checklist`, {
+      const res = await fetch(`${API}/tasks/${taskId}/checklist`, {
         method: "PATCH", headers: getAuthHeaders(true),
         credentials: "include", body: JSON.stringify({ itemId, done }),
       });
@@ -789,7 +789,7 @@ export default function TeamDashboard({ currentUser, activeShift }) {
   const handleStatusChange = useCallback(async (taskId, status) => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
     try {
-      const res = await fetch(`${API}/api/tasks/${taskId}`, {
+      const res = await fetch(`${API}/tasks/${taskId}`, {
         method: "PATCH", headers: getAuthHeaders(true),
         credentials: "include", body: JSON.stringify({ status }),
       });
@@ -800,7 +800,7 @@ export default function TeamDashboard({ currentUser, activeShift }) {
 
   const handleProgressLog = useCallback(async (taskId, value) => {
     try {
-      const res = await fetch(`${API}/api/tasks/${taskId}/progress`, {
+      const res = await fetch(`${API}/tasks/${taskId}/progress`, {
         method: "POST", headers: getAuthHeaders(true),
         credentials: "include", body: JSON.stringify({ value, action: "MEMBER_LOG" }),
       });
