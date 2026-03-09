@@ -45,6 +45,7 @@ import AdminTaskPage from "./Pages/Admintaskpage.jsx";
 import TeamDashboard from "./Pages/Teamdashboard.jsx";
 import AdminReportPage from "./Pages/Adminreportpage.jsx";
 import MissingPlayersPage from "./Pages/Missingplayerspage.jsx";
+import Playtimepage from "./Pages/Playtimepage.jsx";
 
 const SIDEBAR_W = 62;
 
@@ -545,6 +546,7 @@ function AdminDashboard({ user }) {
       case "memberDashboard": return <TeamDashboard />;
       case "players": return <Players />;
       case "dailyCheckups": return <MissingPlayersPage user={user}/>;
+      case "playTime" : return <Playtimepage />;
       case "attendance": return <Attendance />;
       case "games": return <Games user={user} />;
       case "issues": return <Issues />;
