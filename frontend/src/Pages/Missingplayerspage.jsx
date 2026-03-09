@@ -727,7 +727,7 @@ export default function MissingPlayersPage() {
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
         {FILTERS.map(f => (
           <button key={f.id} onClick={() => setFilter(f.id)}
-            style={{ padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', border: `1px solid ${filter === f.id ? '#0f172a' : '#e2e8f0'}`, background: filter === f.id ? '#0f172a' : '#f8fafc', color: filter === f.id ? '#fff' : '#64748b' }}>
+            style={{ padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: filter === f.id ? 'rgb(14, 165, 233)' : '#f8fafc', color: filter === f.id ? '#fff' : '#64748b' }}>
             {f.label}{f.count > 0 ? <span style={{ opacity: 0.65, marginLeft: 4 }}>{f.count}</span> : null}
           </button>
         ))}
@@ -797,3 +797,4 @@ const S = {
   errBox:     { padding: '10px 12px', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 8, fontSize: 12, color: '#dc2626' },
   okBox:      { padding: '10px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, fontSize: 12, color: '#16a34a' },
 };
+
