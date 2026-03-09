@@ -866,7 +866,7 @@ export default function TeamDashboard({ currentUser, activeShift }) {
         </div>
         <div style={{ display: "flex", gap: "4px" }}>
           {["all", "pending", "done"].map(f => (
-            <button key={f} onClick={() => setTaskFilter(f)} style={{ padding: "6px 12px", border: "1px solid", borderColor: taskFilter === f ? "#0f172a" : "#e2e8f0", borderRadius: "8px", fontSize: "11px", fontWeight: "700", background: taskFilter === f ? "#0ea5e9" : "#fff", color: taskFilter === f ? "#fff" : "#0ea5e9", cursor: "pointer", textTransform: "capitalize" }}>{f}</button>
+            <button key={f} onClick={() => setTaskFilter(f)} style={{ padding: "6px 12px", border: "1px solid", borderRadius: "8px", fontSize: "11px", fontWeight: "700", background: taskFilter === f ? "#0ea5e9" : "#fff", color: taskFilter === f ? "#fff" : "#0ea5e9", cursor: "pointer", textTransform: "capitalize" }}>{f}</button>
           ))}
           <button onClick={loadTasks} style={{ padding: "6px 10px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", cursor: "pointer", color: "#64748b", display: "flex", alignItems: "center" }}>
             <RefreshCw style={{ width: "12px", height: "12px" }} />
