@@ -1,10 +1,10 @@
 /**
- * MissingPlayersPage.jsx
- *
- * Admin view  → inline dropdown on every card to assign a MISSING_INFO task to a specific
- *               team member in one click (no modal needed).
- * Member view → "Claim" button on every card with missing fields.
- *               Works even when no task exists yet — creates + assigns the task to self.
+ * MissingPlayersPage.jsx  — fixes:
+ *  1. Accurate data  — threshold bumped, backend already filters non-missing players
+ *  2. HIGHLY CRITICAL at 3+ missing, CRITICAL at 2 missing (display only)
+ *  3. Only players with ≥1 missing field shown (backend + frontend guard)
+ *  4. Edit → auto-syncs task via SSE; undo button on completed task
+ *  5. Edit button locked: admin always; member only if they own the task
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -13,12 +13,14 @@ import {
   Phone, Mail, Camera, Instagram, Send, Users, X,
   ClipboardList, CheckCircle2, ChevronDown, ShieldCheck,
   UserCheck, Clock, AlertCircle, CheckCircle, Edit2, Save, User,
-  Loader2,
+  Loader2, Undo2, Lock,
 } from 'lucide-react';
 import { api } from '../api';
 
-// ─── Config ───────────────────────────────────────────────────────────────────
+// ─── Config ────────────────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// 2 missing = CRITICAL (orange badge)
+// 3+ missing = HIGHLY CRITICAL (red badge)
 const CRITICAL_THRESHOLD      = 2;
 const HIGH_CRITICAL_THRESHOLD = 3;
 
@@ -31,7 +33,7 @@ const CONTACT_FIELD_META = {
 };
 const CONTACT_KEYS = Object.keys(CONTACT_FIELD_META);
 
-// ─── Pure helpers ─────────────────────────────────────────────────────────────
+// ─── Pure helpers ──────────────────────────────────────────────
 function getMissingContactFields(player) {
   return CONTACT_KEYS.filter(key => {
     const val = player[key];
@@ -57,7 +59,7 @@ function getTaskPlayerId(task) {
   return m ? m[1] : null;
 }
 
-// ─── Avatar ────────────────────────────────────────────────────────────────────
+// ─── Avatar ────────────────────────────────────────────────────
 const AVATAR_COLORS = [
   ['#dc2626','#fff'],['#ea580c','#fff'],['#ca8a04','#fff'],['#16a34a','#fff'],
   ['#0891b2','#fff'],['#2563eb','#fff'],['#7c3aed','#fff'],['#db2777','#fff'],
@@ -97,8 +99,7 @@ function FieldChip({ field }) {
   );
 }
 
-// ─── Inline Admin Assign Dropdown ─────────────────────────────────────────────
-// Shows directly on the card — no modal. Selecting a member fires the assign API instantly.
+// ─── Inline Admin Assign Dropdown ──────────────────────────────
 function InlineAdminAssign({ player, task, teamMembers, onAssigned, assigning }) {
   const isDone       = ['COMPLETED', 'DONE'].includes(task?.status);
   const currentValue = (!task?.assignToAll && task?.assignedToId) ? String(task.assignedToId) : '';
@@ -121,8 +122,7 @@ function InlineAdminAssign({ player, task, teamMembers, onAssigned, assigning })
             background: currentValue ? '#f0fdf4' : '#fff',
             color: currentValue ? '#166534' : '#374151',
             outline: 'none', cursor: assigning || isDone ? 'not-allowed' : 'pointer',
-            opacity: isDone ? 0.6 : 1,
-            boxSizing: 'border-box',
+            opacity: isDone ? 0.6 : 1, boxSizing: 'border-box',
           }}
         >
           <option value="">— Assign to member —</option>
@@ -132,14 +132,11 @@ function InlineAdminAssign({ player, task, teamMembers, onAssigned, assigning })
             </option>
           ))}
         </select>
-
         {assigning
           ? <Loader2 style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 12, height: 12, color: '#94a3b8', animation: 'spin 0.8s linear infinite' }} />
           : <ChevronDown style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 12, height: 12, color: '#94a3b8', pointerEvents: 'none' }} />
         }
       </div>
-
-      {/* Existing task status */}
       {task && (
         <div style={{ marginTop: 5, fontSize: 11, display: 'flex', alignItems: 'center', gap: 4,
           color: isDone ? '#16a34a' : task.assignToAll ? '#2563eb' : '#7c3aed' }}>
@@ -155,7 +152,7 @@ function InlineAdminAssign({ player, task, teamMembers, onAssigned, assigning })
   );
 }
 
-// ─── Edit Modal ───────────────────────────────────────────────────────────────
+// ─── Edit Modal ────────────────────────────────────────────────
 function EditModal({ player, onClose, onSaved }) {
   const [form, setForm] = useState({
     name: player.name || '', email: player.email || '', phone: player.phone || '',
@@ -171,9 +168,12 @@ function EditModal({ player, onClose, onSaved }) {
     setSaving(true); setErr(null);
     try {
       const res = await api.players.updatePlayer(player.id, {
-        name: form.name || undefined, email: form.email || null,
-        phone: form.phone || null, snapchat: form.snapchat || null,
-        instagram: form.instagram || null, telegram: form.telegram || null,
+        name:      form.name      || undefined,
+        email:     form.email     || null,
+        phone:     form.phone     || null,
+        snapchat:  form.snapchat  || null,
+        instagram: form.instagram || null,
+        telegram:  form.telegram  || null,
       });
       setDone(true);
       setTimeout(() => onSaved({ ...player, ...form, ...(res?.data || {}) }), 700);
@@ -181,16 +181,17 @@ function EditModal({ player, onClose, onSaved }) {
   };
 
   const FIELDS = [
-    { key: 'name', label: 'Full Name', type: 'text', required: true },
-    { key: 'email', label: 'Email', type: 'email' },
-    { key: 'phone', label: 'Phone', type: 'text' },
-    { key: 'telegram', label: 'Telegram', type: 'text' },
-    { key: 'instagram', label: 'Instagram', type: 'text' },
-    { key: 'snapchat', label: 'Snapchat', type: 'text' },
+    { key: 'name',      label: 'Full Name',  type: 'text',  required: true },
+    { key: 'email',     label: 'Email',      type: 'email' },
+    { key: 'phone',     label: 'Phone',      type: 'text' },
+    { key: 'telegram',  label: 'Telegram',   type: 'text' },
+    { key: 'instagram', label: 'Instagram',  type: 'text' },
+    { key: 'snapchat',  label: 'Snapchat',   type: 'text' },
   ];
 
   return (
-    <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,23,42,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+    <div onClick={e => e.target === e.currentTarget && onClose()}
+      style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,23,42,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 460, boxShadow: '0 24px 60px rgba(0,0,0,.2)', overflow: 'hidden' }}>
         <div style={{ padding: '18px 20px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -222,7 +223,7 @@ function EditModal({ player, onClose, onSaved }) {
             );
           })}
           {err  && <div style={S.errBox}>⚠️ {err}</div>}
-          {done && <div style={S.okBox}>✅ Updated!</div>}
+          {done && <div style={S.okBox}>✅ Updated! Task synced automatically.</div>}
         </div>
         <div style={{ padding: '14px 20px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', gap: 10 }}>
           <button onClick={onClose} disabled={saving} style={S.cancelBtn}>Cancel</button>
@@ -236,8 +237,11 @@ function EditModal({ player, onClose, onSaved }) {
   );
 }
 
-// ─── Player Card ───────────────────────────────────────────────────────────────
-function PlayerCard({ player, onEdit, onInlineAssign, onClaim, userRole, task, claimingId, assigningId, teamMembers }) {
+// ─── Player Card ───────────────────────────────────────────────
+function PlayerCard({
+  player, onEdit, onInlineAssign, onClaim, onUndoTask,
+  userRole, task, claimingId, assigningId, undoingId, teamMembers, currentUserId,
+}) {
   const missing        = getMissingContactFields(player);
   const isCritical     = missing.length >= CRITICAL_THRESHOLD;
   const isHighCritical = missing.length >= HIGH_CRITICAL_THRESHOLD;
@@ -245,25 +249,28 @@ function PlayerCard({ player, onEdit, onInlineAssign, onClaim, userRole, task, c
   const isMember       = isMemberRole(userRole);
   const claiming       = claimingId === player.id;
   const assigning      = assigningId === player.id;
+  const undoing        = undoingId  === player.id;
 
-  const hasTask      = !!task;
-  const isDone       = ['COMPLETED', 'DONE'].includes(task?.status);
-  const isOpenToAll  = hasTask && (task.assignToAll === true || !task.assignedToId);
-  const isAssigned   = hasTask && !!task.assignedToId && !task.assignToAll;
-  const assignedName = task?.assignedTo?.name || task?.assignedTo?.username;
-
-  // Member-specific claim state
-  const [currentUserId] = useState(() => {
-    try { const u = JSON.parse(localStorage.getItem('user') || '{}'); return u.id ? String(u.id) : null; } catch { return null; }
-  });
-  const isClaimedByMe    = isAssigned && currentUserId && String(task.assignedToId) === currentUserId;
+  const isDone           = ['COMPLETED', 'DONE'].includes(task?.status);
+  const isOpenToAll      = !!task && (task.assignToAll === true || !task.assignedToId);
+  const isAssigned       = !!task && !!task.assignedToId && !task.assignToAll;
+  const assignedName     = task?.assignedTo?.name || task?.assignedTo?.username;
+  const isClaimedByMe    = isAssigned && currentUserId && String(task.assignedToId) === String(currentUserId);
   const isClaimedByOther = isAssigned && !isClaimedByMe;
-  const canClaim         = isMember && !isDone && !isClaimedByOther && missing.length > 0;
+
+  // ── Edit permission: admin always; member only if they own the task ──
+  const canEdit = isAdmin || (isMember && isClaimedByMe);
+
+  const canClaim = isMember && !isDone && !isClaimedByOther && missing.length > 0;
 
   return (
     <div style={{
       borderRadius: 14, padding: 16, boxSizing: 'border-box',
-      border: isHighCritical ? '2px solid #ef4444' : isCritical ? '1.5px solid #fca5a5' : '1px solid #e2e8f0',
+      border: isDone
+        ? '2px solid #86efac'
+        : isHighCritical ? '2px solid #ef4444'
+        : isCritical ? '1.5px solid #fca5a5'
+        : '1px solid #e2e8f0',
       background: isDone ? '#f0fdf4' : isHighCritical ? '#fff5f5' : isCritical ? '#fffbfb' : '#fff',
       display: 'flex', flexDirection: 'column', gap: 10,
     }}>
@@ -277,11 +284,15 @@ function PlayerCard({ player, onEdit, onInlineAssign, onClaim, userRole, task, c
         <TierBadge tier={player.tier} />
       </div>
 
-      {/* Critical badge */}
-      {isCritical && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: isHighCritical ? '#ef4444' : '#fee2e2', color: isHighCritical ? '#fff' : '#dc2626', fontSize: 10, fontWeight: 800, alignSelf: 'flex-start' }}>
-          <AlertTriangle style={{ width: 10, height: 10 }} />
-          {isHighCritical ? 'HIGHLY CRITICAL' : 'CRITICAL'}
+      {/* Critical badge — only show HIGHLY CRITICAL at 3+ */}
+      {isHighCritical && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: '#ef4444', color: '#fff', fontSize: 10, fontWeight: 800, alignSelf: 'flex-start' }}>
+          <AlertTriangle style={{ width: 10, height: 10 }} /> HIGHLY CRITICAL
+        </div>
+      )}
+      {isCritical && !isHighCritical && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: '#fee2e2', color: '#dc2626', fontSize: 10, fontWeight: 800, alignSelf: 'flex-start' }}>
+          <AlertTriangle style={{ width: 10, height: 10 }} /> CRITICAL
         </div>
       )}
 
@@ -300,7 +311,29 @@ function PlayerCard({ player, onEdit, onInlineAssign, onClaim, userRole, task, c
         }
       </div>
 
-      {/* ── ADMIN: inline assign dropdown ─────────────────────────────── */}
+      {/* Task completed banner + undo */}
+      {isDone && (
+        <div style={{ padding: '8px 10px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <CheckCircle2 style={{ width: 13, height: 13 }} /> Task completed
+          </span>
+          {(isAdmin || isClaimedByMe) && (
+            <button
+              onClick={() => onUndoTask(player, task)}
+              disabled={undoing}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: '1px solid #86efac', background: '#fff', fontSize: 11, fontWeight: 700, color: '#16a34a', cursor: undoing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+            >
+              {undoing
+                ? <Loader2 style={{ width: 11, height: 11, animation: 'spin 0.8s linear infinite' }} />
+                : <Undo2 style={{ width: 11, height: 11 }} />
+              }
+              Undo
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── ADMIN: inline assign dropdown ── */}
       {isAdmin && (
         <InlineAdminAssign
           player={player}
@@ -311,8 +344,8 @@ function PlayerCard({ player, onEdit, onInlineAssign, onClaim, userRole, task, c
         />
       )}
 
-      {/* ── MEMBER: claim / status ────────────────────────────────────── */}
-      {isMember && (
+      {/* ── MEMBER: claim / status ── */}
+      {isMember && !isDone && (
         <div>
           {isClaimedByMe ? (
             <div style={{ padding: '7px 10px', borderRadius: 8, background: '#fff7ed', border: '1px solid #fed7aa', fontSize: 11, fontWeight: 600, color: '#ea580c', display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -320,7 +353,7 @@ function PlayerCard({ player, onEdit, onInlineAssign, onClaim, userRole, task, c
             </div>
           ) : isClaimedByOther ? (
             <div style={{ padding: '7px 10px', borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: 11, color: '#64748b', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <User style={{ width: 11, height: 11 }} /> Claimed by {assignedName || 'another member'}
+              <Lock style={{ width: 11, height: 11 }} /> Claimed by {assignedName || 'another member'}
             </div>
           ) : canClaim ? (
             <button
@@ -350,15 +383,23 @@ function PlayerCard({ player, onEdit, onInlineAssign, onClaim, userRole, task, c
       {/* Footer */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid #f1f5f9', marginTop: 'auto' }}>
         <span style={{ fontSize: 10, color: '#94a3b8' }}>Added {new Date(player.createdAt).toLocaleDateString()}</span>
-        <button onClick={() => onEdit(player)} style={{ ...S.btn, background: '#fff', color: '#3b82f6', border: '1px solid #bfdbfe' }}>
-          <Edit2 style={{ width: 10, height: 10 }} /> Edit
-        </button>
+
+        {/* Edit button: admin always, member only if they own the task */}
+        {canEdit ? (
+          <button onClick={() => onEdit(player)} style={{ ...S.btn, background: '#fff', color: '#3b82f6', border: '1px solid #bfdbfe' }}>
+            <Edit2 style={{ width: 10, height: 10 }} /> Edit
+          </button>
+        ) : isMember && !isClaimedByMe && (
+          <span style={{ fontSize: 10, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 3 }}>
+            <Lock style={{ width: 9, height: 9 }} /> Claim to edit
+          </span>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Stat Card ─────────────────────────────────────────────────────────────────
+// ─── Stat Card ──────────────────────────────────────────────────
 function StatCard({ label, value, color, bg, icon: Icon, highlight }) {
   return (
     <div style={{ padding: '14px 16px', borderRadius: 12, background: bg, border: `1px solid ${color}25`, outline: highlight ? `2px solid ${color}` : 'none' }}>
@@ -381,12 +422,13 @@ export default function MissingPlayersPage() {
   const [search,        setSearch]        = useState('');
   const [filter,        setFilter]        = useState('all');
   const [editTarget,    setEditTarget]    = useState(null);
-  const [tasks,         setTasks]         = useState({}); // String(playerId) → task
+  const [tasks,         setTasks]         = useState({});         // String(playerId) → task
   const [teamMembers,   setTeamMembers]   = useState([]);
   const [userRole,      setUserRole]      = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [claimingId,    setClaimingId]    = useState(null);   // player.id being claimed
-  const [assigningId,   setAssigningId]   = useState(null);   // player.id being assigned
+  const [claimingId,    setClaimingId]    = useState(null);
+  const [assigningId,   setAssigningId]   = useState(null);
+  const [undoingId,     setUndoingId]     = useState(null);
   const [autoRefresh,   setAutoRefresh]   = useState(true);
   const [lastRefresh,   setLastRefresh]   = useState(new Date());
   const [refreshKey,    setRefreshKey]    = useState(0);
@@ -413,8 +455,9 @@ export default function MissingPlayersPage() {
     setError(null);
     try {
       const res  = await api.players.getMissingInfo(true);
+      // Backend already filters to players with ≥1 missing field
       const list = res?.data || res?.players || res || [];
-      setPlayers(Array.isArray(list) ? list : []);
+      setPlayers(Array.isArray(list) ? list.filter(p => getMissingContactFields(p).length > 0) : []);
       setLastRefresh(new Date());
     } catch (e) {
       if (!silent) setError(e.message || 'Failed to load players');
@@ -444,14 +487,34 @@ export default function MissingPlayersPage() {
     return () => clearInterval(id);
   }, [autoRefresh, loadPlayers, loadTasks]);
 
-  // ── SSE ───────────────────────────────────────────────────────
+  // ── SSE (real-time updates from task sync + player edits) ─────
   useEffect(() => {
     try {
       const es = api.tasks.connectSSE();
       sseRef.current = es;
       const onUpdate = () => { loadPlayers(true); loadTasks(); };
       es.onmessage = e => {
-        try { const { type } = JSON.parse(e.data); if (['task_created','task_updated','task_deleted','player_updated'].includes(type)) onUpdate(); } catch {}
+        try {
+          const { type, data } = JSON.parse(e.data);
+          if (['task_created', 'task_updated', 'task_deleted'].includes(type)) {
+            // Optimistic task update in map
+            if (type === 'task_updated' && data) {
+              const pid = getTaskPlayerId(data);
+              if (pid) setTasks(prev => ({ ...prev, [pid]: data }));
+            }
+            if (type === 'task_deleted' && data?.id) {
+              setTasks(prev => {
+                const next = { ...prev };
+                Object.keys(next).forEach(k => { if (next[k]?.id === data.id) delete next[k]; });
+                return next;
+              });
+            }
+            loadTasks();
+          }
+          if (type === 'player_updated') {
+            loadPlayers(true);
+          }
+        } catch {}
       };
       es.onerror = () => {};
     } catch {}
@@ -459,33 +522,17 @@ export default function MissingPlayersPage() {
   }, [loadPlayers, loadTasks]);
 
   // ── ADMIN: inline assign ──────────────────────────────────────
-  // Called when admin selects a member from the dropdown on a player card.
-  // Creates the MISSING_INFO task (or re-assigns if one exists) in one API call.
   const handleInlineAssign = useCallback(async (player, memberId) => {
     setAssigningId(player.id);
     setError(null);
     try {
       const res = await fetch(`${API_BASE}/players/${player.id}/assign-missing-info-task`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: authHeaders(true),
-        body: JSON.stringify({
-          assignedToId: memberId ? parseInt(memberId, 10) : null,
-          priority: 'HIGH',
-        }),
+        method: 'POST', credentials: 'include', headers: authHeaders(true),
+        body: JSON.stringify({ assignedToId: memberId ? parseInt(memberId, 10) : null, priority: 'HIGH' }),
       });
       const data = await res.json();
-
-      // If a duplicate task already exists the backend returns 409 — surface it gracefully
-      if (res.status === 409) {
-        // Still update local state with the existing task
-        if (data.existingTaskId) {
-          await loadTasks();
-        }
-        return;
-      }
+      if (res.status === 409) { if (data.existingTaskId) await loadTasks(); return; }
       if (!res.ok) throw new Error(data.error || data.message || 'Failed to assign task');
-
       const task = data.data || data.task || data;
       const pid  = getTaskPlayerId(task) || String(player.id);
       setTasks(prev => ({ ...prev, [pid]: task }));
@@ -497,41 +544,29 @@ export default function MissingPlayersPage() {
   }, [loadTasks]);
 
   // ── MEMBER: claim ─────────────────────────────────────────────
-  // Works two ways:
-  //   • task exists and is open → POST /tasks/:id/claim
-  //   • no task yet             → POST /players/:id/assign-missing-info-task (assignedToId = self)
   const handleClaim = useCallback(async (player, task) => {
     if (!currentUserId) return;
     setClaimingId(player.id);
     setError(null);
     try {
       if (task?.id) {
-        // Claim existing open task
-        const res  = await fetch(`${API_BASE}/tasks/${task.id}/claim`, {
-          method: 'POST', credentials: 'include', headers: authHeaders(true),
-        });
+        const res  = await fetch(`${API_BASE}/tasks/${task.id}/claim`, { method: 'POST', credentials: 'include', headers: authHeaders(true) });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to claim task');
         const updated = { ...(data.data || data.task || data), assignToAll: false, assignedToId: parseInt(currentUserId) };
         setTasks(prev => ({ ...prev, [String(player.id)]: updated }));
       } else {
-        // No task yet — create one assigned directly to this member
         const res  = await fetch(`${API_BASE}/players/${player.id}/assign-missing-info-task`, {
           method: 'POST', credentials: 'include', headers: authHeaders(true),
           body: JSON.stringify({ assignedToId: parseInt(currentUserId), priority: 'MEDIUM' }),
         });
         const data = await res.json();
-        if (res.status === 409) {
-          // Task already exists — just refresh so it appears in member's list
-          await loadTasks();
-          return;
-        }
+        if (res.status === 409) { await loadTasks(); return; }
         if (!res.ok) throw new Error(data.error || data.message || 'Failed to claim');
         const newTask = data.data || data.task || data;
         const pid     = getTaskPlayerId(newTask) || String(player.id);
         setTasks(prev => ({ ...prev, [pid]: newTask }));
       }
-      // Refresh member task list via SSE (happens automatically) + delayed pull
       setTimeout(loadTasks, 1000);
     } catch (e) {
       setError(e.message);
@@ -540,31 +575,62 @@ export default function MissingPlayersPage() {
     }
   }, [currentUserId, loadTasks]);
 
-  // ── Edit saved ────────────────────────────────────────────────
-  const handleSaved = useCallback((updated) => {
-    setEditTarget(null);
-    setPlayers(prev => prev.map(p => p.id !== updated.id ? p : { ...p, ...updated }));
+  // ── Undo task completion ──────────────────────────────────────
+  const handleUndoTask = useCallback(async (player, task) => {
+    if (!task?.id) return;
+    setUndoingId(player.id);
+    setError(null);
+    try {
+      const res  = await fetch(`${API_BASE}/tasks/${task.id}/undo-completion`, {
+        method: 'POST', credentials: 'include', headers: authHeaders(true),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to undo task');
+      const updated = data.data || data.task || data;
+      const pid     = getTaskPlayerId(updated) || String(player.id);
+      setTasks(prev => ({ ...prev, [pid]: updated }));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setUndoingId(null);
+    }
   }, []);
 
-  // ── Stats ─────────────────────────────────────────────────────
+  // ── Edit saved ────────────────────────────────────────────────
+  // Backend PATCH already syncs the task and broadcasts via SSE,
+  // so the task state updates automatically via the SSE listener above.
+  const handleSaved = useCallback((updated) => {
+    setEditTarget(null);
+    setPlayers(prev => {
+      // If all fields now filled, remove from list
+      const missing = getMissingContactFields(updated);
+      if (missing.length === 0) return prev.filter(p => p.id !== updated.id);
+      return prev.map(p => p.id !== updated.id ? p : { ...p, ...updated });
+    });
+  }, []);
+
+  // ── Stats (based on what's visible) ──────────────────────────
   const stats = {
-    total:      players.length,
-    critical:   players.filter(p => getMissingContactFields(p).length >= CRITICAL_THRESHOLD).length,
-    misSnap:    players.filter(p => getMissingContactFields(p).includes('snapchat')).length,
-    misPhone:   players.filter(p => getMissingContactFields(p).includes('phone')).length,
-    misEmail:   players.filter(p => getMissingContactFields(p).includes('email')).length,
-    unassigned: players.filter(p => !tasks[String(p.id)]).length,
+    total:         players.length,
+    highCritical:  players.filter(p => getMissingContactFields(p).length >= HIGH_CRITICAL_THRESHOLD).length,
+    critical:      players.filter(p => getMissingContactFields(p).length >= CRITICAL_THRESHOLD).length,
+    misSnap:       players.filter(p => getMissingContactFields(p).includes('snapchat')).length,
+    misPhone:      players.filter(p => getMissingContactFields(p).includes('phone')).length,
+    misEmail:      players.filter(p => getMissingContactFields(p).includes('email')).length,
+    unassigned:    players.filter(p => !tasks[String(p.id)]).length,
   };
 
   // ── Filtered list ─────────────────────────────────────────────
   const filtered = players.filter(p => {
     const missing = getMissingContactFields(p);
     const q = search.toLowerCase();
-    const matchSearch  = !q || p.name?.toLowerCase().includes(q) || p.username?.toLowerCase().includes(q);
-    const matchFilter  =
-      filter === 'all'        ? true :
-      filter === 'critical'   ? missing.length >= CRITICAL_THRESHOLD :
-      filter === 'unassigned' ? !tasks[String(p.id)] :
+    const matchSearch =
+      !q || p.name?.toLowerCase().includes(q) || p.username?.toLowerCase().includes(q);
+    const matchFilter =
+      filter === 'all'          ? true :
+      filter === 'highcritical' ? missing.length >= HIGH_CRITICAL_THRESHOLD :
+      filter === 'critical'     ? missing.length >= CRITICAL_THRESHOLD :
+      filter === 'unassigned'   ? !tasks[String(p.id)] :
       CONTACT_KEYS.includes(filter) ? missing.includes(filter) : true;
     return matchSearch && matchFilter;
   });
@@ -573,12 +639,13 @@ export default function MissingPlayersPage() {
   const isMember = isMemberRole(userRole);
 
   const FILTERS = [
-    { id: 'all',        label: 'All',        count: stats.total      },
-    { id: 'critical',   label: '🔴 Critical', count: stats.critical   },
-    { id: 'snapchat',   label: 'Snapchat',   count: stats.misSnap    },
-    { id: 'phone',      label: 'Phone',      count: stats.misPhone   },
-    { id: 'email',      label: 'Email',      count: stats.misEmail   },
-    { id: 'unassigned', label: 'Unassigned', count: stats.unassigned },
+    { id: 'all',          label: 'All',             count: stats.total        },
+    { id: 'highcritical', label: '🔴 Highly Critical', count: stats.highCritical },
+    { id: 'critical',     label: '🟠 Critical',      count: stats.critical     },
+    { id: 'snapchat',     label: 'Snapchat',         count: stats.misSnap      },
+    { id: 'phone',        label: 'Phone',            count: stats.misPhone     },
+    { id: 'email',        label: 'Email',            count: stats.misEmail     },
+    { id: 'unassigned',   label: 'Unassigned',       count: stats.unassigned   },
   ];
 
   return (
@@ -612,12 +679,12 @@ export default function MissingPlayersPage() {
 
       {/* Stats */}
       <div style={S.statsGrid}>
-        <StatCard label="Total Players"         value={stats.total}      color="#64748b" bg="#f8fafc"  icon={Users}         />
-        <StatCard label="Critical (2+ missing)" value={stats.critical}   color="#dc2626" bg="#fff1f2"  icon={AlertTriangle} highlight={stats.critical > 0} />
-        <StatCard label="Missing Snapchat"      value={stats.misSnap}    color="#eab308" bg="#fefce8"  icon={Camera}        />
-        <StatCard label="Missing Phone"         value={stats.misPhone}   color="#8b5cf6" bg="#f5f3ff"  icon={Phone}         />
-        <StatCard label="Missing Email"         value={stats.misEmail}   color="#3b82f6" bg="#eff6ff"  icon={Mail}          />
-        <StatCard label="Unassigned"            value={stats.unassigned} color="#f97316" bg="#fff7ed"  icon={User}          />
+        <StatCard label="Total (Missing Info)"     value={stats.total}        color="#64748b" bg="#f8fafc"  icon={Users}         />
+        <StatCard label="Highly Critical (3+)"     value={stats.highCritical} color="#dc2626" bg="#fff1f2"  icon={AlertTriangle} highlight={stats.highCritical > 0} />
+        <StatCard label="Critical (2+ missing)"    value={stats.critical}     color="#f97316" bg="#fff7ed"  icon={AlertCircle}   highlight={stats.critical > 0} />
+        <StatCard label="Missing Snapchat"         value={stats.misSnap}      color="#eab308" bg="#fefce8"  icon={Camera}        />
+        <StatCard label="Missing Phone"            value={stats.misPhone}     color="#8b5cf6" bg="#f5f3ff"  icon={Phone}         />
+        <StatCard label="Missing Email"            value={stats.misEmail}     color="#3b82f6" bg="#eff6ff"  icon={Mail}          />
       </div>
 
       {/* Error */}
@@ -629,15 +696,15 @@ export default function MissingPlayersPage() {
         </div>
       )}
 
-      {/* Admin hint */}
+      {/* Role hints */}
       {isAdmin && (
         <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, fontSize: 12, color: '#92400e', marginBottom: 10 }}>
-          💡 <strong>Admin:</strong> Use the dropdown on each card to assign a player to a team member. The task will appear instantly in their dashboard.
+          💡 <strong>Admin:</strong> Assign players using the dropdown. Only the assigned member can edit that player's info. Use <strong>Undo</strong> to reopen completed tasks.
         </div>
       )}
       {isMember && (
         <div style={{ padding: '10px 14px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, fontSize: 12, color: '#0369a1', marginBottom: 10 }}>
-          💡 Click <strong>Claim This Player</strong> to take ownership — the task will appear in your <em>My Tasks</em> section.
+          💡 Click <strong>Claim This Player</strong> to take ownership — then you can edit their missing info. Saving auto-completes the task in your dashboard.
         </div>
       )}
 
@@ -667,7 +734,7 @@ export default function MissingPlayersPage() {
       </div>
 
       <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>
-        Showing {filtered.length} of {players.length} players
+        Showing {filtered.length} of {players.length} players with missing info
         {filter !== 'all' && <span style={{ color: '#ef4444', marginLeft: 6 }}>• filtered</span>}
       </div>
 
@@ -693,11 +760,14 @@ export default function MissingPlayersPage() {
               onEdit={setEditTarget}
               onInlineAssign={handleInlineAssign}
               onClaim={handleClaim}
+              onUndoTask={handleUndoTask}
               userRole={userRole}
               task={tasks[String(player.id)] || null}
               claimingId={claimingId}
               assigningId={assigningId}
+              undoingId={undoingId}
               teamMembers={teamMembers}
+              currentUserId={currentUserId}
             />
           ))}
         </div>
@@ -711,7 +781,7 @@ export default function MissingPlayersPage() {
   );
 }
 
-// ─── Shared styles ─────────────────────────────────────────────────────────────
+// ─── Shared styles ──────────────────────────────────────────────
 const S = {
   page:       { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', maxWidth: 1400, margin: '0 auto' },
   header:     { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 12 },
@@ -720,7 +790,6 @@ const S = {
   statsGrid:  { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12, marginBottom: 20 },
   grid:       { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 },
   empty:      { textAlign: 'center', padding: '60px 20px', color: '#94a3b8', fontSize: 14 },
-  label:      { display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 5 },
   btn:        { fontSize: 11, fontWeight: 600, borderRadius: 6, padding: '4px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' },
   iconBtn:    { background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4 },
   cancelBtn:  { flex: 1, padding: 10, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', color: '#374151' },
