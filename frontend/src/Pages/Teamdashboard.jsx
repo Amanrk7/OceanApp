@@ -5,7 +5,7 @@ import {
   TrendingUp, Users, List, ChevronDown, ChevronUp,
   Calendar, Plus, X, Check,
   UserCheck, Phone, Mail, Camera, Instagram, Send, User,
-  ClipboardList, Lock, Unlock, Undo2 
+  ClipboardList, Lock, Unlock, Undo2
 } from "lucide-react";
 import { tasksAPI } from "../api";
 
@@ -35,20 +35,20 @@ function getAuthHeaders(includeContentType = false) {
 
 // ── MISSING_INFO field config ─────────────────────────────────
 const MISSING_FIELD_META = {
-  email:           { icon: Mail,      label: "Email",           placeholder: "player@email.com",  type: "email", color: "#3b82f6" },
-  phone:           { icon: Phone,     label: "Phone",           placeholder: "+1 234 567 8900",    type: "tel",   color: "#8b5cf6" },
-  snapchat:        { icon: Camera,    label: "Snapchat",        placeholder: "@snapchathandle",    type: "text",  color: "#eab308" },
-  instagram:       { icon: Instagram, label: "Instagram",       placeholder: "@instagramhandle",   type: "text",  color: "#ec4899" },
-  telegram:        { icon: Send,      label: "Telegram",        placeholder: "@telegramhandle",    type: "text",  color: "#0ea5e9" },
-  assigned_member: { icon: User,      label: "Assigned Member", placeholder: "Select member…",     type: "select", color: "#ef4444" },
+  email:           { icon: Mail,      label: "Email",           placeholder: "player@email.com",  type: "email",  color: "#3b82f6" },
+  phone:           { icon: Phone,     label: "Phone",           placeholder: "+1 234 567 8900",   type: "tel",    color: "#8b5cf6" },
+  snapchat:        { icon: Camera,    label: "Snapchat",        placeholder: "@snapchathandle",   type: "text",   color: "#eab308" },
+  instagram:       { icon: Instagram, label: "Instagram",       placeholder: "@instagramhandle",  type: "text",   color: "#ec4899" },
+  telegram:        { icon: Send,      label: "Telegram",        placeholder: "@telegramhandle",   type: "text",   color: "#0ea5e9" },
+  assigned_member: { icon: User,      label: "Assigned Member", placeholder: "Select member…",    type: "select", color: "#ef4444" },
 };
 
 const TASK_TYPES = [
-  { value: "STANDARD",        label: "Standard",         icon: List,         color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1" },
-  { value: "DAILY_CHECKLIST", label: "Daily Checklist",  icon: CheckCircle,  color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd" },
-  { value: "PLAYER_ADDITION", label: "Player Addition",  icon: Users,        color: "#8b5cf6", bg: "#f5f3ff", border: "#ddd6fe" },
-  { value: "REVENUE_TARGET",  label: "Revenue Target",   icon: TrendingUp,   color: "#22c55e", bg: "#f0fdf4", border: "#86efac" },
-  { value: "MISSING_INFO",    label: "Missing Info",     icon: ClipboardList,color: "#f97316", bg: "#fff7ed", border: "#fed7aa" },
+  { value: "STANDARD",        label: "Standard",        icon: List,          color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1" },
+  { value: "DAILY_CHECKLIST", label: "Daily Checklist", icon: CheckCircle,   color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd" },
+  { value: "PLAYER_ADDITION", label: "Player Addition", icon: Users,         color: "#8b5cf6", bg: "#f5f3ff", border: "#ddd6fe" },
+  { value: "REVENUE_TARGET",  label: "Revenue Target",  icon: TrendingUp,    color: "#22c55e", bg: "#f0fdf4", border: "#86efac" },
+  { value: "MISSING_INFO",    label: "Missing Info",    icon: ClipboardList, color: "#f97316", bg: "#fff7ed", border: "#fed7aa" },
 ];
 
 const PRIORITY_BAR = { LOW: "#22c55e", MEDIUM: "#f59e0b", HIGH: "#f97316" };
@@ -60,8 +60,7 @@ function fmtTime(iso) {
 function fmtDue(iso) {
   if (!iso) return null;
   const d = new Date(iso);
-  const now = new Date();
-  const isOverdue = d < now;
+  const isOverdue = d < new Date();
   const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " + fmtTime(iso);
   return { label, isOverdue };
 }
@@ -89,15 +88,15 @@ function TypeBadge({ taskType }) {
 // MISSING INFO TASK CARD
 // ═══════════════════════════════════════════════════════════════
 function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
-  const [expanded, setExpanded] = useState(true);
-  const [claiming, setClaiming] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [expanded,    setExpanded]    = useState(true);
+  const [claiming,    setClaiming]    = useState(false);
+  const [submitting,  setSubmitting]  = useState(false);
+  const [undoing,     setUndoing]     = useState(false);   // ← was missing
+  const [error,       setError]       = useState("");
+  const [success,     setSuccess]     = useState(false);
   const [teamMembers, setTeamMembers] = useState([]);
-  const [form, setForm] = useState({});
-  const [undoing, setUndoing] = useState(false);
-  
+  const [form,        setForm]        = useState({});
+
   const playerMeta = useMemo(() => {
     try { return JSON.parse(task.notes || "{}"); } catch { return {}; }
   }, [task.notes]);
@@ -112,16 +111,17 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
     [task.checklistItems]
   );
 
-  const totalFields  = (task.checklistItems || []).length;
-  const doneCount    = doneFields.length;
-  const pct          = totalFields > 0 ? Math.round((doneCount / totalFields) * 100) : 0;
+  const totalFields = (task.checklistItems || []).length;
+  const doneCount   = doneFields.length;
+  const pct         = totalFields > 0 ? Math.round((doneCount / totalFields) * 100) : 0;
 
-  const isClaimable  = !task.assignedToId && task.assignToAll !== false; // open to all
-  const isClaimedByMe = task.assignedToId === currentUser?.id;
+  // ── FIX: coerce both sides to String so number vs string never mismatches ──
+  const isClaimedByMe    = !!task.assignedToId && String(task.assignedToId) === String(currentUser?.id);
   const isClaimedByOther = !!task.assignedToId && !isClaimedByMe;
-  const isCompleted  = task.status === "COMPLETED";
+  const isClaimable      = !task.assignedToId; // no owner yet → open to all
+  const isCompleted      = task.status === "COMPLETED";
 
-  // Fetch team members for assigned_member field
+  // Fetch team members for assigned_member dropdown
   useEffect(() => {
     if (missingFields.includes("assigned_member") && isClaimedByMe) {
       fetch(`${API}/team-members`, { credentials: "include", headers: getAuthHeaders() })
@@ -133,14 +133,13 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
 
   const set = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }));
 
+  // ── Claim ──────────────────────────────────────────────────────
   const handleClaim = async () => {
     setClaiming(true);
     setError("");
     try {
-      const res = await fetch(`${API}/tasks/${task.id}/claim`, {
-        method: "POST",
-        credentials: "include",
-        headers: getAuthHeaders(true),
+      const res  = await fetch(`${API}/tasks/${task.id}/claim`, {
+        method: "POST", credentials: "include", headers: getAuthHeaders(true),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to claim task");
@@ -152,6 +151,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
     }
   };
 
+  // ── Submit missing info ────────────────────────────────────────
   const handleSubmit = async () => {
     const hasAnyValue = Object.values(form).some(v => v && v.trim?.() !== "");
     if (!hasAnyValue) { setError("Please fill in at least one field before submitting."); return; }
@@ -167,10 +167,8 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
         }
       });
 
-      const res = await fetch(`${API}/tasks/${task.id}/submit-missing-info`, {
-        method: "POST",
-        credentials: "include",
-        headers: getAuthHeaders(true),
+      const res  = await fetch(`${API}/tasks/${task.id}/submit-missing-info`, {
+        method: "POST", credentials: "include", headers: getAuthHeaders(true),
         body: JSON.stringify(body),
       });
       const data = await res.json();
@@ -186,11 +184,31 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
     }
   };
 
+  // ── Undo completion ── (was MISSING — this is the fix)
+  const handleUndo = async () => {
+    setUndoing(true);
+    setError("");
+    try {
+      const res  = await fetch(`${API}/tasks/${task.id}/undo-completion`, {
+        method: "POST", credentials: "include", headers: getAuthHeaders(true),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to undo");
+      setSuccess(false);
+      onInfoSubmitted(data.data); // reuse callback to update task in parent state
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUndoing(false);
+    }
+  };
+
   const borderColor = isCompleted ? "#86efac" : isClaimedByMe ? "#fed7aa" : isClaimedByOther ? "#e2e8f0" : "#fed7aa";
   const borderLeft  = isCompleted ? "#22c55e" : "#f97316";
 
   return (
-    <div style={{ ...CARD, overflow: "hidden", border: `1px solid ${borderColor}`, borderLeft: `4px solid ${borderLeft}`, opacity: isCompleted ? 0.8 : 1 }}>
+    <div style={{ ...CARD, overflow: "hidden", border: `1px solid ${borderColor}`, borderLeft: `4px solid ${borderLeft}`, opacity: isCompleted ? 0.85 : 1 }}>
+
       {/* ── Header ── */}
       <div style={{ padding: "14px 16px", display: "flex", gap: "12px", alignItems: "flex-start" }}>
         <div style={{
@@ -201,6 +219,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
         }}>
           <ClipboardList style={{ width: "17px", height: "17px", color: isCompleted ? "#22c55e" : "#f97316" }} />
         </div>
+
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
             <span style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a", wordBreak: "break-word" }}>{task.title}</span>
@@ -237,7 +256,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
           </div>
         </div>
 
-        {/* Expand / collapse */}
+        {/* Expand / collapse — only when there's something interactive to show */}
         {!isClaimedByOther && !isCompleted && (
           <button onClick={() => setExpanded(v => !v)} style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: "7px", cursor: "pointer", padding: "6px", color: "#64748b", display: "flex", flexShrink: 0 }}>
             {expanded ? <ChevronUp style={{ width: "14px", height: "14px" }} /> : <ChevronDown style={{ width: "14px", height: "14px" }} />}
@@ -245,14 +264,14 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
         )}
       </div>
 
-      {/* ── Body ── */}
+      {/* ── Body: active / unclaimed ── */}
       {expanded && !isCompleted && !isClaimedByOther && (
         <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: "12px" }}>
           {task.description && (
             <p style={{ fontSize: "12px", color: "#64748b", margin: 0, lineHeight: "1.5", wordBreak: "break-word" }}>{task.description}</p>
           )}
 
-          {/* Already filled fields */}
+          {/* Already-filled fields */}
           {doneFields.length > 0 && (
             <div style={{ padding: "10px 12px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "8px" }}>
               <div style={{ fontSize: "11px", fontWeight: "700", color: "#166534", marginBottom: "6px" }}>✓ Already Filled</div>
@@ -270,25 +289,14 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
             </div>
           )}
 
-          {/* Claim section — shown if unclaimed */}
+          {/* Claim section */}
           {isClaimable && !isClaimedByMe && (
             <div style={{ padding: "14px", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "10px" }}>
               <div style={{ fontSize: "12px", color: "#9a3412", marginBottom: "10px", lineHeight: "1.5" }}>
-                <strong>Unclaimed task.</strong> Claim this task to start collecting contact info for <strong>@{playerMeta.username || "player"}</strong>.
-                Once claimed, it will be assigned to you and removed from others' lists.
+                <strong>Unclaimed task.</strong> Claim this task to start collecting contact info for{" "}
+                <strong>@{playerMeta.username || "player"}</strong>. Once claimed, it will be assigned to you.
               </div>
-              <button
-                onClick={handleClaim}
-                disabled={claiming}
-                style={{
-                  width: "100%", padding: "10px", borderRadius: "8px", border: "none",
-                  background: claiming ? "#e2e8f0" : "#f97316",
-                  color: claiming ? "#94a3b8" : "#fff",
-                  fontWeight: "700", fontSize: "13px", cursor: claiming ? "not-allowed" : "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-                  fontFamily: "inherit",
-                }}
-              >
+              <button onClick={handleClaim} disabled={claiming} style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "none", background: claiming ? "#e2e8f0" : "#f97316", color: claiming ? "#94a3b8" : "#fff", fontWeight: "700", fontSize: "13px", cursor: claiming ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontFamily: "inherit" }}>
                 {claiming
                   ? <><RefreshCw style={{ width: "13px", height: "13px", animation: "spin 0.8s linear infinite" }} /> Claiming…</>
                   : <><UserCheck style={{ width: "13px", height: "13px" }} /> Claim This Task</>
@@ -297,7 +305,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
             </div>
           )}
 
-          {/* Form — shown only to the claimer */}
+          {/* Fill-in form — only for the claimer */}
           {isClaimedByMe && missingFields.length > 0 && (
             <div style={{ padding: "14px", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "10px", display: "flex", flexDirection: "column", gap: "12px" }}>
               <div style={{ fontSize: "11px", fontWeight: "700", color: "#c2410c", textTransform: "uppercase", letterSpacing: "0.4px" }}>
@@ -316,11 +324,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
                         <Icon style={{ width: "10px", height: "10px", verticalAlign: "middle", marginRight: "4px" }} />
                         {meta.label}
                       </label>
-                      <select
-                        value={form[key] || ""}
-                        onChange={set(key)}
-                        style={{ ...INPUT, borderColor: form[key] ? meta.color : "#e2e8f0", cursor: "pointer" }}
-                      >
+                      <select value={form[key] || ""} onChange={set(key)} style={{ ...INPUT, borderColor: form[key] ? meta.color : "#e2e8f0", cursor: "pointer" }}>
                         <option value="">{meta.placeholder}</option>
                         {teamMembers.map(m => (
                           <option key={m.id} value={m.id}>{m.name} ({m.role})</option>
@@ -337,13 +341,11 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
                       {meta.label}
                     </label>
                     <input
-                      type={meta.type}
-                      value={form[key] || ""}
-                      onChange={set(key)}
+                      type={meta.type} value={form[key] || ""} onChange={set(key)}
                       placeholder={meta.placeholder}
                       style={{ ...INPUT, borderColor: form[key] ? meta.color : "#e2e8f0" }}
-                      onFocus={e  => e.target.style.borderColor = meta.color}
-                      onBlur={e   => e.target.style.borderColor = form[key] ? meta.color : "#e2e8f0"}
+                      onFocus={e => e.target.style.borderColor = meta.color}
+                      onBlur={e  => e.target.style.borderColor = form[key] ? meta.color : "#e2e8f0"}
                     />
                   </div>
                 );
@@ -355,19 +357,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
                 </div>
               )}
 
-              <button
-                onClick={handleSubmit}
-                disabled={submitting || success}
-                style={{
-                  padding: "10px", borderRadius: "8px", border: "none",
-                  background: submitting || success ? "#e2e8f0" : "#f97316",
-                  color: submitting || success ? "#94a3b8" : "#fff",
-                  fontWeight: "700", fontSize: "13px",
-                  cursor: submitting || success ? "not-allowed" : "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-                  fontFamily: "inherit",
-                }}
-              >
+              <button onClick={handleSubmit} disabled={submitting || success} style={{ padding: "10px", borderRadius: "8px", border: "none", background: submitting || success ? "#e2e8f0" : "#f97316", color: submitting || success ? "#94a3b8" : "#fff", fontWeight: "700", fontSize: "13px", cursor: submitting || success ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontFamily: "inherit" }}>
                 {submitting
                   ? <><RefreshCw style={{ width: "13px", height: "13px", animation: "spin 0.8s linear infinite" }} /> Submitting…</>
                   : success
@@ -386,38 +376,46 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
         </div>
       )}
 
-      {/* Completed state body */}
-      {/* Completed state body */}
-{isCompleted && (
-  <div style={{ padding: "0 16px 14px", display: "flex", flexDirection: "column", gap: "8px" }}>
-    <div style={{ padding: "10px 12px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "8px", fontSize: "12px", color: "#16a34a", display: "flex", alignItems: "center", gap: "6px" }}>
-      <CheckCircle style={{ width: "14px", height: "14px", flexShrink: 0 }} />
-      All missing info for <strong>@{playerMeta.username}</strong> has been collected.
-    </div>
-    {/* Undo button — only the assigned member (or admin) sees this */}
-    {isClaimedByMe && (
-      <button
-        onClick={handleUndo}
-        disabled={undoing}
-        style={{
-          display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-          padding: "8px 14px", borderRadius: "8px",
-          border: "1px solid #e2e8f0", background: undoing ? "#f8fafc" : "#fff",
-          color: undoing ? "#94a3b8" : "#64748b",
-          fontSize: "12px", fontWeight: "700", cursor: undoing ? "not-allowed" : "pointer",
-          fontFamily: "inherit",
-        }}
-      >
-        {undoing
-          ? <><RefreshCw style={{ width: "12px", height: "12px", animation: "spin 0.8s linear infinite" }} /> Undoing…</>
-          : <><Undo2 style={{ width: "12px", height: "12px" }} /> Undo Completion</>
-        }
-      </button>
-    )}
-  </div>
-)}
+      {/* ── Body: completed ── */}
+      {isCompleted && (
+        <div style={{ padding: "0 16px 14px", display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={{ padding: "10px 12px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "8px", fontSize: "12px", color: "#16a34a", display: "flex", alignItems: "center", gap: "6px" }}>
+            <CheckCircle style={{ width: "14px", height: "14px", flexShrink: 0 }} />
+            All missing info for <strong>@{playerMeta.username}</strong> has been collected.
+          </div>
 
-      {/* Claimed by other state body */}
+          {/* Undo button — only visible to the task owner (isClaimedByMe) */}
+          {isClaimedByMe && (
+            <button
+              onClick={handleUndo}
+              disabled={undoing}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                padding: "8px 14px", borderRadius: "8px",
+                border: "1px solid #e2e8f0",
+                background: undoing ? "#f8fafc" : "#fff",
+                color: undoing ? "#94a3b8" : "#64748b",
+                fontSize: "12px", fontWeight: "700",
+                cursor: undoing ? "not-allowed" : "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              {undoing
+                ? <><RefreshCw style={{ width: "12px", height: "12px", animation: "spin 0.8s linear infinite" }} /> Undoing…</>
+                : <><Undo2 style={{ width: "12px", height: "12px" }} /> Undo Completion</>
+              }
+            </button>
+          )}
+
+          {error && (
+            <div style={{ padding: "10px 12px", background: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "8px", fontSize: "12px", color: "#dc2626" }}>
+              ⚠️ {error}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Body: claimed by someone else ── */}
       {isClaimedByOther && !isCompleted && (
         <div style={{ padding: "0 16px 14px" }}>
           <div style={{ padding: "10px 12px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", fontSize: "12px", color: "#64748b", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -475,8 +473,10 @@ function DailyChecklistCard({ task, onChecklistToggle, currentUserId }) {
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {checklist.map(item => (
               <label key={item.id} style={{ display: "flex", alignItems: "center", gap: "10px", cursor: toggling === item.id ? "wait" : "pointer", padding: "9px 12px", borderRadius: "8px", background: item.done ? "#f0fdf4" : "#fafafa", border: `1px solid ${item.done ? "#86efac" : "#e2e8f0"}` }}>
-                <div style={{ width: "20px", height: "20px", borderRadius: "6px", border: `2px solid ${item.done ? "#22c55e" : "#cbd5e1"}`, background: item.done ? "#22c55e" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-                  onClick={() => toggle(item)}>
+                <div
+                  style={{ width: "20px", height: "20px", borderRadius: "6px", border: `2px solid ${item.done ? "#22c55e" : "#cbd5e1"}`, background: item.done ? "#22c55e" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                  onClick={() => toggle(item)}
+                >
                   {item.done && <Check style={{ width: "11px", height: "11px", color: "#fff" }} />}
                   {toggling === item.id && <RefreshCw style={{ width: "10px", height: "10px", color: "#cbd5e1", animation: "spin 0.8s linear infinite" }} />}
                 </div>
@@ -494,15 +494,15 @@ function DailyChecklistCard({ task, onChecklistToggle, currentUserId }) {
 
 // ─── Player Addition Card ─────────────────────────────────────
 function PlayerAdditionCard({ task, currentUserId, onProgressLog }) {
-  const [logVal, setLogVal] = useState("");
-  const [logging, setLogging] = useState(false);
-  const [logSuccess, setLogSuccess] = useState(false);
-  const [expanded, setExpanded] = useState(true);
+  const [logVal,      setLogVal]      = useState("");
+  const [logging,     setLogging]     = useState(false);
+  const [logSuccess,  setLogSuccess]  = useState(false);
+  const [expanded,    setExpanded]    = useState(true);
 
   const pct = task.targetValue > 0 ? Math.min(100, Math.round(((task.currentValue ?? 0) / task.targetValue) * 100)) : 0;
   const allDone = pct >= 100;
   const due = fmtDue(task.dueDate);
-  const mySubTask = (task.subTasks || []).find(st => st.assignedToId === currentUserId || st.assignedTo?.id === currentUserId);
+  const mySubTask = (task.subTasks || []).find(st => String(st.assignedToId) === String(currentUserId) || String(st.assignedTo?.id) === String(currentUserId));
   const myPct = mySubTask?.targetValue > 0 ? Math.min(100, Math.round(((mySubTask.currentValue ?? 0) / mySubTask.targetValue) * 100)) : null;
 
   async function handleLog() {
@@ -523,7 +523,7 @@ function PlayerAdditionCard({ task, currentUserId, onProgressLog }) {
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
             <span style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a" }}>{task.title}</span>
             <TypeBadge taskType="PLAYER_ADDITION" />
-            {task.assignToAll && <span style={{ padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: "700", background: "#f5f3ff", color: "rgb(14,165,233)" }}>All Members</span>}
+            {task.assignToAll && <span style={{ padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: "700", background: "#f5f3ff", color: "#0ea5e9" }}>All Members</span>}
           </div>
           <div style={{ display: "flex", gap: "10px", alignItems: "center", marginTop: "5px" }}>
             <div style={{ flex: 1, maxWidth: "200px" }}><ProgressBar pct={pct} color="#8b5cf6" thin /></div>
@@ -541,7 +541,7 @@ function PlayerAdditionCard({ task, currentUserId, onProgressLog }) {
           {task.description && <p style={{ fontSize: "12px", color: "#64748b", margin: 0, lineHeight: "1.5" }}>{task.description}</p>}
           {mySubTask && (
             <div style={{ padding: "12px 14px", background: "#f5f3ff", border: "1px solid #ddd6fe", borderRadius: "10px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "700", color: "rgb(14,165,233)", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "8px" }}>My Target</div>
+              <div style={{ fontSize: "11px", fontWeight: "700", color: "#0ea5e9", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "8px" }}>My Target</div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px", fontSize: "12px" }}>
                 <span style={{ color: "#64748b" }}>My progress</span>
                 <span style={{ fontWeight: "800", color: myPct >= 100 ? "#22c55e" : "#8b5cf6" }}>
@@ -557,7 +557,7 @@ function PlayerAdditionCard({ task, currentUserId, onProgressLog }) {
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {task.subTasks.map(st => {
                   const sPct = st.targetValue > 0 ? Math.min(100, Math.round(((st.currentValue ?? 0) / st.targetValue) * 100)) : 0;
-                  const isMe = st.assignedToId === currentUserId || st.assignedTo?.id === currentUserId;
+                  const isMe = String(st.assignedToId) === String(currentUserId) || String(st.assignedTo?.id) === String(currentUserId);
                   return (
                     <div key={st.id} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <span style={{ fontSize: "12px", fontWeight: isMe ? "700" : "500", color: isMe ? "#8b5cf6" : "#0f172a", minWidth: "90px" }}>
@@ -595,14 +595,14 @@ function PlayerAdditionCard({ task, currentUserId, onProgressLog }) {
 
 // ─── Revenue Target Card ──────────────────────────────────────
 function RevenueTargetCard({ task, currentUserId, onProgressLog }) {
-  const [logVal, setLogVal] = useState("");
-  const [logging, setLogging] = useState(false);
+  const [logVal,     setLogVal]     = useState("");
+  const [logging,    setLogging]    = useState(false);
   const [logSuccess, setLogSuccess] = useState(false);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded,   setExpanded]   = useState(true);
 
   const pct = task.targetValue > 0 ? Math.min(100, Math.round(((task.currentValue ?? 0) / task.targetValue) * 100)) : 0;
   const allDone = pct >= 100;
-  const mySubTask = (task.subTasks || []).find(st => st.assignedToId === currentUserId || st.assignedTo?.id === currentUserId);
+  const mySubTask = (task.subTasks || []).find(st => String(st.assignedToId) === String(currentUserId) || String(st.assignedTo?.id) === String(currentUserId));
   const myPct = mySubTask?.targetValue > 0 ? Math.min(100, Math.round(((mySubTask.currentValue ?? 0) / mySubTask.targetValue) * 100)) : null;
   const due = fmtDue(task.dueDate);
 
@@ -674,10 +674,10 @@ function StandardTaskCard({ task, onStatusChange, onChecklistToggle, currentUser
   const [expanded, setExpanded] = useState(false);
   const [toggling, setToggling] = useState(null);
   const isCompleted = task.status === "COMPLETED";
-  const checklist = task.checklistItems || [];
-  const doneItems = checklist.filter(i => i.done).length;
-  const due = fmtDue(task.dueDate);
-  const barColor = PRIORITY_BAR[task.priority] || "#64748b";
+  const checklist   = task.checklistItems || [];
+  const doneItems   = checklist.filter(i => i.done).length;
+  const due         = fmtDue(task.dueDate);
+  const barColor    = PRIORITY_BAR[task.priority] || "#64748b";
 
   async function toggle(item) {
     setToggling(item.id);
@@ -711,8 +711,10 @@ function StandardTaskCard({ task, onStatusChange, onChecklistToggle, currentUser
           {task.description && <p style={{ fontSize: "12px", color: "#64748b", margin: "0 0 8px", lineHeight: "1.5" }}>{task.description}</p>}
           {checklist.map(item => (
             <label key={item.id} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", padding: "7px 10px", borderRadius: "7px", background: item.done ? "#f0fdf4" : "#fafafa", border: `1px solid ${item.done ? "#86efac" : "#e2e8f0"}` }}>
-              <div style={{ width: "18px", height: "18px", borderRadius: "5px", border: `2px solid ${item.done ? "#22c55e" : "#cbd5e1"}`, background: item.done ? "#22c55e" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-                onClick={() => !toggling && toggle(item)}>
+              <div
+                style={{ width: "18px", height: "18px", borderRadius: "5px", border: `2px solid ${item.done ? "#22c55e" : "#cbd5e1"}`, background: item.done ? "#22c55e" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                onClick={() => !toggling && toggle(item)}
+              >
                 {item.done && <Check style={{ width: "10px", height: "10px", color: "#fff" }} />}
               </div>
               <span style={{ flex: 1, fontSize: "13px", color: item.done ? "#94a3b8" : "#0f172a", textDecoration: item.done ? "line-through" : "none" }}>{item.label}</span>
@@ -729,16 +731,16 @@ function StandardTaskCard({ task, onStatusChange, onChecklistToggle, currentUser
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════
 export default function TeamDashboard({ currentUser, activeShift }) {
-  const [tasks, setTasks]           = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState("");
+  const [tasks,      setTasks]      = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState("");
   const [taskFilter, setTaskFilter] = useState("all");
   const sseRef = useRef(null);
 
   const loadTasks = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/tasks?myTasks=true`, { credentials: "include", headers: getAuthHeaders() });
+      const res  = await fetch(`${API}/tasks?myTasks=true`, { credentials: "include", headers: getAuthHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load tasks");
       setTasks(data.data || []);
@@ -754,8 +756,7 @@ export default function TeamDashboard({ currentUser, activeShift }) {
 
     const es = tasksAPI.connectSSE();
     sseRef.current = es;
-
-    es.addEventListener("connected", () => { console.log("SSE connected ✓"); });
+    es.addEventListener("connected", () => console.log("SSE connected ✓"));
 
     es.onmessage = (e) => {
       try {
@@ -764,22 +765,25 @@ export default function TeamDashboard({ currentUser, activeShift }) {
           setTasks(prev => {
             const exists = prev.find(t => t.id === data.id);
             if (exists) return prev.map(t => t.id === data.id ? data : t);
-            // Show MISSING_INFO if assignToAll (claimable by this member)
             if (data.taskType === "MISSING_INFO" && data.assignToAll) return [data, ...prev];
-            if (data.assignToAll || data.assignedToId === currentUser?.id) return [data, ...prev];
+            if (data.assignToAll || String(data.assignedToId) === String(currentUser?.id)) return [data, ...prev];
             return prev;
           });
         }
         if (type === "task_updated") {
           setTasks(prev => {
             const existing = prev.find(t => t.id === data.id);
-            // If MISSING_INFO task was just claimed by someone else and I wasn't the one, remove it
-            if (data.taskType === "MISSING_INFO" && data.assignedToId && data.assignedToId !== currentUser?.id && !data.assignToAll) {
+            // MISSING_INFO claimed by someone else → remove from my list
+            if (
+              data.taskType === "MISSING_INFO" &&
+              data.assignedToId &&
+              String(data.assignedToId) !== String(currentUser?.id) &&
+              !data.assignToAll
+            ) {
               return prev.filter(t => t.id !== data.id);
             }
             if (existing) return prev.map(t => t.id === data.id ? data : t);
-            // If it became assigned to me, add it
-            if (data.assignedToId === currentUser?.id) return [data, ...prev];
+            if (String(data.assignedToId) === String(currentUser?.id)) return [data, ...prev];
             return prev;
           });
         }
@@ -792,29 +796,22 @@ export default function TeamDashboard({ currentUser, activeShift }) {
   }, [loadTasks, currentUser?.id]);
 
   // ── Handlers ──────────────────────────────────────────────────
-
   const handleChecklistToggle = useCallback(async (taskId, itemId, done) => {
     setTasks(prev => prev.map(t => {
       if (t.id !== taskId) return t;
-      return { ...t, checklistItems: (t.checklistItems || []).map(i => i.id === itemId ? { ...i, done, doneBy: currentUser?.name } : i) };
+      return { ...t, checklistItems: (t.checklistItems || []).map(i => i.id === itemId ? { ...i, done } : i) };
     }));
     try {
-      const res = await fetch(`${API}/tasks/${taskId}/checklist`, {
-        method: "PATCH", headers: getAuthHeaders(true),
-        credentials: "include", body: JSON.stringify({ itemId, done }),
-      });
+      const res  = await fetch(`${API}/tasks/${taskId}/checklist`, { method: "PATCH", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ itemId, done }) });
       const data = await res.json();
       if (res.ok && data.data) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
     } catch (_) {}
-  }, [currentUser?.name]);
+  }, []);
 
   const handleStatusChange = useCallback(async (taskId, status) => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
     try {
-      const res = await fetch(`${API}/tasks/${taskId}`, {
-        method: "PATCH", headers: getAuthHeaders(true),
-        credentials: "include", body: JSON.stringify({ status }),
-      });
+      const res  = await fetch(`${API}/tasks/${taskId}`, { method: "PATCH", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ status }) });
       const data = await res.json();
       if (res.ok && data.data) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
     } catch (_) {}
@@ -822,24 +819,14 @@ export default function TeamDashboard({ currentUser, activeShift }) {
 
   const handleProgressLog = useCallback(async (taskId, value) => {
     try {
-      const res = await fetch(`${API}/tasks/${taskId}/progress`, {
-        method: "POST", headers: getAuthHeaders(true),
-        credentials: "include", body: JSON.stringify({ value, action: "MEMBER_LOG" }),
-      });
+      const res  = await fetch(`${API}/tasks/${taskId}/progress`, { method: "POST", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ value, action: "MEMBER_LOG" }) });
       const data = await res.json();
       if (res.ok && data.data) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
     } catch (_) {}
   }, []);
 
-  // Claim handler for MISSING_INFO tasks
-  const handleClaimTask = useCallback((updatedTask) => {
-    setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
-  }, []);
-
-  // After member submits info, update the task in state
-  const handleInfoSubmitted = useCallback((updatedTask) => {
-    setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
-  }, []);
+  const handleClaimTask    = useCallback((updatedTask) => setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t)), []);
+  const handleInfoSubmitted = useCallback((updatedTask) => setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t)), []);
 
   // ── Filter ────────────────────────────────────────────────────
   const filtered = tasks.filter(t => {
@@ -853,11 +840,10 @@ export default function TeamDashboard({ currentUser, activeShift }) {
   const players     = filtered.filter(t => t.taskType === "PLAYER_ADDITION");
   const revenue     = filtered.filter(t => t.taskType === "REVENUE_TARGET");
   const standard    = filtered.filter(t => t.taskType === "STANDARD");
-
   const hasOtherTypes = daily.length + players.length + revenue.length > 0;
 
-  const completedCount = tasks.filter(t => t.status === "COMPLETED").length;
-  const overdueCount   = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length;
+  const completedCount     = tasks.filter(t => t.status === "COMPLETED").length;
+  const overdueCount       = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length;
   const missingInfoPending = tasks.filter(t => t.taskType === "MISSING_INFO" && t.status !== "COMPLETED").length;
 
   return (
@@ -880,7 +866,7 @@ export default function TeamDashboard({ currentUser, activeShift }) {
         </div>
         <div style={{ display: "flex", gap: "4px" }}>
           {["all", "pending", "done"].map(f => (
-            <button key={f} onClick={() => setTaskFilter(f)} style={{ padding: "6px 12px", border: "1px solid", borderColor: taskFilter === f ? "#0f172a" : "#e2e8f0", borderRadius: "8px", fontSize: "11px", fontWeight: "700", background: taskFilter === f ? "rgb(14,165,233)" : "#fff", color: taskFilter === f ? "#fff" : "rgb(14,165,233)", cursor: "pointer", textTransform: "capitalize" }}>{f}</button>
+            <button key={f} onClick={() => setTaskFilter(f)} style={{ padding: "6px 12px", border: "1px solid", borderColor: taskFilter === f ? "#0f172a" : "#e2e8f0", borderRadius: "8px", fontSize: "11px", fontWeight: "700", background: taskFilter === f ? "#0ea5e9" : "#fff", color: taskFilter === f ? "#fff" : "#0ea5e9", cursor: "pointer", textTransform: "capitalize" }}>{f}</button>
           ))}
           <button onClick={loadTasks} style={{ padding: "6px 10px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", cursor: "pointer", color: "#64748b", display: "flex", alignItems: "center" }}>
             <RefreshCw style={{ width: "12px", height: "12px" }} />
@@ -908,25 +894,15 @@ export default function TeamDashboard({ currentUser, activeShift }) {
         </div>
       ) : (
         <>
-          {/* ── Missing Info Tasks ── */}
           {missingInfo.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "0 2px" }}>
-                📋 Missing Player Info Tasks
-              </div>
+              <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "0 2px" }}>📋 Missing Player Info Tasks</div>
               {missingInfo.map(task => (
-                <MissingInfoTaskCard
-                  key={task.id}
-                  task={task}
-                  currentUser={currentUser}
-                  onClaim={handleClaimTask}
-                  onInfoSubmitted={handleInfoSubmitted}
-                />
+                <MissingInfoTaskCard key={task.id} task={task} currentUser={currentUser} onClaim={handleClaimTask} onInfoSubmitted={handleInfoSubmitted} />
               ))}
             </div>
           )}
 
-          {/* ── Daily Checklists ── */}
           {daily.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "0 2px" }}>📋 Daily Checklists</div>
@@ -934,7 +910,6 @@ export default function TeamDashboard({ currentUser, activeShift }) {
             </div>
           )}
 
-          {/* ── Player Addition Goals ── */}
           {players.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "0 2px" }}>👥 Player Addition Goals</div>
@@ -942,7 +917,6 @@ export default function TeamDashboard({ currentUser, activeShift }) {
             </div>
           )}
 
-          {/* ── Revenue Targets ── */}
           {revenue.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "0 2px" }}>💰 Revenue Targets</div>
@@ -950,12 +924,9 @@ export default function TeamDashboard({ currentUser, activeShift }) {
             </div>
           )}
 
-          {/* ── Standard / Other Tasks ── */}
           {standard.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {hasOtherTypes && (
-                <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "8px 2px 0" }}>📌 Other Tasks</div>
-              )}
+              {hasOtherTypes && <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "8px 2px 0" }}>📌 Other Tasks</div>}
               {standard.map(task => <StandardTaskCard key={task.id} task={task} onStatusChange={handleStatusChange} onChecklistToggle={handleChecklistToggle} currentUserId={currentUser?.id} />)}
             </div>
           )}
