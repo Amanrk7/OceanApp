@@ -438,8 +438,8 @@ export default function Transactions() {
     { id: 'pending',   label: 'Pending', badge: filterTab !== 'pending' && pendingCashoutCount > 0 ? pendingCashoutCount : null },
     { id: 'completed', label: 'Completed', badge: null },
   ];
-
-  const headers = ['ID', 'Player', 'Type', 'Amount', 'Fee', 'Received / Paid', 'Game', 'Wallet', 'Balance Before → After', 'Status', 'Date', 'Actions'];
+ 
+  const headers = ['ID', 'Player', 'Type', 'Amount', 'Fee', 'Received / Paid', 'Game', 'Wallet', 'Games Points Before → After', 'Status', 'Date', 'Actions'];
 
   return (
     <div style={{ padding: '4px 0' }}>
