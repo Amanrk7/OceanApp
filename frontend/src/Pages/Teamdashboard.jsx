@@ -25,6 +25,7 @@ const CARD = {
 };
 
 const API = import.meta.env.VITE_API_URL ?? "";
+
 function getAuthHeaders(includeContentType = false) {
   const token = localStorage.getItem('authToken');
   const headers = {};
@@ -33,22 +34,36 @@ function getAuthHeaders(includeContentType = false) {
   return headers;
 }
 
+// ── Safely extract numeric user ID from any currentUser shape ──
+// Handles: { id }, { userId }, { user: { id } }, string/number directly
+function extractUserId(currentUser) {
+  if (!currentUser) return null;
+  const raw =
+    currentUser.id       ??
+    currentUser.userId   ??
+    currentUser.user?.id ??
+    null;
+  if (raw === null || raw === undefined) return null;
+  const n = parseInt(raw, 10);
+  return isNaN(n) ? null : n;
+}
+
 // ── MISSING_INFO field config ─────────────────────────────────
 const MISSING_FIELD_META = {
-  email: { icon: Mail, label: "Email", placeholder: "player@email.com", type: "email", color: "#3b82f6" },
-  phone: { icon: Phone, label: "Phone", placeholder: "+1 234 567 8900", type: "tel", color: "#8b5cf6" },
-  snapchat: { icon: Camera, label: "Snapchat", placeholder: "@snapchathandle", type: "text", color: "#eab308" },
-  instagram: { icon: Instagram, label: "Instagram", placeholder: "@instagramhandle", type: "text", color: "#ec4899" },
-  telegram: { icon: Send, label: "Telegram", placeholder: "@telegramhandle", type: "text", color: "#0ea5e9" },
-  assigned_member: { icon: User, label: "Assigned Member", placeholder: "Select member…", type: "select", color: "#ef4444" },
+  email:           { icon: Mail,      label: "Email",           placeholder: "player@email.com",  type: "email",  color: "#3b82f6" },
+  phone:           { icon: Phone,     label: "Phone",           placeholder: "+1 234 567 8900",   type: "tel",    color: "#8b5cf6" },
+  snapchat:        { icon: Camera,    label: "Snapchat",        placeholder: "@snapchathandle",   type: "text",   color: "#eab308" },
+  instagram:       { icon: Instagram, label: "Instagram",       placeholder: "@instagramhandle",  type: "text",   color: "#ec4899" },
+  telegram:        { icon: Send,      label: "Telegram",        placeholder: "@telegramhandle",   type: "text",   color: "#0ea5e9" },
+  assigned_member: { icon: User,      label: "Assigned Member", placeholder: "Select member…",    type: "select", color: "#ef4444" },
 };
 
 const TASK_TYPES = [
-  { value: "STANDARD", label: "Standard", icon: List, color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1" },
-  { value: "DAILY_CHECKLIST", label: "Daily Checklist", icon: CheckCircle, color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd" },
-  { value: "PLAYER_ADDITION", label: "Player Addition", icon: Users, color: "#8b5cf6", bg: "#f5f3ff", border: "#ddd6fe" },
-  { value: "REVENUE_TARGET", label: "Revenue Target", icon: TrendingUp, color: "#22c55e", bg: "#f0fdf4", border: "#86efac" },
-  { value: "MISSING_INFO", label: "Missing Info", icon: ClipboardList, color: "#f97316", bg: "#fff7ed", border: "#fed7aa" },
+  { value: "STANDARD",        label: "Standard",        icon: List,          color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1" },
+  { value: "DAILY_CHECKLIST", label: "Daily Checklist", icon: CheckCircle,   color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd" },
+  { value: "PLAYER_ADDITION", label: "Player Addition", icon: Users,         color: "#8b5cf6", bg: "#f5f3ff", border: "#ddd6fe" },
+  { value: "REVENUE_TARGET",  label: "Revenue Target",  icon: TrendingUp,    color: "#22c55e", bg: "#f0fdf4", border: "#86efac" },
+  { value: "MISSING_INFO",    label: "Missing Info",    icon: ClipboardList, color: "#f97316", bg: "#fff7ed", border: "#fed7aa" },
 ];
 
 const PRIORITY_BAR = { LOW: "#22c55e", MEDIUM: "#f59e0b", HIGH: "#f97316" };
@@ -88,14 +103,17 @@ function TypeBadge({ taskType }) {
 // MISSING INFO TASK CARD
 // ═══════════════════════════════════════════════════════════════
 function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
-  const [expanded, setExpanded] = useState(true);
-  const [claiming, setClaiming] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [undoing, setUndoing] = useState(false);   // ← was missing
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [expanded,    setExpanded]    = useState(true);
+  const [claiming,    setClaiming]    = useState(false);
+  const [submitting,  setSubmitting]  = useState(false);
+  const [undoing,     setUndoing]     = useState(false);
+  const [error,       setError]       = useState("");
+  const [success,     setSuccess]     = useState(false);
   const [teamMembers, setTeamMembers] = useState([]);
-  const [form, setForm] = useState({});
+  const [form,        setForm]        = useState({});
+
+  // ── ✅ FIX: use extractUserId so any currentUser shape works ──
+  const myId = extractUserId(currentUser);
 
   const playerMeta = useMemo(() => {
     try { return JSON.parse(task.notes || "{}"); } catch { return {}; }
@@ -112,14 +130,14 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
   );
 
   const totalFields = (task.checklistItems || []).length;
-  const doneCount = doneFields.length;
-  const pct = totalFields > 0 ? Math.round((doneCount / totalFields) * 100) : 0;
+  const doneCount   = doneFields.length;
+  const pct         = totalFields > 0 ? Math.round((doneCount / totalFields) * 100) : 0;
 
-  // ── FIX: coerce both sides to String so number vs string never mismatches ──
-  const isClaimedByMe = !!task.assignedToId && String(task.assignedToId) === String(currentUser?.id);
+  // ── ✅ FIX: compare using extracted numeric IDs ──
+  const isClaimedByMe    = !!task.assignedToId && myId !== null && parseInt(task.assignedToId, 10) === myId;
   const isClaimedByOther = !!task.assignedToId && !isClaimedByMe;
-  const isClaimable = !task.assignedToId; // no owner yet → open to all
-  const isCompleted = task.status === "COMPLETED";
+  const isClaimable      = !task.assignedToId;
+  const isCompleted      = task.status === "COMPLETED";
 
   // Fetch team members for assigned_member dropdown
   useEffect(() => {
@@ -127,7 +145,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
       fetch(`${API}/team-members`, { credentials: "include", headers: getAuthHeaders() })
         .then(r => r.json())
         .then(d => setTeamMembers(d.data || []))
-        .catch(() => { });
+        .catch(() => {});
     }
   }, [isClaimedByMe, missingFields]);
 
@@ -138,7 +156,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
     setClaiming(true);
     setError("");
     try {
-      const res = await fetch(`${API}/tasks/${task.id}/claim`, {
+      const res  = await fetch(`${API}/tasks/${task.id}/claim`, {
         method: "POST", credentials: "include", headers: getAuthHeaders(true),
       });
       const data = await res.json();
@@ -167,7 +185,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
         }
       });
 
-      const res = await fetch(`${API}/tasks/${task.id}/submit-missing-info`, {
+      const res  = await fetch(`${API}/tasks/${task.id}/submit-missing-info`, {
         method: "POST", credentials: "include", headers: getAuthHeaders(true),
         body: JSON.stringify(body),
       });
@@ -184,18 +202,18 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
     }
   };
 
-  // ── Undo completion ── (was MISSING — this is the fix)
+  // ── Undo completion ────────────────────────────────────────────
   const handleUndo = async () => {
     setUndoing(true);
     setError("");
     try {
-      const res = await fetch(`${API}/tasks/${task.id}/undo-completion`, {
+      const res  = await fetch(`${API}/tasks/${task.id}/undo-completion`, {
         method: "POST", credentials: "include", headers: getAuthHeaders(true),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to undo");
       setSuccess(false);
-      onInfoSubmitted(data.data); // reuse callback to update task in parent state
+      onInfoSubmitted(data.data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -204,7 +222,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
   };
 
   const borderColor = isCompleted ? "#86efac" : isClaimedByMe ? "#fed7aa" : isClaimedByOther ? "#e2e8f0" : "#fed7aa";
-  const borderLeft = isCompleted ? "#22c55e" : "#f97316";
+  const borderLeft  = isCompleted ? "#22c55e" : "#f97316";
 
   return (
     <div style={{ ...CARD, overflow: "hidden", border: `1px solid ${borderColor}`, borderLeft: `4px solid ${borderLeft}`, opacity: isCompleted ? 0.85 : 1 }}>
@@ -256,7 +274,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
           </div>
         </div>
 
-        {/* Expand / collapse — only when there's something interactive to show */}
+        {/* Expand / collapse */}
         {!isClaimedByOther && !isCompleted && (
           <button onClick={() => setExpanded(v => !v)} style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: "7px", cursor: "pointer", padding: "6px", color: "#64748b", display: "flex", flexShrink: 0 }}>
             {expanded ? <ChevronUp style={{ width: "14px", height: "14px" }} /> : <ChevronDown style={{ width: "14px", height: "14px" }} />}
@@ -345,7 +363,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
                       placeholder={meta.placeholder}
                       style={{ ...INPUT, borderColor: form[key] ? meta.color : "#e2e8f0" }}
                       onFocus={e => e.target.style.borderColor = meta.color}
-                      onBlur={e => e.target.style.borderColor = form[key] ? meta.color : "#e2e8f0"}
+                      onBlur={e  => e.target.style.borderColor = form[key] ? meta.color : "#e2e8f0"}
                     />
                   </div>
                 );
@@ -361,8 +379,8 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
                 {submitting
                   ? <><RefreshCw style={{ width: "13px", height: "13px", animation: "spin 0.8s linear infinite" }} /> Submitting…</>
                   : success
-                    ? <><Check style={{ width: "13px", height: "13px" }} /> Submitted!</>
-                    : <><Check style={{ width: "13px", height: "13px" }} /> Submit Info</>
+                  ? <><Check style={{ width: "13px", height: "13px" }} /> Submitted!</>
+                  : <><Check style={{ width: "13px", height: "13px" }} /> Submit Info</>
                 }
               </button>
             </div>
@@ -384,7 +402,7 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
             All missing info for <strong>@{playerMeta.username}</strong> has been collected.
           </div>
 
-          {/* ✅ FIX: was `isClaimedByMe` only — now shows for claimer OR if task has no specific owner (assignToAll) */}
+          {/* Show undo for: claimer OR assignToAll (anyone can undo open tasks) */}
           {(isClaimedByMe || !task.assignedToId) && (
             <button
               onClick={handleUndo}
@@ -494,10 +512,10 @@ function DailyChecklistCard({ task, onChecklistToggle, currentUserId }) {
 
 // ─── Player Addition Card ─────────────────────────────────────
 function PlayerAdditionCard({ task, currentUserId, onProgressLog }) {
-  const [logVal, setLogVal] = useState("");
-  const [logging, setLogging] = useState(false);
-  const [logSuccess, setLogSuccess] = useState(false);
-  const [expanded, setExpanded] = useState(true);
+  const [logVal,      setLogVal]      = useState("");
+  const [logging,     setLogging]     = useState(false);
+  const [logSuccess,  setLogSuccess]  = useState(false);
+  const [expanded,    setExpanded]    = useState(true);
 
   const pct = task.targetValue > 0 ? Math.min(100, Math.round(((task.currentValue ?? 0) / task.targetValue) * 100)) : 0;
   const allDone = pct >= 100;
@@ -595,10 +613,10 @@ function PlayerAdditionCard({ task, currentUserId, onProgressLog }) {
 
 // ─── Revenue Target Card ──────────────────────────────────────
 function RevenueTargetCard({ task, currentUserId, onProgressLog }) {
-  const [logVal, setLogVal] = useState("");
-  const [logging, setLogging] = useState(false);
+  const [logVal,     setLogVal]     = useState("");
+  const [logging,    setLogging]    = useState(false);
   const [logSuccess, setLogSuccess] = useState(false);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded,   setExpanded]   = useState(true);
 
   const pct = task.targetValue > 0 ? Math.min(100, Math.round(((task.currentValue ?? 0) / task.targetValue) * 100)) : 0;
   const allDone = pct >= 100;
@@ -674,10 +692,10 @@ function StandardTaskCard({ task, onStatusChange, onChecklistToggle, currentUser
   const [expanded, setExpanded] = useState(false);
   const [toggling, setToggling] = useState(null);
   const isCompleted = task.status === "COMPLETED";
-  const checklist = task.checklistItems || [];
-  const doneItems = checklist.filter(i => i.done).length;
-  const due = fmtDue(task.dueDate);
-  const barColor = PRIORITY_BAR[task.priority] || "#64748b";
+  const checklist   = task.checklistItems || [];
+  const doneItems   = checklist.filter(i => i.done).length;
+  const due         = fmtDue(task.dueDate);
+  const barColor    = PRIORITY_BAR[task.priority] || "#64748b";
 
   async function toggle(item) {
     setToggling(item.id);
@@ -731,16 +749,39 @@ function StandardTaskCard({ task, onStatusChange, onChecklistToggle, currentUser
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════
 export default function TeamDashboard({ currentUser, activeShift }) {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [taskFilter, setTaskFilter] = useState("all");
+  const [tasks,        setTasks]        = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState("");
+  const [taskFilter,   setTaskFilter]   = useState("all");
+  // ── ✅ FIX: keep a resolved copy of the current user that always has .id ──
+  const [resolvedUser, setResolvedUser] = useState(null);
   const sseRef = useRef(null);
+
+  // ── Resolve currentUser.id — fetch from /api/user if needed ──
+  useEffect(() => {
+    const id = extractUserId(currentUser);
+    if (id !== null) {
+      // Parent passed a valid user object — use it directly
+      setResolvedUser({ ...currentUser, id });
+    } else {
+      // Parent didn't include id — fetch the logged-in user ourselves
+      fetch(`${API}/user`, { credentials: "include", headers: getAuthHeaders() })
+        .then(r => r.json())
+        .then(data => {
+          const u = data?.data ?? data?.user ?? data;
+          if (u?.id) setResolvedUser(u);
+        })
+        .catch(() => {});
+    }
+  }, [currentUser]);
+
+  // Numeric id of the currently logged-in user (used in SSE handler)
+  const myId = resolvedUser ? extractUserId(resolvedUser) : null;
 
   const loadTasks = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/tasks?myTasks=true`, { credentials: "include", headers: getAuthHeaders() });
+      const res  = await fetch(`${API}/tasks?myTasks=true`, { credentials: "include", headers: getAuthHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load tasks");
       setTasks(data.data || []);
@@ -761,15 +802,17 @@ export default function TeamDashboard({ currentUser, activeShift }) {
     es.onmessage = (e) => {
       try {
         const { type, data } = JSON.parse(e.data);
+
         if (type === "task_created") {
           setTasks(prev => {
             const exists = prev.find(t => t.id === data.id);
             if (exists) return prev.map(t => t.id === data.id ? data : t);
             if (data.taskType === "MISSING_INFO" && data.assignToAll) return [data, ...prev];
-            if (data.assignToAll || String(data.assignedToId) === String(currentUser?.id)) return [data, ...prev];
+            if (data.assignToAll || (myId && parseInt(data.assignedToId, 10) === myId)) return [data, ...prev];
             return prev;
           });
         }
+
         if (type === "task_updated") {
           setTasks(prev => {
             const existing = prev.find(t => t.id === data.id);
@@ -777,23 +820,25 @@ export default function TeamDashboard({ currentUser, activeShift }) {
             if (
               data.taskType === "MISSING_INFO" &&
               data.assignedToId &&
-              String(data.assignedToId) !== String(currentUser?.id) &&
+              myId !== null &&
+              parseInt(data.assignedToId, 10) !== myId &&
               !data.assignToAll
             ) {
               return prev.filter(t => t.id !== data.id);
             }
             if (existing) return prev.map(t => t.id === data.id ? data : t);
-            if (String(data.assignedToId) === String(currentUser?.id)) return [data, ...prev];
+            if (myId && parseInt(data.assignedToId, 10) === myId) return [data, ...prev];
             return prev;
           });
         }
+
         if (type === "task_deleted") setTasks(prev => prev.filter(t => t.id !== data.id));
-      } catch (_) { }
+      } catch (_) {}
     };
 
     es.onerror = () => console.warn("SSE disconnected, will auto-reconnect");
     return () => es.close();
-  }, [loadTasks, currentUser?.id]);
+  }, [loadTasks, myId]);
 
   // ── Handlers ──────────────────────────────────────────────────
   const handleChecklistToggle = useCallback(async (taskId, itemId, done) => {
@@ -802,48 +847,48 @@ export default function TeamDashboard({ currentUser, activeShift }) {
       return { ...t, checklistItems: (t.checklistItems || []).map(i => i.id === itemId ? { ...i, done } : i) };
     }));
     try {
-      const res = await fetch(`${API}/tasks/${taskId}/checklist`, { method: "PATCH", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ itemId, done }) });
+      const res  = await fetch(`${API}/tasks/${taskId}/checklist`, { method: "PATCH", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ itemId, done }) });
       const data = await res.json();
       if (res.ok && data.data) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
-    } catch (_) { }
+    } catch (_) {}
   }, []);
 
   const handleStatusChange = useCallback(async (taskId, status) => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
     try {
-      const res = await fetch(`${API}/tasks/${taskId}`, { method: "PATCH", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ status }) });
+      const res  = await fetch(`${API}/tasks/${taskId}`, { method: "PATCH", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ status }) });
       const data = await res.json();
       if (res.ok && data.data) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
-    } catch (_) { }
+    } catch (_) {}
   }, []);
 
   const handleProgressLog = useCallback(async (taskId, value) => {
     try {
-      const res = await fetch(`${API}/tasks/${taskId}/progress`, { method: "POST", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ value, action: "MEMBER_LOG" }) });
+      const res  = await fetch(`${API}/tasks/${taskId}/progress`, { method: "POST", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ value, action: "MEMBER_LOG" }) });
       const data = await res.json();
       if (res.ok && data.data) setTasks(prev => prev.map(t => t.id === taskId ? data.data : t));
-    } catch (_) { }
+    } catch (_) {}
   }, []);
 
-  const handleClaimTask = useCallback((updatedTask) => setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t)), []);
+  const handleClaimTask     = useCallback((updatedTask) => setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t)), []);
   const handleInfoSubmitted = useCallback((updatedTask) => setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t)), []);
 
   // ── Filter ────────────────────────────────────────────────────
   const filtered = tasks.filter(t => {
     if (taskFilter === "pending") return t.status !== "COMPLETED";
-    if (taskFilter === "done") return t.status === "COMPLETED";
+    if (taskFilter === "done")    return t.status === "COMPLETED";
     return true;
   });
 
-  const missingInfo = filtered.filter(t => t.taskType === "MISSING_INFO");
-  const daily = filtered.filter(t => t.taskType === "DAILY_CHECKLIST");
-  const players = filtered.filter(t => t.taskType === "PLAYER_ADDITION");
-  const revenue = filtered.filter(t => t.taskType === "REVENUE_TARGET");
-  const standard = filtered.filter(t => t.taskType === "STANDARD");
-  const hasOtherTypes = daily.length + players.length + revenue.length > 0;
+  const missingInfo    = filtered.filter(t => t.taskType === "MISSING_INFO");
+  const daily          = filtered.filter(t => t.taskType === "DAILY_CHECKLIST");
+  const players        = filtered.filter(t => t.taskType === "PLAYER_ADDITION");
+  const revenue        = filtered.filter(t => t.taskType === "REVENUE_TARGET");
+  const standard       = filtered.filter(t => t.taskType === "STANDARD");
+  const hasOtherTypes  = daily.length + players.length + revenue.length > 0;
 
-  const completedCount = tasks.filter(t => t.status === "COMPLETED").length;
-  const overdueCount = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length;
+  const completedCount     = tasks.filter(t => t.status === "COMPLETED").length;
+  const overdueCount       = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length;
   const missingInfoPending = tasks.filter(t => t.taskType === "MISSING_INFO" && t.status !== "COMPLETED").length;
 
   return (
@@ -898,7 +943,13 @@ export default function TeamDashboard({ currentUser, activeShift }) {
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "0 2px" }}>📋 Missing Player Info Tasks</div>
               {missingInfo.map(task => (
-                <MissingInfoTaskCard key={task.id} task={task} currentUser={currentUser} onClaim={handleClaimTask} onInfoSubmitted={handleInfoSubmitted} />
+                <MissingInfoTaskCard
+                  key={task.id}
+                  task={task}
+                  currentUser={resolvedUser}   {/* ✅ use resolvedUser, not currentUser */}
+                  onClaim={handleClaimTask}
+                  onInfoSubmitted={handleInfoSubmitted}
+                />
               ))}
             </div>
           )}
@@ -906,28 +957,28 @@ export default function TeamDashboard({ currentUser, activeShift }) {
           {daily.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "0 2px" }}>📋 Daily Checklists</div>
-              {daily.map(task => <DailyChecklistCard key={task.id} task={task} onChecklistToggle={handleChecklistToggle} currentUserId={currentUser?.id} />)}
+              {daily.map(task => <DailyChecklistCard key={task.id} task={task} onChecklistToggle={handleChecklistToggle} currentUserId={myId} />)}
             </div>
           )}
 
           {players.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "0 2px" }}>👥 Player Addition Goals</div>
-              {players.map(task => <PlayerAdditionCard key={task.id} task={task} currentUserId={currentUser?.id} onProgressLog={handleProgressLog} />)}
+              {players.map(task => <PlayerAdditionCard key={task.id} task={task} currentUserId={myId} onProgressLog={handleProgressLog} />)}
             </div>
           )}
 
           {revenue.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "0 2px" }}>💰 Revenue Targets</div>
-              {revenue.map(task => <RevenueTargetCard key={task.id} task={task} currentUserId={currentUser?.id} onProgressLog={handleProgressLog} />)}
+              {revenue.map(task => <RevenueTargetCard key={task.id} task={task} currentUserId={myId} onProgressLog={handleProgressLog} />)}
             </div>
           )}
 
           {standard.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {hasOtherTypes && <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "8px 2px 0" }}>📌 Other Tasks</div>}
-              {standard.map(task => <StandardTaskCard key={task.id} task={task} onStatusChange={handleStatusChange} onChecklistToggle={handleChecklistToggle} currentUserId={currentUser?.id} />)}
+              {standard.map(task => <StandardTaskCard key={task.id} task={task} onStatusChange={handleStatusChange} onChecklistToggle={handleChecklistToggle} currentUserId={myId} />)}
             </div>
           )}
         </>
