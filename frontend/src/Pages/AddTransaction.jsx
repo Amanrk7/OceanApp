@@ -662,7 +662,7 @@ function AddTransactionsPage() {
                                         { label: "Received / Paid", w: "130px" },
                                         { label: "Game", w: "110px" },
                                         { label: "Wallet", w: "130px" },
-                                        { label: "Game Points", w: "155px" },
+                                        { label: "Games Points Before → After", w: "155px" },
                                         { label: "Status", w: "95px" },
                                         { label: "Date", w: "155px" },
                                         { label: "", w: "80px" },
