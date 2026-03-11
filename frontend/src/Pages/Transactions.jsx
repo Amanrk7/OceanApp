@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { RotateCcw, RefreshCw } from 'lucide-react';
+import { RotateCcw, RefreshCw, CheckCircle, DollarSign, ChevronDown, ChevronUp, Clock, AlertCircle } from 'lucide-react';
 import { api } from '../api';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -33,7 +33,114 @@ const getAmountColor = (type) => {
   return '#64748b';
 };
 
-function StatusBadge({ status }) {
+const isCashout = (tx) => ['Cashout', 'cashout'].includes(tx.type);
+
+// ─── Payment Progress Bar ─────────────────────────────────────────────────────
+function PaymentProgress({ paid, total }) {
+  const pct = total > 0 ? Math.min((paid / total) * 100, 100) : 0;
+  const remaining = Math.max(total - paid, 0);
+  return (
+    <div style={{ minWidth: '140px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: '600', color: '#64748b', marginBottom: '4px' }}>
+        <span style={{ color: '#10b981' }}>Paid {fmt(paid)}</span>
+        <span style={{ color: '#ef4444' }}>{fmt(remaining)} left</span>
+      </div>
+      <div style={{ height: '6px', background: '#fee2e2', borderRadius: '99px', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: pct >= 100 ? '#10b981' : '#f59e0b', borderRadius: '99px', transition: 'width .4s ease' }} />
+      </div>
+      <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '3px' }}>{pct.toFixed(0)}% paid</div>
+    </div>
+  );
+}
+
+// ─── Partial Pay Panel ────────────────────────────────────────────────────────
+function PartialPayPanel({ tx, onClose, onSuccess, onError }) {
+  const remaining = Math.max((parseFloat(tx.amount) || 0) - (parseFloat(tx.paidAmount) || 0), 0);
+  const [amount, setAmount] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [markFull, setMarkFull] = useState(false);
+
+  const payAmt = markFull ? remaining : (parseFloat(amount) || 0);
+  const invalid = !markFull && (payAmt <= 0 || payAmt > remaining);
+
+  const handlePay = async () => {
+    if (invalid && !markFull) return;
+    try {
+      setSubmitting(true);
+      await api.transactions.partialPayment(String(tx.id).replace(/\D/g, ''), { amount: payAmt });
+      onSuccess(`Partial payment of ${fmt(payAmt)} recorded for transaction #${tx.id}.`);
+    } catch (err) {
+      onError(err.message || 'Partial payment failed.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{ margin: '0 14px 12px', padding: '14px 16px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontWeight: '700', fontSize: '12px', color: '#92400e', display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <DollarSign size={12} /> Partial Payment — {fmt(remaining)} remaining
+        </span>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '16px', lineHeight: 1 }}>✕</button>
+      </div>
+
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: '#92400e', userSelect: 'none' }}>
+          <input type="checkbox" checked={markFull} onChange={e => setMarkFull(e.target.checked)} style={{ cursor: 'pointer' }} />
+          Pay full remaining ({fmt(remaining)})
+        </label>
+      </div>
+
+      {!markFull && (
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '13px', pointerEvents: 'none' }}>$</span>
+            <input
+              type="number"
+              placeholder={`Max ${remaining.toFixed(2)}`}
+              min="0.01"
+              max={remaining}
+              step="0.01"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              style={{ width: '100%', padding: '8px 10px 8px 22px', border: `1px solid ${invalid && amount ? '#fca5a5' : '#fde68a'}`, borderRadius: '6px', fontSize: '13px', fontFamily: 'inherit', boxSizing: 'border-box', background: '#fff', outline: 'none' }}
+            />
+          </div>
+          {amount && !invalid && (
+            <span style={{ fontSize: '11px', color: '#92400e', fontWeight: '600', whiteSpace: 'nowrap' }}>
+              → {fmt(remaining - payAmt)} left after
+            </span>
+          )}
+        </div>
+      )}
+      {invalid && amount && !markFull && (
+        <p style={{ margin: 0, fontSize: '11px', color: '#ef4444' }}>⚠ Amount must be between $0.01 and {fmt(remaining)}</p>
+      )}
+
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <button onClick={onClose} style={{ flex: 1, padding: '8px', background: '#fff', border: '1px solid #fde68a', borderRadius: '6px', fontWeight: '600', fontSize: '12px', cursor: 'pointer', color: '#92400e' }}>
+          Cancel
+        </button>
+        <button onClick={handlePay} disabled={submitting || (!markFull && invalid)}
+          style={{ flex: 2, padding: '8px', background: submitting || (!markFull && invalid) ? '#e2e8f0' : '#f59e0b', border: 'none', borderRadius: '6px', fontWeight: '700', fontSize: '12px', cursor: submitting || (!markFull && invalid) ? 'not-allowed' : 'pointer', color: submitting || (!markFull && invalid) ? '#94a3b8' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+          {submitting ? '⏳ Processing…' : <><DollarSign size={12} /> Record Payment of {fmt(markFull ? remaining : payAmt)}</>}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Status Badge ─────────────────────────────────────────────────────────────
+function StatusBadge({ status, paidAmount, totalAmount }) {
+  const isPartial = status === 'PENDING' && paidAmount > 0 && paidAmount < totalAmount;
+  if (isPartial) {
+    return (
+      <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', background: '#fef3c7', color: '#92400e', whiteSpace: 'nowrap' }}>
+        PARTIAL
+      </span>
+    );
+  }
   const s = {
     COMPLETED: { bg: '#dcfce7', text: '#166634' },
     PENDING:   { bg: '#fef3c7', text: '#92400e' },
@@ -47,6 +154,192 @@ function StatusBadge({ status }) {
   );
 }
 
+// ─── Transaction Row ──────────────────────────────────────────────────────────
+function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess, onError }) {
+  const [showPartial, setShowPartial] = useState(false);
+
+  const isUndoing    = undoingId === tx.id;
+  const isApproving  = approvingId === tx.id;
+  const canUndo      = (tx.status === 'COMPLETED' || tx.status === 'PENDING') && !isUndoing && !isApproving;
+  const isDepositRow = tx.type === 'Deposit';
+  const isCashoutRow = isCashout(tx);
+  const isPending    = tx.status === 'PENDING';
+  const isCompleted  = tx.status === 'COMPLETED';
+  const positive     = !['Cashout', 'Loss'].includes(tx.type);
+
+  const feeVal      = parseFloat(tx.fee) || 0;
+  const depositVal  = parseFloat(tx.amount) || 0;
+  const receivedAmt = depositVal - feeVal;
+  const paidAmount  = parseFloat(tx.paidAmount) || 0;
+  const totalAmount = depositVal;
+  const isPartial   = isCashoutRow && isPending && paidAmount > 0 && paidAmount < totalAmount;
+
+  const typeStyle = TYPE_COLORS[tx.type] || { bg: '#f1f5f9', text: '#475569' };
+
+  return (
+    <>
+      <tr
+        style={{ borderBottom: showPartial ? 'none' : '1px solid #f1f5f9', opacity: tx.status === 'CANCELLED' ? 0.55 : 1, background: isCashoutRow && isPending ? '#fffdf5' : 'transparent' }}
+        onMouseEnter={e => { if (!showPartial) e.currentTarget.style.background = isCashoutRow && isPending ? '#fffbeb' : '#fafbfc'; }}
+        onMouseLeave={e => { if (!showPartial) e.currentTarget.style.background = isCashoutRow && isPending ? '#fffdf5' : 'transparent'; }}>
+
+        {/* ID */}
+        <td style={{ padding: '12px 14px', fontWeight: '700', color: '#0ea5e9', fontSize: '12px', whiteSpace: 'nowrap' }}>
+          {tx.id}
+          {isCashoutRow && isPending && (
+            <div style={{ marginTop: '3px' }}>
+              <span style={{ fontSize: '9px', padding: '1px 5px', background: '#fef3c7', color: '#92400e', borderRadius: '4px', fontWeight: '700' }}>
+                <Clock size={8} style={{ display: 'inline', marginRight: '2px' }} />AWAITING
+              </span>
+            </div>
+          )}
+        </td>
+
+        {/* Player */}
+        <td style={{ padding: '12px 14px', minWidth: '130px' }}>
+          <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '13px' }}>{tx.playerName || '—'}</div>
+          {tx.email && <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>{tx.email}</div>}
+        </td>
+
+        {/* Type */}
+        <td style={{ padding: '12px 14px' }}>
+          <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', background: typeStyle.bg, color: typeStyle.text, whiteSpace: 'nowrap' }}>
+            {tx.type}
+          </span>
+        </td>
+
+        {/* Amount */}
+        <td style={{ padding: '12px 14px', fontWeight: '800', fontSize: '14px', color: getAmountColor(tx.type), whiteSpace: 'nowrap' }}>
+          {positive ? '+' : '−'}{fmt(tx.amount)}
+        </td>
+
+        {/* Fee */}
+        <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', background: isDepositRow ? '#fafeff' : 'transparent' }}>
+          {feeVal > 0
+            ? <span style={{ fontWeight: '700', fontSize: '12px', color: '#f59e0b' }}>−{fmt(feeVal)}</span>
+            : <span style={{ color: '#e2e8f0', fontSize: '12px' }}>—</span>
+          }
+        </td>
+
+        {/* Received / Paid Progress */}
+        <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', background: (isDepositRow || isCashoutRow) ? '#fafeff' : 'transparent' }}>
+          {isDepositRow
+            ? <span style={{ fontWeight: '700', fontSize: '13px', color: '#0ea5e9' }}>{fmt(receivedAmt)}</span>
+            : isCashoutRow
+              ? <PaymentProgress paid={paidAmount} total={totalAmount} />
+              : <span style={{ color: '#e2e8f0', fontSize: '12px' }}>—</span>
+          }
+        </td>
+
+        {/* Game */}
+        <td style={{ padding: '12px 14px' }}>
+          {tx.gameName
+            ? <span style={{ display: 'inline-block', padding: '2px 8px', background: '#f1f5f9', borderRadius: '5px', fontSize: '11px', fontWeight: '500', color: '#475569', whiteSpace: 'nowrap' }}>{tx.gameName}</span>
+            : <span style={{ color: '#e2e8f0', fontSize: '12px' }}>—</span>
+          }
+        </td>
+
+        {/* Wallet */}
+        <td style={{ padding: '12px 14px', minWidth: '110px' }}>
+          {(tx.walletMethod || tx.walletName)
+            ? <div>
+                <div style={{ fontSize: '12px', fontWeight: '600', color: '#0f172a' }}>{tx.walletMethod || ''}</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8' }}>{tx.walletName || ''}</div>
+              </div>
+            : <span style={{ color: '#e2e8f0', fontSize: '12px' }}>—</span>
+          }
+        </td>
+
+        {/* Balance before → after */}
+        <td style={{ padding: '12px 14px', fontSize: '12px', whiteSpace: 'nowrap' }}>
+          {tx.balanceBefore != null && tx.balanceAfter != null
+            ? <>
+                <span style={{ color: '#94a3b8' }}>{fmt(tx.balanceBefore)}</span>
+                <span style={{ color: positive ? '#22c55e' : '#ef4444', fontWeight: '700' }}>
+                  {' → '}{fmt(tx.balanceAfter)}
+                </span>
+              </>
+            : <span style={{ color: '#e2e8f0' }}>—</span>
+          }
+        </td>
+
+        {/* Status */}
+        <td style={{ padding: '12px 14px' }}>
+          <StatusBadge status={tx.status} paidAmount={paidAmount} totalAmount={totalAmount} />
+        </td>
+
+        {/* Date */}
+        <td style={{ padding: '12px 14px', fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>
+          {formatDate(tx)}
+        </td>
+
+        {/* Actions */}
+        <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'flex-start' }}>
+
+            {/* Approve button — only for pending cashouts */}
+            {isCashoutRow && isPending && !isUndoing && (
+              <button onClick={() => onApprove(tx.id)}
+                disabled={isApproving}
+                title="Mark as fully paid & complete"
+                style={{ background: isApproving ? '#e2e8f0' : '#10b981', border: 'none', color: isApproving ? '#94a3b8' : '#fff', cursor: isApproving ? 'not-allowed' : 'pointer', fontWeight: '700', fontSize: '11px', borderRadius: '6px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', transition: 'all .15s' }}
+                onMouseEnter={e => { if (!isApproving) e.currentTarget.style.background = '#059669'; }}
+                onMouseLeave={e => { if (!isApproving) e.currentTarget.style.background = '#10b981'; }}>
+                {isApproving ? '⏳ Marking…' : <><CheckCircle size={11} /> Mark Done</>}
+              </button>
+            )}
+
+            {/* Partial pay button — only for pending cashouts */}
+            {isCashoutRow && isPending && !isApproving && !isUndoing && (
+              <button onClick={() => setShowPartial(v => !v)}
+                title="Record a partial payment"
+                style={{ background: showPartial ? '#fef3c7' : '#fff', border: '1px solid #fde68a', color: '#92400e', cursor: 'pointer', fontWeight: '600', fontSize: '11px', borderRadius: '6px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', transition: 'all .15s' }}>
+                <DollarSign size={11} /> Partial Pay {showPartial ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+              </button>
+            )}
+
+            {/* Undo */}
+            {isUndoing && <span style={{ fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap' }}>Reversing…</span>}
+            {canUndo && !isCashoutRow && (
+              <button onClick={() => onUndo(tx.id)}
+                title="Undo — reverses the transaction and restores all balances"
+                style={{ background: 'none', border: '1px solid #e2e8f0', color: '#64748b', cursor: 'pointer', fontWeight: '600', fontSize: '11px', borderRadius: '6px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', transition: 'all .15s' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fff1f2'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.background = 'none'; }}>
+                <RotateCcw size={11} /> Undo
+              </button>
+            )}
+            {/* Undo for completed cashouts */}
+            {isCashoutRow && isCompleted && canUndo && (
+              <button onClick={() => onUndo(tx.id)}
+                style={{ background: 'none', border: '1px solid #e2e8f0', color: '#64748b', cursor: 'pointer', fontWeight: '600', fontSize: '11px', borderRadius: '6px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', transition: 'all .15s' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fff1f2'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.background = 'none'; }}>
+                <RotateCcw size={11} /> Undo
+              </button>
+            )}
+          </div>
+        </td>
+      </tr>
+
+      {/* Partial pay panel — injected as a sub-row */}
+      {showPartial && (
+        <tr style={{ borderBottom: '1px solid #f1f5f9', background: '#fffdf5' }}>
+          <td colSpan={12} style={{ padding: 0 }}>
+            <PartialPayPanel
+              tx={tx}
+              onClose={() => setShowPartial(false)}
+              onSuccess={(msg) => { setShowPartial(false); onPartialSuccess(msg); }}
+              onError={(msg) => { setShowPartial(false); onError(msg); }}
+            />
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function Transactions() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -54,8 +347,14 @@ export default function Transactions() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [undoingId, setUndoingId] = useState(null);
-  const [undoError, setUndoError] = useState('');
+  const [approvingId, setApprovingId] = useState(null);
+  const [banner, setBanner] = useState({ type: '', msg: '' }); // type: 'success' | 'error'
   const itemsPerPage = 15;
+
+  const showBanner = (type, msg) => {
+    setBanner({ type, msg });
+    setTimeout(() => setBanner({ type: '', msg: '' }), 4000);
+  };
 
   const loadTransactions = useCallback(async (page = currentPage, tab = filterTab, forceRefresh = false) => {
     try {
@@ -75,25 +374,47 @@ export default function Transactions() {
   const transactions = data?.data || [];
   const pagination = data?.pagination || { page: 1, limit: 15, total: 0, pages: 1 };
 
+  // Pending cashout count for badge
+  const pendingCashoutCount = transactions.filter(t => isCashout(t) && t.status === 'PENDING').length;
+
   const handleUndo = async (transactionId) => {
-    setUndoError('');
     const numericId = String(transactionId).replace(/\D/g, '');
     try {
       setUndoingId(transactionId);
       const result = await api.transactions.undoTransaction(numericId);
       api.clearCache?.();
       await loadTransactions(currentPage, filterTab, true);
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('transactionUndone', {
-          detail: { transactionId, message: result.message, timestamp: new Date().toISOString() }
-        }));
-      }
+      window.dispatchEvent(new CustomEvent('transactionUndone', {
+        detail: { transactionId, message: result.message, timestamp: new Date().toISOString() }
+      }));
+      showBanner('success', `✓ Transaction #${transactionId} reversed successfully.`);
     } catch (error) {
-      console.error('Failed to undo transaction:', error);
-      setUndoError(error.message || 'Undo failed. Please try again.');
+      showBanner('error', error.message || 'Undo failed. Please try again.');
     } finally {
       setUndoingId(null);
     }
+  };
+
+  // Approve cashout — marks it COMPLETED (full payment)
+  const handleApprove = async (transactionId) => {
+    const numericId = String(transactionId).replace(/\D/g, '');
+    try {
+      setApprovingId(transactionId);
+      await api.transactions.approveCashout(numericId);
+      api.clearCache?.();
+      await loadTransactions(currentPage, filterTab, true);
+      showBanner('success', `✓ Cashout #${transactionId} marked as completed.`);
+    } catch (error) {
+      showBanner('error', error.message || 'Approval failed. Please try again.');
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  const handlePartialSuccess = async (msg) => {
+    api.clearCache?.();
+    await loadTransactions(currentPage, filterTab, true);
+    showBanner('success', msg);
   };
 
   const filteredTransactions = transactions.filter(t => {
@@ -109,36 +430,52 @@ export default function Transactions() {
   });
 
   const tabs = [
-    { id: 'all',       label: 'All Transactions' },
-    { id: 'pending',   label: 'Pending' },
-    { id: 'completed', label: 'Completed' },
+    { id: 'all',       label: 'All Transactions', badge: null },
+    { id: 'pending',   label: 'Pending', badge: filterTab !== 'pending' && pendingCashoutCount > 0 ? pendingCashoutCount : null },
+    { id: 'completed', label: 'Completed', badge: null },
   ];
 
-  // Column headers
-  const headers = ['ID', 'Player', 'Type', 'Amount', 'Fee', 'Received Amt', 'Game', 'Wallet', 'Balance Before → After', 'Status', 'Date', ''];
+  const headers = ['ID', 'Player', 'Type', 'Amount', 'Fee', 'Received / Paid', 'Game', 'Wallet', 'Balance Before → After', 'Status', 'Date', 'Actions'];
 
   return (
     <div style={{ padding: '4px 0' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
-            All deposits, cashouts, and bonuses — fee deducted, received amount shown per deposit
+            All deposits, cashouts, and bonuses · Cashouts start as <strong style={{ color: '#92400e' }}>Pending</strong> and must be approved by admin
           </p>
         </div>
-        <button onClick={() => loadTransactions(currentPage, filterTab)} disabled={loading}
+        <button onClick={() => loadTransactions(currentPage, filterTab, true)} disabled={loading}
           style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', padding: '9px 14px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}>
           <RefreshCw style={{ width: '13px', height: '13px', animation: loading ? 'spin 1s linear infinite' : 'none' }} />
           Refresh
         </button>
       </div>
 
-      {/* Undo error banner */}
-      {undoError && (
-        <div style={{ padding: '11px 16px', marginBottom: '16px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#991b1b', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>⚠ {undoError}</span>
-          <button onClick={() => setUndoError('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#991b1b', fontSize: '16px' }}>✕</button>
+      {/* Pending cashouts info banner */}
+      {pendingCashoutCount > 0 && filterTab !== 'pending' && (
+        <div style={{ padding: '11px 16px', marginBottom: '16px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', color: '#92400e', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+            <Clock size={14} />
+            <strong>{pendingCashoutCount}</strong> cashout{pendingCashoutCount !== 1 ? 's' : ''} awaiting your approval on this page
+          </span>
+          <button onClick={() => { setFilterTab('pending'); setCurrentPage(1); }}
+            style={{ background: '#f59e0b', border: 'none', color: '#fff', borderRadius: '6px', padding: '5px 12px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
+            View Pending →
+          </button>
+        </div>
+      )}
+
+      {/* Success / Error banner */}
+      {banner.msg && (
+        <div style={{ padding: '11px 16px', marginBottom: '16px', background: banner.type === 'success' ? '#dcfce7' : '#fee2e2', border: `1px solid ${banner.type === 'success' ? '#86efac' : '#fca5a5'}`, borderRadius: '8px', color: banner.type === 'success' ? '#166634' : '#991b1b', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+            {banner.type === 'success' ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+            {banner.msg}
+          </span>
+          <button onClick={() => setBanner({ type: '', msg: '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontSize: '16px' }}>✕</button>
         </div>
       )}
 
@@ -152,8 +489,14 @@ export default function Transactions() {
               color: filterTab === tab.id ? '#0ea5e9' : '#64748b',
               borderBottom: filterTab === tab.id ? '2px solid #0ea5e9' : '2px solid transparent',
               cursor: 'pointer', transition: 'all 0.15s',
+              display: 'flex', alignItems: 'center', gap: '6px',
             }}>
               {tab.label}
+              {tab.badge && (
+                <span style={{ background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '10px', fontWeight: '700', padding: '1px 6px', minWidth: '18px', textAlign: 'center' }}>
+                  {tab.badge}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -166,6 +509,17 @@ export default function Transactions() {
         />
       </div>
 
+      {/* How it works info — cashout workflow */}
+      {filterTab === 'pending' && (
+        <div style={{ padding: '12px 16px', marginBottom: '16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '12px', color: '#475569', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ fontSize: '16px' }}>1️⃣</span> Cashout is recorded → auto set to <strong>PENDING</strong></span>
+          <span style={{ color: '#cbd5e1' }}>→</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ fontSize: '16px' }}>2️⃣</span> Optionally pay in <strong>partial installments</strong></span>
+          <span style={{ color: '#cbd5e1' }}>→</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ fontSize: '16px' }}>3️⃣</span> Admin clicks <strong>Mark Done</strong> → moves to <strong>COMPLETED</strong></span>
+        </div>
+      )}
+
       {/* Table */}
       <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 2px 8px rgba(15,23,42,.05)' }}>
         {loading ? (
@@ -176,7 +530,7 @@ export default function Transactions() {
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead style={{ background: '#f8fafc', position: 'sticky', top: 0 }}>
+              <thead style={{ background: '#f8fafc', position: 'sticky', top: 0, zIndex: 10 }}>
                 <tr>
                   {headers.map(h => (
                     <th key={h} style={{
@@ -184,132 +538,28 @@ export default function Transactions() {
                       fontWeight: '700', color: '#64748b',
                       textTransform: 'uppercase', fontSize: '11px',
                       letterSpacing: '0.4px', borderBottom: '1px solid #e2e8f0',
-                      whiteSpace: 'nowrap',
-                      ...(h === 'Fee' || h === 'Received Amt'
+                      whiteSpace: 'nowrap', background: '#f8fafc',
+                      ...(h === 'Fee' || h === 'Received / Paid'
                         ? { color: '#0369a1', background: '#f0f9ff' }
                         : {}),
+                      ...(h === 'Actions' ? { color: '#92400e', background: '#fffbeb' } : {}),
                     }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {filteredTransactions.length > 0 ? filteredTransactions.map(tx => {
-                  const typeStyle   = TYPE_COLORS[tx.type] || { bg: '#f1f5f9', text: '#475569' };
-                  const positive    = !['Cashout', 'Loss'].includes(tx.type);
-                  const isUndoing   = undoingId === tx.id;
-                  const canUndo     = (tx.status === 'COMPLETED' || tx.status === 'PENDING') && !isUndoing;
-                  const isDepositRow = tx.type === 'Deposit';
-
-                  // Received Amt = deposit amount − fee (what the wallet actually receives)
-                  const feeVal      = parseFloat(tx.fee)    || 0;
-                  const depositVal  = parseFloat(tx.amount) || 0;
-                  const receivedAmt = depositVal - feeVal;
-
-                  return (
-                    <tr key={tx.id}
-                      style={{ borderBottom: '1px solid #f1f5f9', opacity: tx.status === 'CANCELLED' ? 0.55 : 1 }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#fafbfc'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-
-                      {/* ID */}
-                      <td style={{ padding: '12px 14px', fontWeight: '700', color: '#0ea5e9', fontSize: '12px', whiteSpace: 'nowrap' }}>
-                        {tx.id}
-                      </td>
-
-                      {/* Player */}
-                      <td style={{ padding: '12px 14px', minWidth: '130px' }}>
-                        <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '13px' }}>{tx.playerName || '—'}</div>
-                        {tx.email && <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>{tx.email}</div>}
-                      </td>
-
-                      {/* Type */}
-                      <td style={{ padding: '12px 14px' }}>
-                        <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', background: typeStyle.bg, color: typeStyle.text, whiteSpace: 'nowrap' }}>
-                          {tx.type}
-                        </span>
-                      </td>
-
-                      {/* Amount */}
-                      <td style={{ padding: '12px 14px', fontWeight: '800', fontSize: '14px', color: getAmountColor(tx.type), whiteSpace: 'nowrap' }}>
-                        {positive ? '+' : '−'}{fmt(tx.amount)}
-                      </td>
-
-                      {/* Fee — deposit rows only, no sub-label */}
-                      <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', background: isDepositRow ? '#fafeff' : 'transparent' }}>
-                        {isDepositRow && feeVal > 0
-                          ? <span style={{ fontWeight: '700', fontSize: '12px', color: '#f59e0b' }}>−{fmt(feeVal)}</span>
-                          : <span style={{ color: '#e2e8f0', fontSize: '12px' }}>—</span>
-                        }
-                      </td>
-
-                      {/* Received Amt — deposit amt minus fee */}
-                      <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', background: isDepositRow ? '#fafeff' : 'transparent' }}>
-                        {isDepositRow
-                          ? <span style={{ fontWeight: '700', fontSize: '13px', color: '#0ea5e9' }}>{fmt(receivedAmt)}</span>
-                          : <span style={{ color: '#e2e8f0', fontSize: '12px' }}>—</span>
-                        }
-                      </td>
-
-                      {/* Game */}
-                      <td style={{ padding: '12px 14px' }}>
-                        {tx.gameName
-                          ? <span style={{ display: 'inline-block', padding: '2px 8px', background: '#f1f5f9', borderRadius: '5px', fontSize: '11px', fontWeight: '500', color: '#475569', whiteSpace: 'nowrap' }}>{tx.gameName}</span>
-                          : <span style={{ color: '#e2e8f0', fontSize: '12px' }}>—</span>
-                        }
-                      </td>
-
-                      {/* Wallet */}
-                      <td style={{ padding: '12px 14px', minWidth: '110px' }}>
-                        {(tx.walletMethod || tx.walletName)
-                          ? <div>
-                              <div style={{ fontSize: '12px', fontWeight: '600', color: '#0f172a' }}>{tx.walletMethod || ''}</div>
-                              <div style={{ fontSize: '11px', color: '#94a3b8' }}>{tx.walletName || ''}</div>
-                            </div>
-                          : <span style={{ color: '#e2e8f0', fontSize: '12px' }}>—</span>
-                        }
-                      </td>
-
-                      {/* Balance before → after */}
-                      <td style={{ padding: '12px 14px', fontSize: '12px', whiteSpace: 'nowrap' }}>
-                        {tx.balanceBefore != null && tx.balanceAfter != null
-                          ? <>
-                              <span style={{ color: '#94a3b8' }}>{fmt(tx.balanceBefore)}</span>
-                              <span style={{ color: positive ? '#22c55e' : '#ef4444', fontWeight: '700' }}>
-                                {' → '}{fmt(tx.balanceAfter)}
-                              </span>
-                            </>
-                          : <span style={{ color: '#e2e8f0' }}>—</span>
-                        }
-                      </td>
-
-                      {/* Status */}
-                      <td style={{ padding: '12px 14px' }}>
-                        <StatusBadge status={tx.status} />
-                      </td>
-
-                      {/* Date */}
-                      <td style={{ padding: '12px 14px', fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>
-                        {formatDate(tx)}
-                      </td>
-
-                      {/* Undo */}
-                      <td style={{ padding: '12px 14px' }}>
-                        {isUndoing
-                          ? <span style={{ fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap' }}>Reversing…</span>
-                          : canUndo
-                            ? <button onClick={() => handleUndo(tx.id)}
-                                title="Undo — reverses the transaction and restores all balances"
-                                style={{ background: 'none', border: '1px solid #e2e8f0', color: '#64748b', cursor: 'pointer', fontWeight: '600', fontSize: '12px', borderRadius: '6px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', transition: 'all .15s' }}
-                                onMouseEnter={e => { e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fff1f2'; }}
-                                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.background = 'none'; }}>
-                                <RotateCcw size={12} /> Undo
-                              </button>
-                            : null
-                        }
-                      </td>
-                    </tr>
-                  );
-                }) : (
+                {filteredTransactions.length > 0 ? filteredTransactions.map(tx => (
+                  <TxRow
+                    key={tx.id}
+                    tx={tx}
+                    undoingId={undoingId}
+                    approvingId={approvingId}
+                    onUndo={handleUndo}
+                    onApprove={handleApprove}
+                    onPartialSuccess={handlePartialSuccess}
+                    onError={(msg) => showBanner('error', msg)}
+                  />
+                )) : (
                   <tr>
                     <td colSpan={headers.length} style={{ padding: '48px 16px', textAlign: 'center', color: '#94a3b8' }}>
                       No transactions found
