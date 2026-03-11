@@ -252,15 +252,19 @@ function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess
 
         {/* Balance before → after */}
         <td style={{ padding: '12px 14px', fontSize: '12px', whiteSpace: 'nowrap' }}>
-          {tx.balanceBefore != null && tx.balanceAfter != null
-            ? <>
-                <span style={{ color: '#94a3b8' }}>{fmt(tx.balanceBefore)}</span>
-                <span style={{ color: positive ? '#22c55e' : '#ef4444', fontWeight: '700' }}>
-                  {' → '}{fmt(tx.balanceAfter)}
-                </span>
-              </>
-            : <span style={{ color: '#e2e8f0' }}>—</span>
-          }
+         {tx.gameStockBefore != null && tx.gameStockAfter != null && (
+    <div style={{ marginTop: tx.balanceBefore != null ? '4px' : '0' }}>
+      <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '1px' }}>Game Points</div>
+      <span style={{ color: '#94a3b8' }}>{parseFloat(tx.gameStockBefore).toFixed(0)}</span>
+      <span style={{ color: tx.gameStockAfter >= tx.gameStockBefore ? '#22c55e' : '#ef4444', fontWeight: '700' }}>
+        {' → '}{parseFloat(tx.gameStockAfter).toFixed(0)}
+      </span>
+    </div>
+  )}
+  {tx.gameStockBefore == null && (
+    <span style={{ color: '#e2e8f0' }}>—</span>
+  )}
+          
         </td>
 
         {/* Status */}
