@@ -543,7 +543,7 @@ function AdminDashboard({ user }) {
   const renderPage = () => {
     switch (page) {
       case "dashboard": return <AnalyticsDashboard />;
-      case "memberDashboard": return <TeamDashboard />;
+      case "memberDashboard": return <TeamDashboard user={user}/>;
       case "players": return <Players />;
       case "dailyCheckups": return <MissingPlayersPage user={user}/>;
       case "playTime" : return <Playtimepage />;
