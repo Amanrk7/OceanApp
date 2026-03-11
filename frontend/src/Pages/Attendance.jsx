@@ -184,12 +184,14 @@ export default function Attendance() {
                           fontSize: '13px',
                           flexShrink: 0
                         }}
-                          onClick={() => handleView(player)}
                         >
                           {(player.name || player.username || '?')[0].toUpperCase()}
                         </div>
                         <div>
-                          <div style={{ fontWeight: '500', color: '#0f172a', fontSize: '13px' }}>
+                          <div style={{ fontWeight: '500', color: '#0f172a', fontSize: '13px' }}
+                            onClick={() => handleView(player)}
+
+                          >
                             {player.name || player.username}
                           </div>
                           <div style={{ fontSize: '12px', color: '#64748b' }}>
