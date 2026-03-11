@@ -108,10 +108,10 @@ function LedgerRow({ tx, undoingId, onUndo }) {
     const statusLabel = isPartial ? "PARTIAL" : tx.status;
     const statusColor =
         statusLabel === "COMPLETED" ? { bg: "#dcfce7", text: "#166534" } :
-        statusLabel === "PARTIAL"   ? { bg: "#fef3c7", text: "#d97706" } :
-        statusLabel === "PENDING"   ? { bg: "#fef3c7", text: "#92400e" } :
-        statusLabel === "CANCELLED" ? { bg: "#fee2e2", text: "#991b1b" } :
-        { bg: "#f1f5f9", text: "#475569" };
+            statusLabel === "PARTIAL" ? { bg: "#fef3c7", text: "#d97706" } :
+                statusLabel === "PENDING" ? { bg: "#fef3c7", text: "#92400e" } :
+                    statusLabel === "CANCELLED" ? { bg: "#fee2e2", text: "#991b1b" } :
+                        { bg: "#f1f5f9", text: "#475569" };
 
     return (
         <tr onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={e => e.currentTarget.style.background = "transparent"} style={{ borderBottom: "1px solid #f1f5f9", opacity: tx.status === "CANCELLED" ? 0.6 : 1 }}>
@@ -147,7 +147,7 @@ function LedgerRow({ tx, undoingId, onUndo }) {
                                 <div style={{ height: "100%", width: `${totalAmount > 0 ? Math.min((paidAmount / totalAmount) * 100, 100) : 0}%`, background: paidAmount >= totalAmount ? "#10b981" : "#f59e0b", borderRadius: "99px" }} />
                             </div>
                         </div>
-                    : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>
+                        : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>
                 }
             </td>
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
@@ -161,10 +161,34 @@ function LedgerRow({ tx, undoingId, onUndo }) {
                     </div>
                 ) : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>}
             </td>
-            <td style={{ padding: "10px 12px", fontSize: "12px", whiteSpace: "nowrap" }}>
+            {/* <td style={{ padding: "10px 12px", fontSize: "12px", whiteSpace: "nowrap" }}>
                 {tx.balanceBefore != null && tx.balanceAfter != null ? (
                     <><span style={{ color: "#64748b" }}>{fmt(tx.balanceBefore)}</span><span style={{ color: "#94a3b8", margin: "0 3px" }}>→</span><span style={{ color: positive ? "#22c55e" : "#ef4444", fontWeight: "700" }}>{fmt(tx.balanceAfter)}</span></>
                 ) : <span style={{ color: "#cbd5e1" }}>—</span>}
+            </td> */}
+
+            <td style={{ padding: "10px 12px", fontSize: "12px", whiteSpace: "nowrap" }}>
+                {/* {tx.balanceBefore != null && tx.balanceAfter != null && (
+                    <div>
+                        <div style={{ fontSize: "10px", color: "#94a3b8", marginBottom: "1px" }}>💰 Player</div>
+                        <span style={{ color: "#64748b" }}>{fmt(tx.balanceBefore)}</span>
+                        <span style={{ color: "#94a3b8", margin: "0 3px" }}>→</span>
+                        <span style={{ color: positive ? "#22c55e" : "#ef4444", fontWeight: "700" }}>{fmt(tx.balanceAfter)}</span>
+                    </div>
+                )} */}
+                {tx.gameStockBefore != null && tx.gameStockAfter != null && (
+                    <div style={{ marginTop: tx.balanceBefore != null ? "4px" : "0" }}>
+                        <div style={{ fontSize: "10px", color: "#94a3b8", marginBottom: "1px" }}>🎮 Points</div>
+                        <span style={{ color: "#64748b" }}>{parseFloat(tx.gameStockBefore).toFixed(0)}</span>
+                        <span style={{ color: "#94a3b8", margin: "0 3px" }}>→</span>
+                        <span style={{ color: tx.gameStockAfter >= tx.gameStockBefore ? "#22c55e" : "#ef4444", fontWeight: "700" }}>
+                            {parseFloat(tx.gameStockAfter).toFixed(0)}
+                        </span>
+                    </div>
+                )}
+                {tx.gameStockBefore == null && (
+                    <span style={{ color: "#cbd5e1" }}>—</span>
+                )}
             </td>
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
                 <span style={{ display: "inline-block", padding: "3px 9px", borderRadius: "6px", fontSize: "11px", fontWeight: "700", background: statusColor.bg, color: statusColor.text }}>{statusLabel}</span>
