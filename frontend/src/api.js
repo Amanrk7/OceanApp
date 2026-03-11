@@ -349,7 +349,7 @@ export const transactionsAPI = {
   },
 
   approveCashout: async (transactionId) => {
-    const res = await fetch(`${API_BASE_URL}/api/transactions/${transactionId}/approve`, {
+    const res = await fetch(`${API_BASE_URL}/transactions/${transactionId}/approve`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -362,7 +362,7 @@ export const transactionsAPI = {
   },
 
   partialPayment: async (transactionId, { amount }) => {
-    const res = await fetch(`${API_BASE_URL}/api/transactions/${transactionId}/partial-payment`, {
+    const res = await fetch(`${API_BASE_URL}/transactions/${transactionId}/partial-payment`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
