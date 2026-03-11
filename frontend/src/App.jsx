@@ -596,7 +596,7 @@ function PlayerDashboardWithSidebar({ user }) {
   setUsr(user);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-
+  console.log("user is the: ", user);
   const handleLogout = async () => {
     try { setLoading(true); await api.auth.logout(); window.location.reload(); }
     catch { } finally { setLoading(false); }
