@@ -510,10 +510,15 @@ function AddTransactionsPage() {
                                 <ChevronDown style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
                             </div>
                             {selGame && (
-                                <div style={{ marginTop: "8px", padding: "10px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: "500", background: !stockOk ? "#fee2e2" : "#f0fdf4", border: `1px solid ${!stockOk ? "#fca5a5" : "#86efac"}`, color: !stockOk ? "#991b1b" : "#166534" }}>
-                                    {!stockOk ? `⚠ Insufficient — ${selGame.name} has ${selGame.pointStock.toFixed(2)} pts, need ${stockNeeded.toFixed(2)}` : `✓ ${selGame.name}: ${selGame.pointStock.toFixed(2)} pts → ${(selGame.pointStock - stockNeeded).toFixed(2)} pts after`}
-                                </div>
-                            )}
+  <div style={{ marginTop: "8px", padding: "10px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: "500", background: !stockOk ? "#fee2e2" : "#f0fdf4", border: `1px solid ${!stockOk ? "#fca5a5" : "#86efac"}`, color: !stockOk ? "#991b1b" : "#166534" }}>
+    {isDeposit
+      ? (!stockOk
+          ? `⚠ Insufficient — ${selGame.name} has ${selGame.pointStock.toFixed(2)} pts, need ${stockNeeded.toFixed(2)}`
+          : `✓ ${selGame.name}: ${selGame.pointStock.toFixed(2)} pts → ${(selGame.pointStock - stockNeeded).toFixed(2)} pts after`)
+      : `✓ ${selGame.name}: ${selGame.pointStock.toFixed(2)} pts → ${(selGame.pointStock + amt).toFixed(2)} pts after`
+    }
+  </div>
+)}
 
                             {gameRequired && <p style={{ color: "#ef4444", fontSize: "11px", marginTop: "4px" }}>⚠ Game is required to proceed</p>}
                         </div>)}
