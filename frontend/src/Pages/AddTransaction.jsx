@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
     CheckCircle, AlertCircle, Search, X, RefreshCw, ChevronDown,
-    ArrowDownLeft, ArrowUpRight, Zap, Gift, Star, Users, Wallet,
+    ArrowDownLeft, ArrowUpRight, Zap, Gift, Star, Users, Wallet, Clock,
 } from "lucide-react";
 import { api } from "../api";
 
@@ -88,6 +88,7 @@ function LedgerRow({ tx, undoingId, onUndo }) {
     const isUndoing = undoingId === tx.id;
     const canUndo = (tx.status === "COMPLETED" || tx.status === "PENDING") && !isUndoing;
     const isDepositRow = ["Deposit", "deposit"].includes(tx.type);
+    const isCashoutRow = ["Cashout", "cashout"].includes(tx.type);
     const positive = !["Cashout", "cashout"].includes(tx.type);
 
     let displayType = tx.type;
@@ -99,7 +100,18 @@ function LedgerRow({ tx, undoingId, onUndo }) {
     else if (tx.bonusType === "streak") { displayType = "Streak Bonus"; typeColor = { bg: "#fffbeb", text: "#92400e" }; }
     else if (tx.bonusType === "referral") { displayType = "Referral Bonus"; typeColor = { bg: "#f0fdf4", text: "#166534" }; }
 
-    const statusColor = tx.status === "COMPLETED" ? { bg: "#dcfce7", text: "#166534" } : tx.status === "CANCELLED" ? { bg: "#fee2e2", text: "#991b1b" } : { bg: "#fef3c7", text: "#92400e" };
+    const isPending = tx.status === "PENDING";
+    const paidAmount = parseFloat(tx.paidAmount) || 0;
+    const totalAmount = parseFloat(tx.amount) || 0;
+    const isPartial = isCashoutRow && isPending && paidAmount > 0 && paidAmount < totalAmount;
+
+    const statusLabel = isPartial ? "PARTIAL" : tx.status;
+    const statusColor =
+        statusLabel === "COMPLETED" ? { bg: "#dcfce7", text: "#166534" } :
+        statusLabel === "PARTIAL"   ? { bg: "#fef3c7", text: "#d97706" } :
+        statusLabel === "PENDING"   ? { bg: "#fef3c7", text: "#92400e" } :
+        statusLabel === "CANCELLED" ? { bg: "#fee2e2", text: "#991b1b" } :
+        { bg: "#f1f5f9", text: "#475569" };
 
     return (
         <tr onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={e => e.currentTarget.style.background = "transparent"} style={{ borderBottom: "1px solid #f1f5f9", opacity: tx.status === "CANCELLED" ? 0.6 : 1 }}>
@@ -114,23 +126,27 @@ function LedgerRow({ tx, undoingId, onUndo }) {
             <td style={{ padding: "10px 12px", fontWeight: "700", fontSize: "14px", color: positive ? "#10b981" : "#ef4444", whiteSpace: "nowrap" }}>
                 {positive ? "+" : "−"}{fmt(tx.amount)}
             </td>
-            {/* Fee */}
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
-                {/* {isDepositRow && tx.fee != null && tx.fee > 0
-                    ? <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "12px" }}>−{fmt(tx.fee)}</span>
-                    : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>
-                } */}
                 {tx.fee != null && tx.fee > 0
                     ? <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "12px" }}>−{fmt(tx.fee)}</span>
                     : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>
                 }
             </td>
-            {/* Received Amt (deposit amt − fee = what we actually receive) */}
+            {/* Received / Paid progress */}
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
                 {isDepositRow
                     ? <span style={{ fontWeight: "700", fontSize: "13px", color: "#0ea5e9" }}>
                         {fmt((parseFloat(tx.amount) || 0) - (parseFloat(tx.fee) || 0))}
                     </span>
+                    : isCashoutRow
+                        ? <div style={{ minWidth: "110px" }}>
+                            <div style={{ fontSize: "11px", color: "#64748b", marginBottom: "3px" }}>
+                                {fmt(paidAmount)} / {fmt(totalAmount)}
+                            </div>
+                            <div style={{ height: "5px", background: "#fee2e2", borderRadius: "99px", overflow: "hidden" }}>
+                                <div style={{ height: "100%", width: `${totalAmount > 0 ? Math.min((paidAmount / totalAmount) * 100, 100) : 0}%`, background: paidAmount >= totalAmount ? "#10b981" : "#f59e0b", borderRadius: "99px" }} />
+                            </div>
+                        </div>
                     : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>
                 }
             </td>
@@ -151,11 +167,11 @@ function LedgerRow({ tx, undoingId, onUndo }) {
                 ) : <span style={{ color: "#cbd5e1" }}>—</span>}
             </td>
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
-                <span style={{ display: "inline-block", padding: "3px 9px", borderRadius: "6px", fontSize: "11px", fontWeight: "700", background: statusColor.bg, color: statusColor.text }}>{tx.status}</span>
+                <span style={{ display: "inline-block", padding: "3px 9px", borderRadius: "6px", fontSize: "11px", fontWeight: "700", background: statusColor.bg, color: statusColor.text }}>{statusLabel}</span>
             </td>
             <td style={{ padding: "10px 12px", color: "#94a3b8", fontSize: "11px", whiteSpace: "nowrap" }}>{formatDate(tx.timestamp ?? tx.createdAt)}</td>
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
-                {canUndo && (
+                {canUndo && !isUndoing && (
                     <button onClick={() => onUndo(tx.id, tx.playerId)}
                         style={{ background: "none", border: "1px solid #e2e8f0", color: "#64748b", cursor: "pointer", fontWeight: "600", fontSize: "12px", borderRadius: "6px", padding: "4px 10px", display: "inline-flex", alignItems: "center", gap: "4px" }}
                         onMouseEnter={e => { e.currentTarget.style.borderColor = "#ef4444"; e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.background = "#fff5f5"; }}
@@ -261,7 +277,6 @@ function AddTransactionsPage() {
     const clearPlayer = () => { setPlayer(null); setQuery(""); setMatchUsedToday(false); setReferralUsedEver(false); setForm(f => ({ ...EMPTY, txType: f.txType })); };
     const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
-    // ══ DERIVED VALUES ════════════════════════════════════════
     const amt = parseFloat(form.amount) || 0;
     const feeAmt = parseFloat(form.fee) || 0;
     const isDeposit = form.txType === "deposit";
@@ -278,20 +293,9 @@ function AddTransactionsPage() {
     const referralAmt = (form.bonusReferral && hasReferrer && amt > 0) ? amt * 0.5 : 0;
     const totalBonus = matchAmt + specialAmt + referralAmt;
 
-    // ★ Full deposit amount to player. Game stock = full amt + bonuses (NOT amt - fee)
-    // const stockNeeded =
-    //     (isDeposit ? amt : 0) +
-    //     matchAmt + specialAmt +
-    //     (form.bonusReferral && hasReferrer && amt > 0 ? referralAmt * 2 : 0);
-
     const stockNeeded = isDeposit
         ? amt + matchAmt + specialAmt + (form.bonusReferral && hasReferrer && amt > 0 ? referralAmt * 2 : 0)
         : amt;
-
-    // const stockOk            = !selGame || stockNeeded <= selGame.pointStock;
-    // const cashoutOverLimit   = !isDeposit && !streakWaived && amt > cashoutLimit && cashoutLimit > 0;
-    // const walletInsufficient = !isDeposit && selWallet && amt > selWallet.balance;
-    // const gameRequired       = isDeposit && !form.gameId;
 
     const stockOk = !selGame || stockNeeded <= selGame.pointStock;
     const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -304,25 +308,18 @@ function AddTransactionsPage() {
     const walletInsufficient = !isDeposit && selWallet && amt > selWallet.balance;
     const gameRequired = !form.gameId;
 
-    // const canSubmit =
-    //     !!player?.id && amt > 0 && !!form.walletId &&
-    //     (isDeposit ? !!form.gameId : true) &&
-    //     stockOk && !cashoutOverLimit && !walletInsufficient && !submitting &&
-    //     feeAmt >= 0 && (amt === 0 || feeAmt <= amt);
-
     const canSubmit =
         !!player?.id && amt > 0 && !!form.walletId && !!form.gameId &&
         stockOk && !cashoutOverLimit && !walletInsufficient && !submitting &&
         feeAmt >= 0 && (amt === 0 || feeAmt <= amt);
 
-    // ══ SUBMIT ════════════════════════════════════════════════
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(""); setSuccess("");
         if (!player?.id) { setError("Please select a player."); return; }
         if (!amt) { setError("Enter a valid amount."); return; }
         if (!form.walletId) { setError("Please select a wallet."); return; }
-        if (isDeposit && !form.gameId) { setError("Please select a game — required for all deposits."); return; }
+        if (!form.gameId) { setError("Please select a game — required for all transactions."); return; }
         if (!stockOk) { setError(`Insufficient game stock — need ${stockNeeded.toFixed(2)} pts.`); return; }
         if (cashoutOverLimit) { setError(`Cashout exceeds limit of ${fmt(cashoutLimit)}.`); return; }
         if (walletInsufficient) { setError(`Wallet only has ${fmt(selWallet?.balance)}.`); return; }
@@ -332,14 +329,13 @@ function AddTransactionsPage() {
             setSubmitting(true);
             const payload = isDeposit
                 ? { playerId: player.id, amount: amt, fee: feeAmt, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, gameId: form.gameId, notes: form.notes, bonusMatch: form.bonusMatch && amt > 0, bonusSpecial: form.bonusSpecial && amt > 0, bonusReferral: form.bonusReferral && hasReferrer && amt > 0 }
-                // : { playerId: player.id, amount: amt, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, notes: form.notes };
                 : { playerId: player.id, amount: amt, fee: feeAmt, gameId: form.gameId, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, notes: form.notes };
 
             const data = isDeposit ? await api.transactions.deposit(payload) : await api.transactions.cashout(payload);
 
-            let msg = data.message || "Transaction recorded successfully!";
+            let msg = data.message || (isDeposit ? "Deposit recorded successfully!" : "Cashout recorded — status set to Pending. Approve it from the Transactions page.");
             if (data.transaction?.referralBonus) { const rb = data.transaction.referralBonus; msg += ` Referral bonus of ${fmt(rb.amount)} also sent to ${rb.referrerName}.`; }
-            if (feeAmt > 0) msg += ` Wallet credited with ${fmt(amt - feeAmt)} (${fmt(amt)} deposit − ${fmt(feeAmt)} fee).`;
+            if (feeAmt > 0 && isDeposit) msg += ` Wallet credited with ${fmt(amt - feeAmt)} (${fmt(amt)} deposit − ${fmt(feeAmt)} fee).`;
             setSuccess(msg);
             setForm(EMPTY); setQuery(""); setPlayer(null); setMatchUsedToday(false); setReferralUsedEver(false);
             api.clearCache?.();
@@ -349,7 +345,6 @@ function AddTransactionsPage() {
         } finally { setSubmitting(false); }
     };
 
-    // ══ UNDO ══════════════════════════════════════════════════
     const handleUndo = async (txId, playerIdFromTx) => {
         try {
             setUndoingId(txId); setError(""); setUndoSuccess("");
@@ -366,7 +361,6 @@ function AddTransactionsPage() {
         finally { setUndoingId(null); }
     };
 
-    // ══ RENDER ════════════════════════════════════════════════
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "28px", maxWidth: "inherit" }}>
 
@@ -383,15 +377,28 @@ function AddTransactionsPage() {
                 </div>
 
                 {/* Info banner */}
-                <div style={{ marginBottom: "22px", padding: "14px 16px", background: isDeposit ? "#f0fdf4" : "#fef2f2", borderLeft: `4px solid ${isDeposit ? "#22c55e" : "#ef4444"}`, borderRadius: "8px", display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                    {isDeposit ? <ArrowDownLeft style={{ width: "17px", height: "17px", color: "#16a34a", flexShrink: 0, marginTop: "1px" }} /> : <ArrowUpRight style={{ width: "17px", height: "17px", color: "#dc2626", flexShrink: 0, marginTop: "1px" }} />}
+                <div style={{ marginBottom: "22px", padding: "14px 16px", background: isDeposit ? "#f0fdf4" : "#fffbeb", borderLeft: `4px solid ${isDeposit ? "#22c55e" : "#f59e0b"}`, borderRadius: "8px", display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                    {isDeposit
+                        ? <ArrowDownLeft style={{ width: "17px", height: "17px", color: "#16a34a", flexShrink: 0, marginTop: "1px" }} />
+                        : <Clock style={{ width: "17px", height: "17px", color: "#d97706", flexShrink: 0, marginTop: "1px" }} />
+                    }
                     <div>
-                        <p style={{ fontWeight: "700", color: isDeposit ? "#14532d" : "#7f1d1d", margin: "0 0 2px", fontSize: "14px" }}>{isDeposit ? "Record a Deposit" : "Record a Cashout"}</p>
-                        <p style={{ color: isDeposit ? "#166534" : "#991b1b", margin: 0, fontSize: "12px", lineHeight: "1.5" }}>
+                        <p style={{ fontWeight: "700", color: isDeposit ? "#14532d" : "#92400e", margin: "0 0 2px", fontSize: "14px" }}>
+                            {isDeposit ? "Record a Deposit" : "Record a Cashout — starts as Pending"}
+                        </p>
+                        <p style={{ color: isDeposit ? "#166534" : "#92400e", margin: 0, fontSize: "12px", lineHeight: "1.5" }}>
                             {isDeposit
                                 ? "Player receives the full deposit amount. The wallet is credited with (deposit − fee). Game stock deducted for full deposit + bonuses."
-                                : "Cashout deducts from player balance and wallet. Cashout limit enforced (waived at 30-day streak)."}
+                                : "Cashout is saved as PENDING. Go to the Transactions page to approve it (full or partial payments). Balance is deducted immediately."
+                            }
                         </p>
+                        {!isDeposit && (
+                            <div style={{ marginTop: "8px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                                {["1️⃣ Record cashout → PENDING", "2️⃣ Optional partial payments", "3️⃣ Admin marks DONE → COMPLETED"].map(s => (
+                                    <span key={s} style={{ fontSize: "11px", padding: "3px 8px", background: "#fef3c7", borderRadius: "5px", color: "#92400e", fontWeight: "600" }}>{s}</span>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -439,7 +446,6 @@ function AddTransactionsPage() {
                                     {hasReferrer && <span style={{ padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166534" }}>👤 Referred by {player.referredBy?.name || `ID ${player.referredBy?.id || player.referredBy}`}</span>}
                                     {matchUsedToday && <span style={{ padding: "4px 10px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#92400e" }}>⚠ Match bonus used today</span>}
                                     {referralUsedEver && <span style={{ padding: "4px 10px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#92400e" }}>⚠ Referral bonus already used</span>}
-                                    {/* {!isDeposit && cashoutLimit > 0 && !streakWaived && <span style={{ padding: "4px 10px", background: cashoutOverLimit ? "#fee2e2" : "#fef2f2", border: `1px solid ${cashoutOverLimit ? "#fca5a5" : "#fecaca"}`, borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#991b1b" }}>Cashout limit: {fmt(cashoutLimit)}</span>} */}
                                     {!isDeposit && cashoutLimit > 0 && !streakWaived && <span style={{ padding: "4px 10px", background: cashoutOverLimit ? "#fee2e2" : "#fef2f2", border: `1px solid ${cashoutOverLimit ? "#fca5a5" : "#fecaca"}`, borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#991b1b" }}>Daily limit: {fmt(cashoutLimit - todayCashoutTotal)} remaining (of {fmt(cashoutLimit)})</span>}
                                     {!isDeposit && streakWaived && <span style={{ padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166534" }}>✓ Limit waived (30-day streak)</span>}
                                 </div>
@@ -448,8 +454,6 @@ function AddTransactionsPage() {
                     </div>
 
                     {/* Amount + Fee + Wallet */}
-                    {/* <div style={{ display: "grid", gridTemplateColumns: isDeposit ? "1fr 1fr 1fr" : "1fr 1fr", gap: "16px" }}> */}
-
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
                         <div>
                             <label style={LABEL}>{isDeposit ? "Deposit Amount ($) *" : `Cashout Amount ($) *${!streakWaived && cashoutLimit > 0 ? ` — Limit: ${fmt(cashoutLimit)}` : ""}`}</label>
@@ -494,38 +498,31 @@ function AddTransactionsPage() {
                         </div>
                     </div>
 
-                    {/* Game selector
-                    {isDeposit && (
-                        <div>
-                            <label style={LABEL}>Game <span style={{ color: "#ef4444" }}>*</span> required for all deposits</label> */}
                     {/* Game selector */}
-                    {(
-                        <div>
-                            <label style={LABEL}>Game <span style={{ color: "#ef4444" }}>*</span> required for all transactions</label>
-                            <div style={{ position: "relative" }}>
-                                <select value={form.gameId} onChange={e => set("gameId", e.target.value)} style={{ ...SELECT, borderColor: gameRequired ? "#fca5a5" : "#e2e8f0" }}>
-                                    <option value="">— Select a game —</option>
-                                    {games.map(g => <option key={g.id} value={g.id} disabled={g.pointStock <= 0}>{g.name}  ({(g.pointStock ?? 0).toFixed(0)} pts){g.pointStock <= 0 ? " — EMPTY" : ""}</option>)}
-                                </select>
-                                <ChevronDown style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
+                    <div>
+                        <label style={LABEL}>Game <span style={{ color: "#ef4444" }}>*</span> required for all transactions</label>
+                        <div style={{ position: "relative" }}>
+                            <select value={form.gameId} onChange={e => set("gameId", e.target.value)} style={{ ...SELECT, borderColor: gameRequired ? "#fca5a5" : "#e2e8f0" }}>
+                                <option value="">— Select a game —</option>
+                                {games.map(g => <option key={g.id} value={g.id} disabled={g.pointStock <= 0}>{g.name}  ({(g.pointStock ?? 0).toFixed(0)} pts){g.pointStock <= 0 ? " — EMPTY" : ""}</option>)}
+                            </select>
+                            <ChevronDown style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
+                        </div>
+                        {selGame && (
+                            <div style={{ marginTop: "8px", padding: "10px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: "500", background: !stockOk ? "#fee2e2" : "#f0fdf4", border: `1px solid ${!stockOk ? "#fca5a5" : "#86efac"}`, color: !stockOk ? "#991b1b" : "#166534" }}>
+                                {isDeposit
+                                    ? (!stockOk
+                                        ? `⚠ Insufficient — ${selGame.name} has ${selGame.pointStock.toFixed(2)} pts, need ${stockNeeded.toFixed(2)}`
+                                        : `✓ ${selGame.name}: ${selGame.pointStock.toFixed(2)} pts → ${(selGame.pointStock - stockNeeded).toFixed(2)} pts after`)
+                                    : `✓ ${selGame.name}: ${selGame.pointStock.toFixed(2)} pts → ${(selGame.pointStock + stockNeeded).toFixed(2)} pts after`
+                                }
                             </div>
-                            {selGame && (
-  <div style={{ marginTop: "8px", padding: "10px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: "500", background: !stockOk ? "#fee2e2" : "#f0fdf4", border: `1px solid ${!stockOk ? "#fca5a5" : "#86efac"}`, color: !stockOk ? "#991b1b" : "#166534" }}>
-    {isDeposit
-      ? (!stockOk
-          ? `⚠ Insufficient — ${selGame.name} has ${selGame.pointStock.toFixed(2)} pts, need ${stockNeeded.toFixed(2)}`
-          : `✓ ${selGame.name}: ${selGame.pointStock.toFixed(2)} pts → ${(selGame.pointStock - stockNeeded).toFixed(2)} pts after`)
-      : `✓ ${selGame.name}: ${selGame.pointStock.toFixed(2)} pts → ${(selGame.pointStock + stockNeeded).toFixed(2)} pts after`
-    }
-  </div>
-)}
+                        )}
+                        {gameRequired && <p style={{ color: "#ef4444", fontSize: "11px", marginTop: "4px" }}>⚠ Game is required to proceed</p>}
+                    </div>
 
-                            {gameRequired && <p style={{ color: "#ef4444", fontSize: "11px", marginTop: "4px" }}>⚠ Game is required to proceed</p>}
-                        </div>)}
-
-                    {/* Bonus section */}
+                    {/* Bonus section — deposits only */}
                     {isDeposit && (
-
                         <>
                             <div style={DIVIDER} />
                             <div>
@@ -592,8 +589,11 @@ function AddTransactionsPage() {
                     {/* Buttons */}
                     <div style={{ display: "flex", gap: "12px", paddingTop: "4px" }}>
                         <button type="button" onClick={() => { setForm(EMPTY); setQuery(""); clearPlayer(); setError(""); setSuccess(""); setUndoSuccess(""); }} style={{ flex: 1, padding: "12px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px" }}>Clear</button>
-                        <button type="submit" disabled={!canSubmit} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", fontWeight: "700", fontSize: "14px", cursor: canSubmit ? "pointer" : "not-allowed", background: canSubmit ? (isDeposit ? "#10b981" : "#ef4444") : "#e2e8f0", color: canSubmit ? "#fff" : "#94a3b8", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px" }}>
-                            {submitting ? <span>⏳ Processing…</span> : isDeposit ? <><ArrowDownLeft style={{ width: "15px", height: "15px" }} /> Record Deposit</> : <><ArrowUpRight style={{ width: "15px", height: "15px" }} /> Record Cashout</>}
+                        <button type="submit" disabled={!canSubmit} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", fontWeight: "700", fontSize: "14px", cursor: canSubmit ? "pointer" : "not-allowed", background: canSubmit ? (isDeposit ? "#10b981" : "#f59e0b") : "#e2e8f0", color: canSubmit ? "#fff" : "#94a3b8", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px" }}>
+                            {submitting ? <span>⏳ Processing…</span> : isDeposit
+                                ? <><ArrowDownLeft style={{ width: "15px", height: "15px" }} /> Record Deposit</>
+                                : <><Clock style={{ width: "15px", height: "15px" }} /> Record Cashout (→ Pending)</>
+                            }
                         </button>
                     </div>
                 </form>
@@ -603,8 +603,8 @@ function AddTransactionsPage() {
             <div style={{ ...CARD, padding: 0, overflow: "hidden" }}>
                 <div style={{ padding: "16px 20px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
                     <div>
-                        <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: "#0f172a" }}>All Transactions</h3>
-                        <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#94a3b8" }}>Full amount → player · Fee → wallet revenue</p>
+                        <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: "#0f172a" }}>Recent Transactions</h3>
+                        <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#94a3b8" }}>Deposits complete immediately · Cashouts start as Pending — approve via Transactions page</p>
                     </div>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
                         <div onClick={() => setAutoRefresh(!autoRefresh)} style={{ padding: "6px 12px", borderRadius: "8px", border: "1px solid #e2e8f0", background: autoRefresh ? "#dcfce7" : "#fff", color: autoRefresh ? "#166534" : "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}>
@@ -635,7 +635,7 @@ function AddTransactionsPage() {
                                         { label: "Type", w: "120px" },
                                         { label: "Amount", w: "100px" },
                                         { label: "Fee", w: "80px" },
-                                        { label: "Received Amt", w: "110px" },
+                                        { label: "Received / Paid", w: "130px" },
                                         { label: "Game", w: "110px" },
                                         { label: "Wallet", w: "130px" },
                                         { label: "Balance", w: "155px" },
