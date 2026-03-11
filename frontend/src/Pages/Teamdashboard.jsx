@@ -947,7 +947,7 @@ export default function TeamDashboard({ currentUser, activeShift }) {
                 <MissingInfoTaskCard
                   key={task.id}
                   task={task}
-                  currentUser={resolvedUser}   {/* ✅ use resolvedUser, not currentUser */}
+                  currentUser={resolvedUser} 
                   onClaim={handleClaimTask}
                   onInfoSubmitted={handleInfoSubmitted}
                 />
