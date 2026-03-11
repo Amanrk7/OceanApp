@@ -347,6 +347,33 @@ export const transactionsAPI = {
       body: JSON.stringify(payload)
     });
   },
+
+  approveCashout: async (transactionId) => {
+    const res = await fetch(`${BASE_URL}/api/transactions/${transactionId}/approve`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to approve cashout');
+    }
+    return res.json();
+  },
+
+  partialPayment: async (transactionId, { amount }) => {
+    const res = await fetch(`${BASE_URL}/api/transactions/${transactionId}/partial-payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ amount }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to record partial payment');
+    }
+    return res.json();
+  },
 };
 
 // ═══════════════════════════════════════════════════════════════
