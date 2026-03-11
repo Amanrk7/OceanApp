@@ -795,7 +795,7 @@ export default function TeamDashboard({ currentUser, activeShift }) {
 
   useEffect(() => {
     loadTasks();
-
+    console.log("the current user is: ", currentUser);
     const es = tasksAPI.connectSSE();
     sseRef.current = es;
     es.addEventListener("connected", () => console.log("SSE connected ✓"));
