@@ -178,7 +178,7 @@ function LedgerRow({ tx, undoingId, onUndo }) {
                 )} */}
                 {tx.gameStockBefore != null && tx.gameStockAfter != null && (
                     <div style={{ marginTop: tx.balanceBefore != null ? "4px" : "0" }}>
-                        <div style={{ fontSize: "10px", color: "#94a3b8", marginBottom: "1px" }}>🎮 Points</div>
+                        <div style={{ fontSize: "10px", color: "#94a3b8", marginBottom: "1px" }}>Game Points</div>
                         <span style={{ color: "#64748b" }}>{parseFloat(tx.gameStockBefore).toFixed(0)}</span>
                         <span style={{ color: "#94a3b8", margin: "0 3px" }}>→</span>
                         <span style={{ color: tx.gameStockAfter >= tx.gameStockBefore ? "#22c55e" : "#ef4444", fontWeight: "700" }}>
@@ -662,7 +662,7 @@ function AddTransactionsPage() {
                                         { label: "Received / Paid", w: "130px" },
                                         { label: "Game", w: "110px" },
                                         { label: "Wallet", w: "130px" },
-                                        { label: "Balance", w: "155px" },
+                                        { label: "Game Points", w: "155px" },
                                         { label: "Status", w: "95px" },
                                         { label: "Date", w: "155px" },
                                         { label: "", w: "80px" },
