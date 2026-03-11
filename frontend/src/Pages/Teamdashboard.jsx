@@ -757,7 +757,7 @@ export default function TeamDashboard({ currentUser, activeShift }) {
   const [resolvedUser, setResolvedUser] = useState(null);
   const sseRef = useRef(null);
 
-  console.log("the current user is: ", currentUser);
+  // console.log("the current user is: ", currentUser);
   // ── Resolve currentUser.id — fetch from /api/user if needed ──
   useEffect(() => {
     const id = extractUserId(currentUser);
