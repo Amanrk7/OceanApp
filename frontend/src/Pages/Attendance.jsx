@@ -188,8 +188,10 @@ export default function Attendance() {
                           {(player.name || player.username || '?')[0].toUpperCase()}
                         </div>
                         <div>
-                          <div style={{ fontWeight: '500', color: '#0f172a', fontSize: '13px' }}
+                          <div style={{ fontWeight: '500', color: '#0f172a', cursor: 'pointer', fontSize: '13px' }}
                             onClick={() => handleView(player)}
+                            onMouseEnter={e => e.currentTarget.style.color = C.sky}
+                            onMouseLeave={e => e.currentTarget.style.color = '#0f172a'}
 
                           >
                             {player.name || player.username}
