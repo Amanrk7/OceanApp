@@ -348,25 +348,19 @@ export const transactionsAPI = {
     });
   },
 
+// In api.js → transactionsAPI object, replace approveCashout and partialPayment:
+
 approveCashout: async (transactionId) => {
-  const res = await fetch(`${API_BASE_URL}/transactions/${transactionId}/approve`, {
+  return fetchAPI(`/transactions/${transactionId}/approve`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',   // ← THIS is what's missing
   });
-  if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Approval failed'); }
-  return res.json();
 },
 
 partialPayment: async (transactionId, { amount }) => {
-  const res = await fetch(`${API_BASE_URL}/transactions/${transactionId}/partial-payment`, {
+  return fetchAPI(`/transactions/${transactionId}/partial-payment`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',   // ← THIS is what's missing
     body: JSON.stringify({ amount }),
   });
-  if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Partial payment failed'); }
-  return res.json();
 },
 };
 
