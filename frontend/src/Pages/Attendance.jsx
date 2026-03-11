@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from "react-router-dom";
 import { Eye } from 'lucide-react';
 import { api } from '../api';
+import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
+
 
 export default function Attendance() {
   // ===== STATE =====
+  const navigate = useNavigate();
+  const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
+
   const [data, setData] = useState(null);
   const [stats, setStats] = useState({
     total: 0,
@@ -60,6 +66,11 @@ export default function Attendance() {
       </div>
     );
   }
+
+  const handleView = (player) => {
+    setSelectedPlayer(player);
+    navigate(`/playerDashboard/${player.id}`);
+  };
 
   // ===== DATA EXTRACTION =====
   const allData = data?.data || [];
@@ -172,7 +183,9 @@ export default function Attendance() {
                           fontWeight: '600',
                           fontSize: '13px',
                           flexShrink: 0
-                        }}>
+                        }}
+                          onClick={() => handleView(player)}
+                        >
                           {(player.name || player.username || '?')[0].toUpperCase()}
                         </div>
                         <div>
@@ -224,6 +237,7 @@ export default function Attendance() {
                         }}
                           onMouseEnter={(e) => e.target.style.color = '#0b6ea8'}
                           onMouseLeave={(e) => e.target.style.color = '#0ea5e9'}
+                          onClick={() => handleView(player)}
                         >
                           <Eye size={16} /> View →
                         </button>
