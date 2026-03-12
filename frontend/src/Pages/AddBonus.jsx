@@ -1,7 +1,37 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { CheckCircle, AlertCircle, Search, X, Gift, RefreshCw, Flame, Tag } from "lucide-react";
 import { api } from "../api";
 import { fmtTX } from "../utils/txTime";
+import { useParams, useNavigate } from 'react-router-dom';
+import { ShiftStatusContext } from "../Context/membershiftStatus";
+
+
+const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', flexShrink: 0 }}>
+        {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
+    </svg>
+);
+const ICheck = () => <Ico d="M20 6L9 17l-5-5" />;
+const IAlert = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} />;
+const IPlus = () => <Ico d="M12 5v14M5 12h14" />;
+const IX = () => <Ico d="M18 6L6 18M6 6l12 12" />;
+const IUser = () => <Ico d={['M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2', 'M12 11a4 4 0 100-8 4 4 0 000 8z']} />;
+const ILock = () => <Ico d={['M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z', 'M7 11V7a5 5 0 0110 0v4']} />;
+const IMail = () => <Ico d={['M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z', 'M22 6l-10 7L2 6']} />;
+const IPhone = () => <Ico d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />;
+const IUsers = () => <Ico d={['M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2', 'M23 21v-2a4 4 0 00-3-3.87', 'M16 3.13a4 4 0 010 7.75', 'M9 7a4 4 0 100 8 4 4 0 000-8z']} />;
+const IShield = () => <Ico d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />;
+const IWarn = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} size={13} />;
+const C = {
+    sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
+    green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
+    red: '#dc2626', redLt: '#fff1f2', redBdr: '#fecdd3',
+    amber: '#d97706', amberLt: '#fffbeb', amberBdr: '#fcd34d',
+    violet: '#7c3aed', violetLt: '#f5f3ff', violetBdr: '#ddd6fe',
+    slate: '#0f172a', gray: '#64748b', grayLt: '#94a3b8',
+    border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
+};
+
 
 // ─── Style constants ─────────────────────────────────────────────────────────
 const LABEL = {
@@ -43,32 +73,32 @@ const BONUS_TYPES = [
 // ═════════════════════════════════════════════════════════════════════════════
 export default function BonusPage() {
     // ── Player search state ───────────────────────────────────────────────────
-    const [player, setPlayer]         = useState(null);
-    const [query, setQuery]           = useState("");
-    const [results, setResults]       = useState([]);
-    const [searching, setSearching]   = useState(false);
+    const [player, setPlayer] = useState(null);
+    const [query, setQuery] = useState("");
+    const [results, setResults] = useState([]);
+    const [searching, setSearching] = useState(false);
     const [eligLoading, setEligLoading] = useState(false);
-    const [showDrop, setShowDrop]     = useState(false);
+    const [showDrop, setShowDrop] = useState(false);
     const dropRef = useRef(null);
 
     // ── Form state ────────────────────────────────────────────────────────────
-    const [bonusType, setBonusType]           = useState("streak");
-    const [customLabel, setCustomLabel]       = useState("");   // only used when bonusType === "other"
-    const [amount, setAmount]                 = useState("");
+    const [bonusType, setBonusType] = useState("streak");
+    const [customLabel, setCustomLabel] = useState("");   // only used when bonusType === "other"
+    const [amount, setAmount] = useState("");
     const [selectedGameId, setSelectedGameId] = useState("");
-    const [notes, setNotes]                   = useState("");
+    const [notes, setNotes] = useState("");
 
     // ── Data state ────────────────────────────────────────────────────────────
-    const [games, setGames]                     = useState([]);
-    const [gamesLoading, setGamesLoading]       = useState(true);
-    const [ledger, setLedger]                   = useState([]);
-    const [ledgerLoading, setLedgerLoading]     = useState(true);
+    const [games, setGames] = useState([]);
+    const [gamesLoading, setGamesLoading] = useState(true);
+    const [ledger, setLedger] = useState([]);
+    const [ledgerLoading, setLedgerLoading] = useState(true);
     const [lastLedgerRefresh, setLastLedgerRefresh] = useState(null);
 
     // ── Submission state ──────────────────────────────────────────────────────
     const [submitting, setSubmitting] = useState(false);
-    const [success, setSuccess]       = useState("");
-    const [error, setError]           = useState("");
+    const [success, setSuccess] = useState("");
+    const [error, setError] = useState("");
 
     // ── Load games ────────────────────────────────────────────────────────────
     const loadGames = useCallback(async (silent = false) => {
@@ -95,7 +125,7 @@ export default function BonusPage() {
         loadGames();
         loadLedger();
         const ledgerInterval = setInterval(() => loadLedger(true), 10000);
-        const gamesInterval  = setInterval(() => loadGames(true), 15000);
+        const gamesInterval = setInterval(() => loadGames(true), 15000);
         return () => { clearInterval(ledgerInterval); clearInterval(gamesInterval); };
     }, [loadGames, loadLedger]);
 
@@ -152,22 +182,22 @@ export default function BonusPage() {
     };
 
     // ── Derived values ────────────────────────────────────────────────────────
-    const amt          = parseFloat(amount) || 0;
+    const amt = parseFloat(amount) || 0;
     const selectedGame = games.find(g => g.id === selectedGameId) || null;
-    const stockOk      = selectedGame ? amt <= selectedGame.pointStock : false;
+    const stockOk = selectedGame ? amt <= selectedGame.pointStock : false;
     const customLabelOk = bonusType === "streak" || customLabel.trim().length > 0;
-    const canSubmit    = !!player?.id && amt > 0 && !!selectedGameId && stockOk && customLabelOk && !submitting;
+    const canSubmit = !!player?.id && amt > 0 && !!selectedGameId && stockOk && customLabelOk && !submitting;
 
     // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(""); setSuccess("");
 
-        if (!player?.id)       { setError("Please select a player."); return; }
-        if (!selectedGameId)   { setError("Please select a game."); return; }
-        if (!amt || amt <= 0)  { setError("Enter a valid bonus amount."); return; }
+        if (!player?.id) { setError("Please select a player."); return; }
+        if (!selectedGameId) { setError("Please select a game."); return; }
+        if (!amt || amt <= 0) { setError("Enter a valid bonus amount."); return; }
         if (bonusType === "other" && !customLabel.trim()) { setError("Enter a label for the custom bonus."); return; }
-        if (!stockOk)          { setError(`Insufficient game stock. ${selectedGame?.name} has ${selectedGame?.pointStock?.toFixed(0)} pts, need ${amt.toFixed(2)} pts.`); return; }
+        if (!stockOk) { setError(`Insufficient game stock. ${selectedGame?.name} has ${selectedGame?.pointStock?.toFixed(0)} pts, need ${amt.toFixed(2)} pts.`); return; }
 
         // For custom bonus: send the label text as bonusType so backend
         // uses it as the description prefix (requires backend one-liner — see note below).
@@ -176,11 +206,11 @@ export default function BonusPage() {
         try {
             setSubmitting(true);
             await api.bonuses.grantBonus({
-                playerId:  player.id,
-                amount:    amt,
-                gameId:    selectedGameId,
+                playerId: player.id,
+                amount: amt,
+                gameId: selectedGameId,
                 bonusType: bonusTypePayload,
-                notes:     notes.trim() || undefined,
+                notes: notes.trim() || undefined,
             });
 
             const displayLabel = bonusType === "streak" ? "Streak Bonus" : customLabel.trim();
@@ -220,14 +250,52 @@ export default function BonusPage() {
     const resolveLedgerType = (b) => {
         const desc = (b.description || "");
         const descLower = desc.toLowerCase();
-        if (descLower.startsWith("streak bonus"))   return { label: "Streak Bonus",   emoji: "🔥", bg: "#fffbeb", color: "#92400e" };
+        if (descLower.startsWith("streak bonus")) return { label: "Streak Bonus", emoji: "🔥", bg: "#fffbeb", color: "#92400e" };
         if (descLower.startsWith("referral bonus")) return { label: "Referral Bonus", emoji: "👤", bg: "#f0fdf4", color: "#166534" };
-        if (descLower.startsWith("match bonus"))    return { label: "Match Bonus",    emoji: "💰", bg: "#eff6ff", color: "rgb(14, 165, 233)" };
+        if (descLower.startsWith("match bonus")) return { label: "Match Bonus", emoji: "💰", bg: "#eff6ff", color: "rgb(14, 165, 233)" };
         // Extract custom label: everything before " from " in description
         const fromIdx = desc.indexOf(" from ");
         const customType = fromIdx > 0 ? desc.slice(0, fromIdx).trim() : "Custom Bonus";
         return { label: customType, emoji: "🏷️", bg: "#f5f3ff", color: "#5b21b6" };
     };
+
+
+    if (!shiftActive) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                {/* Breadcrumb */}
+                {/* <Breadcrumb /> */}
+                <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
+                    <button onClick={() => navigate('/shifts')} style={{
+                        padding: '9px 18px',
+                        background: 'rgb(14, 165, 233)',
+                        color: 'rgb(255, 255, 255)'
+                    }}
+                    >
+                        Start Shift
+                    </button>
+                </nav>
+
+
+                <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <IAlert />
+                    <div>
+                        <p style={{ fontWeight: '700', color: '#78350f', margin: '0 0 2px', fontSize: '14px' }}>Shift Required</p>
+                        <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift before adding players to the system.</p>
+                    </div>
+                </div>
+                <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '60px 28px', textAlign: 'center' }}>
+                    <div style={{ width: '60px', height: '60px', background: C.amberLt, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${C.amberBdr}` }}>
+                        <ILock />
+                    </div>
+                    <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '800', color: '#78350f' }}>Form Locked</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: C.amber }}>Go to Shifts and start your shift first.</p>
+                </div>
+            </div >
+        );
+    }
+
 
     // ─────────────────────────────────────────────────────────────────────────
     return (
@@ -609,7 +677,7 @@ export default function BonusPage() {
                                             <td style={{ padding: "11px 14px" }}>
                                                 {b.gameName
                                                     ? <span style={{ display: "inline-block", padding: "3px 9px", background: "#f1f5f9", borderRadius: "6px", fontSize: "12px", fontWeight: "500", color: "#475569", whiteSpace: "nowrap" }}>
-                                                          {b.gameName.match(/^[^-]+/)[0].trim()}
+                                                        {b.gameName.match(/^[^-]+/)[0].trim()}
                                                     </span>
                                                     : <span style={{ color: "#cbd5e1" }}>—</span>
                                                 }
