@@ -701,7 +701,9 @@ export default function MissingPlayersPage() {
         {/* Breadcrumb */}
         {/* <Breadcrumb /> */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
-          <button onClick={() => navigate('/shifts')}
+          <button onClick={() => navigate('/shifts')} style={{    padding: '9px 18px',
+    background: 'rgb(14, 165, 233)',
+    color: 'rgb(255, 255, 255)'}}
           >
             Start Shift
           </button>
@@ -877,6 +879,7 @@ const S = {
   errBox: { padding: '10px 12px', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 8, fontSize: 12, color: '#dc2626' },
   okBox: { padding: '10px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, fontSize: 12, color: '#16a34a' },
 };
+
 
 
 
