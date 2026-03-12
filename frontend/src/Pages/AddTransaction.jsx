@@ -436,7 +436,8 @@ function AddTransactionsPage() {
                 {/* Breadcrumb */}
                 {/* <Breadcrumb /> */}
                 <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
-                    <button onClick={() => navigate('/shifts')}>
+                    <button onClick={() => navigate('/shifts') } style={{    background: 'rgb(14, 165, 233)',
+    color: 'rgb(255, 255, 255)'}}>
                         Start Shift
                     </button>
                 </nav>
