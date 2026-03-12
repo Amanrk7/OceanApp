@@ -701,9 +701,11 @@ export default function MissingPlayersPage() {
         {/* Breadcrumb */}
         {/* <Breadcrumb /> */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
-          <button onClick={() => navigate('/shifts')} style={{    padding: '9px 18px',
-    background: 'rgb(14, 165, 233)',
-    color: 'rgb(255, 255, 255)'}}
+          <button onClick={() => navigate('/shifts')} style={{
+            padding: '9px 18px',
+            background: 'rgb(14, 165, 233)',
+            color: 'rgb(255, 255, 255)'
+          }}
           >
             Start Shift
           </button>
@@ -714,7 +716,7 @@ export default function MissingPlayersPage() {
           <IAlert />
           <div>
             <p style={{ fontWeight: '700', color: '#78350f', margin: '0 0 2px', fontSize: '14px' }}>Shift Required</p>
-            <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift before adding players to the system.</p>
+            <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift to look for daily checkups.</p>
           </div>
         </div>
         <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '60px 28px', textAlign: 'center' }}>
@@ -879,7 +881,6 @@ const S = {
   errBox: { padding: '10px 12px', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 8, fontSize: 12, color: '#dc2626' },
   okBox: { padding: '10px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, fontSize: 12, color: '#16a34a' },
 };
-
 
 
 
