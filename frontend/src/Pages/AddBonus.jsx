@@ -72,6 +72,9 @@ const BONUS_TYPES = [
 // MAIN BONUS PAGE
 // ═════════════════════════════════════════════════════════════════════════════
 export default function BonusPage() {
+    const { shiftActive } = useContext(ShiftStatusContext);
+    const navigate = useNavigate();
+
     // ── Player search state ───────────────────────────────────────────────────
     const [player, setPlayer] = useState(null);
     const [query, setQuery] = useState("");
