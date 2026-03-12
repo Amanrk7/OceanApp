@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     CheckCircle, AlertCircle, Search, X, RefreshCw, ChevronDown,
     ArrowDownLeft, ArrowUpRight, Zap, Gift, Star, Users, Wallet, Clock,
 } from "lucide-react";
+import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { api } from "../api";
 
 const LABEL = {
@@ -209,8 +211,21 @@ function LedgerRow({ tx, undoingId, onUndo }) {
     );
 }
 
+// function Breadcrumb() {
+
+//     return (
+//         <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
+
+//             <button onClick={() => navigate('/?page=shifts')}>
+//                 Start Shift
+//             </button>
+//         </nav >
+//     );
+// }
 function AddTransactionsPage() {
     const EMPTY = { txType: "deposit", amount: "", fee: "", gameId: "", walletId: "", notes: "", bonusMatch: false, bonusSpecial: false, bonusReferral: false };
+    const { shiftActive } = useContext(ShiftStatusContext);
+    const navigate = useNavigate();
 
     const [form, setForm] = useState(EMPTY);
     const [player, setPlayer] = useState(null);
@@ -384,6 +399,38 @@ function AddTransactionsPage() {
         } catch (err) { setError(err.message || "Undo failed."); }
         finally { setUndoingId(null); }
     };
+
+
+    if (!shiftActive) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                {/* Breadcrumb */}
+                {/* <Breadcrumb /> */}
+                <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
+                    <button onClick={() => navigate('/?page=shifts')}>
+                        Start Shift
+                    </button>
+                </nav>
+
+
+                <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <IAlert />
+                    <div>
+                        <p style={{ fontWeight: '700', color: '#78350f', margin: '0 0 2px', fontSize: '14px' }}>Shift Required</p>
+                        <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift before adding players to the system.</p>
+                    </div>
+                </div>
+                <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '60px 28px', textAlign: 'center' }}>
+                    <div style={{ width: '60px', height: '60px', background: C.amberLt, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${C.amberBdr}` }}>
+                        <ILock />
+                    </div>
+                    <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '800', color: '#78350f' }}>Form Locked</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: C.amber }}>Go to Shifts and start your shift first.</p>
+                </div>
+            </div >
+        );
+    }
 
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "28px", maxWidth: "inherit" }}>
