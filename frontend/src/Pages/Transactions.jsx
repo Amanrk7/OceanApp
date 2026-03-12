@@ -1,7 +1,35 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { RotateCcw, RefreshCw, CheckCircle, DollarSign, ChevronDown, ChevronUp, Clock, AlertCircle } from 'lucide-react';
 import { api } from '../api';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ShiftStatusContext } from "../Context/membershiftStatus";
 
+
+const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', flexShrink: 0 }}>
+    {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
+  </svg>
+);
+const ICheck = () => <Ico d="M20 6L9 17l-5-5" />;
+const IAlert = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} />;
+const IPlus = () => <Ico d="M12 5v14M5 12h14" />;
+const IX = () => <Ico d="M18 6L6 18M6 6l12 12" />;
+const IUser = () => <Ico d={['M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2', 'M12 11a4 4 0 100-8 4 4 0 000 8z']} />;
+const ILock = () => <Ico d={['M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z', 'M7 11V7a5 5 0 0110 0v4']} />;
+const IMail = () => <Ico d={['M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z', 'M22 6l-10 7L2 6']} />;
+const IPhone = () => <Ico d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />;
+const IUsers = () => <Ico d={['M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2', 'M23 21v-2a4 4 0 00-3-3.87', 'M16 3.13a4 4 0 010 7.75', 'M9 7a4 4 0 100 8 4 4 0 000-8z']} />;
+const IShield = () => <Ico d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />;
+const IWarn = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} size={13} />;
+const C = {
+  sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
+  green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
+  red: '#dc2626', redLt: '#fff1f2', redBdr: '#fecdd3',
+  amber: '#d97706', amberLt: '#fffbeb', amberBdr: '#fcd34d',
+  violet: '#7c3aed', violetLt: '#f5f3ff', violetBdr: '#ddd6fe',
+  slate: '#0f172a', gray: '#64748b', grayLt: '#94a3b8',
+  border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
+};
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
 
@@ -15,16 +43,16 @@ const formatDate = (tx) => {
 };
 
 const TYPE_COLORS = {
-  'Deposit':        { bg: '#dcfce7', text: '#166634' },
-  'Cashout':        { bg: '#fee2e2', text: '#991b1b' },
-  'Match Bonus':    { bg: '#eff6ff', text: '#0369a1' },
-  'Special Bonus':  { bg: '#faf5ff', text: '#6b21a8' },
-  'Bonus':          { bg: '#eff6ff', text: '#0369a1' },
-  'Streak Bonus':   { bg: '#fffbeb', text: '#92400e' },
+  'Deposit': { bg: '#dcfce7', text: '#166634' },
+  'Cashout': { bg: '#fee2e2', text: '#991b1b' },
+  'Match Bonus': { bg: '#eff6ff', text: '#0369a1' },
+  'Special Bonus': { bg: '#faf5ff', text: '#6b21a8' },
+  'Bonus': { bg: '#eff6ff', text: '#0369a1' },
+  'Streak Bonus': { bg: '#fffbeb', text: '#92400e' },
   'Referral Bonus': { bg: '#f0fdf4', text: '#166634' },
-  'Win':            { bg: '#dcfce7', text: '#166634' },
-  'Loss':           { bg: '#fee2e2', text: '#991b1b' },
-  'Freeplay':       { bg: '#fef3c7', text: '#92400e' },
+  'Win': { bg: '#dcfce7', text: '#166634' },
+  'Loss': { bg: '#fee2e2', text: '#991b1b' },
+  'Freeplay': { bg: '#fef3c7', text: '#92400e' },
 };
 
 const getAmountColor = (type) => {
@@ -143,9 +171,9 @@ function StatusBadge({ status, paidAmount, totalAmount }) {
   }
   const s = {
     COMPLETED: { bg: '#dcfce7', text: '#166634' },
-    PENDING:   { bg: '#fef3c7', text: '#92400e' },
+    PENDING: { bg: '#fef3c7', text: '#92400e' },
     CANCELLED: { bg: '#fee2e2', text: '#991b1b' },
-    REJECTED:  { bg: '#fee2e2', text: '#991b1b' },
+    REJECTED: { bg: '#fee2e2', text: '#991b1b' },
   }[status] || { bg: '#f1f5f9', text: '#475569' };
   return (
     <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', background: s.bg, color: s.text, whiteSpace: 'nowrap' }}>
@@ -158,21 +186,21 @@ function StatusBadge({ status, paidAmount, totalAmount }) {
 function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess, onError }) {
   const [showPartial, setShowPartial] = useState(false);
 
-  const isUndoing    = undoingId === tx.id;
-  const isApproving  = approvingId === tx.id;
-  const canUndo      = (tx.status === 'COMPLETED' || tx.status === 'PENDING') && !isUndoing && !isApproving;
+  const isUndoing = undoingId === tx.id;
+  const isApproving = approvingId === tx.id;
+  const canUndo = (tx.status === 'COMPLETED' || tx.status === 'PENDING') && !isUndoing && !isApproving;
   const isDepositRow = tx.type === 'Deposit';
   const isCashoutRow = isCashout(tx);
-  const isPending    = tx.status === 'PENDING';
-  const isCompleted  = tx.status === 'COMPLETED';
-  const positive     = !['Cashout', 'Loss'].includes(tx.type);
+  const isPending = tx.status === 'PENDING';
+  const isCompleted = tx.status === 'COMPLETED';
+  const positive = !['Cashout', 'Loss'].includes(tx.type);
 
-  const feeVal      = parseFloat(tx.fee) || 0;
-  const depositVal  = parseFloat(tx.amount) || 0;
+  const feeVal = parseFloat(tx.fee) || 0;
+  const depositVal = parseFloat(tx.amount) || 0;
   const receivedAmt = depositVal - feeVal;
-  const paidAmount  = parseFloat(tx.paidAmount) || 0;
+  const paidAmount = parseFloat(tx.paidAmount) || 0;
   const totalAmount = depositVal;
-  const isPartial   = isCashoutRow && isPending && paidAmount > 0 && paidAmount < totalAmount;
+  const isPartial = isCashoutRow && isPending && paidAmount > 0 && paidAmount < totalAmount;
 
   const typeStyle = TYPE_COLORS[tx.type] || { bg: '#f1f5f9', text: '#475569' };
 
@@ -243,28 +271,28 @@ function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess
         <td style={{ padding: '12px 14px', minWidth: '110px' }}>
           {(tx.walletMethod || tx.walletName)
             ? <div>
-                <div style={{ fontSize: '12px', fontWeight: '600', color: '#0f172a' }}>{tx.walletMethod || ''}</div>
-                <div style={{ fontSize: '11px', color: '#94a3b8' }}>{tx.walletName || ''}</div>
-              </div>
+              <div style={{ fontSize: '12px', fontWeight: '600', color: '#0f172a' }}>{tx.walletMethod || ''}</div>
+              <div style={{ fontSize: '11px', color: '#94a3b8' }}>{tx.walletName || ''}</div>
+            </div>
             : <span style={{ color: '#e2e8f0', fontSize: '12px' }}>—</span>
           }
         </td>
 
         {/* Balance before → after */}
         <td style={{ padding: '12px 14px', fontSize: '12px', whiteSpace: 'nowrap' }}>
-         {tx.gameStockBefore != null && tx.gameStockAfter != null && (
-    <div style={{ marginTop: tx.balanceBefore != null ? '4px' : '0' }}>
-      <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '1px' }}>Game Points</div>
-      <span style={{ color: '#94a3b8' }}>{parseFloat(tx.gameStockBefore).toFixed(0)}</span>
-      <span style={{ color: tx.gameStockAfter >= tx.gameStockBefore ? '#22c55e' : '#ef4444', fontWeight: '700' }}>
-        {' → '}{parseFloat(tx.gameStockAfter).toFixed(0)}
-      </span>
-    </div>
-  )}
-  {tx.gameStockBefore == null && (
-    <span style={{ color: '#e2e8f0' }}>—</span>
-  )}
-          
+          {tx.gameStockBefore != null && tx.gameStockAfter != null && (
+            <div style={{ marginTop: tx.balanceBefore != null ? '4px' : '0' }}>
+              <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '1px' }}>Game Points</div>
+              <span style={{ color: '#94a3b8' }}>{parseFloat(tx.gameStockBefore).toFixed(0)}</span>
+              <span style={{ color: tx.gameStockAfter >= tx.gameStockBefore ? '#22c55e' : '#ef4444', fontWeight: '700' }}>
+                {' → '}{parseFloat(tx.gameStockAfter).toFixed(0)}
+              </span>
+            </div>
+          )}
+          {tx.gameStockBefore == null && (
+            <span style={{ color: '#e2e8f0' }}>—</span>
+          )}
+
         </td>
 
         {/* Status */}
@@ -345,6 +373,8 @@ function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function Transactions() {
+  const { shiftActive } = useContext(ShiftStatusContext);
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filterTab, setFilterTab] = useState('all');
@@ -434,12 +464,49 @@ export default function Transactions() {
   });
 
   const tabs = [
-    { id: 'all',       label: 'All Transactions', badge: null },
-    { id: 'pending',   label: 'Pending', badge: filterTab !== 'pending' && pendingCashoutCount > 0 ? pendingCashoutCount : null },
+    { id: 'all', label: 'All Transactions', badge: null },
+    { id: 'pending', label: 'Pending', badge: filterTab !== 'pending' && pendingCashoutCount > 0 ? pendingCashoutCount : null },
     { id: 'completed', label: 'Completed', badge: null },
   ];
- 
+
   const headers = ['ID', 'Player', 'Type', 'Amount', 'Fee', 'Received / Paid', 'Game', 'Wallet', 'Before → After', 'Status', 'Date', 'Actions'];
+
+
+  if (!shiftActive) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+        {/* Breadcrumb */}
+        {/* <Breadcrumb /> */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
+          <button onClick={() => navigate('/shifts')} style={{
+            padding: '9px 18px',
+            background: 'rgb(14, 165, 233)',
+            color: 'rgb(255, 255, 255)'
+          }}
+          >
+            Start Shift
+          </button>
+        </nav>
+
+
+        <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+          <IAlert />
+          <div>
+            <p style={{ fontWeight: '700', color: '#78350f', margin: '0 0 2px', fontSize: '14px' }}>Shift Required</p>
+            <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift before adding players to the system.</p>
+          </div>
+        </div>
+        <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '60px 28px', textAlign: 'center' }}>
+          <div style={{ width: '60px', height: '60px', background: C.amberLt, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${C.amberBdr}` }}>
+            <ILock />
+          </div>
+          <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '800', color: '#78350f' }}>Form Locked</p>
+          <p style={{ margin: 0, fontSize: '13px', color: C.amber }}>Go to Shifts and start your shift first.</p>
+        </div>
+      </div >
+    );
+  }
 
   return (
     <div style={{ padding: '4px 0' }}>
