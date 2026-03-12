@@ -350,7 +350,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
-  const handleNav = (id) => { onNavigate(id); setDrawerOpen(false); navigate(`/?page=${id}`); };
+  const handleNav = (id) => { onNavigate(id); setDrawerOpen(false);  };
 
   const DesktopSidebar = (
     <aside className="ob-sidebar">
