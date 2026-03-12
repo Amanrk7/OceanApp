@@ -366,7 +366,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
               <div className="ob-nav-item">
                 <button
                   className={`ob-navlink${activePage === item.id ? ' active' : ''}`}
-                  onClick={() => {!disabled && handleNav(item.id)}
+                  onClick={() => {!disabled && handleNav(item.id)}}
                   disabled={disabled}
                   aria-label={item.label}
                 >
