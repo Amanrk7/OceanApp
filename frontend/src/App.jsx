@@ -718,6 +718,9 @@ export default function App() {
                   <Route path="/PlayerDashboard/:playerId"
                     element={user ? <PlayerDashboardWithSidebar user={user} /> : <LoginPage />}
                   />
+                  <Route path="/shifts"
+                    element={user ? <ShiftsPage user={user} /> : <LoginPage />}
+                  />
                 </Routes>
               </Router>
             </PlayerDashboardPlayerNameProvider>
@@ -727,4 +730,3 @@ export default function App() {
     </ThemeProvider>
   );
 }
-
