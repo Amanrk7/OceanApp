@@ -7,7 +7,8 @@
  *  5. Edit button locked: admin always; member only if they own the task
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useContext } from "react";
+
 import {
   AlertTriangle, Search, RefreshCw,
   Phone, Mail, Camera, Instagram, Send, Users, X,
@@ -15,21 +16,24 @@ import {
   UserCheck, Clock, AlertCircle, CheckCircle, Edit2, Save, User,
   Loader2, Undo2, Lock,
 } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ShiftStatusContext } from "../Context/membershiftStatus";
+
 import { api } from '../api';
 
 // ─── Config ────────────────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 // 2 missing = CRITICAL (orange badge)
 // 3+ missing = HIGHLY CRITICAL (red badge)
-const CRITICAL_THRESHOLD      = 2;
+const CRITICAL_THRESHOLD = 2;
 const HIGH_CRITICAL_THRESHOLD = 3;
 
 const CONTACT_FIELD_META = {
-  email:     { icon: Mail,      label: 'Email',     color: '#3b82f6', bg: '#eff6ff' },
-  phone:     { icon: Phone,     label: 'Phone',     color: '#8b5cf6', bg: '#f5f3ff' },
-  snapchat:  { icon: Camera,    label: 'Snapchat',  color: '#eab308', bg: '#fefce8' },
+  email: { icon: Mail, label: 'Email', color: '#3b82f6', bg: '#eff6ff' },
+  phone: { icon: Phone, label: 'Phone', color: '#8b5cf6', bg: '#f5f3ff' },
+  snapchat: { icon: Camera, label: 'Snapchat', color: '#eab308', bg: '#fefce8' },
   instagram: { icon: Instagram, label: 'Instagram', color: '#ec4899', bg: '#fdf2f8' },
-  telegram:  { icon: Send,      label: 'Telegram',  color: '#0ea5e9', bg: '#f0f9ff' },
+  telegram: { icon: Send, label: 'Telegram', color: '#0ea5e9', bg: '#f0f9ff' },
 };
 const CONTACT_KEYS = Object.keys(CONTACT_FIELD_META);
 
@@ -40,7 +44,7 @@ function getMissingContactFields(player) {
     return !val || String(val).trim() === '';
   });
 }
-function isAdminRole(role)  { return ['ADMIN', 'SUPER_ADMIN'].includes(role); }
+function isAdminRole(role) { return ['ADMIN', 'SUPER_ADMIN'].includes(role); }
 function isMemberRole(role) { return ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'].includes(role); }
 function authHeaders(json = false) {
   const token = localStorage.getItem('authToken');
@@ -51,18 +55,18 @@ function authHeaders(json = false) {
 }
 function getTaskPlayerId(task) {
   if (!task) return null;
-  if (task.playerId)       return String(task.playerId);
+  if (task.playerId) return String(task.playerId);
   if (task.targetPlayerId) return String(task.targetPlayerId);
-  if (task.player?.id)     return String(task.player.id);
-  try { const m = JSON.parse(task.notes || '{}'); if (m.playerId) return String(m.playerId); } catch {}
+  if (task.player?.id) return String(task.player.id);
+  try { const m = JSON.parse(task.notes || '{}'); if (m.playerId) return String(m.playerId); } catch { }
   const m = String(task.description || '').match(/player[_ ]?id[:\s]+(\d+)/i);
   return m ? m[1] : null;
 }
 
 // ─── Avatar ────────────────────────────────────────────────────
 const AVATAR_COLORS = [
-  ['#dc2626','#fff'],['#ea580c','#fff'],['#ca8a04','#fff'],['#16a34a','#fff'],
-  ['#0891b2','#fff'],['#2563eb','#fff'],['#7c3aed','#fff'],['#db2777','#fff'],
+  ['#dc2626', '#fff'], ['#ea580c', '#fff'], ['#ca8a04', '#fff'], ['#16a34a', '#fff'],
+  ['#0891b2', '#fff'], ['#2563eb', '#fff'], ['#7c3aed', '#fff'], ['#db2777', '#fff'],
 ];
 function Avatar({ name, size = 40 }) {
   const idx = (name || '?').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_COLORS.length;
@@ -76,7 +80,7 @@ function Avatar({ name, size = 40 }) {
 
 function TierBadge({ tier }) {
   const map = {
-    GOLD:   { bg: '#fffbeb', color: '#d97706', border: '#fde68a' },
+    GOLD: { bg: '#fffbeb', color: '#d97706', border: '#fde68a' },
     SILVER: { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
     BRONZE: { bg: '#fef3c7', color: '#b45309', border: '#fde68a' },
   };
@@ -101,9 +105,9 @@ function FieldChip({ field }) {
 
 // ─── Inline Admin Assign Dropdown ──────────────────────────────
 function InlineAdminAssign({ player, task, teamMembers, onAssigned, assigning }) {
-  const isDone       = ['COMPLETED', 'DONE'].includes(task?.status);
+  const isDone = ['COMPLETED', 'DONE'].includes(task?.status);
   const currentValue = (!task?.assignToAll && task?.assignedToId) ? String(task.assignedToId) : '';
-  const currentName  = task?.assignedTo?.name || task?.assignedTo?.username;
+  const currentName = task?.assignedTo?.name || task?.assignedTo?.username;
 
   return (
     <div style={{ marginTop: 2 }}>
@@ -138,13 +142,15 @@ function InlineAdminAssign({ player, task, teamMembers, onAssigned, assigning })
         }
       </div>
       {task && (
-        <div style={{ marginTop: 5, fontSize: 11, display: 'flex', alignItems: 'center', gap: 4,
-          color: isDone ? '#16a34a' : task.assignToAll ? '#2563eb' : '#7c3aed' }}>
+        <div style={{
+          marginTop: 5, fontSize: 11, display: 'flex', alignItems: 'center', gap: 4,
+          color: isDone ? '#16a34a' : task.assignToAll ? '#2563eb' : '#7c3aed'
+        }}>
           {isDone
             ? <><CheckCircle2 style={{ width: 10, height: 10 }} /> Task completed</>
             : task.assignToAll
-            ? <><ClipboardList style={{ width: 10, height: 10 }} /> Open to all members</>
-            : <><ClipboardList style={{ width: 10, height: 10 }} /> Task active → {currentName || 'assigned'}</>
+              ? <><ClipboardList style={{ width: 10, height: 10 }} /> Open to all members</>
+              : <><ClipboardList style={{ width: 10, height: 10 }} /> Task active → {currentName || 'assigned'}</>
           }
         </div>
       )}
@@ -159,8 +165,8 @@ function EditModal({ player, onClose, onSaved }) {
     snapchat: player.snapchat || '', instagram: player.instagram || '', telegram: player.telegram || '',
   });
   const [saving, setSaving] = useState(false);
-  const [err, setErr]       = useState(null);
-  const [done, setDone]     = useState(false);
+  const [err, setErr] = useState(null);
+  const [done, setDone] = useState(false);
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const save = async () => {
@@ -168,12 +174,12 @@ function EditModal({ player, onClose, onSaved }) {
     setSaving(true); setErr(null);
     try {
       const res = await api.players.updatePlayer(player.id, {
-        name:      form.name      || undefined,
-        email:     form.email     || null,
-        phone:     form.phone     || null,
-        snapchat:  form.snapchat  || null,
+        name: form.name || undefined,
+        email: form.email || null,
+        phone: form.phone || null,
+        snapchat: form.snapchat || null,
         instagram: form.instagram || null,
-        telegram:  form.telegram  || null,
+        telegram: form.telegram || null,
       });
       setDone(true);
       setTimeout(() => onSaved({ ...player, ...form, ...(res?.data || {}) }), 700);
@@ -181,12 +187,12 @@ function EditModal({ player, onClose, onSaved }) {
   };
 
   const FIELDS = [
-    { key: 'name',      label: 'Full Name',  type: 'text',  required: true },
-    { key: 'email',     label: 'Email',      type: 'email' },
-    { key: 'phone',     label: 'Phone',      type: 'text' },
-    { key: 'telegram',  label: 'Telegram',   type: 'text' },
-    { key: 'instagram', label: 'Instagram',  type: 'text' },
-    { key: 'snapchat',  label: 'Snapchat',   type: 'text' },
+    { key: 'name', label: 'Full Name', type: 'text', required: true },
+    { key: 'email', label: 'Email', type: 'email' },
+    { key: 'phone', label: 'Phone', type: 'text' },
+    { key: 'telegram', label: 'Telegram', type: 'text' },
+    { key: 'instagram', label: 'Instagram', type: 'text' },
+    { key: 'snapchat', label: 'Snapchat', type: 'text' },
   ];
 
   return (
@@ -217,12 +223,12 @@ function EditModal({ player, onClose, onSaved }) {
                   placeholder={`Enter ${f.label.toLowerCase()}…`}
                   style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${isMissing ? '#fca5a5' : '#e2e8f0'}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', background: isMissing ? '#fff5f5' : '#fff' }}
                   onFocus={e => e.target.style.borderColor = '#3b82f6'}
-                  onBlur={e  => e.target.style.borderColor = isMissing ? '#fca5a5' : '#e2e8f0'}
+                  onBlur={e => e.target.style.borderColor = isMissing ? '#fca5a5' : '#e2e8f0'}
                 />
               </div>
             );
           })}
-          {err  && <div style={S.errBox}>⚠️ {err}</div>}
+          {err && <div style={S.errBox}>⚠️ {err}</div>}
           {done && <div style={S.okBox}>✅ Updated! Task synced automatically.</div>}
         </div>
         <div style={{ padding: '14px 20px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', gap: 10 }}>
@@ -242,20 +248,20 @@ function PlayerCard({
   player, onEdit, onInlineAssign, onClaim, onUndoTask,
   userRole, task, claimingId, assigningId, undoingId, teamMembers, currentUserId,
 }) {
-  const missing        = getMissingContactFields(player);
-  const isCritical     = missing.length >= CRITICAL_THRESHOLD;
+  const missing = getMissingContactFields(player);
+  const isCritical = missing.length >= CRITICAL_THRESHOLD;
   const isHighCritical = missing.length >= HIGH_CRITICAL_THRESHOLD;
-  const isAdmin        = isAdminRole(userRole);
-  const isMember       = isMemberRole(userRole);
-  const claiming       = claimingId === player.id;
-  const assigning      = assigningId === player.id;
-  const undoing        = undoingId  === player.id;
+  const isAdmin = isAdminRole(userRole);
+  const isMember = isMemberRole(userRole);
+  const claiming = claimingId === player.id;
+  const assigning = assigningId === player.id;
+  const undoing = undoingId === player.id;
 
-  const isDone           = ['COMPLETED', 'DONE'].includes(task?.status);
-  const isOpenToAll      = !!task && (task.assignToAll === true || !task.assignedToId);
-  const isAssigned       = !!task && !!task.assignedToId && !task.assignToAll;
-  const assignedName     = task?.assignedTo?.name || task?.assignedTo?.username;
-  const isClaimedByMe    = isAssigned && currentUserId && String(task.assignedToId) === String(currentUserId);
+  const isDone = ['COMPLETED', 'DONE'].includes(task?.status);
+  const isOpenToAll = !!task && (task.assignToAll === true || !task.assignedToId);
+  const isAssigned = !!task && !!task.assignedToId && !task.assignToAll;
+  const assignedName = task?.assignedTo?.name || task?.assignedTo?.username;
+  const isClaimedByMe = isAssigned && currentUserId && String(task.assignedToId) === String(currentUserId);
   const isClaimedByOther = isAssigned && !isClaimedByMe;
 
   // ── Edit permission: admin always; member only if they own the task ──
@@ -269,8 +275,8 @@ function PlayerCard({
       border: isDone
         ? '2px solid #86efac'
         : isHighCritical ? '2px solid #ef4444'
-        : isCritical ? '1.5px solid #fca5a5'
-        : '1px solid #e2e8f0',
+          : isCritical ? '1.5px solid #fca5a5'
+            : '1px solid #e2e8f0',
       background: isDone ? '#f0fdf4' : isHighCritical ? '#fff5f5' : isCritical ? '#fffbfb' : '#fff',
       display: 'flex', flexDirection: 'column', gap: 10,
     }}>
@@ -303,11 +309,11 @@ function PlayerCard({
         </div>
         {missing.length === 0
           ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#22c55e', fontWeight: 600 }}>
-              <CheckCircle style={{ width: 11, height: 11 }} /> All contact info present
-            </span>
+            <CheckCircle style={{ width: 11, height: 11 }} /> All contact info present
+          </span>
           : <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-              {missing.map(f => <FieldChip key={f} field={f} />)}
-            </div>
+            {missing.map(f => <FieldChip key={f} field={f} />)}
+          </div>
         }
       </div>
 
@@ -416,23 +422,27 @@ function StatCard({ label, value, color, bg, icon: Icon, highlight }) {
 // MAIN PAGE
 // ═══════════════════════════════════════════════════════════════
 export default function MissingPlayersPage() {
-  const [players,       setPlayers]       = useState([]);
-  const [loading,       setLoading]       = useState(true);
-  const [error,         setError]         = useState(null);
-  const [search,        setSearch]        = useState('');
-  const [filter,        setFilter]        = useState('all');
-  const [editTarget,    setEditTarget]    = useState(null);
-  const [tasks,         setTasks]         = useState({});         // String(playerId) → task
-  const [teamMembers,   setTeamMembers]   = useState([]);
-  const [userRole,      setUserRole]      = useState(null);
+  const { shiftActive } = useContext(ShiftStatusContext);
+  const navigate = useNavigate();
+  const [players, setPlayers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [editTarget, setEditTarget] = useState(null);
+  const [tasks, setTasks] = useState({});         // String(playerId) → task
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [userRole, setUserRole] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [claimingId,    setClaimingId]    = useState(null);
-  const [assigningId,   setAssigningId]   = useState(null);
-  const [undoingId,     setUndoingId]     = useState(null);
-  const [autoRefresh,   setAutoRefresh]   = useState(true);
-  const [lastRefresh,   setLastRefresh]   = useState(new Date());
-  const [refreshKey,    setRefreshKey]    = useState(0);
+  const [claimingId, setClaimingId] = useState(null);
+  const [assigningId, setAssigningId] = useState(null);
+  const [undoingId, setUndoingId] = useState(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [refreshKey, setRefreshKey] = useState(0);
   const sseRef = useRef(null);
+
+
 
   // ── Current user ──────────────────────────────────────────────
   useEffect(() => {
@@ -442,11 +452,11 @@ export default function MissingPlayersPage() {
         setUserRole(u?.role || null);
         setCurrentUserId(u?.id ? String(u.id) : null);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     api.tasks.getTeamMembers()
       .then(res => setTeamMembers(res?.data || res || []))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // ── Load players ──────────────────────────────────────────────
@@ -454,7 +464,7 @@ export default function MissingPlayersPage() {
     if (!silent) setLoading(true);
     setError(null);
     try {
-      const res  = await api.players.getMissingInfo(true);
+      const res = await api.players.getMissingInfo(true);
       // Backend already filters to players with ≥1 missing field
       const list = res?.data || res?.players || res || [];
       setPlayers(Array.isArray(list) ? list.filter(p => getMissingContactFields(p).length > 0) : []);
@@ -469,14 +479,14 @@ export default function MissingPlayersPage() {
   // ── Load MISSING_INFO tasks ───────────────────────────────────
   const loadTasks = useCallback(async () => {
     try {
-      const res  = await fetch(`${API_BASE}/tasks?taskType=MISSING_INFO`, { credentials: 'include', headers: authHeaders() });
+      const res = await fetch(`${API_BASE}/tasks?taskType=MISSING_INFO`, { credentials: 'include', headers: authHeaders() });
       if (!res.ok) return;
       const data = await res.json();
       const list = data?.data || [];
-      const map  = {};
+      const map = {};
       list.forEach(task => { const pid = getTaskPlayerId(task); if (pid) map[pid] = task; });
       setTasks(map);
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => { loadPlayers(); loadTasks(); }, [loadPlayers, loadTasks, refreshKey]);
@@ -514,10 +524,10 @@ export default function MissingPlayersPage() {
           if (type === 'player_updated') {
             loadPlayers(true);
           }
-        } catch {}
+        } catch { }
       };
-      es.onerror = () => {};
-    } catch {}
+      es.onerror = () => { };
+    } catch { }
     return () => sseRef.current?.close();
   }, [loadPlayers, loadTasks]);
 
@@ -534,7 +544,7 @@ export default function MissingPlayersPage() {
       if (res.status === 409) { if (data.existingTaskId) await loadTasks(); return; }
       if (!res.ok) throw new Error(data.error || data.message || 'Failed to assign task');
       const task = data.data || data.task || data;
-      const pid  = getTaskPlayerId(task) || String(player.id);
+      const pid = getTaskPlayerId(task) || String(player.id);
       setTasks(prev => ({ ...prev, [pid]: task }));
     } catch (e) {
       setError(e.message);
@@ -550,13 +560,13 @@ export default function MissingPlayersPage() {
     setError(null);
     try {
       if (task?.id) {
-        const res  = await fetch(`${API_BASE}/tasks/${task.id}/claim`, { method: 'POST', credentials: 'include', headers: authHeaders(true) });
+        const res = await fetch(`${API_BASE}/tasks/${task.id}/claim`, { method: 'POST', credentials: 'include', headers: authHeaders(true) });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to claim task');
         const updated = { ...(data.data || data.task || data), assignToAll: false, assignedToId: parseInt(currentUserId) };
         setTasks(prev => ({ ...prev, [String(player.id)]: updated }));
       } else {
-        const res  = await fetch(`${API_BASE}/players/${player.id}/assign-missing-info-task`, {
+        const res = await fetch(`${API_BASE}/players/${player.id}/assign-missing-info-task`, {
           method: 'POST', credentials: 'include', headers: authHeaders(true),
           body: JSON.stringify({ assignedToId: parseInt(currentUserId), priority: 'MEDIUM' }),
         });
@@ -564,7 +574,7 @@ export default function MissingPlayersPage() {
         if (res.status === 409) { await loadTasks(); return; }
         if (!res.ok) throw new Error(data.error || data.message || 'Failed to claim');
         const newTask = data.data || data.task || data;
-        const pid     = getTaskPlayerId(newTask) || String(player.id);
+        const pid = getTaskPlayerId(newTask) || String(player.id);
         setTasks(prev => ({ ...prev, [pid]: newTask }));
       }
       setTimeout(loadTasks, 1000);
@@ -581,13 +591,13 @@ export default function MissingPlayersPage() {
     setUndoingId(player.id);
     setError(null);
     try {
-      const res  = await fetch(`${API_BASE}/tasks/${task.id}/undo-completion`, {
+      const res = await fetch(`${API_BASE}/tasks/${task.id}/undo-completion`, {
         method: 'POST', credentials: 'include', headers: authHeaders(true),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to undo task');
       const updated = data.data || data.task || data;
-      const pid     = getTaskPlayerId(updated) || String(player.id);
+      const pid = getTaskPlayerId(updated) || String(player.id);
       setTasks(prev => ({ ...prev, [pid]: updated }));
     } catch (e) {
       setError(e.message);
@@ -611,13 +621,13 @@ export default function MissingPlayersPage() {
 
   // ── Stats (based on what's visible) ──────────────────────────
   const stats = {
-    total:         players.length,
-    highCritical:  players.filter(p => getMissingContactFields(p).length >= HIGH_CRITICAL_THRESHOLD).length,
-    critical:      players.filter(p => getMissingContactFields(p).length >= CRITICAL_THRESHOLD).length,
-    misSnap:       players.filter(p => getMissingContactFields(p).includes('snapchat')).length,
-    misPhone:      players.filter(p => getMissingContactFields(p).includes('phone')).length,
-    misEmail:      players.filter(p => getMissingContactFields(p).includes('email')).length,
-    unassigned:    players.filter(p => !tasks[String(p.id)]).length,
+    total: players.length,
+    highCritical: players.filter(p => getMissingContactFields(p).length >= HIGH_CRITICAL_THRESHOLD).length,
+    critical: players.filter(p => getMissingContactFields(p).length >= CRITICAL_THRESHOLD).length,
+    misSnap: players.filter(p => getMissingContactFields(p).includes('snapchat')).length,
+    misPhone: players.filter(p => getMissingContactFields(p).includes('phone')).length,
+    misEmail: players.filter(p => getMissingContactFields(p).includes('email')).length,
+    unassigned: players.filter(p => !tasks[String(p.id)]).length,
   };
 
   // ── Filtered list ─────────────────────────────────────────────
@@ -627,26 +637,59 @@ export default function MissingPlayersPage() {
     const matchSearch =
       !q || p.name?.toLowerCase().includes(q) || p.username?.toLowerCase().includes(q);
     const matchFilter =
-      filter === 'all'          ? true :
-      filter === 'highcritical' ? missing.length >= HIGH_CRITICAL_THRESHOLD :
-      filter === 'critical'     ? missing.length >= CRITICAL_THRESHOLD :
-      filter === 'unassigned'   ? !tasks[String(p.id)] :
-      CONTACT_KEYS.includes(filter) ? missing.includes(filter) : true;
+      filter === 'all' ? true :
+        filter === 'highcritical' ? missing.length >= HIGH_CRITICAL_THRESHOLD :
+          filter === 'critical' ? missing.length >= CRITICAL_THRESHOLD :
+            filter === 'unassigned' ? !tasks[String(p.id)] :
+              CONTACT_KEYS.includes(filter) ? missing.includes(filter) : true;
     return matchSearch && matchFilter;
   });
 
-  const isAdmin  = isAdminRole(userRole);
+  const isAdmin = isAdminRole(userRole);
   const isMember = isMemberRole(userRole);
 
   const FILTERS = [
-    { id: 'all',          label: 'All',             count: stats.total        },
+    { id: 'all', label: 'All', count: stats.total },
     { id: 'highcritical', label: '🔴 Highly Critical', count: stats.highCritical },
-    { id: 'critical',     label: '🟠 Critical',      count: stats.critical     },
-    { id: 'snapchat',     label: 'Snapchat',         count: stats.misSnap      },
-    { id: 'phone',        label: 'Phone',            count: stats.misPhone     },
-    { id: 'email',        label: 'Email',            count: stats.misEmail     },
-    { id: 'unassigned',   label: 'Unassigned',       count: stats.unassigned   },
+    { id: 'critical', label: '🟠 Critical', count: stats.critical },
+    { id: 'snapchat', label: 'Snapchat', count: stats.misSnap },
+    { id: 'phone', label: 'Phone', count: stats.misPhone },
+    { id: 'email', label: 'Email', count: stats.misEmail },
+    { id: 'unassigned', label: 'Unassigned', count: stats.unassigned },
   ];
+
+  if (!shiftActive) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+        {/* Breadcrumb */}
+        {/* <Breadcrumb /> */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
+          <button onClick={() => navigate('/?page=shifts')}>
+            Start Shift
+          </button>
+        </nav>
+
+
+        <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+          <IAlert />
+          <div>
+            <p style={{ fontWeight: '700', color: '#78350f', margin: '0 0 2px', fontSize: '14px' }}>Shift Required</p>
+            <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift before adding players to the system.</p>
+          </div>
+        </div>
+        <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '60px 28px', textAlign: 'center' }}>
+          <div style={{ width: '60px', height: '60px', background: C.amberLt, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${C.amberBdr}` }}>
+            <ILock />
+          </div>
+          <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '800', color: '#78350f' }}>Form Locked</p>
+          <p style={{ margin: 0, fontSize: '13px', color: C.amber }}>Go to Shifts and start your shift first.</p>
+        </div>
+      </div >
+    );
+  }
+
+
 
   return (
     <div style={S.page}>
@@ -679,12 +722,12 @@ export default function MissingPlayersPage() {
 
       {/* Stats */}
       <div style={S.statsGrid}>
-        <StatCard label="Total (Missing Info)"     value={stats.total}        color="#64748b" bg="#f8fafc"  icon={Users}         />
-        <StatCard label="Highly Critical (3+)"     value={stats.highCritical} color="#dc2626" bg="#fff1f2"  icon={AlertTriangle} highlight={stats.highCritical > 0} />
-        <StatCard label="Critical (2+ missing)"    value={stats.critical}     color="#f97316" bg="#fff7ed"  icon={AlertCircle}   highlight={stats.critical > 0} />
-        <StatCard label="Missing Snapchat"         value={stats.misSnap}      color="#eab308" bg="#fefce8"  icon={Camera}        />
-        <StatCard label="Missing Phone"            value={stats.misPhone}     color="#8b5cf6" bg="#f5f3ff"  icon={Phone}         />
-        <StatCard label="Missing Email"            value={stats.misEmail}     color="#3b82f6" bg="#eff6ff"  icon={Mail}          />
+        <StatCard label="Total (Missing Info)" value={stats.total} color="#64748b" bg="#f8fafc" icon={Users} />
+        <StatCard label="Highly Critical (3+)" value={stats.highCritical} color="#dc2626" bg="#fff1f2" icon={AlertTriangle} highlight={stats.highCritical > 0} />
+        <StatCard label="Critical (2+ missing)" value={stats.critical} color="#f97316" bg="#fff7ed" icon={AlertCircle} highlight={stats.critical > 0} />
+        <StatCard label="Missing Snapchat" value={stats.misSnap} color="#eab308" bg="#fefce8" icon={Camera} />
+        <StatCard label="Missing Phone" value={stats.misPhone} color="#8b5cf6" bg="#f5f3ff" icon={Phone} />
+        <StatCard label="Missing Email" value={stats.misEmail} color="#3b82f6" bg="#eff6ff" icon={Mail} />
       </div>
 
       {/* Error */}
@@ -714,7 +757,7 @@ export default function MissingPlayersPage() {
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or username…"
           style={{ width: '100%', padding: '11px 36px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
           onFocus={e => e.target.style.borderColor = '#3b82f6'}
-          onBlur={e  => e.target.style.borderColor = '#e2e8f0'}
+          onBlur={e => e.target.style.borderColor = '#e2e8f0'}
         />
         {search && (
           <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
@@ -783,18 +826,17 @@ export default function MissingPlayersPage() {
 
 // ─── Shared styles ──────────────────────────────────────────────
 const S = {
-  page:       { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', maxWidth: 1400, margin: '0 auto' },
-  header:     { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 12 },
-  pageIcon:   { width: 44, height: 44, borderRadius: 12, background: '#fff1f2', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  page: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', maxWidth: 1400, margin: '0 auto' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 12 },
+  pageIcon: { width: 44, height: 44, borderRadius: 12, background: '#fff1f2', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   refreshBtn: { display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', border: '1px solid #e2e8f0', borderRadius: 10, background: '#fff', fontSize: 12, fontWeight: 600, color: '#374151', cursor: 'pointer', fontFamily: 'inherit' },
-  statsGrid:  { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12, marginBottom: 20 },
-  grid:       { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 },
-  empty:      { textAlign: 'center', padding: '60px 20px', color: '#94a3b8', fontSize: 14 },
-  btn:        { fontSize: 11, fontWeight: 600, borderRadius: 6, padding: '4px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' },
-  iconBtn:    { background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4 },
-  cancelBtn:  { flex: 1, padding: 10, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', color: '#374151' },
+  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12, marginBottom: 20 },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 },
+  empty: { textAlign: 'center', padding: '60px 20px', color: '#94a3b8', fontSize: 14 },
+  btn: { fontSize: 11, fontWeight: 600, borderRadius: 6, padding: '4px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' },
+  iconBtn: { background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4 },
+  cancelBtn: { flex: 1, padding: 10, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', color: '#374151' },
   primaryBtn: { flex: 2, padding: 10, border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' },
-  errBox:     { padding: '10px 12px', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 8, fontSize: 12, color: '#dc2626' },
-  okBox:      { padding: '10px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, fontSize: 12, color: '#16a34a' },
+  errBox: { padding: '10px 12px', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 8, fontSize: 12, color: '#dc2626' },
+  okBox: { padding: '10px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, fontSize: 12, color: '#16a34a' },
 };
-
