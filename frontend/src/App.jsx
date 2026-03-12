@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useContext } from "react";
-import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation, useParams } from "react-router-dom";
 import { api } from "./api";
 import { AddPlayerProvider } from "./Context/addPlayer.jsx";
 import { PlayerDashboardPlayerNameProvider } from "./Context/playerDashboardPlayerNamecontext.jsx";
@@ -350,7 +350,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
-  const handleNav = (id) => { onNavigate(id); setDrawerOpen(false); };
+  const handleNav = (id) => { onNavigate(id); setDrawerOpen(false); navigate(`/?page=${id}`); };
 
   const DesktopSidebar = (
     <aside className="ob-sidebar">
@@ -366,7 +366,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
               <div className="ob-nav-item">
                 <button
                   className={`ob-navlink${activePage === item.id ? ' active' : ''}`}
-                  onClick={() => !disabled && handleNav(item.id)}
+                  onClick={() => {!disabled && handleNav(item.id)}
                   disabled={disabled}
                   aria-label={item.label}
                 >
