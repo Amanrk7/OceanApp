@@ -350,7 +350,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
-  const handleNav = (id) => { onNavigate(id); setDrawerOpen(false);  };
+  const handleNav = (id) => { onNavigate(id); setDrawerOpen(false); };
 
   const DesktopSidebar = (
     <aside className="ob-sidebar">
@@ -366,7 +366,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
               <div className="ob-nav-item">
                 <button
                   className={`ob-navlink${activePage === item.id ? ' active' : ''}`}
-                  onClick={() => {!disabled && handleNav(item.id)}}
+                  onClick={() => { !disabled && handleNav(item.id) }}
                   disabled={disabled}
                   aria-label={item.label}
                 >
@@ -543,10 +543,10 @@ function AdminDashboard({ user }) {
   const renderPage = () => {
     switch (page) {
       case "dashboard": return <AnalyticsDashboard />;
-      case "memberDashboard": return <TeamDashboard user={user}/>;
+      case "memberDashboard": return <TeamDashboard user={user} />;
       case "players": return <Players />;
-      case "dailyCheckups": return <MissingPlayersPage currentUser={user}/>;
-      case "playTime" : return <Playtimepage />;
+      case "dailyCheckups": return <MissingPlayersPage currentUser={user} />;
+      case "playTime": return <Playtimepage />;
       case "attendance": return <Attendance />;
       case "games": return <Games user={user} />;
       case "issues": return <Issues />;
@@ -619,6 +619,38 @@ function PlayerDashboardWithSidebar({ user }) {
   );
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════
+function ShiftsWithSidebar({ user }) {
+  const { setUsr } = useContext(CurrentUserContext);
+  setUsr(user);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+  const handleLogout = async () => {
+    try { setLoading(true); await api.auth.logout(); window.location.reload(); }
+    catch { } finally { setLoading(false); }
+  };
+
+  return (
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--color-bg)", width: "100vw" }}>
+      <Sidebar
+        user={user}
+        activePage="shifts"
+        onNavigate={(id) => navigate(`/?page=${id}`)}
+        onLogout={handleLogout}
+      />
+      <main className="ob-main">
+        <div className="ob-container">
+          <div className="ob-header">
+            <h1>Shifts</h1>
+          </div>
+          <ShiftsPage />
+        </div>
+      </main>
+    </div>
+  );
+}
 // ══════════════════════════════════════════════════════════════════════════
 // LOGIN PAGE
 // ══════════════════════════════════════════════════════════════════════════
@@ -718,8 +750,9 @@ export default function App() {
                   <Route path="/PlayerDashboard/:playerId"
                     element={user ? <PlayerDashboardWithSidebar user={user} /> : <LoginPage />}
                   />
+
                   <Route path="/shifts"
-                    element={user ? <ShiftsPage user={user} /> : <LoginPage />}
+                    element={user ? <ShiftsWithSidebar user={user} /> : <LoginPage />}
                   />
                 </Routes>
               </Router>
