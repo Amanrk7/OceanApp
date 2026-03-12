@@ -28,6 +28,42 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const CRITICAL_THRESHOLD = 2;
 const HIGH_CRITICAL_THRESHOLD = 3;
 
+// ─── Inline SVG icons ─────────────────────────────────────────────────────────
+const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', flexShrink: 0 }}>
+    {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
+  </svg>
+);
+const ICheck = () => <Ico d="M20 6L9 17l-5-5" />;
+const IAlert = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} />;
+const IPlus = () => <Ico d="M12 5v14M5 12h14" />;
+const IX = () => <Ico d="M18 6L6 18M6 6l12 12" />;
+const IUser = () => <Ico d={['M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2', 'M12 11a4 4 0 100-8 4 4 0 000 8z']} />;
+const ILock = () => <Ico d={['M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z', 'M7 11V7a5 5 0 0110 0v4']} />;
+const IMail = () => <Ico d={['M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z', 'M22 6l-10 7L2 6']} />;
+const IPhone = () => <Ico d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />;
+const IUsers = () => <Ico d={['M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2', 'M23 21v-2a4 4 0 00-3-3.87', 'M16 3.13a4 4 0 010 7.75', 'M9 7a4 4 0 100 8 4 4 0 000-8z']} />;
+const IShield = () => <Ico d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />;
+const IWarn = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} size={13} />;
+const C = {
+  sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
+  green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
+  red: '#dc2626', redLt: '#fff1f2', redBdr: '#fecdd3',
+  amber: '#d97706', amberLt: '#fffbeb', amberBdr: '#fcd34d',
+  violet: '#7c3aed', violetLt: '#f5f3ff', violetBdr: '#ddd6fe',
+  slate: '#0f172a', gray: '#64748b', grayLt: '#94a3b8',
+  border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
+};
+const LABEL = {
+  display: "block", fontSize: "11px", fontWeight: "700",
+  color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px",
+};
+const INPUT = {
+  width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0",
+  borderRadius: "8px", fontSize: "14px", fontFamily: "inherit",
+  boxSizing: "border-box", background: "#fff", color: "#0f172a", outline: "none",
+};
+
 const CONTACT_FIELD_META = {
   email: { icon: Mail, label: 'Email', color: '#3b82f6', bg: '#eff6ff' },
   phone: { icon: Phone, label: 'Phone', color: '#8b5cf6', bg: '#f5f3ff' },
