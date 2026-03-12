@@ -8,6 +8,16 @@ import { ShiftStatusContext } from "../Context/membershiftStatus";
 
 import { api } from "../api";
 
+
+const C = {
+    sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
+    green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
+    red: '#dc2626', redLt: '#fff1f2', redBdr: '#fecdd3',
+    amber: '#d97706', amberLt: '#fffbeb', amberBdr: '#fcd34d',
+    violet: '#7c3aed', violetLt: '#f5f3ff', violetBdr: '#ddd6fe',
+    slate: '#0f172a', gray: '#64748b', grayLt: '#94a3b8',
+    border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
+};
 const LABEL = {
     display: "block", fontSize: "11px", fontWeight: "700",
     color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px",
@@ -415,7 +425,7 @@ function AddTransactionsPage() {
                 </nav>
 
 
-                <div style={{ padding: '14px 18px', borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                     <IAlert />
                     <div>
                         <p style={{ fontWeight: '700', color: '#78350f', margin: '0 0 2px', fontSize: '14px' }}>Shift Required</p>
@@ -423,7 +433,7 @@ function AddTransactionsPage() {
                     </div>
                 </div>
                 <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '60px 28px', textAlign: 'center' }}>
-                    <div style={{ width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${C.amberBdr}` }}>
+                    <div style={{ width: '60px', height: '60px', background: C.amberLt, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${C.amberBdr}` }}>
                         <ILock />
                     </div>
                     <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '800', color: '#78350f' }}>Form Locked</p>
