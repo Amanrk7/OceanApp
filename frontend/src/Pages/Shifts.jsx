@@ -72,9 +72,9 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
     const token = localStorage.getItem('authToken');
     if (!token) { setLoading(false); return; }
     Promise.all([
-      fj('/api/wallets'),
-      fj('/api/games'),
-      fj('/api/tasks?myTasks=true'),
+      fj('/wallets'),
+      fj('/games'),
+      fj('/tasks?myTasks=true'),
     ])
       .then(([w, g, t]) => {
         setWallets((w.data ?? []).flatMap(grp => grp.subAccounts ?? []));
