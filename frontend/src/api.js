@@ -445,6 +445,32 @@ export const bonusesAPI = {
 };
 
 // ═══════════════════════════════════════════════════════════════
+// STREAK API
+// ═══════════════════════════════════════════════════════════════
+
+export const streakAPI = {
+  freeze: (playerId, hours, note) =>
+    fetchAPI(`/players/${playerId}/streak/freeze`, {
+      method: 'POST',
+      body: JSON.stringify({ hours, note }),
+    }),
+ 
+  extendFreeze: (playerId, hours, note) =>
+    fetchAPI(`/players/${playerId}/streak/extend-freeze`, {
+      method: 'POST',
+      body: JSON.stringify({ hours, note }),
+    }),
+ 
+  unfreeze: (playerId) =>
+    fetchAPI(`/players/${playerId}/streak/unfreeze`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    }),
+ 
+  getStatus: (playerId) =>
+    fetchAPI(`/players/${playerId}/streak/freeze-status`),
+};
+// ═══════════════════════════════════════════════════════════════
 // WALLETS API
 // ═══════════════════════════════════════════════════════════════
 
@@ -599,6 +625,7 @@ export const api = {
   shifts: shiftApi,
   expenses: expensesAPI,
   bonuses: bonusesAPI,
+  streak: streakAPI,
   tasks: tasksAPI,
   reports: reportsAPI,
   clearCache: () => cache.clearAll(),
