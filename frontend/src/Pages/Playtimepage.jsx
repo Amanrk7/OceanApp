@@ -57,30 +57,12 @@ const CARD = {
 };
 
 // ─── Freeze API helpers ───────────────────────────────────────────────────────
-// Strip any trailing /api so we never get /api/api/... doubling.
-// Works whether VITE_API_URL is set to:
-//   https://oceanappbackend.onrender.com       ← bare origin
-//   https://oceanappbackend.onrender.com/api   ← with /api suffix (common pattern)
-const _RAW_BASE = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL)
-    || "https://oceanappbackend.onrender.com";
-const _API_BASE = _RAW_BASE.replace(/\/api\/?$/, "");  // always the bare origin
-
-async function _backendPost(path, body = {}) {
-    const res = await fetch(`${_API_BASE}${path}`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
-    return data;
-}
-
+// Calls api.streak.* which you need to add to api.js (see instructions below).
+// This ensures the same auth headers / base URL used by all other api calls.
 const freezeApi = {
-    freeze:   (playerId, hours, note) => _backendPost(`/api/players/${playerId}/streak/freeze`,        { hours, note }),
-    extend:   (playerId, hours, note) => _backendPost(`/api/players/${playerId}/streak/extend-freeze`, { hours, note }),
-    unfreeze: (playerId)              => _backendPost(`/api/players/${playerId}/streak/unfreeze`,       {}),
+    freeze:   (playerId, hours, note) => api.streak.freeze(playerId, hours, note),
+    extend:   (playerId, hours, note) => api.streak.extendFreeze(playerId, hours, note),
+    unfreeze: (playerId)              => api.streak.unfreeze(playerId),
 };
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
@@ -846,7 +828,7 @@ export default function PlaytimePage() {
     // ── SSE real-time ────────────────────────────────────────────────────────
     useEffect(() => {
         try {
-            const es = new EventSource(`${_API_BASE}/api/tasks/events`, { withCredentials: true });
+            const es = new EventSource(`${api.baseURL}/api/tasks/events`, { withCredentials: true });
             sseRef.current = es;
             const refresh = () => {
                 detailCache.current = {};
