@@ -57,11 +57,13 @@ const CARD = {
 };
 
 // ─── Freeze API helpers ───────────────────────────────────────────────────────
-// Uses the same backend base URL as the rest of the app.
-// VITE_API_URL must be set in your Vercel env vars:
-//   VITE_API_URL=https://oceanappbackend.onrender.com
-const _API_BASE = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL)
+// Strip any trailing /api so we never get /api/api/... doubling.
+// Works whether VITE_API_URL is set to:
+//   https://oceanappbackend.onrender.com       ← bare origin
+//   https://oceanappbackend.onrender.com/api   ← with /api suffix (common pattern)
+const _RAW_BASE = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL)
     || "https://oceanappbackend.onrender.com";
+const _API_BASE = _RAW_BASE.replace(/\/api\/?$/, "");  // always the bare origin
 
 async function _backendPost(path, body = {}) {
     const res = await fetch(`${_API_BASE}${path}`, {
@@ -844,7 +846,7 @@ export default function PlaytimePage() {
     // ── SSE real-time ────────────────────────────────────────────────────────
     useEffect(() => {
         try {
-            const es = new EventSource("/api/tasks/events", { withCredentials: true });
+            const es = new EventSource(`${_API_BASE}/api/tasks/events`, { withCredentials: true });
             sseRef.current = es;
             const refresh = () => {
                 detailCache.current = {};
