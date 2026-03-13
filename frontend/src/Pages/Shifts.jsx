@@ -279,9 +279,9 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
     if (!token) { setLoading(false); return; }
     const fromDate = encodeURIComponent(new Date(shift.startTime).toISOString());
     Promise.all([
-      fj('/api/wallets'),
-      fj('/api/games'),
-      fj(`/api/transactions?limit=500&status=COMPLETED&fromDate=${fromDate}`),
+      fj('/wallets'),
+      fj('/games'),
+      fj(`/transactions?limit=500&status=COMPLETED&fromDate=${fromDate}`),
     ])
       .then(([w, g, txns]) => {
         setEndWallets((w.data ?? []).flatMap(grp => grp.subAccounts ?? []));
@@ -653,7 +653,7 @@ export const ShiftsPage = () => {
         const [activeRes, historyRes, tasksRes] = await Promise.all([
           api.shifts.getActiveShift(usr.role),
           api.shifts.getShifts(usr.role),
-          token ? fj('/api/tasks?myTasks=true') : Promise.resolve({ data: [] }),
+          token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
         ]);
         if (activeRes?.data) {
           const sh = activeRes.data;
@@ -661,7 +661,7 @@ export const ShiftsPage = () => {
           setActiveShift(sh);
           setShiftActive(true);
           // Restore start snapshot from checkin record
-          const checkinRes = await fj(`/api/shifts/${sh.id}/checkin`).catch(() => null);
+          const checkinRes = await fj(`/shifts/${sh.id}/checkin`).catch(() => null);
           if (checkinRes?.data?.balanceNote) {
             try { setStartSnapshot(JSON.parse(checkinRes.data.balanceNote)); } catch (_) {}
           }
@@ -687,7 +687,7 @@ export const ShiftsPage = () => {
       activeShiftIdRef.current = shiftId;
       setActiveShift(res.data);
       // 2) record checkin snapshot
-      await fj(`/api/shifts/${shiftId}/checkin`, {
+      await fj(`/shifts/${shiftId}/checkin`, {
         method:'POST',
         body: JSON.stringify({ confirmedBalance: snapshot.totalWallet, balanceNote: JSON.stringify(snapshot) }),
       });
@@ -706,7 +706,7 @@ export const ShiftsPage = () => {
     try {
       setLoading(true);
       // 1) submit end-of-shift form
-      await fj(`/api/shifts/${shiftId}/checkout`, {
+      await fj(`/shifts/${shiftId}/checkout`, {
         method:'POST',
         body: JSON.stringify({
           effortRating:       feedback.effort,
