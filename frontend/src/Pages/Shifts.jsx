@@ -885,6 +885,7 @@ export const ShiftsPage = () => {
                     <th style={{ ...T.TH, textAlign:'center' }}>Net Profit</th>
                     <th style={{ ...T.TH, textAlign:'center' }}>Effort</th>
                     <th style={{ ...T.TH, textAlign:'center' }}>Balanced</th>
+                    <th style={{ ...T.TH, textAlign: 'center' }}>Report</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -917,6 +918,20 @@ export const ShiftsPage = () => {
                         <td style={{ ...T.TD, textAlign:'center' }}>
                           {balanced===null ? '—' : balanced ? <span style={{ color:'#16a34a', fontWeight:'700' }}>✓</span> : <span style={{ color:'#dc2626', fontWeight:'700' }}>⚠️</span>}
                         </td>
+                        <td style={{ ...T.TD, textAlign: 'center' }}>
+  
+    href={`${API_BASE}/shifts/${shift.id}/pdf`}
+    target="_blank"
+    rel="noopener noreferrer"
+    style={{
+      padding: '4px 10px', background: '#2563eb', color: '#fff',
+      borderRadius: '6px', fontSize: '11px', fontWeight: '600',
+      textDecoration: 'none', display: 'inline-block',
+    }}
+  >
+    PDF
+  </a>
+</td>
                       </tr>
                     );
                   })}
