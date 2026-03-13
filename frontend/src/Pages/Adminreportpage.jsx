@@ -116,23 +116,36 @@ function EffortStars({ rating }) {
 }
 
 // ── Reconciliation Table (wallet or game) ──────────────────────────
-function ReconciliationTable({ title, rows, startTotal, endTotal, expectedChange, actualChange, discrepancy, unit = "$", icon: Icon, iconColor }) {
+function ReconciliationTable({ title, rows, startTotal, endTotal, expectedChange, actualChange, discrepancy, unit = "$", icon: Icon, iconColor, depositFees = 0, cashoutFees = 0 }) {
   const isBalanced = Math.abs(discrepancy ?? 0) < 0.02;
   const fmt = (v) => unit === "$" ? fmtMoney(v) : `${(v ?? 0).toFixed(0)} pts`;
   const sign = (v) => (v ?? 0) >= 0 ? "+" : "−";
   const clr = (v) => unit === "$" ? ((v ?? 0) >= 0 ? "#16a34a" : "#dc2626") : ((v ?? 0) <= 0 ? "#16a34a" : "#dc2626");
+  const totalFees = depositFees + cashoutFees;
 
   return (
     <div style={{ border: "1px solid #e2e8f0", borderRadius: "10px", overflow: "hidden" }}>
-      <div style={{ padding: "10px 14px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ padding: "10px 14px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "6px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
           {Icon && <Icon style={{ width: "14px", height: "14px", color: iconColor }} />}
           <span style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a" }}>{title}</span>
         </div>
-        <span style={{ fontSize: "11px", color: "#64748b" }}>
-          Expected: <b style={{ color: "#475569" }}>{sign(expectedChange)}{fmt(Math.abs(expectedChange ?? 0))}</b>
-          {" · "}Actual: <b style={{ color: clr(actualChange) }}>{sign(actualChange)}{fmt(Math.abs(actualChange ?? 0))}</b>
-        </span>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+          {unit === "$" && totalFees > 0 && (
+            <span style={{ fontSize: "11px", color: "#64748b", padding: "2px 8px", background: "#fffbeb", borderRadius: "5px", border: "1px solid #fde68a" }}>
+              Fees: <b style={{ color: "#b45309" }}>−{fmtMoney(totalFees)}</b>
+              {depositFees > 0 && cashoutFees > 0 && (
+                <span style={{ color: "#94a3b8", marginLeft: "4px" }}>
+                  (dep −{fmtMoney(depositFees)} · co −{fmtMoney(cashoutFees)})
+                </span>
+              )}
+            </span>
+          )}
+          <span style={{ fontSize: "11px", color: "#64748b" }}>
+            Expected: <b style={{ color: "#475569" }}>{sign(expectedChange)}{fmt(Math.abs(expectedChange ?? 0))}</b>
+            {" · "}Actual: <b style={{ color: clr(actualChange) }}>{sign(actualChange)}{fmt(Math.abs(actualChange ?? 0))}</b>
+          </span>
+        </div>
       </div>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
         <thead>
@@ -140,6 +153,7 @@ function ReconciliationTable({ title, rows, startTotal, endTotal, expectedChange
             <th style={{ ...TH, padding: "7px 12px", fontSize: "10px" }}>Account</th>
             <th style={{ ...TH, padding: "7px 12px", fontSize: "10px", textAlign: "right" }}>Start</th>
             <th style={{ ...TH, padding: "7px 12px", fontSize: "10px", textAlign: "right" }}>End</th>
+            {unit === "$" && totalFees > 0 && <th style={{ ...TH, padding: "7px 12px", fontSize: "10px", textAlign: "right" }}>Fees</th>}
             <th style={{ ...TH, padding: "7px 12px", fontSize: "10px", textAlign: "right" }}>Change</th>
           </tr>
         </thead>
@@ -151,6 +165,11 @@ function ReconciliationTable({ title, rows, startTotal, endTotal, expectedChange
                 <td style={{ ...TD, padding: "8px 12px", fontSize: "12px" }}>{r.name}{r.method ? <span style={{ color: "#94a3b8", marginLeft: "6px" }}>{r.method}</span> : null}</td>
                 <td style={{ ...TD, padding: "8px 12px", textAlign: "right", color: "#64748b" }}>{fmt(r.start)}</td>
                 <td style={{ ...TD, padding: "8px 12px", textAlign: "right", fontWeight: "600" }}>{fmt(r.end)}</td>
+                {unit === "$" && totalFees > 0 && (
+                  <td style={{ ...TD, padding: "8px 12px", textAlign: "right", fontSize: "11px", color: "#b45309" }}>
+                    {r.fee != null && r.fee > 0 ? `−${fmtMoney(r.fee)}` : <span style={{ color: "#cbd5e1" }}>—</span>}
+                  </td>
+                )}
                 <td style={{ ...TD, padding: "8px 12px", textAlign: "right", fontWeight: "700", color: clr(unit === "$" ? delta : -delta) }}>
                   {delta >= 0 ? "+" : "−"}{fmt(Math.abs(delta))}
                 </td>
@@ -162,6 +181,9 @@ function ReconciliationTable({ title, rows, startTotal, endTotal, expectedChange
             <td style={{ ...TD, padding: "8px 12px", fontWeight: "700", fontSize: "12px" }}>Total</td>
             <td style={{ ...TD, padding: "8px 12px", textAlign: "right", fontWeight: "600" }}>{fmt(startTotal)}</td>
             <td style={{ ...TD, padding: "8px 12px", textAlign: "right", fontWeight: "700" }}>{fmt(endTotal)}</td>
+            {unit === "$" && totalFees > 0 && (
+              <td style={{ ...TD, padding: "8px 12px", textAlign: "right", fontWeight: "700", color: "#b45309" }}>−{fmtMoney(totalFees)}</td>
+            )}
             <td style={{ ...TD, padding: "8px 12px", textAlign: "right", fontWeight: "700", color: clr(unit === "$" ? actualChange : -actualChange) }}>
               {(actualChange ?? 0) >= 0 ? "+" : "−"}{fmt(Math.abs(actualChange ?? 0))}
               {!isBalanced && (
@@ -409,6 +431,47 @@ function ShiftDetail({ shift, index, total }) {
     gameRows.push({ name: sg?.name ?? eg?.name ?? id, start: sg?.pointStock ?? 0, end: eg?.pointStock ?? 0 });
   });
 
+  // ── Compute fees from transaction notes ──────────────────────────
+  const txns = shift.transactions || [];
+  const depositFees = txns
+    .filter(t => t.type === 'DEPOSIT')
+    .reduce((sum, t) => {
+      const m = (t.notes || '').match(/fee:([\d.]+)/);
+      return sum + (m ? parseFloat(m[1]) : 0);
+    }, 0);
+  const cashoutFees = txns
+    .filter(t => t.type === 'WITHDRAWAL')
+    .reduce((sum, t) => {
+      const m = (t.notes || '').match(/fee:([\d.]+)/);
+      return sum + (m ? parseFloat(m[1]) : 0);
+    }, 0);
+
+  // Fee-adjusted wallet expected change:
+  //   deposits credited as (depositAmt - depositFee) each
+  //   cashouts debited as  (cashoutAmt + cashoutFee)  each
+  const feeAdjustedExpectedWalletChange =
+    (endSnapshot?.deposits ?? 0) - depositFees
+    - (endSnapshot?.cashouts ?? 0) - cashoutFees;
+  const feeAdjustedWalletDiscrepancy =
+    (endSnapshot?.walletChange ?? 0) - feeAdjustedExpectedWalletChange;
+
+  // Build wallet rows with per-wallet fee (from transactions)
+  const walletFeeMap = {};
+  txns.filter(t => t.type === 'DEPOSIT').forEach(t => {
+    const wMatch = (t.description || '').match(/via ([^ ]+) - (.+)$/);
+    if (wMatch) {
+      const key = `${wMatch[1]}__${wMatch[2]}`;
+      const feeMatch = (t.notes || '').match(/fee:([\d.]+)/);
+      walletFeeMap[key] = (walletFeeMap[key] || 0) + (feeMatch ? parseFloat(feeMatch[1]) : 0);
+    }
+  });
+  // Re-attach fee to walletRows
+  walletRows.forEach(r => {
+    const key = `${r.method}__${r.name}`;
+    r.fee = walletFeeMap[key] ?? null;
+  });
+  // ─────────────────────────────────────────────────────────────────
+
   const hasReconciliation = startSnapshot && endSnapshot;
   const hasCheckinNotes = startSnapshot?.notes;
 
@@ -506,12 +569,14 @@ function ShiftDetail({ shift, index, total }) {
                       rows={walletRows}
                       startTotal={startSnapshot?.totalWallet ?? 0}
                       endTotal={endSnapshot?.totalWallet ?? 0}
-                      expectedChange={endSnapshot?.deposits - endSnapshot?.cashouts}
+                      expectedChange={feeAdjustedExpectedWalletChange}
                       actualChange={endSnapshot?.walletChange}
-                      discrepancy={endSnapshot?.walletDiscrepancy}
+                      discrepancy={feeAdjustedWalletDiscrepancy}
                       unit="$"
                       icon={Wallet}
                       iconColor="#2563eb"
+                      depositFees={depositFees}
+                      cashoutFees={cashoutFees}
                     />
                   )}
                   {/* Game table */}
@@ -755,28 +820,53 @@ function printReport(report, date) {
         const startWs = startSnapshot.walletSnapshot ?? [];
         const endWs = endSnapshot.walletSnapshot ?? [];
         const allIds = [...new Set([...startWs.map(w => w.id), ...endWs.map(w => w.id)])];
+
+        // Compute per-wallet fees from transactions
+        const wFeeMap = {};
+        (shift.transactions || []).filter(t => t.type === 'DEPOSIT').forEach(t => {
+          const wMatch = (t.description || '').match(/via ([^ ]+) - (.+)$/);
+          if (wMatch) {
+            const key = `${wMatch[1]}__${wMatch[2]}`;
+            const feeMatch = (t.notes || '').match(/fee:([\d.]+)/);
+            wFeeMap[key] = (wFeeMap[key] || 0) + (feeMatch ? parseFloat(feeMatch[1]) : 0);
+          }
+        });
+        const pDepFees = (shift.transactions || []).filter(t => t.type === 'DEPOSIT').reduce((s, t) => {
+          const m = (t.notes || '').match(/fee:([\d.]+)/); return s + (m ? parseFloat(m[1]) : 0);
+        }, 0);
+        const pCoFees = (shift.transactions || []).filter(t => t.type === 'WITHDRAWAL').reduce((s, t) => {
+          const m = (t.notes || '').match(/fee:([\d.]+)/); return s + (m ? parseFloat(m[1]) : 0);
+        }, 0);
+        const pTotalFees = pDepFees + pCoFees;
+        const hasFees = pTotalFees > 0;
+
         const rows = allIds.map(id => {
           const sw = startWs.find(w => w.id === id);
           const ew = endWs.find(w => w.id === id);
           const delta = (ew?.balance ?? 0) - (sw?.balance ?? 0);
+          const wKey = `${sw?.method ?? ew?.method ?? ""}__${sw?.name ?? ew?.name ?? id}`;
+          const rowFee = wFeeMap[wKey] ?? 0;
           return `<tr>
             <td>${sw?.method ?? ew?.method ?? ""} — ${sw?.name ?? ew?.name ?? id}</td>
             <td style="text-align:right;color:#64748b">${fmtMoney(sw?.balance ?? 0)}</td>
             <td style="text-align:right;font-weight:600">${fmtMoney(ew?.balance ?? 0)}</td>
+            ${hasFees ? `<td style="text-align:right;color:#b45309;font-size:10px">${rowFee > 0 ? `−${fmtMoney(rowFee)}` : '—'}</td>` : ''}
             <td style="text-align:right;font-weight:700;color:${delta >= 0 ? '#16a34a' : '#dc2626'}">${delta >= 0 ? '+' : '−'}${fmtMoney(Math.abs(delta))}</td>
           </tr>`;
         }).join("");
         const walletDelta = (endSnapshot.totalWallet ?? 0) - (startSnapshot.totalWallet ?? 0);
+        const feesNote = hasFees ? `<span style="color:#b45309;font-size:10px"> (incl. fees −${fmtMoney(pTotalFees)})</span>` : '';
         return `
           <p style="font-weight:700;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;margin:0 0 6px">Wallet Balances</p>
           <table style="margin-bottom:12px">
-            <thead><tr><th>Account</th><th style="text-align:right">Start</th><th style="text-align:right">End</th><th style="text-align:right">Change</th></tr></thead>
+            <thead><tr><th>Account</th><th style="text-align:right">Start</th><th style="text-align:right">End</th>${hasFees ? '<th style="text-align:right;color:#b45309">Fees</th>' : ''}<th style="text-align:right">Change</th></tr></thead>
             <tbody>
               ${rows}
               <tr style="background:#f8fafc">
-                <td><strong>Total</strong></td>
+                <td><strong>Total</strong>${feesNote}</td>
                 <td style="text-align:right;font-weight:600">${fmtMoney(startSnapshot.totalWallet ?? 0)}</td>
                 <td style="text-align:right;font-weight:700">${fmtMoney(endSnapshot.totalWallet ?? 0)}</td>
+                ${hasFees ? `<td style="text-align:right;font-weight:700;color:#b45309">−${fmtMoney(pTotalFees)}</td>` : ''}
                 <td style="text-align:right;font-weight:800;color:${walletDelta >= 0 ? '#16a34a' : '#dc2626'}">${walletDelta >= 0 ? '+' : '−'}${fmtMoney(Math.abs(walletDelta))}</td>
               </tr>
             </tbody>
@@ -817,10 +907,23 @@ function printReport(report, date) {
       })();
 
       const discrepancyHtml = endSnapshot ? (() => {
-        const { isBalanced, totalDiscrepancy, deposits, cashouts, bonuses, netProfit, walletChange, gameChange } = endSnapshot;
-        return `<div style="padding:10px 14px;background:${isBalanced ? '#f0fdf4' : '#fef2f2'};border-left:4px solid ${isBalanced ? '#16a34a' : '#dc2626'};border-radius:6px;margin-bottom:12px;font-size:11px">
-          <strong style="color:${isBalanced ? '#166534' : '#991b1b'}">${isBalanced ? "✓ Fully balanced" : `⚠️ Discrepancy: ${fmtMoney(Math.abs(totalDiscrepancy ?? 0))}`}</strong><br/>
-          Deposits ${fmtMoney(deposits)} − Cashouts ${fmtMoney(cashouts)} − Bonuses ${fmtMoney(bonuses)} = Net ${fmtMoney(netProfit)} | Wallet Δ ${walletChange >= 0 ? '+' : ''}${fmtMoney(walletChange)} | Game Δ ${(gameChange ?? 0) >= 0 ? '+' : ''}${(gameChange ?? 0).toFixed(0)} pts | Total discrepancy: ${fmtMoney(totalDiscrepancy ?? 0)}
+        const { deposits, cashouts, bonuses, netProfit, walletChange, gameChange } = endSnapshot;
+        // Recompute discrepancy with fees
+        const pDepFees2 = (shift.transactions || []).filter(t => t.type === 'DEPOSIT').reduce((s, t) => {
+          const m = (t.notes || '').match(/fee:([\d.]+)/); return s + (m ? parseFloat(m[1]) : 0);
+        }, 0);
+        const pCoFees2 = (shift.transactions || []).filter(t => t.type === 'WITHDRAWAL').reduce((s, t) => {
+          const m = (t.notes || '').match(/fee:([\d.]+)/); return s + (m ? parseFloat(m[1]) : 0);
+        }, 0);
+        const feeAdjExp = (deposits ?? 0) - pDepFees2 - (cashouts ?? 0) - pCoFees2;
+        const feeAdjDisc = (walletChange ?? 0) - feeAdjExp;
+        const isOk = Math.abs(feeAdjDisc) < 0.02;
+        const feesLine = (pDepFees2 + pCoFees2) > 0
+          ? ` | Dep fees −${fmtMoney(pDepFees2)}${pCoFees2 > 0 ? ` · CO fees −${fmtMoney(pCoFees2)}` : ''}`
+          : '';
+        return `<div style="padding:10px 14px;background:${isOk ? '#f0fdf4' : '#fef2f2'};border-left:4px solid ${isOk ? '#16a34a' : '#dc2626'};border-radius:6px;margin-bottom:12px;font-size:11px">
+          <strong style="color:${isOk ? '#166534' : '#991b1b'}">${isOk ? "✓ Fully balanced" : `⚠️ Discrepancy: ${fmtMoney(Math.abs(feeAdjDisc))}`}</strong><br/>
+          Deposits ${fmtMoney(deposits)} − Cashouts ${fmtMoney(cashouts)} − Bonuses ${fmtMoney(bonuses)} = Net ${fmtMoney(netProfit)}${feesLine} | Wallet Δ ${walletChange >= 0 ? '+' : ''}${fmtMoney(walletChange)} | Game Δ ${(gameChange ?? 0) >= 0 ? '+' : ''}${(gameChange ?? 0).toFixed(0)} pts | Discrepancy (fee-adj): ${fmtMoney(feeAdjDisc)}
         </div>`;
       })() : "";
 
