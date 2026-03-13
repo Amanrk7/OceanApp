@@ -918,7 +918,7 @@ export const ShiftsPage = () => {
                         <td style={{ ...T.TD, textAlign:'center' }}>
                           {balanced===null ? '—' : balanced ? <span style={{ color:'#16a34a', fontWeight:'700' }}>✓</span> : <span style={{ color:'#dc2626', fontWeight:'700' }}>⚠️</span>}
                         </td>
-                        <td style={{ ...T.TD, textAlign: 'center' }}>
+                        <td style={{ ...T.TD, textAlign: 'center' }}
   
     href={`${API_BASE}/shifts/${shift.id}/pdf`}
     target="_blank"
