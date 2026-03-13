@@ -57,27 +57,28 @@ const CARD = {
 };
 
 // ─── Freeze API helpers ───────────────────────────────────────────────────────
+// Uses the same backend base URL as the rest of the app.
+// VITE_API_URL must be set in your Vercel env vars:
+//   VITE_API_URL=https://oceanappbackend.onrender.com
+const _API_BASE = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL)
+    || "https://oceanappbackend.onrender.com";
+
+async function _backendPost(path, body = {}) {
+    const res = await fetch(`${_API_BASE}${path}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
+    return data;
+}
+
 const freezeApi = {
-    freeze: (playerId, hours, note) =>
-        fetch(`/api/players/${playerId}/streak/freeze`, {
-            method: "POST", credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ hours, note }),
-        }).then(r => r.json()),
-
-    extend: (playerId, hours, note) =>
-        fetch(`/api/players/${playerId}/streak/extend-freeze`, {
-            method: "POST", credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ hours, note }),
-        }).then(r => r.json()),
-
-    unfreeze: (playerId) =>
-        fetch(`/api/players/${playerId}/streak/unfreeze`, {
-            method: "POST", credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({}),
-        }).then(r => r.json()),
+    freeze:   (playerId, hours, note) => _backendPost(`/api/players/${playerId}/streak/freeze`,        { hours, note }),
+    extend:   (playerId, hours, note) => _backendPost(`/api/players/${playerId}/streak/extend-freeze`, { hours, note }),
+    unfreeze: (playerId)              => _backendPost(`/api/players/${playerId}/streak/unfreeze`,       {}),
 };
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
