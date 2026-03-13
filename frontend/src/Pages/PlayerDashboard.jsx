@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid,
-    Tooltip, ResponsiveContainer, Legend,
+    Tooltip, ResponsiveContainer, Legend, Snowflake 
 } from 'recharts';
 import { fmtTXTime } from '../utils/txTime';
 
@@ -96,6 +96,141 @@ function SectionHeader({ title, count }) {
             )}
         </div>
     );
+
+
+    // ─── Helper ───────────────────────────────────────────────────────────────────
+function fmtDuration(ms) {
+    if (ms <= 0) return 'expired';
+    const h = Math.floor(ms / 3_600_000);
+    const m = Math.floor((ms % 3_600_000) / 60_000);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+}
+ 
+// ─── Streak & Freeze Card ─────────────────────────────────────────────────────
+// Add this component definition alongside the other components in PlayerDashboard.jsx
+function StreakFreezeCard({ player }) {
+    const streak   = player.streak?.currentStreak ?? 0;
+    const freeze   = player.streakFreeze;
+    const isFrozen = freeze?.isFrozen;
+    const isAuto   = freeze?.isAutoFreeze;
+    const until    = freeze?.freezeUntil ? new Date(freeze.freezeUntil) : null;
+    const msLeft   = until ? Math.max(0, until - Date.now()) : 0;
+    const lastPlayed = player.streak?.lastPlayedDate;
+ 
+    const STREAK_COLORS = [
+        { days: 30, color: '#10b981', bg: '#f0fdf4', border: '#86efac', label: 'Legend' },
+        { days: 15, color: '#ef4444', bg: '#fef2f2', border: '#fca5a5', label: 'Blazing' },
+        { days: 10, color: '#f97316', bg: '#fff7ed', border: '#fdba74', label: 'Fire' },
+        { days: 7,  color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', label: 'Hot Streak' },
+        { days: 5,  color: '#8b5cf6', bg: '#faf5ff', border: '#ddd6fe', label: 'On A Roll' },
+        { days: 3,  color: '#0ea5e9', bg: '#f0f9ff', border: '#bae6fd', label: 'Warming Up' },
+        { days: 2,  color: '#64748b', bg: '#f1f5f9', border: '#cbd5e1', label: 'Starter' },
+    ];
+    const tier = STREAK_COLORS.find(t => streak >= t.days);
+ 
+    return (
+        <div style={{
+            background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`,
+            boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '20px 24px',
+        }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+ 
+                {/* Left: Streak info */}
+                <div style={{ flex: 1, minWidth: '200px' }}>
+                    <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: '800', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                        Streak
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                        <span style={{ fontSize: '36px', fontWeight: '900', color: tier?.color || C.grayLt, lineHeight: 1 }}>
+                            {streak}
+                        </span>
+                        <span style={{ fontSize: '14px', color: C.grayLt, fontWeight: '600' }}>days</span>
+                        {tier && (
+                            <span style={{
+                                padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700',
+                                background: tier.bg, border: `1px solid ${tier.border}`, color: tier.color,
+                            }}>
+                                🔥 {tier.label}
+                            </span>
+                        )}
+                    </div>
+                    {lastPlayed && (
+                        <p style={{ margin: '6px 0 0', fontSize: '12px', color: C.grayLt }}>
+                            Last deposit: <strong style={{ color: C.slate }}>{lastPlayed}</strong>
+                        </p>
+                    )}
+                </div>
+ 
+                {/* Right: Freeze status */}
+                <div style={{ flex: 1, minWidth: '220px' }}>
+                    {isFrozen ? (
+                        <div style={{
+                            padding: '14px 16px', borderRadius: '10px',
+                            background: isAuto ? '#eff6ff' : '#dbeafe',
+                            border: `1px solid ${isAuto ? '#bfdbfe' : '#93c5fd'}`,
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                                <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#fff', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <span style={{ fontSize: '14px' }}>🧊</span>
+                                </div>
+                                <div>
+                                    <p style={{ margin: 0, fontWeight: '800', fontSize: '13px', color: '#1d4ed8' }}>
+                                        {isAuto ? 'Auto-Frozen (Grace Period)' : 'Streak Frozen by Staff'}
+                                    </p>
+                                    <p style={{ margin: 0, fontSize: '11px', color: '#3b82f6' }}>
+                                        Streak protected from resetting
+                                    </p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                                <div>
+                                    <p style={{ margin: '0 0 2px', fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>Time Remaining</p>
+                                    <p style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#1d4ed8' }}>
+                                        {fmtDuration(msLeft)}
+                                    </p>
+                                </div>
+                                {until && (
+                                    <div>
+                                        <p style={{ margin: '0 0 2px', fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>Expires At</p>
+                                        <p style={{ margin: 0, fontSize: '12px', fontWeight: '600', color: '#1e40af' }}>
+                                            {until.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                            {freeze?.note && (
+                                <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#3b82f6', fontStyle: 'italic' }}>
+                                    Note: {freeze.note}
+                                </p>
+                            )}
+                        </div>
+                    ) : streak > 0 ? (
+                        <div style={{ padding: '14px 16px', borderRadius: '10px', background: '#f0fdf4', border: '1px solid #86efac' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '20px' }}>✅</span>
+                                <div>
+                                    <p style={{ margin: 0, fontWeight: '700', fontSize: '13px', color: '#166534' }}>Streak Active</p>
+                                    <p style={{ margin: 0, fontSize: '11px', color: '#16a34a' }}>No freeze — player is depositing regularly</p>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div style={{ padding: '14px 16px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '20px' }}>💤</span>
+                                <div>
+                                    <p style={{ margin: 0, fontWeight: '700', fontSize: '13px', color: C.gray }}>No Active Streak</p>
+                                    <p style={{ margin: 0, fontSize: '11px', color: C.grayLt }}>Player needs to deposit to start a streak</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
 }
 
 // ─── Delete Modal ───────────────────────────────────────────────────────────────
@@ -420,11 +555,14 @@ export default function PlayerDashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px' }}>
                 <StatCard label="Balance"          value={`$${parseFloat(player.balance || 0).toFixed(2)}`}                              color="#10b981" />
                 <StatCard label="Cashout Limit"    value={`$${parseFloat(player.cashoutLimit || 250).toFixed(0)}`}                       color={C.amber} />
-                <StatCard label="Streak"           value={`${player.streak?.currentStreak || 0} days`}                                   color={C.violet} sub={`Last: ${player.streak?.lastPlayedDate || '—'}`} />
+                {/* <StatCard label="Streak"           value={`${player.streak?.currentStreak || 0} days`}                                   color={C.violet} sub={`Last: ${player.streak?.lastPlayedDate || '—'}`} /> */}
+                <StatCard label="Streak" value={`${player.streak?.currentStreak || 0} days`} color={player.streakFreeze?.isFrozen ? '#1d4ed8' : C.violet} sub={player.streakFreeze?.isFrozen ? `🧊 Frozen · ${fmtDuration(Math.max(0, new Date(player.streakFreeze.freezeUntil) - Date.now()))}` : `Last: ${player.streak?.lastPlayedDate || '—'}`} />
                 <StatCard label="Today's Deposits" value={`$${todayDeposits.toFixed(2)}`}                                                color="#10b981" />
                 <StatCard label="Today's Cashouts" value={`$${todayCashouts.toFixed(2)}`}                                                color={C.red} />
                 <StatCard label="Available Bonus"  value={`$${parseFloat(player.bonusTracker?.availableBonus || 0).toFixed(2)}`}         color="#10b981" />
             </div>
+
+            <StreakFreezeCard player={player} />
 
             {/* ── TIER PROGRESS ────────────────────────────────────────────── */}
             <div style={card({ padding: '18px 24px' })}>
