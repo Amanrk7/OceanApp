@@ -305,19 +305,13 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   const bonuses  = shiftTxns.filter(t => BONUS_TYPES.includes(t.type)).reduce((s,t)=>s+(t.amount??0),0);
   const netProfit = deposits - cashouts - bonuses;
 
-  // ── Fee extraction from transaction notes (fee:X.XX pattern) ──
+  // ── Fee extraction — uses t.fee field directly on each transaction ──
   const depositFees = shiftTxns
     .filter(t => t.type === 'Deposit')
-    .reduce((s, t) => {
-      const m = (t.notes || '').match(/fee:([\d.]+)/);
-      return s + (m ? parseFloat(m[1]) : 0);
-    }, 0);
+    .reduce((s, t) => s + (t.fee ?? 0), 0);
   const cashoutFees = shiftTxns
     .filter(t => t.type === 'Cashout')
-    .reduce((s, t) => {
-      const m = (t.notes || '').match(/fee:([\d.]+)/);
-      return s + (m ? parseFloat(m[1]) : 0);
-    }, 0);
+    .reduce((s, t) => s + (t.fee ?? 0), 0);
   const totalFees = depositFees + cashoutFees;
   const hasFees = totalFees > 0.001;
 
@@ -327,8 +321,7 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
     const wMatch = (t.description || '').match(/via ([^ ]+) - (.+)$/);
     if (wMatch) {
       const key = `${wMatch[1]}__${wMatch[2]}`;
-      const feeMatch = (t.notes || '').match(/fee:([\d.]+)/);
-      walletFeeMap[key] = (walletFeeMap[key] || 0) + (feeMatch ? parseFloat(feeMatch[1]) : 0);
+      walletFeeMap[key] = (walletFeeMap[key] || 0) + (t.fee ?? 0);
     }
   });
 
