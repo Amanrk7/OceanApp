@@ -57,8 +57,8 @@ const CARD = {
 };
 
 // ─── Freeze API helpers ───────────────────────────────────────────────────────
-// Calls api.streak.* which you need to add to api.js (see instructions below).
-// This ensures the same auth headers / base URL used by all other api calls.
+// Delegates to api.streak.* (add streakAPI to api.js — see api_streak_addition.js)
+// Uses the same fetchAPI helper as the rest of the app: correct base URL + auth token.
 const freezeApi = {
     freeze:   (playerId, hours, note) => api.streak.freeze(playerId, hours, note),
     extend:   (playerId, hours, note) => api.streak.extendFreeze(playerId, hours, note),
@@ -828,7 +828,8 @@ export default function PlaytimePage() {
     // ── SSE real-time ────────────────────────────────────────────────────────
     useEffect(() => {
         try {
-            const es = new EventSource(`${api.baseURL}/api/tasks/events`, { withCredentials: true });
+            // tasksAPI.connectSSE() uses API_BASE_URL from api.js — same auth base as all other calls
+            const es = api.tasks.connectSSE();
             sseRef.current = es;
             const refresh = () => {
                 detailCache.current = {};
