@@ -311,7 +311,7 @@ function FreezeModal({ mode, player, currentFreeze, onConfirm, onClose }) {
     };
 
     const modeConfig = {
-        freeze:   { icon: <Snowflake style={{ width: "16px", height: "16px", color: "#1d4ed8" }} />, bg: "#eff6ff", border: "#bfdbfe", title: "Freeze Streak", subtitle: "Protects the streak from resetting for a set time", btnColor: "#1d4ed8", btnLabel: `Freeze for ${hours}h` },
+        freeze:   { icon: <Snowflake style={{ width: "16px", height: "16px", color: "rgb(14, 165, 233)" }} />, bg: "rgb(14, 165, 233)", border: "#bfdbfe", title: "Freeze Streak", subtitle: "Protects the streak from resetting for a set time", btnColor: "#1d4ed8", btnLabel: `Freeze for ${hours}h` },
         extend:   { icon: <Plus style={{ width: "16px", height: "16px", color: "#7c3aed" }} />,       bg: "#faf5ff", border: "#ddd6fe", title: "Extend Freeze",  subtitle: "Add more time to the existing freeze", btnColor: "#7c3aed", btnLabel: `Extend by ${hours}h` },
         unfreeze: { icon: <Unlock style={{ width: "16px", height: "16px", color: "#dc2626" }} />,    bg: "#fef2f2", border: "#fca5a5", title: "Unfreeze Streak", subtitle: "Immediately resets streak to 0 — cannot be undone", btnColor: "#dc2626", btnLabel: "Confirm Reset to 0" },
     }[mode];
@@ -568,7 +568,7 @@ function PlayerRow({ player, depositGames, gamesLoading, onRedeem, onFreezeActio
         <tr
             onMouseEnter={e => { if (!justRedeemed && !strBroken && !isFrozen) e.currentTarget.style.background = "#f8fafc"; }}
             onMouseLeave={e => { e.currentTarget.style.background = rowBg; }}
-            style={{ borderBottom: "1px solid #f1f5f9", background: rowBg, transition: "background .12s" }}>
+            style={{ borderBottom: "1px solid #f1f5f9", transition: "background .12s" }}>
 
             {/* Player */}
             <td style={{ padding: "11px 16px" }}>
@@ -1141,3 +1141,4 @@ export default function PlaytimePage() {
         </div>
     );
 }
+
