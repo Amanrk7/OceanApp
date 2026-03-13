@@ -14,11 +14,9 @@ import { ShiftStatusContext } from '../Context/membershiftStatus.jsx';
 import { CurrentUserContext } from '../Context/currentUser.jsx';
 import { api } from '../api';
 
-// ─── API helper — uses same auth key ('authToken') as the rest of the app ──────
-// VITE_API_URL already includes /api (e.g. https://oceanappbackend.onrender.com/api)
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const fj = async (path, opts = {}) => {
-  const token = localStorage.getItem('authToken');   // ← must match what login() stores
+  const token = localStorage.getItem('authToken');
   const r = await fetch(`${API_BASE}${path}`, {
     credentials: 'include',
     cache: 'no-store',
@@ -40,7 +38,7 @@ const fj = async (path, opts = {}) => {
 const fmt$  = v => `$${Math.abs(v ?? 0).toFixed(2)}`;
 const sign  = v => (v ?? 0) >= 0 ? '+' : '−';
 const clr   = v => (v ?? 0) >= 0 ? '#16a34a' : '#dc2626';
-const clrInv= v => (v ?? 0) <= 0 ? '#16a34a' : '#dc2626'; // inverted: negative game ∆ is good
+const clrInv= v => (v ?? 0) <= 0 ? '#16a34a' : '#dc2626';
 
 // ─── Design tokens ────────────────────────────────────────────────────
 const T = {
@@ -58,7 +56,7 @@ const Badge = ({ label, color='#64748b', bg='#f1f5f9' }) => (
 );
 
 // ═══════════════════════════════════════════════════════════════════════
-// CHECKIN MODAL — shown BEFORE starting the shift
+// CHECKIN MODAL
 // ═══════════════════════════════════════════════════════════════════════
 const CheckinModal = ({ onConfirm, onCancel }) => {
   const [wallets,    setWallets]    = useState([]);
@@ -105,7 +103,6 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
   return (
     <div style={T.overlay}>
       <div style={T.modal}>
-        {/* Header */}
         <div style={{ padding:'20px 28px', borderBottom:'1px solid #e2e8f0', display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexShrink:0 }}>
           <div>
             <h2 style={{ margin:'0 0 4px', fontSize:'17px', fontWeight:'700', color:'#0f172a' }}>🌅 Start-of-Shift Verification</h2>
@@ -114,7 +111,6 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
           <button onClick={onCancel} style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', padding:'4px' }}><X size={18}/></button>
         </div>
 
-        {/* Body */}
         <div style={{ overflowY:'auto', flex:1, padding:'20px 28px', display:'flex', flexDirection:'column', gap:'22px' }}>
           {loading ? (
             <div style={{ textAlign:'center', padding:'40px', color:'#94a3b8' }}>
@@ -123,7 +119,6 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
             </div>
           ) : <>
 
-            {/* ── Wallet Balances ── */}
             <section>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
                 <h3 style={{ margin:0, fontSize:'13px', fontWeight:'700', color:'#0f172a', display:'flex', alignItems:'center', gap:'6px' }}>
@@ -147,7 +142,6 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
                       </tr>
                     ))}
                     {wallets.length === 0 && <tr><td colSpan={3} style={{ ...T.td, textAlign:'center', color:'#94a3b8' }}>No wallets found</td></tr>}
-                    {/* Total row */}
                     <tr style={{ background:'#f0fdf4' }}>
                       <td colSpan={2} style={{ ...T.td, fontWeight:'700', color:'#166534' }}>Combined Total</td>
                       <td style={{ ...T.td, textAlign:'right', fontWeight:'800', color:'#16a34a', fontSize:'14px' }}>${totalWallet.toFixed(2)}</td>
@@ -157,7 +151,6 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
               </div>
             </section>
 
-            {/* ── Game Points ── */}
             <section>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
                 <h3 style={{ margin:0, fontSize:'13px', fontWeight:'700', color:'#0f172a', display:'flex', alignItems:'center', gap:'6px' }}>
@@ -185,7 +178,6 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
                       </tr>
                     ))}
                     {games.length === 0 && <tr><td colSpan={3} style={{ ...T.td, textAlign:'center', color:'#94a3b8' }}>No games found</td></tr>}
-                    {/* Total row */}
                     <tr style={{ background:'#f5f3ff' }}>
                       <td colSpan={2} style={{ ...T.td, fontWeight:'700', color:'#5b21b6' }}>Combined Total</td>
                       <td style={{ ...T.td, textAlign:'right', fontWeight:'800', color:'#7c3aed', fontSize:'14px' }}>{totalGames.toFixed(0)} pts</td>
@@ -195,7 +187,6 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
               </div>
             </section>
 
-            {/* ── Assigned Tasks ── */}
             <section>
               <h3 style={{ margin:'0 0 10px', fontSize:'13px', fontWeight:'700', color:'#0f172a', display:'flex', alignItems:'center', gap:'6px' }}>
                 <ClipboardList size={14} color="#0891b2"/> Your Active Tasks
@@ -226,7 +217,6 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
               )}
             </section>
 
-            {/* ── Opening Notes ── */}
             <section>
               <label style={{ display:'block', fontSize:'13px', fontWeight:'600', color:'#374151', marginBottom:'6px' }}>
                 Opening Notes / Discrepancies <span style={{ color:'#94a3b8', fontWeight:400 }}>(optional)</span>
@@ -241,7 +231,6 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
           </>}
         </div>
 
-        {/* Footer */}
         <div style={{ padding:'14px 28px', borderTop:'1px solid #e2e8f0', display:'flex', gap:'10px', justifyContent:'flex-end', flexShrink:0, background:'#f8fafc' }}>
           <button onClick={onCancel} style={{ padding:'10px 18px', background:'#fff', border:'1px solid #d1d5db', borderRadius:'8px', fontWeight:'600', fontSize:'13px', cursor:'pointer', color:'#374151' }}>
             Cancel
@@ -263,7 +252,7 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════
-// CHECKOUT MODAL — shown BEFORE ending the shift
+// CHECKOUT MODAL — fee-aware reconciliation
 // ═══════════════════════════════════════════════════════════════════════
 const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   const [endWallets,  setEndWallets]  = useState([]);
@@ -271,7 +260,7 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   const [shiftTxns,   setShiftTxns]   = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [submitting,  setSubmitting]  = useState(false);
-  const [activeTab,   setActiveTab]   = useState('reconciliation'); // | 'feedback'
+  const [activeTab,   setActiveTab]   = useState('reconciliation');
   const [fb, setFb] = useState({ effort:7, effortReason:'', improvements:'', workSummary:'', issuesEncountered:'' });
 
   useEffect(() => {
@@ -307,37 +296,73 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   const endTotalG = endGames.reduce((s,g)   => s+(g.pointStock??0), 0);
 
   const walletChange = endTotalW - startTotalW;
-  const gameChange   = endTotalG - startTotalG; // negative = points consumed = expected
+  const gameChange   = endTotalG - startTotalG;
 
   // ── Shift transaction totals ──
   const BONUS_TYPES = ['Match Bonus','Special Bonus','Streak Bonus','Referral Bonus','Bonus'];
-  const deposits = shiftTxns.filter(t => t.type==='Deposit').reduce((s,t)=>s+t.amount,0);
-  const cashouts = shiftTxns.filter(t => t.type==='Cashout').reduce((s,t)=>s+t.amount,0);
-  const bonuses  = shiftTxns.filter(t => BONUS_TYPES.includes(t.type)).reduce((s,t)=>s+t.amount,0);
+  const deposits = shiftTxns.filter(t => t.type==='Deposit').reduce((s,t)=>s+(t.amount??0),0);
+  const cashouts = shiftTxns.filter(t => t.type==='Cashout').reduce((s,t)=>s+(t.amount??0),0);
+  const bonuses  = shiftTxns.filter(t => BONUS_TYPES.includes(t.type)).reduce((s,t)=>s+(t.amount??0),0);
   const netProfit = deposits - cashouts - bonuses;
 
-  // ── Reconciliation checks ──
-  // Expected: wallet should have increased by (D - C)
-  // Expected: game should have decreased by (D + B - C)
-  const expectedWalletChange =  deposits - cashouts;
+  // ── Fee extraction from transaction notes (fee:X.XX pattern) ──
+  const depositFees = shiftTxns
+    .filter(t => t.type === 'Deposit')
+    .reduce((s, t) => {
+      const m = (t.notes || '').match(/fee:([\d.]+)/);
+      return s + (m ? parseFloat(m[1]) : 0);
+    }, 0);
+  const cashoutFees = shiftTxns
+    .filter(t => t.type === 'Cashout')
+    .reduce((s, t) => {
+      const m = (t.notes || '').match(/fee:([\d.]+)/);
+      return s + (m ? parseFloat(m[1]) : 0);
+    }, 0);
+  const totalFees = depositFees + cashoutFees;
+  const hasFees = totalFees > 0.001;
+
+  // ── Per-wallet fee map (keyed by "method__name") ──
+  const walletFeeMap = {};
+  shiftTxns.filter(t => t.type === 'Deposit').forEach(t => {
+    const wMatch = (t.description || '').match(/via ([^ ]+) - (.+)$/);
+    if (wMatch) {
+      const key = `${wMatch[1]}__${wMatch[2]}`;
+      const feeMatch = (t.notes || '').match(/fee:([\d.]+)/);
+      walletFeeMap[key] = (walletFeeMap[key] || 0) + (feeMatch ? parseFloat(feeMatch[1]) : 0);
+    }
+  });
+
+  // ── Fee-adjusted reconciliation ──
+  // Wallet expected: deposits credited net of fee; cashouts debited gross of fee
+  const expectedWalletChange = (deposits - depositFees) - (cashouts + cashoutFees);
+  // Game expected: full deposit amount deducted regardless of fee
   const expectedGameChange   = -(deposits + bonuses - cashouts);
-  const walletDisc = walletChange - expectedWalletChange; // ideally 0
-  const gameDisc   = gameChange   - expectedGameChange;   // ideally 0
+
+  const walletDisc = walletChange - expectedWalletChange;
+  const gameDisc   = gameChange   - expectedGameChange;
   const totalDisc  = walletDisc + gameDisc;
   const balanced   = Math.abs(totalDisc) < 0.02;
 
   // ── Build comparison rows ──
   const walletRows = endWallets.map(w => {
     const s = startWallets.find(sw => sw.id === w.id);
-    return { ...w, startBal: s?.balance ?? 0, endBal: w.balance ?? 0 };
+    const key = `${w.method}__${w.name}`;
+    return { ...w, startBal: s?.balance ?? 0, endBal: w.balance ?? 0, fee: walletFeeMap[key] ?? 0 };
   });
-  startWallets.forEach(sw => { if (!endWallets.find(w=>w.id===sw.id)) walletRows.push({ ...sw, startBal:sw.balance, endBal:0 }); });
+  startWallets.forEach(sw => {
+    if (!endWallets.find(w => w.id === sw.id)) {
+      walletRows.push({ ...sw, startBal: sw.balance, endBal: 0, fee: 0 });
+    }
+  });
 
   const gameRows = endGames.map(g => {
     const s = startGames.find(sg => sg.id === g.id);
     return { ...g, startPts: s?.pointStock ?? 0, endPts: g.pointStock ?? 0 };
   });
-  startGames.forEach(sg => { if (!endGames.find(g=>g.id===sg.id)) gameRows.push({ id:sg.id, name:sg.name, startPts:sg.pointStock, endPts:0 }); });
+  startGames.forEach(sg => {
+    if (!endGames.find(g => g.id === sg.id))
+      gameRows.push({ id:sg.id, name:sg.name, startPts:sg.pointStock, endPts:0 });
+  });
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -349,8 +374,11 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
           totalWallet:endTotalW, totalGames:endTotalG,
           walletChange, gameChange, netProfit,
           deposits, cashouts, bonuses,
-          walletDiscrepancy:walletDisc, gameDiscrepancy:gameDisc,
-          totalDiscrepancy:totalDisc, isBalanced:balanced,
+          depositFees, cashoutFees,
+          walletDiscrepancy: walletDisc,
+          gameDiscrepancy:   gameDisc,
+          totalDiscrepancy:  totalDisc,
+          isBalanced: balanced,
           capturedAt: new Date().toISOString(),
         },
         feedback: fb,
@@ -413,13 +441,27 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
 
             {/* ── Wallet Reconciliation ── */}
             <section>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px', flexWrap:'wrap', gap:'8px' }}>
                 <h3 style={{ margin:0, fontSize:'13px', fontWeight:'700', color:'#0f172a', display:'flex', alignItems:'center', gap:'6px' }}>
                   <Wallet size={14} color="#2563eb"/> Wallet Balances
                 </h3>
-                <span style={{ fontSize:'12px', color:'#64748b' }}>
-                  Expected change: <b style={{ color:expectedWalletChange>=0?'#16a34a':'#dc2626' }}>{expectedWalletChange>=0?'+':''}${expectedWalletChange.toFixed(2)}</b>
-                </span>
+                <div style={{ display:'flex', gap:'10px', alignItems:'center', flexWrap:'wrap' }}>
+                  {hasFees && (
+                    <span style={{ fontSize:'11px', padding:'3px 9px', background:'#fffbeb', border:'1px solid #fde68a', borderRadius:'6px', color:'#92400e' }}>
+                      Fees: <b>−${totalFees.toFixed(2)}</b>
+                      {depositFees > 0 && cashoutFees > 0 && (
+                        <span style={{ color:'#94a3b8', marginLeft:'4px' }}>
+                          (dep −${depositFees.toFixed(2)} · co −${cashoutFees.toFixed(2)})
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  <span style={{ fontSize:'12px', color:'#64748b' }}>
+                    Expected change: <b style={{ color:expectedWalletChange>=0?'#16a34a':'#dc2626' }}>
+                      {expectedWalletChange>=0?'+':''}${expectedWalletChange.toFixed(2)}
+                    </b>
+                  </span>
+                </div>
               </div>
               <div style={{ border:'1px solid #e2e8f0', borderRadius:'10px', overflow:'hidden' }}>
                 <table style={{ width:'100%', borderCollapse:'collapse' }}>
@@ -427,6 +469,7 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                     <th style={T.th}>Wallet</th>
                     <th style={{ ...T.th, textAlign:'right' }}>Start</th>
                     <th style={{ ...T.th, textAlign:'right' }}>End</th>
+                    {hasFees && <th style={{ ...T.th, textAlign:'right', color:'#b45309' }}>Fees</th>}
                     <th style={{ ...T.th, textAlign:'right' }}>Change</th>
                   </tr></thead>
                   <tbody>
@@ -437,18 +480,30 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                           <td style={T.td}><b style={{ color:'#475569' }}>{w.method}</b> — {w.name}</td>
                           <td style={{ ...T.td, textAlign:'right', color:'#64748b' }}>${w.startBal.toFixed(2)}</td>
                           <td style={{ ...T.td, textAlign:'right', fontWeight:'600' }}>${w.endBal.toFixed(2)}</td>
+                          {hasFees && (
+                            <td style={{ ...T.td, textAlign:'right', fontSize:'12px', color:'#b45309' }}>
+                              {w.fee > 0 ? `−$${w.fee.toFixed(2)}` : <span style={{ color:'#cbd5e1' }}>—</span>}
+                            </td>
+                          )}
                           <td style={{ ...T.td, textAlign:'right', fontWeight:'700', color:clr(δ) }}>{sign(δ)}{fmt$(δ)}</td>
                         </tr>
                       );
                     })}
-                    {/* Total */}
+                    {/* Total row */}
                     <tr style={{ background:'#f8fafc' }}>
                       <td style={{ ...T.td, fontWeight:'700' }}>Total</td>
                       <td style={{ ...T.td, textAlign:'right', fontWeight:'600' }}>${startTotalW.toFixed(2)}</td>
                       <td style={{ ...T.td, textAlign:'right', fontWeight:'700' }}>${endTotalW.toFixed(2)}</td>
+                      {hasFees && (
+                        <td style={{ ...T.td, textAlign:'right', fontWeight:'700', color:'#b45309' }}>−${totalFees.toFixed(2)}</td>
+                      )}
                       <td style={{ ...T.td, textAlign:'right', fontWeight:'700', color:clr(walletChange) }}>
                         {sign(walletChange)}{fmt$(walletChange)}
-                        {Math.abs(walletDisc)>.01 && <div style={{ fontSize:'11px', color:'#dc2626', fontWeight:'600' }}>⚠️ {walletDisc>=0?'+':''}{walletDisc.toFixed(2)} vs expected</div>}
+                        {Math.abs(walletDisc) > 0.01 && (
+                          <div style={{ fontSize:'11px', color:'#dc2626', fontWeight:'600' }}>
+                            ⚠️ {walletDisc>=0?'+':''}{walletDisc.toFixed(2)} vs expected
+                          </div>
+                        )}
                       </td>
                     </tr>
                   </tbody>
@@ -464,6 +519,7 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                 </h3>
                 <span style={{ fontSize:'12px', color:'#64748b' }}>
                   Expected change: <b style={{ color:'#7c3aed' }}>{expectedGameChange>=0?'+':''}{expectedGameChange.toFixed(0)} pts</b>
+                  {hasFees && <span style={{ color:'#94a3b8', marginLeft:'6px', fontSize:'11px' }}>(fees don't affect game stock)</span>}
                 </span>
               </div>
               <div style={{ border:'1px solid #e2e8f0', borderRadius:'10px', overflow:'hidden' }}>
@@ -493,7 +549,11 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                       <td style={{ ...T.td, textAlign:'right', fontWeight:'700' }}>{endTotalG.toFixed(0)} pts</td>
                       <td style={{ ...T.td, textAlign:'right', fontWeight:'700', color:clrInv(gameChange) }}>
                         {gameChange>=0?'+':''}{gameChange.toFixed(0)} pts
-                        {Math.abs(gameDisc)>.1 && <div style={{ fontSize:'11px', color:'#dc2626', fontWeight:'600' }}>⚠️ {gameDisc>=0?'+':''}{gameDisc.toFixed(0)} pts vs expected</div>}
+                        {Math.abs(gameDisc) > 0.1 && (
+                          <div style={{ fontSize:'11px', color:'#dc2626', fontWeight:'600' }}>
+                            ⚠️ {gameDisc>=0?'+':''}{gameDisc.toFixed(0)} pts vs expected
+                          </div>
+                        )}
                       </td>
                     </tr>
                   </tbody>
@@ -509,23 +569,28 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
               borderLeft:`4px solid ${balanced?'#16a34a':'#dc2626'}`,
               borderRadius:'10px', display:'flex', alignItems:'flex-start', gap:'12px',
             }}>
-              {balanced ? <CheckCircle size={18} color="#16a34a" style={{ flexShrink:0, marginTop:'1px' }}/> : <AlertCircle size={18} color="#dc2626" style={{ flexShrink:0, marginTop:'1px' }}/>}
+              {balanced
+                ? <CheckCircle size={18} color="#16a34a" style={{ flexShrink:0, marginTop:'1px' }}/>
+                : <AlertCircle size={18} color="#dc2626" style={{ flexShrink:0, marginTop:'1px' }}/>}
               <div>
                 <p style={{ margin:'0 0 4px', fontWeight:'700', color:balanced?'#166534':'#991b1b', fontSize:'14px' }}>
                   {balanced ? '✓ Fully Balanced' : `⚠️ Discrepancy Detected: $${Math.abs(totalDisc).toFixed(2)}`}
                 </p>
                 <p style={{ margin:0, fontSize:'12px', color:balanced?'#16a34a':'#dc2626', lineHeight:1.5 }}>
                   {balanced
-                    ? `Net profit $${netProfit.toFixed(2)} = Wallet Δ ${sign(walletChange)}${fmt$(walletChange)} + Game consumption ${(deposits+bonuses-cashouts).toFixed(0)} pts`
+                    ? `Net profit $${netProfit.toFixed(2)} · Wallet Δ ${sign(walletChange)}${fmt$(walletChange)}${hasFees?` (after $${totalFees.toFixed(2)} fees)`:''} · Game −${(deposits+bonuses-cashouts).toFixed(0)} pts`
                     : `Wallet discrepancy: $${walletDisc.toFixed(2)} | Game discrepancy: ${gameDisc.toFixed(0)} pts. Check transactions before ending.`}
                 </p>
+                {hasFees && (
+                  <p style={{ margin:'4px 0 0', fontSize:'11px', color:'#64748b', fontStyle:'italic' }}>
+                    Fee-adjusted expected wallet change: ${expectedWalletChange.toFixed(2)} (deposits −fees −cashouts −fees)
+                  </p>
+                )}
               </div>
             </div>
 
           </> : <>
             {/* ── FEEDBACK TAB ── */}
-
-            {/* Effort Rating */}
             <div>
               <label style={{ display:'block', fontSize:'13px', fontWeight:'700', color:'#0f172a', marginBottom:'12px' }}>
                 Effort Rating
@@ -546,7 +611,6 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
               </div>
             </div>
 
-            {/* Effort Reason */}
             <div>
               <label style={{ display:'block', fontSize:'13px', fontWeight:'600', color:'#374151', marginBottom:'6px' }}>
                 Why did you rate your effort {fb.effort}/10? <span style={{ color:'#dc2626' }}>*</span>
@@ -556,7 +620,6 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                 rows={3} style={{ width:'100%', padding:'10px 12px', border:'1px solid #d1d5db', borderRadius:'8px', fontSize:'13px', resize:'vertical', fontFamily:'inherit', boxSizing:'border-box', outline:'none' }}/>
             </div>
 
-            {/* Improvements */}
             <div>
               <label style={{ display:'block', fontSize:'13px', fontWeight:'600', color:'#374151', marginBottom:'6px' }}>
                 What could you have done better? <span style={{ color:'#dc2626' }}>*</span>
@@ -566,7 +629,6 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                 rows={3} style={{ width:'100%', padding:'10px 12px', border:'1px solid #d1d5db', borderRadius:'8px', fontSize:'13px', resize:'vertical', fontFamily:'inherit', boxSizing:'border-box', outline:'none' }}/>
             </div>
 
-            {/* Work Summary */}
             <div>
               <label style={{ display:'block', fontSize:'13px', fontWeight:'600', color:'#374151', marginBottom:'6px' }}>
                 Work Summary <span style={{ color:'#94a3b8', fontWeight:400 }}>(optional)</span>
@@ -576,7 +638,6 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                 rows={3} style={{ width:'100%', padding:'10px 12px', border:'1px solid #d1d5db', borderRadius:'8px', fontSize:'13px', resize:'vertical', fontFamily:'inherit', boxSizing:'border-box', outline:'none' }}/>
             </div>
 
-            {/* Issues */}
             <div>
               <label style={{ display:'block', fontSize:'13px', fontWeight:'600', color:'#374151', marginBottom:'6px' }}>
                 Issues Encountered <span style={{ color:'#94a3b8', fontWeight:400 }}>(optional)</span>
@@ -586,7 +647,6 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                 rows={2} style={{ width:'100%', padding:'10px 12px', border:'1px solid #d1d5db', borderRadius:'8px', fontSize:'13px', resize:'vertical', fontFamily:'inherit', boxSizing:'border-box', outline:'none' }}/>
             </div>
 
-            {/* Validation hint */}
             {!canSubmit && (
               <p style={{ margin:0, fontSize:'12px', color:'#d97706', fontStyle:'italic' }}>
                 ⚠️ Effort reason and improvements are required (min 6 characters each) before you can end your shift.
@@ -644,7 +704,6 @@ export const ShiftsPage = () => {
   const [showCheckin,   setShowCheckin]   = useState(false);
   const [showCheckout,  setShowCheckout]  = useState(false);
 
-  // ── Restore on mount ──
   useEffect(() => {
     if (!usr?.role) return;
     (async () => {
@@ -660,7 +719,6 @@ export const ShiftsPage = () => {
           activeShiftIdRef.current = sh.id;
           setActiveShift(sh);
           setShiftActive(true);
-          // Restore start snapshot from checkin record
           const checkinRes = await fj(`/shifts/${sh.id}/checkin`).catch(() => null);
           if (checkinRes?.data?.balanceNote) {
             try { setStartSnapshot(JSON.parse(checkinRes.data.balanceNote)); } catch (_) {}
@@ -672,21 +730,17 @@ export const ShiftsPage = () => {
     })();
   }, [usr?.role]);
 
-  // Auto-clear alerts
   useEffect(() => { if (success) { const t = setTimeout(()=>setSuccess(''),4000); return ()=>clearTimeout(t); } },[success]);
   useEffect(() => { if (error)   { const t = setTimeout(()=>setError(''),5000);   return ()=>clearTimeout(t); } },[error]);
 
-  // ── Checkin confirmed (start shift) ──
   const handleCheckinConfirm = async (snapshot) => {
     try {
       setLoading(true);
-      // 1) start shift in DB
       const res = await api.shifts.startShift({ teamRole: usr?.role });
       if (!res?.data) throw new Error('No shift data returned');
       const shiftId = res.data.id;
       activeShiftIdRef.current = shiftId;
       setActiveShift(res.data);
-      // 2) record checkin snapshot
       await fj(`/shifts/${shiftId}/checkin`, {
         method:'POST',
         body: JSON.stringify({ confirmedBalance: snapshot.totalWallet, balanceNote: JSON.stringify(snapshot) }),
@@ -699,13 +753,11 @@ export const ShiftsPage = () => {
     finally { setLoading(false); }
   };
 
-  // ── Checkout confirmed (end shift) ──
   const handleCheckoutSubmit = async ({ endSnapshot, feedback }) => {
     const shiftId = activeShiftIdRef.current;
     if (!shiftId) return;
     try {
       setLoading(true);
-      // 1) submit end-of-shift form
       await fj(`/shifts/${shiftId}/checkout`, {
         method:'POST',
         body: JSON.stringify({
@@ -716,7 +768,6 @@ export const ShiftsPage = () => {
           additionalNotes:    JSON.stringify({ effortReason:feedback.effortReason, improvements:feedback.improvements, endSnapshot }),
         }),
       });
-      // 2) end the shift
       await api.shifts.endShift(shiftId);
       activeShiftIdRef.current = null;
       setActiveShift(null);
@@ -846,7 +897,6 @@ export const ShiftsPage = () => {
                 <tbody>
                   {pastShifts.filter(s=>!s.isActive).map(shift => {
                     const effort = shift.checkin?.effortRating ?? shift.stats?.effortRating ?? null;
-                    // parse end snapshot for reconciliation status
                     let balanced = null;
                     if (shift.checkin?.additionalNotes) {
                       try {
