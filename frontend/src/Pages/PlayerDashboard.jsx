@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid,
-    Tooltip, ResponsiveContainer, Legend, Snowflake 
+    Tooltip, ResponsiveContainer, Legend, Snowflake
 } from 'recharts';
 import { fmtTXTime } from '../utils/txTime';
 
@@ -20,13 +20,13 @@ const C = {
 const TIER = {
     BRONZE: { bg: '#fed7aa', text: '#92400e', emoji: '🥉', label: 'Bronze' },
     SILVER: { bg: '#e0e7ff', text: '#3730a3', emoji: '🥈', label: 'Silver' },
-    GOLD:   { bg: '#fef3c7', text: '#92400e', emoji: '🥇', label: 'Gold' },
+    GOLD: { bg: '#fef3c7', text: '#92400e', emoji: '🥇', label: 'Gold' },
 };
 const STATUS_MAP = {
-    ACTIVE:          { bg: '#dcfce7', text: '#166534', dot: '#16a34a', label: 'Active' },
-    CRITICAL:        { bg: '#fef9c3', text: '#854d0e', dot: '#d97706', label: 'Critical' },
+    ACTIVE: { bg: '#dcfce7', text: '#166534', dot: '#16a34a', label: 'Active' },
+    CRITICAL: { bg: '#fef9c3', text: '#854d0e', dot: '#d97706', label: 'Critical' },
     HIGHLY_CRITICAL: { bg: '#ffedd5', text: '#9a3412', dot: '#ea580c', label: 'High Critical' },
-    INACTIVE:        { bg: '#fee2e2', text: '#991b1b', dot: '#dc2626', label: 'Inactive' },
+    INACTIVE: { bg: '#fee2e2', text: '#991b1b', dot: '#dc2626', label: 'Inactive' },
 };
 
 const card = (extra = {}) => ({
@@ -40,12 +40,12 @@ const pill = (bg, text) => ({
 
 // ── Bonus type helpers ──────────────────────────────────────────
 const BONUS_LABEL_MAP = {
-    'streak bonus':   { label: 'Streak Bonus',   emoji: '🔥', bg: '#fffbeb', text: '#92400e' },
-    'referral bonus': { label: 'Referral Bonus',  emoji: '👤', bg: '#f0fdf4', text: '#166534' },
-    'match bonus':    { label: 'Match Bonus',     emoji: '💰', bg: '#eff6ff', text: '#1d4ed8' },
-    'special bonus':  { label: 'Special Bonus',   emoji: '⭐', bg: '#faf5ff', text: '#6b21a8' },
-    'bonus':          { label: 'Bonus',           emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
-    'bonus_credited': { label: 'Bonus',           emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
+    'streak bonus': { label: 'Streak Bonus', emoji: '🔥', bg: '#fffbeb', text: '#92400e' },
+    'referral bonus': { label: 'Referral Bonus', emoji: '👤', bg: '#f0fdf4', text: '#166534' },
+    'match bonus': { label: 'Match Bonus', emoji: '💰', bg: '#eff6ff', text: '#1d4ed8' },
+    'special bonus': { label: 'Special Bonus', emoji: '⭐', bg: '#faf5ff', text: '#6b21a8' },
+    'bonus': { label: 'Bonus', emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
+    'bonus_credited': { label: 'Bonus', emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
 };
 
 function resolveBonusInfo(tx) {
@@ -55,14 +55,14 @@ function resolveBonusInfo(tx) {
 
 // ── TX type map for the recent transactions table ──────────────
 const TX_TYPE_MAP = {
-    deposit:          { label: 'Deposit',        color: '#10b981', bg: '#f0fdf4' },
-    cashout:          { label: 'Cashout',         color: '#dc2626', bg: '#fff1f2' },
-    'streak bonus':   { label: 'Streak Bonus',    color: '#f59e0b', bg: '#fffbeb' },
-    'referral bonus': { label: 'Referral Bonus',  color: '#10b981', bg: '#f0fdf4' },
-    'match bonus':    { label: 'Match Bonus',     color: '#3b82f6', bg: '#eff6ff' },
-    'special bonus':  { label: 'Special Bonus',   color: '#8b5cf6', bg: '#faf5ff' },
-    'bonus_credited': { label: 'Bonus',           color: '#d97706', bg: '#fffbeb' },
-    'bonus':          { label: 'Bonus',           color: '#d97706', bg: '#fffbeb' },
+    deposit: { label: 'Deposit', color: '#10b981', bg: '#f0fdf4' },
+    cashout: { label: 'Cashout', color: '#dc2626', bg: '#fff1f2' },
+    'streak bonus': { label: 'Streak Bonus', color: '#f59e0b', bg: '#fffbeb' },
+    'referral bonus': { label: 'Referral Bonus', color: '#10b981', bg: '#f0fdf4' },
+    'match bonus': { label: 'Match Bonus', color: '#3b82f6', bg: '#eff6ff' },
+    'special bonus': { label: 'Special Bonus', color: '#8b5cf6', bg: '#faf5ff' },
+    'bonus_credited': { label: 'Bonus', color: '#d97706', bg: '#fffbeb' },
+    'bonus': { label: 'Bonus', color: '#d97706', bg: '#fffbeb' },
 };
 
 function Avatar({ name = '?', size = 44, fontSize = 15 }) {
@@ -98,7 +98,9 @@ function SectionHeader({ title, count }) {
     );
 
 
-    // ─── Helper ───────────────────────────────────────────────────────────────────
+
+}
+// ─── Helper ───────────────────────────────────────────────────────────────────
 function fmtDuration(ms) {
     if (ms <= 0) return 'expired';
     const h = Math.floor(ms / 3_600_000);
@@ -106,36 +108,36 @@ function fmtDuration(ms) {
     if (h > 0) return `${h}h ${m}m`;
     return `${m}m`;
 }
- 
+
 // ─── Streak & Freeze Card ─────────────────────────────────────────────────────
 // Add this component definition alongside the other components in PlayerDashboard.jsx
 function StreakFreezeCard({ player }) {
-    const streak   = player.streak?.currentStreak ?? 0;
-    const freeze   = player.streakFreeze;
+    const streak = player.streak?.currentStreak ?? 0;
+    const freeze = player.streakFreeze;
     const isFrozen = freeze?.isFrozen;
-    const isAuto   = freeze?.isAutoFreeze;
-    const until    = freeze?.freezeUntil ? new Date(freeze.freezeUntil) : null;
-    const msLeft   = until ? Math.max(0, until - Date.now()) : 0;
+    const isAuto = freeze?.isAutoFreeze;
+    const until = freeze?.freezeUntil ? new Date(freeze.freezeUntil) : null;
+    const msLeft = until ? Math.max(0, until - Date.now()) : 0;
     const lastPlayed = player.streak?.lastPlayedDate;
- 
+
     const STREAK_COLORS = [
         { days: 30, color: '#10b981', bg: '#f0fdf4', border: '#86efac', label: 'Legend' },
         { days: 15, color: '#ef4444', bg: '#fef2f2', border: '#fca5a5', label: 'Blazing' },
         { days: 10, color: '#f97316', bg: '#fff7ed', border: '#fdba74', label: 'Fire' },
-        { days: 7,  color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', label: 'Hot Streak' },
-        { days: 5,  color: '#8b5cf6', bg: '#faf5ff', border: '#ddd6fe', label: 'On A Roll' },
-        { days: 3,  color: '#0ea5e9', bg: '#f0f9ff', border: '#bae6fd', label: 'Warming Up' },
-        { days: 2,  color: '#64748b', bg: '#f1f5f9', border: '#cbd5e1', label: 'Starter' },
+        { days: 7, color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', label: 'Hot Streak' },
+        { days: 5, color: '#8b5cf6', bg: '#faf5ff', border: '#ddd6fe', label: 'On A Roll' },
+        { days: 3, color: '#0ea5e9', bg: '#f0f9ff', border: '#bae6fd', label: 'Warming Up' },
+        { days: 2, color: '#64748b', bg: '#f1f5f9', border: '#cbd5e1', label: 'Starter' },
     ];
     const tier = STREAK_COLORS.find(t => streak >= t.days);
- 
+
     return (
         <div style={{
             background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`,
             boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '20px 24px',
         }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
- 
+
                 {/* Left: Streak info */}
                 <div style={{ flex: 1, minWidth: '200px' }}>
                     <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: '800', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
@@ -161,7 +163,7 @@ function StreakFreezeCard({ player }) {
                         </p>
                     )}
                 </div>
- 
+
                 {/* Right: Freeze status */}
                 <div style={{ flex: 1, minWidth: '220px' }}>
                     {isFrozen ? (
@@ -230,7 +232,6 @@ function StreakFreezeCard({ player }) {
             </div>
         </div>
     );
-}
 }
 
 // ─── Delete Modal ───────────────────────────────────────────────────────────────
@@ -398,8 +399,8 @@ export default function PlayerDashboard() {
 
     if (!player) return null;
 
-    const tier       = TIER[player.tier] || TIER.BRONZE;
-    const tierCfg    = TIER_CONFIG[player.tier] || TIER_CONFIG.BRONZE;
+    const tier = TIER[player.tier] || TIER.BRONZE;
+    const tierCfg = TIER_CONFIG[player.tier] || TIER_CONFIG.BRONZE;
     const weeklyTarget = tierCfg.weeklyTarget;
 
     // ── Weekly deposit total ───────────────────────────────────────────────
@@ -426,7 +427,7 @@ export default function PlayerDashboard() {
     })();
 
     // Progress toward NEXT tier (0–100, capped at 100)
-    const tierPct   = weeklyTarget
+    const tierPct = weeklyTarget
         ? Math.min(100, Math.round((weeklyDeposits / weeklyTarget) * 100))
         : 100;
     const amtToNext = weeklyTarget ? Math.max(0, weeklyTarget - weeklyDeposits) : 0;
@@ -485,7 +486,7 @@ export default function PlayerDashboard() {
             <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0px', borderRadius: '10px', width: 'fit-content', flexWrap: 'wrap', backgrorund: 'none' }}>
                 {[
                     { label: 'Dashboard', onClick: () => navigate('/') },
-                    { label: 'Players',   onClick: () => navigate('/?page=players') },
+                    { label: 'Players', onClick: () => navigate('/?page=players') },
                     { label: player.name, onClick: null },
                 ].map((item, i, arr) => (
                     <React.Fragment key={i}>
@@ -553,13 +554,13 @@ export default function PlayerDashboard() {
 
             {/* ── STAT ROW ────────────────────────────────────────────────── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px' }}>
-                <StatCard label="Balance"          value={`$${parseFloat(player.balance || 0).toFixed(2)}`}                              color="#10b981" />
-                <StatCard label="Cashout Limit"    value={`$${parseFloat(player.cashoutLimit || 250).toFixed(0)}`}                       color={C.amber} />
+                <StatCard label="Balance" value={`$${parseFloat(player.balance || 0).toFixed(2)}`} color="#10b981" />
+                <StatCard label="Cashout Limit" value={`$${parseFloat(player.cashoutLimit || 250).toFixed(0)}`} color={C.amber} />
                 {/* <StatCard label="Streak"           value={`${player.streak?.currentStreak || 0} days`}                                   color={C.violet} sub={`Last: ${player.streak?.lastPlayedDate || '—'}`} /> */}
                 <StatCard label="Streak" value={`${player.streak?.currentStreak || 0} days`} color={player.streakFreeze?.isFrozen ? '#1d4ed8' : C.violet} sub={player.streakFreeze?.isFrozen ? `🧊 Frozen · ${fmtDuration(Math.max(0, new Date(player.streakFreeze.freezeUntil) - Date.now()))}` : `Last: ${player.streak?.lastPlayedDate || '—'}`} />
-                <StatCard label="Today's Deposits" value={`$${todayDeposits.toFixed(2)}`}                                                color="#10b981" />
-                <StatCard label="Today's Cashouts" value={`$${todayCashouts.toFixed(2)}`}                                                color={C.red} />
-                <StatCard label="Available Bonus"  value={`$${parseFloat(player.bonusTracker?.availableBonus || 0).toFixed(2)}`}         color="#10b981" />
+                <StatCard label="Today's Deposits" value={`$${todayDeposits.toFixed(2)}`} color="#10b981" />
+                <StatCard label="Today's Cashouts" value={`$${todayCashouts.toFixed(2)}`} color={C.red} />
+                <StatCard label="Available Bonus" value={`$${parseFloat(player.bonusTracker?.availableBonus || 0).toFixed(2)}`} color="#10b981" />
             </div>
 
             <StreakFreezeCard player={player} />
@@ -742,11 +743,11 @@ export default function PlayerDashboard() {
                         <AreaChart data={finalChartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="dGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%"  stopColor="#10b981" stopOpacity={0.25} />
+                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
                                     <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                 </linearGradient>
                                 <linearGradient id="cGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%"  stopColor={C.red} stopOpacity={0.2} />
+                                    <stop offset="5%" stopColor={C.red} stopOpacity={0.2} />
                                     <stop offset="95%" stopColor={C.red} stopOpacity={0} />
                                 </linearGradient>
                             </defs>
@@ -756,7 +757,7 @@ export default function PlayerDashboard() {
                             <Tooltip content={<CustomChartTooltip />} />
                             <Legend formatter={value => (<span style={{ fontSize: '12px', color: C.gray, fontWeight: '600' }}>{value}</span>)} />
                             <Area type="monotone" dataKey="deposits" stroke="#10b981" strokeWidth={2.5} fill="url(#dGrad)" name="Deposits" dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
-                            <Area type="monotone" dataKey="cashouts" stroke={C.red}    strokeWidth={2.5} fill="url(#cGrad)" name="Cashouts" dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
+                            <Area type="monotone" dataKey="cashouts" stroke={C.red} strokeWidth={2.5} fill="url(#cGrad)" name="Cashouts" dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
                         </AreaChart>
                     </ResponsiveContainer>
                 ) : (
@@ -771,13 +772,13 @@ export default function PlayerDashboard() {
                 <SectionHeader title="Social Media" />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                     {[
-                        { key: 'email',     label: 'Email',     emoji: '📧', prefix: '' },
-                        { key: 'phone',     label: 'Phone',     emoji: '📱', prefix: '' },
-                        { key: 'facebook',  label: 'Facebook',  emoji: '📘', prefix: '@' },
-                        { key: 'telegram',  label: 'Telegram',  emoji: '✈️',  prefix: '@' },
+                        { key: 'email', label: 'Email', emoji: '📧', prefix: '' },
+                        { key: 'phone', label: 'Phone', emoji: '📱', prefix: '' },
+                        { key: 'facebook', label: 'Facebook', emoji: '📘', prefix: '@' },
+                        { key: 'telegram', label: 'Telegram', emoji: '✈️', prefix: '@' },
                         { key: 'instagram', label: 'Instagram', emoji: '📸', prefix: '@' },
-                        { key: 'x',         label: 'X',         emoji: '🐦', prefix: '@' },
-                        { key: 'snapchat',  label: 'Snapchat',  emoji: '👻', prefix: '@' },
+                        { key: 'x', label: 'X', emoji: '🐦', prefix: '@' },
+                        { key: 'snapchat', label: 'Snapchat', emoji: '👻', prefix: '@' },
                     ].map(({ key, label, emoji, prefix }) => {
                         const val = player.socials?.[key];
                         if (!val) return null;
