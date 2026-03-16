@@ -303,7 +303,8 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   const deposits = shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.amount ?? 0), 0);
   const cashouts = shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.amount ?? 0), 0);
   const bonuses = shiftTxns.filter(t => BONUS_TYPES.includes(t.type)).reduce((s, t) => s + (t.amount ?? 0), 0);
-  const netProfit = deposits - cashouts - bonuses;
+  // const netProfit = deposits - cashouts - bonuses;
+  const netProfit = deposits - cashouts;
 
   // ── Fee extraction — uses t.fee field directly on each transaction ──
   const depositFees = shiftTxns
@@ -423,7 +424,8 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                 { label: 'Deposits', val: `+$${deposits.toFixed(2)}`, color: '#16a34a', bg: '#f0fdf4' },
                 { label: 'Cashouts', val: `-$${cashouts.toFixed(2)}`, color: '#dc2626', bg: '#fef2f2' },
                 { label: 'Bonuses', val: `-$${bonuses.toFixed(2)}`, color: '#d97706', bg: '#fffbeb' },
-                { label: 'Net Profit', val: `${netProfit >= 0 ? '+' : ''}$${netProfit.toFixed(2)}`, color: netProfit >= 0 ? '#16a34a' : '#dc2626', bg: netProfit >= 0 ? '#f0fdf4' : '#fef2f2' },
+                // { label: 'Net Profit', val: `${netProfit >= 0 ? '+' : ''}$${netProfit.toFixed(2)}`, color: netProfit >= 0 ? '#16a34a' : '#dc2626', bg: netProfit >= 0 ? '#f0fdf4' : '#fef2f2' },
+                { label: 'Net Profit (D−C)', val: `${netProfit >= 0 ? '+' : ''}$${netProfit.toFixed(2)}`, color: netProfit >= 0 ? '#16a34a' : '#dc2626', bg: netProfit >= 0 ? '#f0fdf4' : '#fef2f2' },
               ].map(({ label, val, color, bg }) => (
                 <div key={label} style={{ padding: '14px', background: bg, borderRadius: '10px', textAlign: 'center' }}>
                   <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '.4px' }}>{label}</p>
@@ -571,7 +573,7 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                 </p>
                 <p style={{ margin: 0, fontSize: '12px', color: balanced ? '#16a34a' : '#dc2626', lineHeight: 1.5 }}>
                   {balanced
-                    ? `Net profit $${netProfit.toFixed(2)} · Wallet Δ ${sign(walletChange)}${fmt$(walletChange)}${hasFees ? ` (after $${totalFees.toFixed(2)} fees)` : ''} · Game −${(deposits + bonuses - cashouts).toFixed(0)} pts`
+                    ? `Net profit (deposits−cashouts) $${netProfit.toFixed(2)} · Wallet Δ ${sign(walletChange)}${fmt$(walletChange)}${hasFees ? ` (after $${totalFees.toFixed(2)} fees)` : ''} · Game −${(deposits + bonuses - cashouts).toFixed(0)} pts`
                     : `Wallet discrepancy: $${walletDisc.toFixed(2)} | Game discrepancy: ${gameDisc.toFixed(0)} pts. Check transactions before ending.`}
                 </p>
                 {hasFees && (
