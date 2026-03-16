@@ -704,7 +704,8 @@ export const ShiftsPage = () => {
         const token = localStorage.getItem('authToken');
         const [activeRes, historyRes, tasksRes] = await Promise.all([
           api.shifts.getActiveShift(usr.role),
-          api.shifts.getShifts(usr.role),
+          // api.shifts.getShifts(usr.role),
+          api.reports.getMyShifts({ role: usr.role, limit: 30 }),
           token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
         ]);
         if (activeRes?.data) {
