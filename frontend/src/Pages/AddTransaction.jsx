@@ -197,29 +197,53 @@ function LedgerRow({ tx, undoingId, onUndo }) {
                 ) : <span style={{ color: "#cbd5e1" }}>—</span>}
             </td> */}
 
+
             <td style={{ padding: "10px 12px", fontSize: "12px", whiteSpace: "nowrap" }}>
-                {/* {tx.balanceBefore != null && tx.balanceAfter != null && (
-                    <div>
-                        <div style={{ fontSize: "10px", color: "#94a3b8", marginBottom: "1px" }}>💰 Player</div>
-                        <span style={{ color: "#64748b" }}>{fmt(tx.balanceBefore)}</span>
-                        <span style={{ color: "#94a3b8", margin: "0 3px" }}>→</span>
-                        <span style={{ color: positive ? "#22c55e" : "#ef4444", fontWeight: "700" }}>{fmt(tx.balanceAfter)}</span>
-                    </div>
-                )} */}
-                {tx.gameStockBefore != null && tx.gameStockAfter != null && (
-                    <div style={{ marginTop: tx.balanceBefore != null ? "4px" : "0" }}>
-                        <div style={{ fontSize: "10px", color: "#94a3b8", marginBottom: "1px" }}>Game Points</div>
-                        <span style={{ color: "#64748b" }}>{parseFloat(tx.gameStockBefore).toFixed(0)}</span>
-                        <span style={{ color: "#94a3b8", margin: "0 3px" }}>→</span>
-                        <span style={{ color: tx.gameStockAfter >= tx.gameStockBefore ? "#22c55e" : "#ef4444", fontWeight: "700" }}>
-                            {parseFloat(tx.gameStockAfter).toFixed(0)}
-                        </span>
-                    </div>
-                )}
-                {tx.gameStockBefore == null && (
-                    <span style={{ color: "#cbd5e1" }}>—</span>
-                )}
-            </td>
+  {tx.gameStockBefore != null && tx.gameStockAfter != null && (() => {
+    const isCashoutTx = ["Cashout", "cashout"].includes(tx.type);
+    const stockBefore = parseFloat(tx.gameStockBefore);
+    const stockAfter = parseFloat(tx.gameStockAfter);
+    const paid = parseFloat(tx.paidAmount) || 0;
+    const total = parseFloat(tx.amount) || 0;
+
+    const effectiveAfter = isCashoutTx ? stockBefore + paid : stockAfter;
+    const remaining = isCashoutTx ? total - paid : 0;
+    const isUp = effectiveAfter >= stockBefore;
+
+    return (
+      <div>
+        <div style={{ fontSize: "10px", color: "#94a3b8", marginBottom: "1px" }}>Game Points</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <span style={{ color: "#94a3b8" }}>{stockBefore.toFixed(0)}</span>
+          <span style={{ color: "#94a3b8", margin: "0 2px" }}>→</span>
+          <span style={{ color: isUp ? "#22c55e" : "#ef4444", fontWeight: "700" }}>
+            {effectiveAfter.toFixed(0)}
+          </span>
+        </div>
+        {isCashoutTx && remaining > 0 && (
+          <div style={{ marginTop: "3px" }}>
+            <div style={{ height: "4px", background: "#e2e8f0", borderRadius: "99px", overflow: "hidden", width: "80px" }}>
+              <div style={{
+                height: "100%",
+                width: `${total > 0 ? Math.min((paid / total) * 100, 100) : 0}%`,
+                background: paid > 0 ? "#22c55e" : "#e2e8f0",
+                borderRadius: "99px"
+              }} />
+            </div>
+            <div style={{ fontSize: "9px", color: "#94a3b8", marginTop: "2px" }}>
+              {remaining.toFixed(0)} pts pending
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  })()}
+  {tx.gameStockBefore == null && (
+    <span style={{ color: "#cbd5e1" }}>—</span>
+  )}
+</td>
+
+            
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
                 <span style={{ display: "inline-block", padding: "3px 9px", borderRadius: "6px", fontSize: "11px", fontWeight: "700", background: statusColor.bg, color: statusColor.text }}>{statusLabel}</span>
             </td>
