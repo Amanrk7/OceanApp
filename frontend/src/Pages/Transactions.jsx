@@ -546,7 +546,7 @@ export default function Transactions() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
-            All deposits, cashouts, and bonuses · Cashouts start as <strong style={{ color: '#92400e' }}>Pending</strong> and must be approved by admin
+            All deposits, cashouts, and bonuses · Cashouts start as <strong style={{ color: '#92400e' }}>Pending</strong> and must be approved by admin or a member
           </p>
         </div>
         <button onClick={() => loadTransactions(currentPage, filterTab, true)} disabled={loading}
@@ -618,7 +618,7 @@ export default function Transactions() {
           <span style={{ color: '#cbd5e1' }}>→</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ fontSize: '16px' }}>2️⃣</span> Optionally pay in <strong>partial installments</strong></span>
           <span style={{ color: '#cbd5e1' }}>→</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ fontSize: '16px' }}>3️⃣</span> Admin clicks <strong>Mark Done</strong> → moves to <strong>COMPLETED</strong></span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ fontSize: '16px' }}>3️⃣</span> Admin/Member clicks <strong>Mark Done</strong> → moves to <strong>COMPLETED</strong></span>
         </div>
       )}
 
