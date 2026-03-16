@@ -246,7 +246,8 @@ function DiscrepancyBanner({ endSnapshot }) {
                             { label: "Deposits", val: fmtMoney(deposits), color: "#16a34a" },
                             { label: "Cashouts", val: `−${fmtMoney(cashouts)}`, color: "#dc2626" },
                             { label: "Bonuses", val: `−${fmtMoney(bonuses)}`, color: "#d97706" },
-                            { label: "Net Profit", val: fmtMoney(netProfit), color: netProfit >= 0 ? "#16a34a" : "#dc2626" },
+                            // { label: "Net Profit", val: fmtMoney(netProfit), color: netProfit >= 0 ? "#16a34a" : "#dc2626" },
+                            { label: "Net Profit (D−C)", val: fmtMoney(netProfit), color: netProfit >= 0 ? "#16a34a" : "#dc2626" },
                             { label: "Wallet Δ", val: `${(walletChange ?? 0) >= 0 ? "+" : ""}${fmtMoney(walletChange)}`, color: "#475569" },
                             { label: "Game Δ", val: `${(gameChange ?? 0) >= 0 ? "+" : ""}${(gameChange ?? 0).toFixed(0)} pts`, color: "#7c3aed" },
                             { label: "Discrepancy", val: fmtMoney(totalDiscrepancy ?? 0), color: isBalanced ? "#16a34a" : "#dc2626" },
@@ -258,7 +259,7 @@ function DiscrepancyBanner({ endSnapshot }) {
                         ))}
                     </div>
                     <p style={{ margin: "8px 0 0", fontSize: "11px", color: "#64748b", fontStyle: "italic" }}>
-                        Formula: (Deposits − Cashouts − Bonuses) should equal (Wallet Δ) and (−Game Δ) = 0 net
+                        Formula: Net Profit = Deposits − Cashouts (bonuses tracked separately). Wallet Δ should equal Deposits − Cashouts ± fees.
                     </p>
                 </div>
             </div>
@@ -1015,7 +1016,7 @@ function printReport(report, date) {
                     : '';
                 return `<div style="padding:10px 14px;background:${isOk ? '#f0fdf4' : '#fef2f2'};border-left:4px solid ${isOk ? '#16a34a' : '#dc2626'};border-radius:6px;margin-bottom:12px;font-size:11px">
           <strong style="color:${isOk ? '#166534' : '#991b1b'}">${isOk ? "✓ Fully balanced" : `⚠️ Discrepancy: ${fmtMoney(Math.abs(feeAdjDisc))}`}</strong><br/>
-          Deposits ${fmtMoney(deposits)} − Cashouts ${fmtMoney(cashouts)} − Bonuses ${fmtMoney(bonuses)} = Net ${fmtMoney(netProfit)}${feesLine} | Wallet Δ ${walletChange >= 0 ? '+' : ''}${fmtMoney(walletChange)} | Game Δ ${(gameChange ?? 0) >= 0 ? '+' : ''}${(gameChange ?? 0).toFixed(0)} pts | Discrepancy (fee-adj): ${fmtMoney(feeAdjDisc)}
+          Deposits ${fmtMoney(deposits)} − Cashouts ${fmtMoney(cashouts)} = Net ${fmtMoney(netProfit)} | Bonuses (separate): ${fmtMoney(bonuses)}${feesLine} | Wallet Δ ${walletChange >= 0 ? '+' : ''}${fmtMoney(walletChange)} | Game Δ ${(gameChange ?? 0) >= 0 ? '+' : ''}${(gameChange ?? 0).toFixed(0)} pts | Discrepancy (fee-adj): ${fmtMoney(feeAdjDisc)}
         </div>`;
             })() : "";
 
