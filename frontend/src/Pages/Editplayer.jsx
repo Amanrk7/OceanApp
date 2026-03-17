@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 
-// ─── Design tokens (matching Players page) ────────────────────
 const C = {
     sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
     green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
@@ -12,8 +11,8 @@ const C = {
 };
 
 const TIER_CASHOUT = { BRONZE: 250, SILVER: 500, GOLD: 750 };
-const STATUS_OPTS = ['ACTIVE', 'CRITICAL', 'HIGHLY_CRITICAL', 'INACTIVE'];
-const TIER_OPTS = ['BRONZE', 'SILVER', 'GOLD'];
+const STATUS_OPTS  = ['ACTIVE', 'CRITICAL', 'HIGHLY_CRITICAL', 'INACTIVE'];
+const TIER_OPTS    = ['BRONZE', 'SILVER', 'GOLD'];
 
 const INPUT = {
     width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`,
@@ -50,49 +49,67 @@ function SectionHead({ children }) {
     );
 }
 
+// ── Mini info banner ──────────────────────────────────────────────────────────
+function InfoBanner({ children }) {
+    return (
+        <div style={{
+            padding: '8px 12px', background: '#fffbeb', border: '1px solid #fde68a',
+            borderRadius: '7px', fontSize: '11px', color: '#92400e', marginBottom: '10px',
+        }}>
+            ⚠️ {children}
+        </div>
+    );
+}
+
 // ══════════════════════════════════════════════════════════════
 // EDIT PLAYER MODAL
 // ══════════════════════════════════════════════════════════════
 export default function EditPlayer({ player, onClose, onSaved }) {
     const [form, setForm] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        tier: 'BRONZE',
-        status: 'ACTIVE',
-        balance: '',
+        // Identity
+        name:         '',
+        email:        '',
+        phone:        '',
+        source:       '',
+        // Classification
+        tier:         'BRONZE',
+        status:       'ACTIVE',
+        // Financials
+        balance:      '',
         cashoutLimit: '250',
-        facebook: '',
-        telegram: '',
+        // Streak — NOTE: sent to backend as `currentStreak`
+        currentStreak: '',
+        // Socials
+        facebook:  '',
+        telegram:  '',
         instagram: '',
-        x: '',
-        snapchat: '',
-        source: '',
-        streak: '',
+        x:         '',
+        snapchat:  '',
     });
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
 
-    // Pre-fill form from player prop
+    const [loading,  setLoading]  = useState(false);
+    const [error,    setError]    = useState('');
+    const [success,  setSuccess]  = useState('');
+
+    // Pre-fill from player prop
     useEffect(() => {
         if (!player) return;
-        console.log("player is: ", player)
         setForm({
-            name: player.name || '',
-            email: player.email || '',
-            phone: player.phone || '',
-            tier: player.tier || 'BRONZE',
-            status: player.status || 'ACTIVE',
-            balance: String(parseFloat(player.balance || 0).toFixed(2)),
-            cashoutLimit: String(parseFloat(player.cashoutLimit || TIER_CASHOUT[player.tier] || 250)),
-            facebook: player.socials.facebook || '',
-            telegram: player.socials.telegram || '',
-            instagram: player.socials.instagram || '',
-            x: player.socials.x || '',
-            snapchat: player.socials.snapchat || '',
-            source: player.source || '',
-            streak: player.streak.currentStreak || '',
+            name:          player.name  || '',
+            email:         player.email || '',
+            phone:         player.phone || '',
+            source:        player.source !== '—' ? (player.source || '') : '',
+            tier:          player.tier   || 'BRONZE',
+            status:        player.status || 'ACTIVE',
+            balance:       String(parseFloat(player.balance || 0).toFixed(2)),
+            cashoutLimit:  String(parseFloat(player.cashoutLimit || TIER_CASHOUT[player.tier] || 250)),
+            // ✅ FIX: use currentStreak (matches backend PATCH field name)
+            currentStreak: String(player.streak?.currentStreak ?? 0),
+            facebook:      player.socials?.facebook  || '',
+            telegram:      player.socials?.telegram  || '',
+            instagram:     player.socials?.instagram || '',
+            x:             player.socials?.x         || '',
+            snapchat:      player.socials?.snapchat  || '',
         });
         setError('');
         setSuccess('');
@@ -100,15 +117,13 @@ export default function EditPlayer({ player, onClose, onSaved }) {
 
     const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
-    // When tier changes, auto-adjust cashoutLimit
+    // Auto-adjust cashoutLimit when tier changes
     const onTierChange = (tier) => {
         setForm(p => ({ ...p, tier, cashoutLimit: String(TIER_CASHOUT[tier] ?? 250) }));
-
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("edit user data: ", form);
         setError(''); setSuccess('');
         if (!form.name.trim() || !form.email.trim()) {
             return setError('Name and email are required.');
@@ -116,22 +131,21 @@ export default function EditPlayer({ player, onClose, onSaved }) {
         try {
             setLoading(true);
             await api.players.updatePlayer(player.id, {
-                name: form.name.trim(),
-                email: form.email.trim(),
-                phone: form.phone.trim() || null,
-                tier: form.tier,
-                status: form.status,
-                balance: parseFloat(form.balance) || 0,
-                cashoutLimit: parseFloat(form.cashoutLimit) || TIER_CASHOUT[form.tier],
-                facebook: form.facebook.trim() || null,
-                telegram: form.telegram.trim() || null,
-                instagram: form.instagram.trim() || null,
-                x: form.x.trim() || null,
-                snapchat: form.snapchat.trim() || null,
-                source: form.source.trim() || null,
-                // source: form.source.trim() || null,
-                streak: form.streak || 0,
-
+                name:          form.name.trim(),
+                email:         form.email.trim(),
+                phone:         form.phone.trim()  || null,
+                tier:          form.tier,
+                status:        form.status,
+                balance:       parseFloat(form.balance)      || 0,
+                cashoutLimit:  parseFloat(form.cashoutLimit) || TIER_CASHOUT[form.tier],
+                // ✅ FIX: send as currentStreak — backend PATCH reads req.body.currentStreak
+                currentStreak: parseInt(form.currentStreak, 10) || 0,
+                facebook:      form.facebook.trim()  || null,
+                telegram:      form.telegram.trim()  || null,
+                instagram:     form.instagram.trim() || null,
+                x:             form.x.trim()         || null,
+                snapchat:      form.snapchat.trim()  || null,
+                source:        form.source.trim()    || null,
             });
             setSuccess('Player updated!');
             setTimeout(() => { onSaved(); onClose(); }, 900);
@@ -145,7 +159,6 @@ export default function EditPlayer({ player, onClose, onSaved }) {
     if (!player) return null;
 
     return (
-        // Backdrop
         <div
             onClick={e => { if (e.target === e.currentTarget) onClose(); }}
             style={{
@@ -154,10 +167,9 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                 padding: '20px',
             }}
         >
-            {/* Modal */}
             <div style={{
                 background: C.white, borderRadius: '16px', boxShadow: '0 24px 60px rgba(15,23,42,.22)',
-                width: '100%', maxWidth: '640px', maxHeight: '90vh', overflow: 'hidden',
+                width: '100%', maxWidth: '660px', maxHeight: '92vh', overflow: 'hidden',
                 display: 'flex', flexDirection: 'column',
             }}>
                 {/* Header */}
@@ -167,35 +179,28 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                     background: C.skyLt,
                 }}>
                     <div>
-                        <p style={{ margin: 0, fontWeight: '800', fontSize: '15px', color: C.slate }}>
-                            Edit Player
-                        </p>
+                        <p style={{ margin: 0, fontWeight: '800', fontSize: '15px', color: C.slate }}>Edit Player</p>
                         <p style={{ margin: '2px 0 0', fontSize: '12px', color: C.gray }}>
                             @{player.username} · ID {player.id}
                         </p>
                     </div>
-                    <button onClick={onClose} style={{
-                        background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px',
-                        color: C.grayLt, lineHeight: 1, padding: '4px',
-                    }}>✕</button>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', color: C.grayLt, lineHeight: 1 }}>✕</button>
                 </div>
 
                 {/* Scrollable body */}
                 <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
                     {error && (
-                        <div style={{
-                            padding: '10px 14px', background: C.redLt, border: `1px solid ${C.redBdr}`,
-                            borderRadius: '8px', color: '#991b1b', fontSize: '13px', marginBottom: '16px',
-                        }}>{error}</div>
+                        <div style={{ padding: '10px 14px', background: C.redLt, border: `1px solid ${C.redBdr}`, borderRadius: '8px', color: '#991b1b', fontSize: '13px', marginBottom: '16px' }}>
+                            {error}
+                        </div>
                     )}
                     {success && (
-                        <div style={{
-                            padding: '10px 14px', background: C.greenLt, border: `1px solid ${C.greenBdr}`,
-                            borderRadius: '8px', color: '#166534', fontSize: '13px', marginBottom: '16px',
-                        }}>✓ {success}</div>
+                        <div style={{ padding: '10px 14px', background: C.greenLt, border: `1px solid ${C.greenBdr}`, borderRadius: '8px', color: '#166534', fontSize: '13px', marginBottom: '16px' }}>
+                            ✓ {success}
+                        </div>
                     )}
 
-                    <form id="edit-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <form id="edit-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
                         {/* ── Identity ── */}
                         <div>
@@ -220,33 +225,25 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                             </div>
                         </div>
 
-                        {/* ── Classification ── */}
+                        {/* ── Classification & Financials ── */}
                         <div>
-                            <SectionHead>Classification & Balance</SectionHead>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '12px' }}>
+                            <SectionHead>Classification &amp; Financials</SectionHead>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                                 <Field label="Tier">
-                                    <select style={selectStyle} value={form.tier}
-                                        onChange={e => onTierChange(e.target.value)}>
-                                        {TIER_OPTS.map(t => <option key={t} value={t}>{t.charAt(0) + t.slice(1).toLowerCase()}</option>)}
-                                    </select>
-                                </Field>
-                                <Field label="Status">
-                                    <select style={selectStyle} value={form.status}
-                                        onChange={e => set('status', e.target.value)}>
-                                        {STATUS_OPTS.map(s => (
-                                            <option key={s} value={s}>
-                                                {s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
-                                            </option>
+                                    <select style={selectStyle} value={form.tier} onChange={e => onTierChange(e.target.value)}>
+                                        {TIER_OPTS.map(t => (
+                                            <option key={t} value={t}>{t.charAt(0) + t.slice(1).toLowerCase()}</option>
                                         ))}
                                     </select>
                                 </Field>
-                                <Field label="Streak">
-                                    <input style={INPUT} type="number" min="0" step="0.01"
-                                        value={form.streak} onChange={e => set('streak', e.target.value)} />
-                                </Field>
-                                <Field label="Balance ($)">
-                                    <input style={INPUT} type="number" min="0" step="0.01"
-                                        value={form.balance} onChange={e => set('balance', e.target.value)} />
+                                <Field label="Status">
+                                    <select style={selectStyle} value={form.status} onChange={e => set('status', e.target.value)}>
+                                        {STATUS_OPTS.map(s => (
+                                            <option key={s} value={s}>
+                                                {s.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </Field>
                                 <Field label="Cashout Limit ($)" hint="Auto-set by tier">
                                     <input style={INPUT} type="number" min="0" step="0.01"
@@ -255,24 +252,67 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                             </div>
                         </div>
 
-                        {/* ── Socials ── */}
+                        {/* ── Balance & Streak (manual override) ── */}
+                        <div>
+                            <SectionHead>Balance &amp; Streak (Manual Override)</SectionHead>
+                            <InfoBanner>
+                                Editing balance directly bypasses the normal transaction flow. Use only for corrections.
+                                To grant a bonus, use the Bonus page instead.
+                            </InfoBanner>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <Field label="Balance ($)" hint="Player's current wallet balance">
+                                    <div style={{ position: 'relative' }}>
+                                        <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: C.grayLt, fontSize: '13px', fontWeight: '700', pointerEvents: 'none' }}>$</span>
+                                        <input
+                                            style={{ ...INPUT, paddingLeft: '22px' }}
+                                            type="number" min="0" step="0.01"
+                                            value={form.balance}
+                                            onChange={e => set('balance', e.target.value)}
+                                        />
+                                    </div>
+                                </Field>
+                                <Field
+                                    label="Current Streak (days)"
+                                    hint={`Was: ${player.streak?.currentStreak ?? 0} days · Last deposit: ${player.streak?.lastPlayedDate || '—'}`}
+                                >
+                                    {/* ✅ FIX: field key is currentStreak, sent to backend as currentStreak */}
+                                    <input
+                                        style={INPUT}
+                                        type="number" min="0" step="1"
+                                        value={form.currentStreak}
+                                        onChange={e => set('currentStreak', e.target.value)}
+                                        placeholder="0"
+                                    />
+                                </Field>
+                            </div>
+
+                            {/* Current state at-a-glance */}
+                            <div style={{
+                                marginTop: '10px', padding: '10px 14px', background: C.bg,
+                                border: `1px solid ${C.border}`, borderRadius: '8px',
+                                display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '12px',
+                            }}>
+                                <span>💰 Current balance: <strong style={{ color: '#10b981' }}>${parseFloat(player.balance || 0).toFixed(2)}</strong></span>
+                                <span>🔥 Current streak: <strong style={{ color: '#7c3aed' }}>{player.streak?.currentStreak ?? 0} days</strong></span>
+                                <span>🎁 Available bonus: <strong style={{ color: '#10b981' }}>${parseFloat(player.bonusTracker?.availableBonus || 0).toFixed(2)}</strong></span>
+                                <span>📊 Total earned: <strong style={{ color: C.slate }}>${parseFloat(player.bonusTracker?.totalBonusEarned || 0).toFixed(2)}</strong></span>
+                            </div>
+                        </div>
+
+                        {/* ── Social Handles ── */}
                         <div>
                             <SectionHead>Social Handles — optional</SectionHead>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 {[
-                                    { key: 'facebook', label: 'Facebook', prefix: 'fb.com/' },
-                                    { key: 'telegram', label: 'Telegram', prefix: 't.me/' },
-                                    { key: 'instagram', label: 'Instagram', prefix: 'ig/' },
-                                    { key: 'x', label: 'X / Twitter', prefix: 'x.com/' },
-                                    { key: 'snapchat', label: 'Snapchat', prefix: 'snap/' },
-                                ].map(({ key, label, prefix }) => (
+                                    { key: 'facebook',  label: 'Facebook'   },
+                                    { key: 'telegram',  label: 'Telegram'   },
+                                    { key: 'instagram', label: 'Instagram'  },
+                                    { key: 'x',         label: 'X / Twitter'},
+                                    { key: 'snapchat',  label: 'Snapchat'   },
+                                ].map(({ key, label }) => (
                                     <Field key={key} label={label}>
                                         <div style={{ position: 'relative' }}>
-                                            <span style={{
-                                                position: 'absolute', left: '10px', top: '50%',
-                                                transform: 'translateY(-50%)', fontSize: '11px',
-                                                color: C.grayLt, fontWeight: '700', pointerEvents: 'none',
-                                            }}>@</span>
+                                            <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: C.grayLt, fontWeight: '700', pointerEvents: 'none' }}>@</span>
                                             <input
                                                 style={{ ...INPUT, paddingLeft: '24px' }}
                                                 value={form[key]}
@@ -289,22 +329,18 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                 </div>
 
                 {/* Footer */}
-                <div style={{
-                    padding: '16px 24px', borderTop: `1px solid ${C.border}`,
-                    display: 'flex', gap: '10px', background: C.bg,
-                }}>
+                <div style={{ padding: '16px 24px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: '10px', background: C.bg }}>
                     <button type="button" onClick={onClose} disabled={loading} style={{
                         flex: 1, padding: '11px', background: C.white, border: `1px solid ${C.border}`,
                         borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px', color: C.slate,
                     }}>Cancel</button>
-                    <button
-                        type="submit" form="edit-form" disabled={loading}
-                        style={{
-                            flex: 2, padding: '11px', background: loading ? '#e2e8f0' : C.sky,
-                            color: loading ? C.grayLt : '#fff', border: 'none', borderRadius: '8px',
-                            fontWeight: '700', fontSize: '13px', cursor: loading ? 'not-allowed' : 'pointer',
-                        }}
-                    >
+                    <button type="submit" form="edit-form" disabled={loading} style={{
+                        flex: 2, padding: '11px',
+                        background: loading ? '#e2e8f0' : C.sky,
+                        color: loading ? C.grayLt : '#fff',
+                        border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                    }}>
                         {loading ? '⏳ Saving…' : '✓ Save Changes'}
                     </button>
                 </div>
