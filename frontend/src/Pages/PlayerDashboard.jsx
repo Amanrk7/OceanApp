@@ -20,13 +20,13 @@ const C = {
 const TIER = {
     BRONZE: { bg: '#fed7aa', text: '#92400e', emoji: '🥉', label: 'Bronze' },
     SILVER: { bg: '#e0e7ff', text: '#3730a3', emoji: '🥈', label: 'Silver' },
-    GOLD:   { bg: '#fef3c7', text: '#92400e', emoji: '🥇', label: 'Gold' },
+    GOLD: { bg: '#fef3c7', text: '#92400e', emoji: '🥇', label: 'Gold' },
 };
 const STATUS_MAP = {
-    ACTIVE:          { bg: '#dcfce7', text: '#166534', dot: '#16a34a', label: 'Active' },
-    CRITICAL:        { bg: '#fef9c3', text: '#854d0e', dot: '#d97706', label: 'Critical' },
+    ACTIVE: { bg: '#dcfce7', text: '#166534', dot: '#16a34a', label: 'Active' },
+    CRITICAL: { bg: '#fef9c3', text: '#854d0e', dot: '#d97706', label: 'Critical' },
     HIGHLY_CRITICAL: { bg: '#ffedd5', text: '#9a3412', dot: '#ea580c', label: 'High Critical' },
-    INACTIVE:        { bg: '#fee2e2', text: '#991b1b', dot: '#dc2626', label: 'Inactive' },
+    INACTIVE: { bg: '#fee2e2', text: '#991b1b', dot: '#dc2626', label: 'Inactive' },
 };
 
 const card = (extra = {}) => ({
@@ -40,12 +40,12 @@ const pill = (bg, text) => ({
 
 // ── Bonus type helpers ──────────────────────────────────────────
 const BONUS_LABEL_MAP = {
-    'streak bonus':   { label: 'Streak Bonus',   emoji: '🔥', bg: '#fffbeb', text: '#92400e' },
-    'referral bonus': { label: 'Referral Bonus',  emoji: '👤', bg: '#f0fdf4', text: '#166534' },
-    'match bonus':    { label: 'Match Bonus',     emoji: '💰', bg: '#eff6ff', text: '#1d4ed8' },
-    'special bonus':  { label: 'Special Bonus',   emoji: '⭐', bg: '#faf5ff', text: '#6b21a8' },
-    'bonus':          { label: 'Bonus',           emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
-    'bonus_credited': { label: 'Bonus',           emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
+    'streak bonus': { label: 'Streak Bonus', emoji: '🔥', bg: '#fffbeb', text: '#92400e' },
+    'referral bonus': { label: 'Referral Bonus', emoji: '👤', bg: '#f0fdf4', text: '#166534' },
+    'match bonus': { label: 'Match Bonus', emoji: '💰', bg: '#eff6ff', text: '#1d4ed8' },
+    'special bonus': { label: 'Special Bonus', emoji: '⭐', bg: '#faf5ff', text: '#6b21a8' },
+    'bonus': { label: 'Bonus', emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
+    'bonus_credited': { label: 'Bonus', emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
 };
 function resolveBonusInfo(tx) {
     const key = (tx.type || '').toLowerCase().trim();
@@ -54,14 +54,14 @@ function resolveBonusInfo(tx) {
 
 // ── TX type map ─────────────────────────────────────────────────
 const TX_TYPE_MAP = {
-    deposit:           { label: 'Deposit',        color: '#10b981', bg: '#f0fdf4' },
-    cashout:           { label: 'Cashout',         color: '#dc2626', bg: '#fff1f2' },
-    'streak bonus':    { label: 'Streak Bonus',    color: '#f59e0b', bg: '#fffbeb' },
-    'referral bonus':  { label: 'Referral Bonus',  color: '#10b981', bg: '#f0fdf4' },
-    'match bonus':     { label: 'Match Bonus',     color: '#3b82f6', bg: '#eff6ff' },
-    'special bonus':   { label: 'Special Bonus',   color: '#8b5cf6', bg: '#faf5ff' },
-    'bonus_credited':  { label: 'Bonus',           color: '#d97706', bg: '#fffbeb' },
-    'bonus':           { label: 'Bonus',           color: '#d97706', bg: '#fffbeb' },
+    deposit: { label: 'Deposit', color: '#10b981', bg: '#f0fdf4' },
+    cashout: { label: 'Cashout', color: '#dc2626', bg: '#fff1f2' },
+    'streak bonus': { label: 'Streak Bonus', color: '#f59e0b', bg: '#fffbeb' },
+    'referral bonus': { label: 'Referral Bonus', color: '#10b981', bg: '#f0fdf4' },
+    'match bonus': { label: 'Match Bonus', color: '#3b82f6', bg: '#eff6ff' },
+    'special bonus': { label: 'Special Bonus', color: '#8b5cf6', bg: '#faf5ff' },
+    'bonus_credited': { label: 'Bonus', color: '#d97706', bg: '#fffbeb' },
+    'bonus': { label: 'Bonus', color: '#d97706', bg: '#fffbeb' },
 };
 
 // ── Helpers ─────────────────────────────────────────────────────
@@ -144,10 +144,10 @@ function StreakFreezeCard({ player }) {
         { days: 30, color: '#10b981', bg: '#f0fdf4', border: '#86efac', label: 'Legend' },
         { days: 15, color: '#ef4444', bg: '#fef2f2', border: '#fca5a5', label: 'Blazing' },
         { days: 10, color: '#f97316', bg: '#fff7ed', border: '#fdba74', label: 'Fire' },
-        { days: 7,  color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', label: 'Hot Streak' },
-        { days: 5,  color: '#8b5cf6', bg: '#faf5ff', border: '#ddd6fe', label: 'On A Roll' },
-        { days: 3,  color: '#0ea5e9', bg: '#f0f9ff', border: '#bae6fd', label: 'Warming Up' },
-        { days: 2,  color: '#64748b', bg: '#f1f5f9', border: '#cbd5e1', label: 'Starter' },
+        { days: 7, color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', label: 'Hot Streak' },
+        { days: 5, color: '#8b5cf6', bg: '#faf5ff', border: '#ddd6fe', label: 'On A Roll' },
+        { days: 3, color: '#0ea5e9', bg: '#f0f9ff', border: '#bae6fd', label: 'Warming Up' },
+        { days: 2, color: '#64748b', bg: '#f1f5f9', border: '#cbd5e1', label: 'Starter' },
     ];
     const tier = STREAK_COLORS.find(t => streak >= t.days);
 
@@ -308,9 +308,9 @@ function PeopleChip({ person, emoji = '👤' }) {
 }
 
 const TIER_CONFIG = {
-    BRONZE: { label: 'Bronze', emoji: '🥉', color: '#b45309', bg: '#fef3c7', weeklyTarget: 500,  cashoutLimit: 250, nextTier: 'SILVER' },
+    BRONZE: { label: 'Bronze', emoji: '🥉', color: '#b45309', bg: '#fef3c7', weeklyTarget: 500, cashoutLimit: 250, nextTier: 'SILVER' },
     SILVER: { label: 'Silver', emoji: '🥈', color: '#3730a3', bg: '#e0e7ff', weeklyTarget: 1000, cashoutLimit: 500, nextTier: 'GOLD' },
-    GOLD:   { label: 'Gold',   emoji: '🥇', color: '#92400e', bg: '#fef3c7', weeklyTarget: null,  cashoutLimit: 750, nextTier: null },
+    GOLD: { label: 'Gold', emoji: '🥇', color: '#92400e', bg: '#fef3c7', weeklyTarget: null, cashoutLimit: 750, nextTier: null },
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -418,16 +418,16 @@ export default function PlayerDashboard() {
 
     // ── Table column config ─────────────────────────────────────
     const TX_HEADERS = [
-        { label: 'Date',            style: {} },
-        { label: 'ID',              style: {} },
-        { label: 'Type',            style: {} },
-        { label: 'Amount',          style: {} },
-        { label: 'Fee',             style: { color: '#0369a1', background: '#f0f9ff' } },
+        { label: 'Date', style: {} },
+        { label: 'ID', style: {} },
+        { label: 'Type', style: {} },
+        { label: 'Amount', style: {} },
+        { label: 'Fee', style: { color: '#0369a1', background: '#f0f9ff' } },
         { label: 'Received / Paid', style: { color: '#0369a1', background: '#f0f9ff' } },
-        { label: 'Game',            style: {} },
-        { label: 'Wallet',          style: {} },
-        { label: 'Before → After',  style: {} },
-        { label: 'Status',          style: {} },
+        { label: 'Game', style: {} },
+        { label: 'Wallet', style: {} },
+        { label: 'Before → After', style: {} },
+        { label: 'Status', style: {} },
     ];
 
     return (
@@ -437,7 +437,7 @@ export default function PlayerDashboard() {
             <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', width: 'fit-content', flexWrap: 'wrap' }}>
                 {[
                     { label: 'Dashboard', onClick: () => navigate('/') },
-                    { label: 'Players',   onClick: () => navigate('/?page=players') },
+                    { label: 'Players', onClick: () => navigate('/?page=players') },
                     { label: player.name, onClick: null },
                 ].map((item, i, arr) => (
                     <React.Fragment key={i}>
@@ -496,17 +496,105 @@ export default function PlayerDashboard() {
 
             {/* ── STAT ROW ────────────────────────────────────────────────── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px' }}>
-                <StatCard label="Balance"          value={`$${parseFloat(player.balance || 0).toFixed(2)}`}                                  color="#10b981" />
-                <StatCard label="Cashout Limit"    value={`$${parseFloat(player.cashoutLimit || 250).toFixed(0)}`}                            color={C.amber} />
-                <StatCard label="Streak"           value={`${player.streak?.currentStreak || 0} days`}
+                <StatCard label="Balance" value={`$${parseFloat(player.balance || 0).toFixed(2)}`} color="#10b981" />
+                <StatCard label="Cashout Limit" value={`$${parseFloat(player.cashoutLimit || 250).toFixed(0)}`} color={C.amber} />
+                <StatCard label="Streak" value={`${player.streak?.currentStreak || 0} days`}
                     color={player.streakFreeze?.isFrozen ? '#1d4ed8' : C.violet}
                     sub={player.streakFreeze?.isFrozen ? `🧊 Frozen · ${fmtDuration(Math.max(0, new Date(player.streakFreeze.freezeUntil) - Date.now()))}` : `Last: ${player.streak?.lastPlayedDate || '—'}`} />
-                <StatCard label="Today's Deposits" value={`$${todayDeposits.toFixed(2)}`}                                                     color="#10b981" />
-                <StatCard label="Today's Cashouts" value={`$${todayCashouts.toFixed(2)}`}                                                     color={C.red} />
-                <StatCard label="Available Bonus"  value={`$${parseFloat(player.bonusTracker?.availableBonus || 0).toFixed(2)}`}              color="#10b981" />
+                <StatCard label="Today's Deposits" value={`$${todayDeposits.toFixed(2)}`} color="#10b981" />
+                <StatCard label="Today's Cashouts" value={`$${todayCashouts.toFixed(2)}`} color={C.red} />
+                {/* <StatCard label="Available Bonus"  value={`$${parseFloat(player.bonusTracker?.availableBonus || 0).toFixed(2)}`}              color="#10b981" /> */}
+                <StatCard
+                    label="Total Bonuses Earned"
+                    value={`$${parseFloat(player.bonusTracker?.totalBonusEarned || 0).toFixed(2)}`}
+                    sub={`${Object.keys(player.bonusTracker?.bonusByType || {}).length} types`}
+                    color="#8b5cf6"
+                />
             </div>
 
             <StreakFreezeCard player={player} />
+
+            {/* ── BONUS BREAKDOWN ──────────────────────────────────────────── */}
+            <div style={card({ padding: '20px 22px' })}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${C.border}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Bonus Summary</p>
+                        <span style={{ padding: '1px 7px', background: '#faf5ff', color: '#7c3aed', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>
+                            ${parseFloat(player.bonusTracker?.totalBonusEarned || 0).toFixed(2)} total
+                        </span>
+                    </div>
+                    {/* Live pulse */}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', color: '#16a34a', fontWeight: '700' }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+                        LIVE
+                    </span>
+                </div>
+
+                {/* Type breakdown */}
+                {(() => {
+                    const BONUS_META = {
+                        Streak: { emoji: '🔥', bg: '#fffbeb', text: '#92400e', border: '#fde68a' },
+                        Referral: { emoji: '👤', bg: '#f0fdf4', text: '#166534', border: '#86efac' },
+                        Match: { emoji: '💰', bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' },
+                        Special: { emoji: '⭐', bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe' },
+                        Other: { emoji: '🎁', bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' },
+                    };
+                    const byType = player.bonusTracker?.bonusByType || {};
+                    const entries = Object.entries(byType).sort((a, b) => b[1] - a[1]);
+
+                    if (entries.length === 0) return (
+                        <p style={{ color: C.grayLt, fontSize: '13px', textAlign: 'center', padding: '16px 0', margin: 0 }}>No bonuses recorded yet</p>
+                    );
+
+                    return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {/* Stacked bar */}
+                            <div style={{ display: 'flex', height: '8px', borderRadius: '99px', overflow: 'hidden', gap: '2px' }}>
+                                {entries.map(([type, amt]) => {
+                                    const total = entries.reduce((s, [, v]) => s + v, 0);
+                                    const pct = total > 0 ? (amt / total) * 100 : 0;
+                                    const meta = BONUS_META[type] || BONUS_META.Other;
+                                    return (
+                                        <div key={type} title={`${type}: $${amt.toFixed(2)}`}
+                                            style={{ width: `${pct}%`, background: meta.text, borderRadius: '99px', minWidth: '4px', transition: 'width .4s ease' }} />
+                                    );
+                                })}
+                            </div>
+
+                            {/* Type rows */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px', marginTop: '4px' }}>
+                                {entries.map(([type, amt]) => {
+                                    const meta = BONUS_META[type] || BONUS_META.Other;
+                                    const total = entries.reduce((s, [, v]) => s + v, 0);
+                                    const pct = total > 0 ? Math.round((amt / total) * 100) : 0;
+                                    return (
+                                        <div key={type} style={{ padding: '12px 14px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: '10px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                                <span style={{ fontSize: '12px', fontWeight: '700', color: meta.text }}>{meta.emoji} {type}</span>
+                                                <span style={{ fontSize: '11px', color: meta.text, opacity: 0.7 }}>{pct}%</span>
+                                            </div>
+                                            <div style={{ fontSize: '20px', fontWeight: '900', color: meta.text }}>${amt.toFixed(2)}</div>
+                                            <div style={{ marginTop: '6px', height: '3px', background: 'rgba(0,0,0,0.1)', borderRadius: '99px' }}>
+                                                <div style={{ height: '100%', width: `${pct}%`, background: meta.text, borderRadius: '99px', opacity: 0.6 }} />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Unclaimed callout — only shows if any exist */}
+                            {parseFloat(player.bonusTracker?.availableBonus || 0) > 0 && (
+                                <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '12px', fontWeight: '600', color: '#92400e' }}>⚠️ Uncredited bonus pending</span>
+                                    <span style={{ fontSize: '14px', fontWeight: '800', color: '#d97706' }}>
+                                        ${parseFloat(player.bonusTracker.availableBonus).toFixed(2)}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
+            </div>
 
             {/* ── TIER PROGRESS ────────────────────────────────────────────── */}
             <div style={card({ padding: '18px 24px' })}>
@@ -708,25 +796,25 @@ export default function PlayerDashboard() {
                                 : (player.transactionHistory || []).slice(0, 40).map(tx => {
                                     const typeKey = (tx.type || '').toLowerCase();
                                     const t = TX_TYPE_MAP[typeKey] || { label: tx.type, color: C.gray, bg: C.bg };
-                                    const isDeposit  = tx.type === 'deposit';
-                                    const isCashout  = tx.type === 'cashout';
-                                    const isPending  = tx.status === 'PENDING';
+                                    const isDeposit = tx.type === 'deposit';
+                                    const isCashout = tx.type === 'cashout';
+                                    const isPending = tx.status === 'PENDING';
                                     const isCompleted = tx.status === 'COMPLETED';
 
                                     const depositAmt = parseFloat(tx.amount || 0);
-                                    const feeVal     = parseFloat(tx.fee || 0);
-                                    const paidAmt    = parseFloat(tx.paidAmount || 0);
+                                    const feeVal = parseFloat(tx.fee || 0);
+                                    const paidAmt = parseFloat(tx.paidAmount || 0);
                                     const receivedAmt = isDeposit ? depositAmt - feeVal : null;
 
                                     // Status badge
                                     const isPartial = isCashout && isPending && paidAmt > 0 && paidAmt < depositAmt;
                                     const statusLabel = isPartial ? 'PARTIAL' : tx.status;
-                                    const statusBg    = isPartial ? '#fef3c7' : isCompleted ? '#dcfce7' : isPending ? '#fef3c7' : '#fee2e2';
+                                    const statusBg = isPartial ? '#fef3c7' : isCompleted ? '#dcfce7' : isPending ? '#fef3c7' : '#fee2e2';
                                     const statusColor = isPartial ? '#92400e' : isCompleted ? '#166534' : isPending ? '#92400e' : '#991b1b';
 
                                     // Game points before/after
                                     const stockBefore = tx.gameStockBefore;
-                                    const stockAfter  = tx.gameStockAfter;
+                                    const stockAfter = tx.gameStockAfter;
                                     const effectiveAfter = isCashout && stockBefore != null
                                         ? stockBefore + paidAmt
                                         : stockAfter;
@@ -786,7 +874,7 @@ export default function PlayerDashboard() {
                                                 {isDeposit
                                                     ? <span style={{ fontWeight: '700', fontSize: '13px', color: C.sky }}>
                                                         ${(receivedAmt ?? depositAmt).toFixed(2)}
-                                                      </span>
+                                                    </span>
                                                     : isCashout
                                                         ? <TxPaymentProgress paid={paidAmt} total={depositAmt} />
                                                         : <span style={{ color: C.border, fontSize: '12px' }}>—</span>
@@ -798,7 +886,7 @@ export default function PlayerDashboard() {
                                                 {tx.gameName
                                                     ? <span style={{ padding: '2px 7px', background: '#f1f5f9', borderRadius: '5px', fontWeight: '500' }}>
                                                         {tx.gameName.match(/^[^-]+/)?.[0]?.trim() || tx.gameName}
-                                                      </span>
+                                                    </span>
                                                     : <span style={{ color: C.border }}>—</span>
                                                 }
                                             </td>
@@ -815,7 +903,7 @@ export default function PlayerDashboard() {
                                                         {tx.walletName && (
                                                             <div style={{ fontSize: '11px', color: C.grayLt, marginTop: '2px' }}>{tx.walletName}</div>
                                                         )}
-                                                      </div>
+                                                    </div>
                                                     : <span style={{ color: C.border, fontSize: '12px' }}>—</span>
                                                 }
                                             </td>
