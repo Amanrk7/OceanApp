@@ -635,7 +635,7 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                   </span>
                 </div>
               </div>
-              <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
+              <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', width:'fitContent' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead><tr>
                     <th style={T.th}>Wallet</th>
@@ -825,7 +825,7 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
               </label>
               <textarea value={fb.issuesEncountered} onChange={e => setFb(f => ({ ...f, issuesEncountered: e.target.value }))}
                 placeholder="Player complaints, system issues, unusual situations…"
-                rows={2} style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }} />
+                rows={2} style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none', background: 'none', color: 'black' }} />
             </div>
 
             {!canSubmit && (
