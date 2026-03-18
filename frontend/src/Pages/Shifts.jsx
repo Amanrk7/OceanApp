@@ -387,6 +387,8 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
                   border: `1px solid ${hasDiscrepancies && !notes.trim() ? '#fca5a5' : '#d1d5db'}`,
                   borderRadius: '8px', fontSize: '13px', resize: 'vertical',
                   fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none', lineHeight: 1.5,
+                  background: 'none',
+                  color: 'black'
                 }}
               />
             </section>
@@ -787,7 +789,10 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
               </label>
               <textarea value={fb.effortReason} onChange={e => setFb(f => ({ ...f, effortReason: e.target.value }))}
                 placeholder="Describe your energy level, focus, challenges faced this shift…"
-                rows={3} style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }} />
+                rows={3} style={{
+                  width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none', background: 'none',
+                  color: 'black'
+                }} />
             </div>
 
             <div>
@@ -796,7 +801,10 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
               </label>
               <textarea value={fb.improvements} onChange={e => setFb(f => ({ ...f, improvements: e.target.value }))}
                 placeholder="Areas for improvement, missed follow-ups, better approaches you could have taken…"
-                rows={3} style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }} />
+                rows={3} style={{
+                  width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none', background: 'none',
+                  color: 'black'
+                }} />
             </div>
 
             <div>
@@ -805,7 +813,10 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
               </label>
               <textarea value={fb.workSummary} onChange={e => setFb(f => ({ ...f, workSummary: e.target.value }))}
                 placeholder="Brief summary of accomplishments this shift…"
-                rows={3} style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }} />
+                rows={3} style={{
+                  width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none', background: 'none',
+                  color: 'black'
+                }} />
             </div>
 
             <div>
@@ -1096,19 +1107,7 @@ export const ShiftsPage = () => {
                         <td style={{ ...T.TD, textAlign: 'center' }}>
                           {balanced === null ? '—' : balanced ? <span style={{ color: '#16a34a', fontWeight: '700' }}>✓</span> : <span style={{ color: '#dc2626', fontWeight: '700' }}>⚠️</span>}
                         </td>
-                        {/* <td style={{ ...T.TD, textAlign: 'center' }}>
-                          <a href={`${API_BASE}/shifts/${shift.id}/pdf`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              padding: '4px 10px', background: '#2563eb', color: '#fff',
-                              borderRadius: '6px', fontSize: '11px', fontWeight: '600',
-                              textDecoration: 'none', display: 'inline-block',
-                            }}
-                          >
-                            PDF
-                          </a>
-                        </td> */}
+
 
                       </tr>
                     );
