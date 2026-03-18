@@ -66,6 +66,12 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
 
+  // ── Editable balance state ──────────────────────────────────────────
+  // walletInputs: { [walletId]: string }  — what member types in
+  // gameInputs:   { [gameId]:   string }
+  const [walletInputs, setWalletInputs] = useState({});
+  const [gameInputs, setGameInputs] = useState({});
+
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (!token) { setLoading(false); return; }
@@ -75,126 +81,269 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
       fj('/tasks?myTasks=true'),
     ])
       .then(([w, g, t]) => {
-        setWallets((w.data ?? []).flatMap(grp => grp.subAccounts ?? []));
-        setGames(g.data ?? []);
+        const flatWallets = (w.data ?? []).flatMap(grp => grp.subAccounts ?? []);
+        const gameList = g.data ?? [];
+        setWallets(flatWallets);
+        setGames(gameList);
         setTasks((t.data ?? []).filter(task => task.status !== 'COMPLETED'));
+
+        // Pre-fill inputs with fetched values
+        const wi = {};
+        flatWallets.forEach(w => { wi[w.id] = (w.balance ?? 0).toFixed(2); });
+        setWalletInputs(wi);
+
+        const gi = {};
+        gameList.forEach(g => { gi[g.id] = (g.pointStock ?? 0).toFixed(0); });
+        setGameInputs(gi);
       })
       .catch(err => console.error('CheckinModal fetch:', err))
       .finally(() => setLoading(false));
   }, []);
 
-  const totalWallet = wallets.reduce((s, w) => s + (w.balance ?? 0), 0);
-  const totalGames = games.reduce((s, g) => s + (g.pointStock ?? 0), 0);
+  // ── Compute totals from inputs ──────────────────────────────────────
+  const totalWallet = wallets.reduce((s, w) => s + (parseFloat(walletInputs[w.id]) || 0), 0);
+  const totalGames = games.reduce((s, g) => s + (parseFloat(gameInputs[g.id]) || 0), 0);
+
+  // ── Discrepancy detection (input vs fetched) ────────────────────────
+  const walletDiscrepancies = wallets.filter(w => {
+    const entered = parseFloat(walletInputs[w.id]);
+    const fetched = w.balance ?? 0;
+    return !isNaN(entered) && Math.abs(entered - fetched) > 0.01;
+  });
+  const gameDiscrepancies = games.filter(g => {
+    const entered = parseFloat(gameInputs[g.id]);
+    const fetched = g.pointStock ?? 0;
+    return !isNaN(entered) && Math.abs(entered - fetched) > 0.5;
+  });
+  const hasDiscrepancies = walletDiscrepancies.length > 0 || gameDiscrepancies.length > 0;
 
   const handleConfirm = async () => {
     setConfirming(true);
     try {
+      // Build snapshot using ENTERED values (not fetched)
       await onConfirm({
-        walletSnapshot: wallets.map(w => ({ id: w.id, name: w.name, method: w.method, balance: w.balance ?? 0 })),
-        gameSnapshot: games.map(g => ({ id: g.id, name: g.name, pointStock: g.pointStock ?? 0 })),
+        walletSnapshot: wallets.map(w => ({
+          id: w.id,
+          name: w.name,
+          method: w.method,
+          balance: parseFloat(walletInputs[w.id]) || 0,
+          fetchedBalance: w.balance ?? 0,            // for audit
+        })),
+        gameSnapshot: games.map(g => ({
+          id: g.id,
+          name: g.name,
+          pointStock: parseFloat(gameInputs[g.id]) || 0,
+          fetchedPointStock: g.pointStock ?? 0,      // for audit
+        })),
         totalWallet,
         totalGames,
         notes,
         capturedAt: new Date().toISOString(),
+        hasDiscrepancies,
+        walletDiscrepancyCount: walletDiscrepancies.length,
+        gameDiscrepancyCount: gameDiscrepancies.length,
       });
     } finally { setConfirming(false); }
   };
 
+  // ── Input style ─────────────────────────────────────────────────────
+  const inputStyle = (hasDisc) => ({
+    width: '90px',
+    padding: '5px 8px',
+    border: `1.5px solid ${hasDisc ? '#f59e0b' : '#d1d5db'}`,
+    borderRadius: '6px',
+    fontSize: '13px',
+    fontWeight: '700',
+    textAlign: 'right',
+    fontFamily: 'inherit',
+    outline: 'none',
+    background: hasDisc ? '#fffbeb' : '#fff',
+    color: '#0f172a',
+  });
+
   return (
     <div style={T.overlay}>
       <div style={T.modal}>
+        {/* Header */}
         <div style={{ padding: '20px 28px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0 }}>
           <div>
             <h2 style={{ margin: '0 0 4px', fontSize: '17px', fontWeight: '700', color: '#0f172a' }}>🌅 Start-of-Shift Verification</h2>
-            <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Confirm all balances before your shift begins</p>
+            <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
+              Enter the balances you <b>actually see</b> — pre-filled from system, edit if different
+            </p>
           </div>
           <button onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '4px' }}><X size={18} /></button>
         </div>
 
+        {/* Body */}
         <div style={{ overflowY: 'auto', flex: 1, padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
-              <RefreshCw size={20} style={{ animation: 'spin 1s linear infinite', marginBottom: '8px', display: 'block', margin: '0 auto 10px' }} />
+              <RefreshCw size={20} style={{ animation: 'spin 1s linear infinite', display: 'block', margin: '0 auto 10px' }} />
               Loading current balances…
             </div>
           ) : <>
 
+            {/* Discrepancy warning */}
+            {hasDiscrepancies && (
+              <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderLeft: '4px solid #f59e0b', borderRadius: '8px', fontSize: '12px', color: '#92400e' }}>
+                ⚠️ <b>Discrepancy detected</b> — your entered values differ from the system.
+                {walletDiscrepancies.length > 0 && <span> Wallet: {walletDiscrepancies.map(w => w.name).join(', ')}.</span>}
+                {gameDiscrepancies.length > 0 && <span> Games: {gameDiscrepancies.map(g => g.name).join(', ')}.</span>}
+                {' '}Add a note explaining the difference below.
+              </div>
+            )}
+
+            {/* ── Wallet Balances ── */}
             <section>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Wallet size={14} color="#2563eb" /> Wallet Balances
+                  <span style={{ fontSize: '11px', fontWeight: '400', color: '#94a3b8' }}>(enter actual)</span>
                 </h3>
                 <span style={{ fontSize: '16px', fontWeight: '800', color: '#16a34a' }}>${totalWallet.toFixed(2)} total</span>
               </div>
               <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead><tr>
-                    <th style={T.th}>Method</th>
-                    <th style={T.th}>Account</th>
-                    <th style={{ ...T.th, textAlign: 'right' }}>Balance</th>
-                  </tr></thead>
+                  <thead>
+                    <tr>
+                      <th style={T.th}>Method</th>
+                      <th style={T.th}>Account</th>
+                      <th style={{ ...T.th, textAlign: 'right', color: '#64748b' }}>System</th>
+                      <th style={{ ...T.th, textAlign: 'right', color: '#0f172a' }}>Actual ✏️</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {wallets.map(w => (
-                      <tr key={w.id}>
-                        <td style={T.td}><b style={{ color: '#475569' }}>{w.method}</b></td>
-                        <td style={T.td}>{w.name}{w.identifier ? <span style={{ color: '#94a3b8', marginLeft: '6px', fontSize: '12px' }}>{w.identifier}</span> : null}</td>
-                        <td style={{ ...T.td, textAlign: 'right', fontWeight: '700' }}>${(w.balance ?? 0).toFixed(2)}</td>
-                      </tr>
-                    ))}
-                    {wallets.length === 0 && <tr><td colSpan={3} style={{ ...T.td, textAlign: 'center', color: '#94a3b8' }}>No wallets found</td></tr>}
+                    {wallets.map(w => {
+                      const entered = parseFloat(walletInputs[w.id]);
+                      const fetched = w.balance ?? 0;
+                      const hasDisc = !isNaN(entered) && Math.abs(entered - fetched) > 0.01;
+                      return (
+                        <tr key={w.id} style={{ background: hasDisc ? '#fefce8' : 'transparent' }}>
+                          <td style={T.td}><b style={{ color: '#475569' }}>{w.method}</b></td>
+                          <td style={T.td}>
+                            {w.name}
+                            {w.identifier && <span style={{ color: '#94a3b8', marginLeft: '6px', fontSize: '12px' }}>{w.identifier}</span>}
+                          </td>
+                          <td style={{ ...T.td, textAlign: 'right', color: '#94a3b8', fontSize: '12px' }}>
+                            ${fetched.toFixed(2)}
+                          </td>
+                          <td style={{ ...T.td, textAlign: 'right' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                              <span style={{ fontSize: '12px', color: '#94a3b8' }}>$</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={walletInputs[w.id] ?? ''}
+                                onChange={e => setWalletInputs(prev => ({ ...prev, [w.id]: e.target.value }))}
+                                style={inputStyle(hasDisc)}
+                              />
+                              {hasDisc && (
+                                <span style={{ fontSize: '10px', color: '#f59e0b', fontWeight: '700' }} title={`System shows $${fetched.toFixed(2)}`}>⚠️</span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {wallets.length === 0 && (
+                      <tr><td colSpan={4} style={{ ...T.td, textAlign: 'center', color: '#94a3b8' }}>No wallets found</td></tr>
+                    )}
                     <tr style={{ background: '#f0fdf4' }}>
                       <td colSpan={2} style={{ ...T.td, fontWeight: '700', color: '#166534' }}>Combined Total</td>
-                      <td style={{ ...T.td, textAlign: 'right', fontWeight: '800', color: '#16a34a', fontSize: '14px' }}>${totalWallet.toFixed(2)}</td>
+                      <td style={{ ...T.td, textAlign: 'right', color: '#94a3b8', fontSize: '12px' }}>
+                        ${wallets.reduce((s, w) => s + (w.balance ?? 0), 0).toFixed(2)}
+                      </td>
+                      <td style={{ ...T.td, textAlign: 'right', fontWeight: '800', color: '#16a34a', fontSize: '14px' }}>
+                        ${totalWallet.toFixed(2)}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             </section>
 
+            {/* ── Game Points ── */}
             <section>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Gamepad2 size={14} color="#7c3aed" /> Game Points
+                  <span style={{ fontSize: '11px', fontWeight: '400', color: '#94a3b8' }}>(enter actual)</span>
                 </h3>
                 <span style={{ fontSize: '16px', fontWeight: '800', color: '#7c3aed' }}>{totalGames.toFixed(0)} pts total</span>
               </div>
               <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead><tr>
-                    <th style={T.th}>Game</th>
-                    <th style={{ ...T.th, textAlign: 'right' }}>Points</th>
-                    <th style={{ ...T.th, textAlign: 'center' }}>Status</th>
-                  </tr></thead>
+                  <thead>
+                    <tr>
+                      <th style={T.th}>Game</th>
+                      <th style={{ ...T.th, textAlign: 'center' }}>Status</th>
+                      <th style={{ ...T.th, textAlign: 'right', color: '#64748b' }}>System</th>
+                      <th style={{ ...T.th, textAlign: 'right', color: '#0f172a' }}>Actual ✏️</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {games.map(g => (
-                      <tr key={g.id}>
-                        <td style={T.td}><b>{g.name}</b></td>
-                        <td style={{ ...T.td, textAlign: 'right', fontWeight: '700' }}>{(g.pointStock ?? 0).toFixed(0)}</td>
-                        <td style={{ ...T.td, textAlign: 'center' }}>
-                          <Badge label={g.status}
-                            color={g.status === 'HEALTHY' ? '#16a34a' : g.status === 'LOW_STOCK' ? '#854d0e' : '#991b1b'}
-                            bg={g.status === 'HEALTHY' ? '#dcfce7' : g.status === 'LOW_STOCK' ? '#fef9c3' : '#fee2e2'} />
-                        </td>
-                      </tr>
-                    ))}
-                    {games.length === 0 && <tr><td colSpan={3} style={{ ...T.td, textAlign: 'center', color: '#94a3b8' }}>No games found</td></tr>}
+                    {games.map(g => {
+                      const entered = parseFloat(gameInputs[g.id]);
+                      const fetched = g.pointStock ?? 0;
+                      const hasDisc = !isNaN(entered) && Math.abs(entered - fetched) > 0.5;
+                      return (
+                        <tr key={g.id} style={{ background: hasDisc ? '#fefce8' : 'transparent' }}>
+                          <td style={T.td}><b>{g.name}</b></td>
+                          <td style={{ ...T.td, textAlign: 'center' }}>
+                            <Badge
+                              label={g.status}
+                              color={g.status === 'HEALTHY' ? '#16a34a' : g.status === 'LOW_STOCK' ? '#854d0e' : '#991b1b'}
+                              bg={g.status === 'HEALTHY' ? '#dcfce7' : g.status === 'LOW_STOCK' ? '#fef9c3' : '#fee2e2'}
+                            />
+                          </td>
+                          <td style={{ ...T.td, textAlign: 'right', color: '#94a3b8', fontSize: '12px' }}>
+                            {fetched.toFixed(0)} pts
+                          </td>
+                          <td style={{ ...T.td, textAlign: 'right' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                              <input
+                                type="number"
+                                step="1"
+                                min="0"
+                                value={gameInputs[g.id] ?? ''}
+                                onChange={e => setGameInputs(prev => ({ ...prev, [g.id]: e.target.value }))}
+                                style={inputStyle(hasDisc)}
+                              />
+                              <span style={{ fontSize: '12px', color: '#94a3b8' }}>pts</span>
+                              {hasDisc && (
+                                <span style={{ fontSize: '10px', color: '#f59e0b', fontWeight: '700' }} title={`System shows ${fetched.toFixed(0)} pts`}>⚠️</span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {games.length === 0 && (
+                      <tr><td colSpan={4} style={{ ...T.td, textAlign: 'center', color: '#94a3b8' }}>No games found</td></tr>
+                    )}
                     <tr style={{ background: '#f5f3ff' }}>
                       <td colSpan={2} style={{ ...T.td, fontWeight: '700', color: '#5b21b6' }}>Combined Total</td>
-                      <td style={{ ...T.td, textAlign: 'right', fontWeight: '800', color: '#7c3aed', fontSize: '14px' }}>{totalGames.toFixed(0)} pts</td>
+                      <td style={{ ...T.td, textAlign: 'right', color: '#94a3b8', fontSize: '12px' }}>
+                        {games.reduce((s, g) => s + (g.pointStock ?? 0), 0).toFixed(0)} pts
+                      </td>
+                      <td style={{ ...T.td, textAlign: 'right', fontWeight: '800', color: '#7c3aed', fontSize: '14px' }}>
+                        {totalGames.toFixed(0)} pts
+                      </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             </section>
 
-            <section>
-              <h3 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <ClipboardList size={14} color="#0891b2" /> Your Active Tasks
-                {tasks.length > 0 && <span style={{ background: '#0891b2', color: '#fff', borderRadius: '10px', padding: '0 7px', fontSize: '11px' }}>{tasks.length}</span>}
-              </h3>
-              {tasks.length === 0 ? (
-                <p style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic', margin: 0 }}>No active tasks assigned</p>
-              ) : (
+            {/* ── Active Tasks ── */}
+            {tasks.length > 0 && (
+              <section>
+                <h3 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <ClipboardList size={14} color="#0891b2" /> Your Active Tasks
+                  <span style={{ background: '#0891b2', color: '#fff', borderRadius: '10px', padding: '0 7px', fontSize: '11px' }}>{tasks.length}</span>
+                </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
                   {tasks.map(t => (
                     <div key={t.id} style={{ padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
@@ -210,41 +359,67 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
                       <Badge
                         label={t.status.replace('_', ' ')}
                         color={t.status === 'IN_PROGRESS' ? '#1d4ed8' : '#475569'}
-                        bg={t.status === 'IN_PROGRESS' ? '#dbeafe' : '#f1f5f9'} />
+                        bg={t.status === 'IN_PROGRESS' ? '#dbeafe' : '#f1f5f9'}
+                      />
                     </div>
                   ))}
                 </div>
-              )}
-            </section>
+              </section>
+            )}
 
+            {/* ── Opening Notes ── */}
             <section>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
-                Opening Notes / Discrepancies <span style={{ color: '#94a3b8', fontWeight: 400 }}>(optional)</span>
+                Opening Notes / Discrepancies
+                {hasDiscrepancies
+                  ? <span style={{ color: '#dc2626', marginLeft: '6px' }}>* required — explain discrepancies above</span>
+                  : <span style={{ color: '#94a3b8', fontWeight: 400 }}> (optional)</span>}
               </label>
               <textarea
-                value={notes} onChange={e => setNotes(e.target.value)}
-                placeholder="Note any balance discrepancies before starting…"
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder={hasDiscrepancies
+                  ? 'Explain why your entered balances differ from the system values…'
+                  : 'Note any balance discrepancies before starting…'}
                 rows={3}
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '13px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none', lineHeight: 1.5 }}
+                style={{
+                  width: '100%', padding: '10px 12px',
+                  border: `1px solid ${hasDiscrepancies && !notes.trim() ? '#fca5a5' : '#d1d5db'}`,
+                  borderRadius: '8px', fontSize: '13px', resize: 'vertical',
+                  fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none', lineHeight: 1.5,
+                }}
               />
             </section>
           </>}
         </div>
 
-        <div style={{ padding: '14px 28px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '10px', justifyContent: 'flex-end', flexShrink: 0, background: '#f8fafc' }}>
-          <button onClick={onCancel} style={{ padding: '10px 18px', background: '#fff', border: '1px solid #d1d5db', borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer', color: '#374151' }}>
-            Cancel
-          </button>
-          <button onClick={handleConfirm} disabled={loading || confirming} style={{
-            padding: '10px 22px', background: '#16a34a', color: '#fff', border: 'none',
-            borderRadius: '8px', fontWeight: '700', fontSize: '13px',
-            cursor: loading || confirming ? 'wait' : 'pointer', opacity: loading || confirming ? .7 : 1,
-            display: 'flex', alignItems: 'center', gap: '7px',
-          }}>
-            {confirming
-              ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Starting…</>
-              : '✓ Confirm & Start Shift'}
-          </button>
+        {/* Footer */}
+        <div style={{ padding: '14px 28px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '10px', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, background: '#f8fafc' }}>
+          <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+            Wallet: <b style={{ color: '#16a34a' }}>${totalWallet.toFixed(2)}</b>
+            {' · '}Games: <b style={{ color: '#7c3aed' }}>{totalGames.toFixed(0)} pts</b>
+            {hasDiscrepancies && <span style={{ color: '#f59e0b', marginLeft: '8px', fontWeight: '600' }}>⚠️ Discrepancies noted</span>}
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={onCancel} style={{ padding: '10px 18px', background: '#fff', border: '1px solid #d1d5db', borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer', color: '#374151' }}>
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={loading || confirming || (hasDiscrepancies && !notes.trim())}
+              style={{
+                padding: '10px 22px', background: '#16a34a', color: '#fff', border: 'none',
+                borderRadius: '8px', fontWeight: '700', fontSize: '13px',
+                cursor: (loading || confirming || (hasDiscrepancies && !notes.trim())) ? 'not-allowed' : 'pointer',
+                opacity: (loading || confirming || (hasDiscrepancies && !notes.trim())) ? .6 : 1,
+                display: 'flex', alignItems: 'center', gap: '7px',
+              }}
+            >
+              {confirming
+                ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Starting…</>
+                : '✓ Confirm & Start Shift'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
