@@ -203,7 +203,7 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
                 </h3>
                 <span style={{ fontSize: '16px', fontWeight: '800', color: '#16a34a' }}>${totalWallet.toFixed(2)} total</span>
               </div>
-              <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', width: 'fitContent' }}>
+              <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', width:'fitContent' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
