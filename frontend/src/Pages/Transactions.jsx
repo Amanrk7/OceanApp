@@ -409,14 +409,19 @@ export default function Transactions() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   // const [filterTab, setFilterTab] = useState('all');
+  // const [filterTab, setFilterTab] = useState(() => {
+  //   const saved = sessionStorage.getItem('transactions_initialTab');
+  //   if (saved) {
+  //     sessionStorage.removeItem('transactions_initialTab'); // consume once
+  //     return saved;
+  //   }
+  //   return 'all';
+  // });
   const [filterTab, setFilterTab] = useState(() => {
-    const saved = sessionStorage.getItem('transactions_initialTab');
-    if (saved) {
-      sessionStorage.removeItem('transactions_initialTab'); // consume once
-      return saved;
-    }
-    return 'all';
-  });
+  const saved = sessionStorage.getItem('transactions_initialTab');
+  sessionStorage.removeItem('transactions_initialTab'); // always clear it
+  return saved === 'pending' ? 'pending' : 'all'; // only accept 'pending', nothing else
+});
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [undoingId, setUndoingId] = useState(null);
