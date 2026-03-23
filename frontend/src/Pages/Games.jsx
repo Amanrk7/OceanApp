@@ -699,7 +699,11 @@ export default function Games() {
   }, [addToast]);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'none', fontFamily: "'Inter', sans-serif" }}>
+    <div style={{
+      minHeight: '100vh', background: 'none', fontFamily: "'Inter', sans-serif", display: 'flex',
+      flexDirection: 'column',
+      gap: '17px'
+    }}>
       <style>{`
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
         @keyframes scaleIn { from { opacity:0; transform:scale(0.94); } to { opacity:1; transform:scale(1); } }
@@ -711,7 +715,7 @@ export default function Games() {
 
       {/* Page header */}
       <div style={{
-        padding: '28px 32px 0',
+        // padding: '28px 32px 0',
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
       }}>
         <div>
@@ -726,7 +730,7 @@ export default function Games() {
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '10px 18px', borderRadius: 10, border: 'none',
             background: 'rgb(14, 165, 233)',
-                
+
             color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer',
             boxShadow: '0 4px 14px rgba(99,102,241,0.35)',
           }}
@@ -737,7 +741,7 @@ export default function Games() {
 
       {/* Controls */}
       <div style={{
-        padding: '20px 32px 0',
+        // padding: '20px 32px 0',
         display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
       }}>
         <div style={{ position: 'relative', width: 240 }}>
@@ -770,7 +774,7 @@ export default function Games() {
       </div>
 
       {/* Content */}
-      <div style={{ padding: '24px 32px 40px' }}>
+      <div>
         {loading && (
           <div style={{ textAlign: 'center', padding: '60px 0', color: '#9ca3af' }}>
             Loading games…
