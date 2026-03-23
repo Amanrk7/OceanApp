@@ -26,7 +26,7 @@ export default function Issues() {
 
   if (loading) {
     return (
-      <div style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
+      <div style={{textAlign: 'center', color: '#64748b' }}>
         <p>Loading issues...</p>
       </div>
     );
@@ -96,14 +96,16 @@ export default function Issues() {
               background: 'none',
               border: 'none',
               fontWeight: '600',
-              fontSize: '14px',
+              fontSize: '13px',
               color: filterTab === tab ? '#0ea5e9' : '#64748b',
               borderBottom: filterTab === tab ? '2px solid #0ea5e9' : 'none',
+              borderBottomLeftRadius: '0px',
+              borderBottomRightRadius: '0px',
               cursor: 'pointer',
               textTransform: 'uppercase'
             }}
           >
-            {tab === 'unresolved' ? 'UNRESOLVED' : 'SOLVED'}
+            {tab === 'unresolved' ? 'Unresolved' : 'Solved'}
           </button>
         ))}
 
