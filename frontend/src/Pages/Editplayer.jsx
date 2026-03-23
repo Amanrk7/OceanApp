@@ -142,6 +142,7 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                 x:             form.x.trim()         || null,
                 snapchat:      form.snapchat.trim()  || null,
                 source:        form.source.trim()    || null,
+                totalBonusEarned: parseFloat(form.totalBonusEarned) || 0,
             });
             setSuccess('Player updated!');
             setTimeout(() => { onSaved(); onClose(); }, 900);
