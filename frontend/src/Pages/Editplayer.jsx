@@ -49,7 +49,6 @@ function SectionHead({ children }) {
     );
 }
 
-// ── Mini info banner ──────────────────────────────────────────────────────────
 function InfoBanner({ children }) {
     return (
         <div style={{
@@ -66,50 +65,46 @@ function InfoBanner({ children }) {
 // ══════════════════════════════════════════════════════════════
 export default function EditPlayer({ player, onClose, onSaved }) {
     const [form, setForm] = useState({
-        // Identity
-        name:         '',
-        email:        '',
-        phone:        '',
-        source:       '',
-        // Classification
-        tier:         'BRONZE',
-        status:       'ACTIVE',
-        // Financials
-        balance:      '',
-        cashoutLimit: '250',
-        // Streak — NOTE: sent to backend as `currentStreak`
-        currentStreak: '',
-        // Socials
-        facebook:  '',
-        telegram:  '',
-        instagram: '',
-        x:         '',
-        snapchat:  '',
+        name:             '',
+        email:            '',
+        phone:            '',
+        source:           '',
+        tier:             'BRONZE',
+        status:           'ACTIVE',
+        balance:          '',
+        cashoutLimit:     '250',
+        currentStreak:    '',
+        totalBonusEarned: '', // ← NEW
+        facebook:         '',
+        telegram:         '',
+        instagram:        '',
+        x:                '',
+        snapchat:         '',
     });
 
     const [loading,  setLoading]  = useState(false);
     const [error,    setError]    = useState('');
     const [success,  setSuccess]  = useState('');
 
-    // Pre-fill from player prop
     useEffect(() => {
         if (!player) return;
         setForm({
-            name:          player.name  || '',
-            email:         player.email || '',
-            phone:         player.phone || '',
-            source:        player.source !== '—' ? (player.source || '') : '',
-            tier:          player.tier   || 'BRONZE',
-            status:        player.status || 'ACTIVE',
-            balance:       String(parseFloat(player.balance || 0).toFixed(2)),
-            cashoutLimit:  String(parseFloat(player.cashoutLimit || TIER_CASHOUT[player.tier] || 250)),
-            // ✅ FIX: use currentStreak (matches backend PATCH field name)
-            currentStreak: String(player.streak?.currentStreak ?? 0),
-            facebook:      player.socials?.facebook  || '',
-            telegram:      player.socials?.telegram  || '',
-            instagram:     player.socials?.instagram || '',
-            x:             player.socials?.x         || '',
-            snapchat:      player.socials?.snapchat  || '',
+            name:             player.name  || '',
+            email:            player.email || '',
+            phone:            player.phone || '',
+            source:           player.source !== '—' ? (player.source || '') : '',
+            tier:             player.tier   || 'BRONZE',
+            status:           player.status || 'ACTIVE',
+            balance:          String(parseFloat(player.balance || 0).toFixed(2)),
+            cashoutLimit:     String(parseFloat(player.cashoutLimit || TIER_CASHOUT[player.tier] || 250)),
+            currentStreak:    String(player.streak?.currentStreak ?? 0),
+            // ← NEW: pre-fill from bonusTracker
+            totalBonusEarned: String(parseFloat(player.bonusTracker?.totalBonusEarned || 0).toFixed(2)),
+            facebook:         player.socials?.facebook  || '',
+            telegram:         player.socials?.telegram  || '',
+            instagram:        player.socials?.instagram || '',
+            x:                player.socials?.x         || '',
+            snapchat:         player.socials?.snapchat  || '',
         });
         setError('');
         setSuccess('');
@@ -117,7 +112,6 @@ export default function EditPlayer({ player, onClose, onSaved }) {
 
     const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
-    // Auto-adjust cashoutLimit when tier changes
     const onTierChange = (tier) => {
         setForm(p => ({ ...p, tier, cashoutLimit: String(TIER_CASHOUT[tier] ?? 250) }));
     };
@@ -125,20 +119,22 @@ export default function EditPlayer({ player, onClose, onSaved }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(''); setSuccess('');
-        if (!form.name.trim() || !form.email.trim()) {
-            return setError('Name and email are required.');
+
+        // ✅ Only name is required now — email is optional
+        if (!form.name.trim()) {
+            return setError('Name is required.');
         }
+
         try {
             setLoading(true);
             await api.players.updatePlayer(player.id, {
                 name:          form.name.trim(),
-                email:         form.email.trim(),
-                phone:         form.phone.trim()  || null,
+                email:         form.email.trim()    || null,   // ← optional
+                phone:         form.phone.trim()    || null,
                 tier:          form.tier,
                 status:        form.status,
-                balance:       parseFloat(form.balance)      || 0,
-                cashoutLimit:  parseFloat(form.cashoutLimit) || TIER_CASHOUT[form.tier],
-                // ✅ FIX: send as currentStreak — backend PATCH reads req.body.currentStreak
+                balance:       parseFloat(form.balance)       || 0,
+                cashoutLimit:  parseFloat(form.cashoutLimit)  || TIER_CASHOUT[form.tier],
                 currentStreak: parseInt(form.currentStreak, 10) || 0,
                 facebook:      form.facebook.trim()  || null,
                 telegram:      form.telegram.trim()  || null,
@@ -210,7 +206,8 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                                     <input style={INPUT} value={form.name}
                                         onChange={e => set('name', e.target.value)} placeholder="Full name" />
                                 </Field>
-                                <Field label="Email *">
+                                {/* ✅ Email is now optional — no asterisk, no required validation */}
+                                <Field label="Email" hint="Optional">
                                     <input style={INPUT} type="email" value={form.email}
                                         onChange={e => set('email', e.target.value)} placeholder="email@example.com" />
                                 </Field>
@@ -252,14 +249,14 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                             </div>
                         </div>
 
-                        {/* ── Balance & Streak (manual override) ── */}
+                        {/* ── Balance, Streak & Bonus (manual override) ── */}
                         <div>
-                            <SectionHead>Balance &amp; Streak (Manual Override)</SectionHead>
+                            <SectionHead>Balance, Streak &amp; Bonus (Manual Override)</SectionHead>
                             <InfoBanner>
-                                Editing balance directly bypasses the normal transaction flow. Use only for corrections.
-                                To grant a bonus, use the Bonus page instead.
+                                Editing these values directly bypasses the normal transaction flow. Use only for corrections.
                             </InfoBanner>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                                {/* Balance */}
                                 <Field label="Balance ($)" hint="Player's current wallet balance">
                                     <div style={{ position: 'relative' }}>
                                         <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: C.grayLt, fontSize: '13px', fontWeight: '700', pointerEvents: 'none' }}>$</span>
@@ -271,11 +268,12 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                                         />
                                     </div>
                                 </Field>
+
+                                {/* Streak */}
                                 <Field
                                     label="Current Streak (days)"
                                     hint={`Was: ${player.streak?.currentStreak ?? 0} days · Last deposit: ${player.streak?.lastPlayedDate || '—'}`}
                                 >
-                                    {/* ✅ FIX: field key is currentStreak, sent to backend as currentStreak */}
                                     <input
                                         style={INPUT}
                                         type="number" min="0" step="1"
@@ -283,6 +281,23 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                                         onChange={e => set('currentStreak', e.target.value)}
                                         placeholder="0"
                                     />
+                                </Field>
+
+                                {/* ── NEW: Total Bonus Earned ── */}
+                                <Field
+                                    label="Total Bonus Earned ($)"
+                                    hint={`Was: $${parseFloat(player.bonusTracker?.totalBonusEarned || 0).toFixed(2)}`}
+                                >
+                                    <div style={{ position: 'relative' }}>
+                                        <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: C.grayLt, fontSize: '13px', fontWeight: '700', pointerEvents: 'none' }}>$</span>
+                                        <input
+                                            style={{ ...INPUT, paddingLeft: '22px' }}
+                                            type="number" min="0" step="0.01"
+                                            value={form.totalBonusEarned}
+                                            onChange={e => set('totalBonusEarned', e.target.value)}
+                                            placeholder="0.00"
+                                        />
+                                    </div>
                                 </Field>
                             </div>
 
@@ -292,8 +307,8 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                                 border: `1px solid ${C.border}`, borderRadius: '8px',
                                 display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '12px',
                             }}>
-                                <span>💰 Current balance: <strong style={{ color: '#10b981' }}>${parseFloat(player.balance || 0).toFixed(2)}</strong></span>
-                                <span>🔥 Current streak: <strong style={{ color: '#7c3aed' }}>{player.streak?.currentStreak ?? 0} days</strong></span>
+                                <span>💰 Balance: <strong style={{ color: '#10b981' }}>${parseFloat(player.balance || 0).toFixed(2)}</strong></span>
+                                <span>🔥 Streak: <strong style={{ color: '#7c3aed' }}>{player.streak?.currentStreak ?? 0} days</strong></span>
                                 <span>🎁 Available bonus: <strong style={{ color: '#10b981' }}>${parseFloat(player.bonusTracker?.availableBonus || 0).toFixed(2)}</strong></span>
                                 <span>📊 Total earned: <strong style={{ color: C.slate }}>${parseFloat(player.bonusTracker?.totalBonusEarned || 0).toFixed(2)}</strong></span>
                             </div>
@@ -304,11 +319,11 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                             <SectionHead>Social Handles — optional</SectionHead>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 {[
-                                    { key: 'facebook',  label: 'Facebook'   },
-                                    { key: 'telegram',  label: 'Telegram'   },
-                                    { key: 'instagram', label: 'Instagram'  },
-                                    { key: 'x',         label: 'X / Twitter'},
-                                    { key: 'snapchat',  label: 'Snapchat'   },
+                                    { key: 'facebook',  label: 'Facebook'    },
+                                    { key: 'telegram',  label: 'Telegram'    },
+                                    { key: 'instagram', label: 'Instagram'   },
+                                    { key: 'x',         label: 'X / Twitter' },
+                                    { key: 'snapchat',  label: 'Snapchat'    },
                                 ].map(({ key, label }) => (
                                     <Field key={key} label={label}>
                                         <div style={{ position: 'relative' }}>
