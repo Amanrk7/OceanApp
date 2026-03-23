@@ -737,9 +737,12 @@ export default function MissingPlayersPage() {
       {/* Header */}
       <div style={S.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={S.pageIcon}><AlertTriangle style={{ width: 20, height: 20, color: '#dc2626' }} /></div>
+          <div style={S.pageIcon}><AlertTriangle style={{
+            width: '30px',
+            height: '30px', color: '#dc2626'
+          }} /></div>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0 }}>Missing Player Info</h1>
+            {/* <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0 }}>Missing Player Info</h1> */}
             <p style={{ fontSize: 13, color: '#64748b', margin: '2px 0 0' }}>Players with incomplete contact details</p>
           </div>
         </div>
@@ -881,6 +884,5 @@ const S = {
   errBox: { padding: '10px 12px', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 8, fontSize: 12, color: '#dc2626' },
   okBox: { padding: '10px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, fontSize: 12, color: '#16a34a' },
 };
-
 
 
