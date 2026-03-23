@@ -96,7 +96,7 @@ export default function Attendance() {
 
   // ===== RENDER =====
   return (
-    <div style={{ padding: '24px' }}>
+    <div>
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
         {/* <h1 style={{ fontSize: '22px', fontWeight: '700', marginBottom: '8px' }}>Attendance Dashboard</h1> */}
