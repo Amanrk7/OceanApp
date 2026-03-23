@@ -526,22 +526,15 @@ function AdminDashboard({ user }) {
     finally { setLoading(false); }
   };
   
-  // const handleNavigate = (pageId, extra = {}) => {
-  //   if (pageId !== 'players') setAddPlayer(false);
-  //   setPage(pageId);
-  //   // If the banner sends tab:'pending', store it so Transactions can read it
-  //   if (extra.tab) {
-  //     sessionStorage.setItem('transactions_initialTab', extra.tab);
-  //   }
-  // };
   const handleNavigate = (pageId, extra = {}) => {
     if (pageId !== 'players') setAddPlayer(false);
+    setPage(pageId);
+    // If the banner sends tab:'pending', store it so Transactions can read it
     if (extra.tab) {
-        sessionStorage.setItem('transactions_initialTab', extra.tab);
+      sessionStorage.setItem('transactions_initialTab', extra.tab);
     }
-    navigate(`/?page=${pageId}`);  // ← drive everything through the URL
-    // Remove the setPage() call — the useEffect will handle it
-};
+  };
+
 
   const navLabels = {
     dashboard: 'Dashboard', memberDashboard: 'Member Dashboard', players: 'Players',
