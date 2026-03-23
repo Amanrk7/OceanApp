@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { fmtTXDate, fmtTXTime } from '../utils/txTime';
+
+
 export default function Issues() {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +28,7 @@ export default function Issues() {
 
   if (loading) {
     return (
-      <div style={{textAlign: 'center', color: '#64748b' }}>
+      <div style={{ textAlign: 'center', color: '#64748b' }}>
         <p>Loading issues...</p>
       </div>
     );
@@ -34,8 +36,8 @@ export default function Issues() {
 
   const filtered = issues.filter(issue =>
     filterTab === 'unresolved'
-      ? issue.status === 'UNRESOLVED' || issue.status === 'Unresolved'
-      : issue.status === 'RESOLVED' || issue.status === 'Resolved'
+      ? issue.status === 'Unresolved'
+      : issue.status === 'Resolved'
   );
 
   const getPriorityColor = (priority) => {
@@ -295,7 +297,6 @@ function AddIssueForm({ onClose, onIssueCreated }) {
 
   return (
     <div style={{
-      padding: '24px',
       maxWidth: '900px',
       margin: '0 auto',
       background: '#fff',
