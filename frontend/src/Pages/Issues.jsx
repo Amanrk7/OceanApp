@@ -36,8 +36,8 @@ export default function Issues() {
 
   const filtered = issues.filter(issue =>
     filterTab === 'unresolved'
-      ? issue.status === 'Unresolved'
-      : issue.status === 'Resolved'
+      ? issue.status === 'UNRESOLVED' || issue.status === 'Unresolved'
+      : issue.status === 'RESOLVED' || issue.status === 'Resolved'
   );
 
   const getPriorityColor = (priority) => {
@@ -79,7 +79,7 @@ export default function Issues() {
   }
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div >
 
 
       {/* Tabs */}
