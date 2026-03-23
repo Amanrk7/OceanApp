@@ -431,7 +431,7 @@ export default function PlayerDashboard() {
     ];
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1100px', margin: '0 auto', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1650px', margin: '0 auto', width: '100%' }}>
 
             {/* ── BREADCRUMB ──────────────────────────────────────────────── */}
             <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', width: 'fit-content', flexWrap: 'wrap' }}>
