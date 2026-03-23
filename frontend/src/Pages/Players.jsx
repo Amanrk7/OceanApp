@@ -324,7 +324,7 @@ export default function Players() {
                                 <th style={TH}>Cashout Limit</th>
                                 <th style={TH}>Socials</th>
                                 <th style={TH}>Status</th>
-                                <th style={TH}>Last Login</th>
+                                {/* <th style={TH}>Last Login</th> */}
                                 <th style={{ ...TH, textAlign: 'center' }}>Actions</th>
                             </tr>
                         </thead>
@@ -378,7 +378,8 @@ export default function Players() {
 
                                         {/* Email */}
                                         <td style={{ ...TD, color: '#64748b', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {player.email}
+                                            
+                                            {player.email || '?'}
                                         </td>
 
                                         {/* Tier */}
@@ -417,7 +418,7 @@ export default function Players() {
                                         </td>
 
                                         {/* Last Login */}
-                                        <td style={{ ...TD, color: '#64748b' }}>{lastLogin}</td>
+                                        {/* <td style={{ ...TD, color: '#64748b' }}>{lastLogin}</td> */}
 
                                         {/* Actions */}
                                         <td style={{ ...TD, textAlign: 'center' }}>
