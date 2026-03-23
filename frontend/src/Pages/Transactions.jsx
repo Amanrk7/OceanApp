@@ -408,7 +408,15 @@ export default function Transactions() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filterTab, setFilterTab] = useState('all');
+  // const [filterTab, setFilterTab] = useState('all');
+  const [filterTab, setFilterTab] = useState(() => {
+    const saved = sessionStorage.getItem('transactions_initialTab');
+    if (saved) {
+      sessionStorage.removeItem('transactions_initialTab'); // consume once
+      return saved;
+    }
+    return 'all';
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [undoingId, setUndoingId] = useState(null);
