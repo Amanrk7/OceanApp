@@ -284,7 +284,7 @@ const CSS = `
     width: calc(100% - var(--sidebar-w));
     transition: background .25s;
   }
-  .ob-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+  .ob-container { max-width: 1650px; margin: 0 auto; padding: 20px; }
   .ob-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
   .ob-header h1 { font-size: 14px; font-weight: 700; color: var(--color-text); }
 
