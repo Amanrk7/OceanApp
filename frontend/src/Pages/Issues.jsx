@@ -78,25 +78,7 @@ export default function Issues() {
 
   return (
     <div style={{ padding: '24px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'end', alignItems: 'center', marginBottom: '24px' }}>
-        {/* <h1 style={{ fontSize: '22px', fontWeight: '700', margin: 0 }}>Issue Tracker</h1> */}
-        <button
-          onClick={() => setShowAddIssue(true)}
-          style={{
-            background: '#0ea5e9',
-            color: '#fff',
-            border: 'none',
-            padding: '10px 16px',
-            borderRadius: '8px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
-        >
-          + Submit Issue
-        </button>
-      </div>
+
 
       {/* Tabs */}
       <div style={{
@@ -124,6 +106,26 @@ export default function Issues() {
             {tab === 'unresolved' ? 'UNRESOLVED' : 'SOLVED'}
           </button>
         ))}
+
+        <div style={{ display: 'flex', justifyContent: 'end', alignItems: 'center', marginBottom: '24px' }}>
+          {/* <h1 style={{ fontSize: '22px', fontWeight: '700', margin: 0 }}>Issue Tracker</h1> */}
+          <button
+            onClick={() => setShowAddIssue(true)}
+            style={{
+              background: '#0ea5e9',
+              color: '#fff',
+              border: 'none',
+              padding: '10px 16px',
+              borderRadius: '8px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            + Submit Issue
+          </button>
+        </div>
+
       </div>
 
       {/* Issues List */}
