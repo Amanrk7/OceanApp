@@ -107,7 +107,7 @@ export default function Issues() {
           </button>
         ))}
 
-        <div style={{ display: 'flex', justifyContent: 'end', alignItems: 'center', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'end', alignItems: 'center', width: '-webkit-fill-available' }}>
           {/* <h1 style={{ fontSize: '22px', fontWeight: '700', margin: 0 }}>Issue Tracker</h1> */}
           <button
             onClick={() => setShowAddIssue(true)}
