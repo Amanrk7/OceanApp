@@ -46,6 +46,7 @@ import TeamDashboard from "./Pages/Teamdashboard.jsx";
 import AdminReportPage from "./Pages/Adminreportpage.jsx";
 import MissingPlayersPage from "./Pages/Missingplayerspage.jsx";
 import Playtimepage from "./Pages/Playtimepage.jsx";
+import PendingTransactionsBanner from "./Components/Pendingtransactionsbanner.jsx";
 
 const SIDEBAR_W = 62;
 
@@ -525,9 +526,17 @@ function AdminDashboard({ user }) {
     finally { setLoading(false); }
   };
 
-  const handleNavigate = (pageId) => {
+  // const handleNavigate = (pageId) => {
+  //   if (pageId !== 'players') setAddPlayer(false);
+  //   setPage(pageId);
+  // };
+  const handleNavigate = (pageId, extra = {}) => {
     if (pageId !== 'players') setAddPlayer(false);
     setPage(pageId);
+    // If the banner sends tab:'pending', store it so Transactions can read it
+    if (extra.tab) {
+      sessionStorage.setItem('transactions_initialTab', extra.tab);
+    }
   };
 
   const navLabels = {
@@ -572,6 +581,10 @@ function AdminDashboard({ user }) {
       <Sidebar user={user} activePage={page} onNavigate={handleNavigate} onLogout={handleLogout} />
       <main className="ob-main">
         <div className="ob-container">
+          <PendingTransactionsBanner
+            currentPage={page}
+            onNavigate={handleNavigate}
+          />
           <div className="ob-header" style={{ alignItems: "center", justifyContent: "flex-start", gap: "4px" }}>
             <h1>{navLabels[page] || 'Dashboard'}</h1>
             {addPlayer && (
