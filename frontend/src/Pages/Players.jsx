@@ -288,6 +288,8 @@ export default function Players() {
                                     fontSize: '13px', color: active ? C.sky : '#64748b',
                                     borderBottom: active ? `2px solid ${C.sky}` : '2px solid transparent',
                                     marginBottom: '-2px', cursor: 'pointer', transition: 'all .15s', whiteSpace: 'nowrap',
+                                    borderBottomLeftRadius: '0px',
+                                    borderBottomRightRadius: '0px',
                                 }}>{tab.label}</button>
                         );
                     })}
@@ -378,7 +380,7 @@ export default function Players() {
 
                                         {/* Email */}
                                         <td style={{ ...TD, color: '#64748b', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            
+
                                             {player.email || '?'}
                                         </td>
 
