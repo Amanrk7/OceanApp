@@ -171,7 +171,7 @@ export default function EditPlayer({ player, onClose, onSaved }) {
             style={{
                 position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)',
                 zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: '20px',
+                padding: '20px', height: '100vh'
             }}
         >
             <div style={{
