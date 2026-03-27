@@ -1,4 +1,4 @@
-import { useState, useContext, useCallback } from "react";
+import { useState, useContext, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AddPlayerContext } from "../Context/addPlayer";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
@@ -10,17 +10,20 @@ const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
         {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
     </svg>
 );
-const ICheck = () => <Ico d="M20 6L9 17l-5-5" />;
-const IAlert = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} />;
-const IPlus = () => <Ico d="M12 5v14M5 12h14" />;
-const IX = () => <Ico d="M18 6L6 18M6 6l12 12" />;
-const IUser = () => <Ico d={['M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2', 'M12 11a4 4 0 100-8 4 4 0 000 8z']} />;
-const ILock = () => <Ico d={['M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z', 'M7 11V7a5 5 0 0110 0v4']} />;
-const IMail = () => <Ico d={['M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z', 'M22 6l-10 7L2 6']} />;
-const IPhone = () => <Ico d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />;
-const IUsers = () => <Ico d={['M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2', 'M23 21v-2a4 4 0 00-3-3.87', 'M16 3.13a4 4 0 010 7.75', 'M9 7a4 4 0 100 8 4 4 0 000-8z']} />;
-const IShield = () => <Ico d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />;
-const IWarn = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} size={13} />;
+const ICheck    = () => <Ico d="M20 6L9 17l-5-5" />;
+const IAlert    = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} />;
+const IPlus     = () => <Ico d="M12 5v14M5 12h14" />;
+const IX        = () => <Ico d="M18 6L6 18M6 6l12 12" />;
+const IUser     = () => <Ico d={['M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2', 'M12 11a4 4 0 100-8 4 4 0 000 8z']} />;
+const ILock     = () => <Ico d={['M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z', 'M7 11V7a5 5 0 0110 0v4']} />;
+const IMail     = () => <Ico d={['M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z', 'M22 6l-10 7L2 6']} />;
+const IPhone    = () => <Ico d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />;
+const IUsers    = () => <Ico d={['M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2', 'M23 21v-2a4 4 0 00-3-3.87', 'M16 3.13a4 4 0 010 7.75', 'M9 7a4 4 0 100 8 4 4 0 000-8z']} />;
+const IShield   = () => <Ico d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />;
+const IWarn     = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} size={13} />;
+const ISearch   = () => <Ico d={['M11 17.25a6.25 6.25 0 110-12.5 6.25 6.25 0 010 12.5z', 'M16 16l4.5 4.5']} />;
+const IWallet   = () => <Ico d={['M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z', 'M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z', 'M12 14a1 1 0 100-2 1 1 0 000 2z']} />;
+const ILink     = () => <Ico d={['M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71', 'M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71']} />;
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -45,11 +48,14 @@ const INPUT = {
 
 // ─── Social handle validation rules ──────────────────────────────────────────
 const SOCIAL_RULES = {
-    facebook:  { pattern: /^[a-zA-Z0-9.]{1,50}$/,          hint: '1–50 chars: letters, numbers, dots only',                         url: (h) => `https://facebook.com/${h}` },
-    telegram:  { pattern: /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/,  hint: '5–32 chars, starts with a letter, letters/numbers/underscores',   url: (h) => `https://t.me/${h}` },
-    instagram: { pattern: /^[a-zA-Z0-9._]{1,30}$/,          hint: '1–30 chars: letters, numbers, dots, underscores',                 url: (h) => `https://instagram.com/${h}` },
-    x:         { pattern: /^[a-zA-Z0-9_]{1,15}$/,           hint: '1–15 chars: letters, numbers, underscores',                       url: (h) => `https://x.com/${h}` },
-    snapchat:  { pattern: /^[a-zA-Z][a-zA-Z0-9._-]{1,14}$/, hint: '2–15 chars, starts with a letter',                               url: (h) => `https://snapchat.com/add/${h}` },
+    facebook:   { pattern: /^[a-zA-Z0-9.]{1,50}$/,          hint: '1–50 chars: letters, numbers, dots only',                       url: (h) => `https://facebook.com/${h}` },
+    telegram:   { pattern: /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/,  hint: '5–32 chars, starts with a letter, letters/numbers/underscores', url: (h) => `https://t.me/${h}` },
+    instagram:  { pattern: /^[a-zA-Z0-9._]{1,30}$/,          hint: '1–30 chars: letters, numbers, dots, underscores',               url: (h) => `https://instagram.com/${h}` },
+    x:          { pattern: /^[a-zA-Z0-9_]{1,15}$/,           hint: '1–15 chars: letters, numbers, underscores',                     url: (h) => `https://x.com/${h}` },
+    snapchat:   { pattern: /^[a-zA-Z][a-zA-Z0-9._-]{1,14}$/, hint: '2–15 chars, starts with a letter',                             url: (h) => `https://snapchat.com/add/${h}` },
+    chimeTag:   { pattern: /^\$[a-zA-Z0-9._-]{2,20}$|^[a-zA-Z0-9._-]{2,20}$/, hint: 'Chime $tag or username (2–20 chars)',          url: null },
+    cashappTag: { pattern: /^\$[a-zA-Z0-9._-]{1,20}$|^[a-zA-Z0-9._-]{1,20}$/, hint: '$cashtag or username (1–20 chars)',            url: (h) => `https://cash.app/${h.startsWith('$') ? h : '$' + h}` },
+    paypalEmail:{ pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,     hint: 'Valid email address linked to PayPal',                          url: null },
 };
 
 function validateHandle(platform, handle) {
@@ -57,6 +63,204 @@ function validateHandle(platform, handle) {
     const rule = SOCIAL_RULES[platform];
     if (!rule) return null;
     return rule.pattern.test(handle.trim()) ? 'valid' : 'invalid';
+}
+
+// ─── Tier badge colors ────────────────────────────────────────────────────────
+const TIER_MAP = {
+    BRONZE: { bg: '#fed7aa', text: '#92400e', emoji: '🥉' },
+    SILVER: { bg: '#e0e7ff', text: '#3730a3', emoji: '🥈' },
+    GOLD:   { bg: '#fef3c7', text: '#92400e', emoji: '🥇' },
+};
+
+// ─── Player search + multi-select picker ──────────────────────────────────────
+function PlayerPicker({ label, hint, value, onChange, multi = true }) {
+    // value: array of { id, name, username } objects
+    const [query, setQuery]       = useState('');
+    const [results, setResults]   = useState([]);
+    const [loading, setLoading]   = useState(false);
+    const [open, setOpen]         = useState(false);
+    const inputRef                = useRef(null);
+    const containerRef            = useRef(null);
+    const debounceRef             = useRef(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handler = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const search = async (q) => {
+        if (q.trim().length < 2) { setResults([]); setOpen(false); return; }
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/players/search?q=${encodeURIComponent(q.trim())}`, {
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const data = await res.json();
+            setResults(data.data || []);
+            setOpen(true);
+        } catch {
+            setResults([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const onInput = (e) => {
+        const q = e.target.value;
+        setQuery(q);
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => search(q), 280);
+    };
+
+    const select = (player) => {
+        if (!multi) {
+            // single-select: replace
+            onChange([{ id: player.id, name: player.name, username: player.username }]);
+        } else {
+            // multi: add if not already selected
+            if (!value.find(p => p.id === player.id)) {
+                onChange([...value, { id: player.id, name: player.name, username: player.username }]);
+            }
+        }
+        setQuery('');
+        setResults([]);
+        setOpen(false);
+        inputRef.current?.blur();
+    };
+
+    const remove = (id) => onChange(value.filter(p => p.id !== id));
+
+    const tierColor = (tier) => TIER_MAP[tier] || TIER_MAP.BRONZE;
+
+    return (
+        <div>
+            <label style={LABEL}>{label}</label>
+
+            {/* Selected chips */}
+            {value.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                    {value.map(p => (
+                        <span key={p.id} style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                            padding: '4px 8px 4px 10px',
+                            background: C.skyLt, border: `1px solid #bae6fd`,
+                            borderRadius: '20px', fontSize: '12px', fontWeight: '600', color: C.skyDk,
+                        }}>
+                            {p.name}
+                            <span style={{ opacity: 0.5, fontSize: '10px', fontWeight: '400' }}>@{p.username}</span>
+                            <button
+                                type="button"
+                                onClick={() => remove(p.id)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 1px', color: C.skyDk, display: 'flex', alignItems: 'center' }}
+                            >
+                                <IX />
+                            </button>
+                        </span>
+                    ))}
+                </div>
+            )}
+
+            {/* Search input */}
+            {(multi || value.length === 0) && (
+                <div ref={containerRef} style={{ position: 'relative' }}>
+                    <div style={{ position: 'relative' }}>
+                        <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: C.grayLt, display: 'flex', pointerEvents: 'none' }}>
+                            <ISearch />
+                        </span>
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            value={query}
+                            onChange={onInput}
+                            onFocus={() => query.trim().length >= 2 && setOpen(true)}
+                            placeholder="Search by name or username…"
+                            style={{ ...INPUT, paddingLeft: '34px', paddingRight: loading ? '34px' : '12px' }}
+                            autoComplete="off"
+                        />
+                        {loading && (
+                            <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: C.grayLt }}>…</span>
+                        )}
+                    </div>
+
+                    {open && results.length > 0 && (
+                        <div style={{
+                            position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 100,
+                            background: C.white, border: `1px solid ${C.border}`,
+                            borderRadius: '10px', boxShadow: '0 8px 24px rgba(15,23,42,.12)',
+                            maxHeight: '220px', overflowY: 'auto',
+                        }}>
+                            {results.map((p, i) => {
+                                const already = value.find(x => x.id === p.id);
+                                const tc = tierColor(p.tier);
+                                return (
+                                    <button
+                                        key={p.id}
+                                        type="button"
+                                        disabled={!!already}
+                                        onClick={() => select(p)}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '10px',
+                                            width: '100%', padding: '9px 14px',
+                                            background: already ? C.bg : C.white,
+                                            border: 'none', borderBottom: i < results.length - 1 ? `1px solid ${C.border}` : 'none',
+                                            cursor: already ? 'not-allowed' : 'pointer',
+                                            textAlign: 'left', fontFamily: 'inherit',
+                                            opacity: already ? 0.5 : 1,
+                                            transition: 'background .12s',
+                                        }}
+                                        onMouseEnter={e => { if (!already) e.currentTarget.style.background = C.skyLt; }}
+                                        onMouseLeave={e => { if (!already) e.currentTarget.style.background = C.white; }}
+                                    >
+                                        {/* Avatar circle */}
+                                        <span style={{
+                                            width: '30px', height: '30px', borderRadius: '50%',
+                                            background: C.skyLt, border: `1px solid #bae6fd`,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            fontSize: '11px', fontWeight: '700', color: C.skyDk, flexShrink: 0,
+                                        }}>
+                                            {p.name.charAt(0).toUpperCase()}
+                                        </span>
+                                        <span style={{ flex: 1, minWidth: 0 }}>
+                                            <span style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: C.slate, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {p.name}
+                                            </span>
+                                            <span style={{ fontSize: '11px', color: C.grayLt }}>@{p.username}</span>
+                                        </span>
+                                        <span style={{ padding: '2px 7px', background: tc.bg, color: tc.text, borderRadius: '20px', fontSize: '10px', fontWeight: '700', flexShrink: 0 }}>
+                                            {p.tier}
+                                        </span>
+                                        {already && (
+                                            <span style={{ fontSize: '10px', color: C.grayLt, flexShrink: 0 }}>Added</span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {open && !loading && results.length === 0 && query.trim().length >= 2 && (
+                        <div style={{
+                            position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 100,
+                            background: C.white, border: `1px solid ${C.border}`,
+                            borderRadius: '10px', padding: '14px', textAlign: 'center',
+                            fontSize: '13px', color: C.grayLt,
+                        }}>
+                            No players found for "{query}"
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {hint && <p style={{ margin: '5px 0 0', fontSize: '11px', color: C.grayLt, lineHeight: '1.4' }}>{hint}</p>}
+        </div>
+    );
 }
 
 // ─── Breadcrumb ───────────────────────────────────────────────────────────────
@@ -81,9 +285,7 @@ function Breadcrumb({ onPlayersClick, onDashboardClick }) {
                             {item.label}
                         </button>
                     ) : (
-                        <span style={{ fontWeight: '700', fontSize: '13px', padding: '2px 6px', color: C.slate }}>
-                            {item.label}
-                        </span>
+                        <span style={{ fontWeight: '700', fontSize: '13px', padding: '2px 6px', color: C.slate }}>{item.label}</span>
                     )}
                     {i < crumbs.length - 1 && (
                         <span style={{ color: C.grayLt, fontSize: '16px', userSelect: 'none' }}>›</span>
@@ -133,12 +335,7 @@ function SectionHead({ step, children }) {
 }
 
 function TierBadge({ tier }) {
-    const map = {
-        BRONZE: { bg: '#fed7aa', text: '#92400e', emoji: '🥉' },
-        SILVER: { bg: '#e0e7ff', text: '#3730a3', emoji: '🥈' },
-        GOLD:   { bg: '#fef3c7', text: '#92400e', emoji: '🥇' },
-    };
-    const t = map[tier] || map.BRONZE;
+    const t = TIER_MAP[tier] || TIER_MAP.BRONZE;
     return (
         <span style={{ padding: '2px 9px', background: t.bg, color: t.text, borderRadius: '20px', fontSize: '11px', fontWeight: '700', marginLeft: '8px' }}>
             {t.emoji} {tier.charAt(0) + tier.slice(1).toLowerCase()}
@@ -146,30 +343,20 @@ function TierBadge({ tier }) {
     );
 }
 
-function AddRowBtn({ onClick, children }) {
-    const [hover, setHover] = useState(false);
-    return (
-        <button type="button" onClick={onClick}
-            onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%', background: hover ? C.skyLt : 'none', border: `1px dashed ${hover ? C.sky : C.border}`, borderRadius: '8px', padding: '8px 12px', cursor: 'pointer', color: C.sky, fontSize: '12px', fontWeight: '600', transition: 'all .15s', justifyContent: 'center' }}>
-            <IPlus /> {children}
-        </button>
-    );
-}
-
-// ─── Social field with live format-validation feedback ────────────────────────
-function SocialField({ platform, label, value, onChange }) {
+// ─── Social / payment field with live format-validation feedback ──────────────
+function ValidatedField({ platform, label, value, onChange, placeholder }) {
     const [focused, setFocused] = useState(false);
-    const status    = validateHandle(platform, value);
-    const rule      = SOCIAL_RULES[platform];
-    const hasVal    = value && value.trim().length > 0;
+    const status     = validateHandle(platform, value);
+    const rule       = SOCIAL_RULES[platform];
+    const hasVal     = value && value.trim().length > 0;
+    const isAt       = !['chimeTag', 'cashappTag', 'paypalEmail'].includes(platform);
 
     const borderColor = !hasVal ? C.border
         : status === 'valid'   ? '#22c55e'
         : status === 'invalid' ? C.red
         : C.border;
 
-    const profileUrl = status === 'valid' ? rule.url(value.trim()) : null;
+    const profileUrl = status === 'valid' && rule?.url ? rule.url(value.trim()) : null;
 
     return (
         <div>
@@ -177,24 +364,32 @@ function SocialField({ platform, label, value, onChange }) {
                 <label style={LABEL}>{label}</label>
                 {hasVal && status === 'valid' && profileUrl && (
                     <a href={profileUrl} target="_blank" rel="noopener noreferrer"
-                        style={{ fontSize: '10px', fontWeight: '700', color: C.sky, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        style={{ fontSize: '10px', fontWeight: '700', color: C.sky, textDecoration: 'none' }}>
                         View ↗
                     </a>
                 )}
             </div>
             <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', fontWeight: '700', color: C.grayLt, pointerEvents: 'none' }}>@</span>
+                {isAt && (
+                    <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', fontWeight: '700', color: C.grayLt, pointerEvents: 'none' }}>@</span>
+                )}
                 <input
-                    type="text"
+                    type={platform === 'paypalEmail' ? 'email' : 'text'}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
-                    placeholder="handle"
-                    style={{ ...INPUT, paddingLeft: '26px', paddingRight: hasVal ? '28px' : '12px', borderColor, boxShadow: focused ? `0 0 0 3px ${borderColor}22` : 'none' }}
+                    placeholder={placeholder || (isAt ? 'handle' : 'value')}
+                    style={{
+                        ...INPUT,
+                        paddingLeft: isAt ? '26px' : '12px',
+                        paddingRight: hasVal ? '28px' : '12px',
+                        borderColor,
+                        boxShadow: focused ? `0 0 0 3px ${borderColor}22` : 'none',
+                    }}
                 />
                 {hasVal && (
-                    <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', width: '8px', height: '8px', borderRadius: '50%', background: status === 'valid' ? '#22c55e' : C.red, flexShrink: 0 }} />
+                    <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', width: '8px', height: '8px', borderRadius: '50%', background: status === 'valid' ? '#22c55e' : C.red }} />
                 )}
             </div>
             {hasVal && (focused || status === 'invalid') && (
@@ -206,19 +401,18 @@ function SocialField({ platform, label, value, onChange }) {
                 </p>
             )}
             {!hasVal && focused && (
-                <p style={{ margin: '4px 0 0', fontSize: '10px', color: C.grayLt, lineHeight: '1.4' }}>{rule.hint}</p>
+                <p style={{ margin: '4px 0 0', fontSize: '10px', color: C.grayLt, lineHeight: '1.4' }}>{rule?.hint}</p>
             )}
         </div>
     );
 }
 
-// ─── Dynamic list section ─────────────────────────────────────────────────────
-function DynamicList({ label, items, onAdd, onChange, onRemove, placeholder, icon: IconEl }) {
+// ─── Sources dynamic list ─────────────────────────────────────────────────────
+function SourcesList({ items, onAdd, onChange, onRemove }) {
     return (
         <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                {IconEl && <span style={{ color: C.grayLt, display: 'flex' }}><IconEl /></span>}
-                <label style={{ ...LABEL, marginBottom: 0 }}>{label}</label>
+                <label style={{ ...LABEL, marginBottom: 0 }}>Sources</label>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
                 {items.map((val, i) => (
@@ -228,7 +422,7 @@ function DynamicList({ label, items, onAdd, onChange, onRemove, placeholder, ico
                             <input
                                 type="text" value={val}
                                 onChange={(e) => onChange(i, e.target.value)}
-                                placeholder={placeholder}
+                                placeholder="e.g. Instagram Ad"
                                 style={{ ...INPUT, paddingLeft: '30px', fontSize: '13px' }}
                             />
                         </div>
@@ -240,7 +434,10 @@ function DynamicList({ label, items, onAdd, onChange, onRemove, placeholder, ico
                         )}
                     </div>
                 ))}
-                <AddRowBtn onClick={onAdd}>Add {label.replace(/s$/, '')}</AddRowBtn>
+                <button type="button" onClick={onAdd}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%', background: 'none', border: `1px dashed ${C.border}`, borderRadius: '8px', padding: '8px 12px', cursor: 'pointer', color: C.sky, fontSize: '12px', fontWeight: '600', justifyContent: 'center' }}>
+                    <IPlus /> Add Source
+                </button>
             </div>
         </div>
     );
@@ -254,16 +451,18 @@ export default function AddNewPlayer({ onIssueCreated }) {
     const { shiftActive }  = useContext(ShiftStatusContext);
     const navigate         = useNavigate();
 
-    // ── Shared breadcrumb handlers ─────────────────────────────────────────
     const goToPlayers   = () => { setAddPlayer(false); };
     const goToDashboard = () => { setAddPlayer(false); navigate('/'); };
 
     const EMPTY = {
         name: '', username: '', email: '', phone: '',
         facebook: '', telegram: '', instagram: '', x: '', snapchat: '',
+        // payment handles
+        chimeTag: '', cashappTag: '', paypalEmail: '',
         tier: 'BRONZE',
-        playerNames: [''],
-        friends: [''],
+        // player pickers — store as { id, name, username }[]
+        referrals: [],
+        friends: [],
         sources: [''],
     };
 
@@ -275,20 +474,19 @@ export default function AddNewPlayer({ onIssueCreated }) {
     const set      = (k, v) => setForm(p => ({ ...p, [k]: v }));
     const onChange = (e)    => set(e.target.name, e.target.value);
 
-    const listOf = (key) => ({
-        add:    ()     => setForm(p => ({ ...p, [key]: [...p[key], ''] })),
-        change: (i, v) => setForm(p => ({ ...p, [key]: p[key].map((x, idx) => idx === i ? v : x) })),
-        remove: (i)    => setForm(p => ({ ...p, [key]: p[key].filter((_, idx) => idx !== i) })),
-    });
-    const refs = listOf('playerNames');
-    const frds = listOf('friends');
-    const srcs = listOf('sources');
+    const srcs = {
+        add:    ()     => setForm(p => ({ ...p, sources: [...p.sources, ''] })),
+        change: (i, v) => setForm(p => ({ ...p, sources: p.sources.map((x, idx) => idx === i ? v : x) })),
+        remove: (i)    => setForm(p => ({ ...p, sources: p.sources.filter((_, idx) => idx !== i) })),
+    };
 
     const onSocialChange = useCallback((platform, val) => {
         setForm(p => ({ ...p, [platform]: val }));
     }, []);
 
-    const socialWarnings = ['facebook', 'telegram', 'instagram', 'x', 'snapchat'].filter(
+    // Validate all handle-type fields before submit
+    const VALIDATED_FIELDS = ['facebook', 'telegram', 'instagram', 'x', 'snapchat', 'chimeTag', 'cashappTag', 'paypalEmail'];
+    const socialWarnings = VALIDATED_FIELDS.filter(
         (p) => form[p] && form[p].trim() && validateHandle(p, form[p]) === 'invalid'
     );
 
@@ -307,27 +505,34 @@ export default function AddNewPlayer({ onIssueCreated }) {
         if (!form.username.trim()) return setError('Username is required.');
 
         if (socialWarnings.length > 0) {
-            const names = socialWarnings.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
-            setError(`Please fix the format for: ${names}. Clear the field to leave it blank, or correct the handle.`);
+            const names = socialWarnings.map(s => {
+                const labels = { chimeTag: 'Chime Tag', cashappTag: 'Cash App Tag', paypalEmail: 'PayPal Email' };
+                return labels[s] || s.charAt(0).toUpperCase() + s.slice(1);
+            }).join(', ');
+            setError(`Please fix the format for: ${names}. Clear the field to leave it blank, or correct the value.`);
             return;
         }
 
         try {
             setLoading(true);
             await api.players.createPlayer({
-                name:      form.name.trim(),
-                username:  form.username.trim(),
-                email:     form.email.trim()    || null,
-                phone:     form.phone.trim()    || null,
-                tier:      form.tier,
-                facebook:  form.facebook.trim() || null,
-                telegram:  form.telegram.trim() || null,
-                instagram: form.instagram.trim()|| null,
-                x:         form.x.trim()        || null,
-                snapchat:  form.snapchat.trim() || null,
-                referrals: form.playerNames.filter(n => n.trim()),
-                friends:   form.friends.filter(n => n.trim()),
-                sources:   form.sources.filter(s => s.trim()),
+                name:         form.name.trim(),
+                username:     form.username.trim(),
+                email:        form.email.trim()       || null,
+                phone:        form.phone.trim()       || null,
+                tier:         form.tier,
+                facebook:     form.facebook.trim()    || null,
+                telegram:     form.telegram.trim()    || null,
+                instagram:    form.instagram.trim()   || null,
+                x:            form.x.trim()           || null,
+                snapchat:     form.snapchat.trim()    || null,
+                chimeTag:     form.chimeTag.trim()    || null,
+                cashappTag:   form.cashappTag.trim()  || null,
+                paypalEmail:  form.paypalEmail.trim() || null,
+                // send IDs — backend resolveUsers already handles numeric IDs
+                referrals:    form.referrals.map(p => String(p.id)),
+                friends:      form.friends.map(p => String(p.id)),
+                sources:      form.sources.filter(s => s.trim()),
             });
 
             setSuccess(`✓ Player "${form.name}" created successfully!`);
@@ -343,21 +548,24 @@ export default function AddNewPlayer({ onIssueCreated }) {
     };
 
     const socials = [
-        { key: 'facebook',  label: 'Facebook'    },
-        { key: 'telegram',  label: 'Telegram'    },
-        { key: 'instagram', label: 'Instagram'   },
-        { key: 'x',         label: 'X / Twitter' },
-        { key: 'snapchat',  label: 'Snapchat'    },
+        { key: 'facebook',  label: 'Facebook',    ph: 'johnsmith' },
+        { key: 'telegram',  label: 'Telegram',    ph: 'johnsmith' },
+        { key: 'instagram', label: 'Instagram',   ph: 'johnsmith' },
+        { key: 'x',         label: 'X / Twitter', ph: 'johnsmith' },
+        { key: 'snapchat',  label: 'Snapchat',    ph: 'johnsmith' },
+    ];
+
+    const payments = [
+        { key: 'chimeTag',    label: 'Chime Tag',    ph: '$ChimeUsername' },
+        { key: 'cashappTag',  label: 'Cash App Tag', ph: '$CashtTag'      },
+        { key: 'paypalEmail', label: 'PayPal Email', ph: 'email@paypal.com' },
     ];
 
     // ── No active shift ─────────────────────────────────────────────────────────
     if (!shiftActive) {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-                {/* Breadcrumb */}
                 <Breadcrumb onDashboardClick={goToDashboard} onPlayersClick={goToPlayers} />
-
                 <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                     <IAlert />
                     <div>
@@ -380,7 +588,6 @@ export default function AddNewPlayer({ onIssueCreated }) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: 'inherit' }}>
 
-            {/* Breadcrumb */}
             <Breadcrumb onDashboardClick={goToDashboard} onPlayersClick={goToPlayers} />
 
             {/* Header */}
@@ -389,12 +596,11 @@ export default function AddNewPlayer({ onIssueCreated }) {
                 <div>
                     <p style={{ fontWeight: '700', color: C.skyDk, margin: '0 0 2px', fontSize: '14px' }}>Add a New Player</p>
                     <p style={{ color: '#0369a1', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>
-                        Fill in the player's details. Social handles are validated for format. They'll be immediately active in the system.
+                        Fill in the player's details. Social and payment handles are validated for format. They'll be immediately active in the system.
                     </p>
                 </div>
             </div>
 
-            {/* Alerts */}
             {error && (
                 <div style={{ padding: '11px 14px', background: C.redLt, border: `1px solid ${C.redBdr}`, borderRadius: '8px', color: '#991b1b', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                     <span style={{ flexShrink: 0, marginTop: '1px' }}><IAlert /></span> {error}
@@ -460,71 +666,89 @@ export default function AddNewPlayer({ onIssueCreated }) {
                         <span style={{ fontWeight: '400', fontSize: '10px', letterSpacing: 0, textTransform: 'none', color: C.grayLt, marginLeft: '6px' }}>— all optional</span>
                     </SectionHead>
 
-                    <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', padding: '10px 14px', background: C.bg, borderRadius: '8px', border: `1px solid ${C.border}` }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: C.gray }}>
-                            <IShield />
-                            <span>Format validated as you type</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#16a34a' }}>
-                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
-                            Valid format
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: C.red }}>
-                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: C.red, display: 'inline-block' }} />
-                            Invalid format
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: C.grayLt }}>
-                            Valid formats open profile link ↗
-                        </div>
+                    {/* Legend */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '16px', padding: '10px 14px', background: C.bg, borderRadius: '8px', border: `1px solid ${C.border}` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: C.gray }}><IShield /><span>Format validated as you type</span></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#16a34a' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />Valid format</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: C.red }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: C.red, display: 'inline-block' }} />Invalid format</div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        {socials.map(({ key, label }) => (
-                            <SocialField
+                        {socials.map(({ key, label, ph }) => (
+                            <ValidatedField
                                 key={key}
                                 platform={key}
                                 label={label}
                                 value={form[key]}
                                 onChange={(val) => onSocialChange(key, val)}
+                                placeholder={ph}
                             />
                         ))}
                     </div>
                 </div>
 
-                {/* ══ 4 · Connections & Sources ════════════════════════════════ */}
+                {/* ══ 4 · Payment Handles ═══════════════════════════════════════ */}
                 <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '24px 28px' }}>
                     <SectionHead step="4">
+                        Payment Handles
+                        <span style={{ fontWeight: '400', fontSize: '10px', letterSpacing: 0, textTransform: 'none', color: C.grayLt, marginLeft: '6px' }}>— all optional</span>
+                    </SectionHead>
+
+                    {/* Subtle info banner */}
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '18px', padding: '10px 14px', background: C.violetLt, border: `1px solid ${C.violetBdr}`, borderRadius: '8px' }}>
+                        <span style={{ color: C.violet, display: 'flex', flexShrink: 0, marginTop: '1px' }}><IWallet /></span>
+                        <p style={{ margin: 0, fontSize: '12px', color: C.violet, lineHeight: '1.5' }}>
+                            These are used for cashout payouts. Leave blank if unknown — they can be added from the player profile later.
+                        </p>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                        {payments.map(({ key, label, ph }) => (
+                            <ValidatedField
+                                key={key}
+                                platform={key}
+                                label={label}
+                                value={form[key]}
+                                onChange={(val) => onSocialChange(key, val)}
+                                placeholder={ph}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                {/* ══ 5 · Connections & Sources ════════════════════════════════ */}
+                <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '24px 28px' }}>
+                    <SectionHead step="5">
                         Connections & Sources
                         <span style={{ fontWeight: '400', fontSize: '10px', letterSpacing: 0, textTransform: 'none', color: C.grayLt, marginLeft: '6px' }}>— optional</span>
                     </SectionHead>
+
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
 
-                        <DynamicList
-                            label="Referrals"
-                            items={form.playerNames}
-                            onAdd={refs.add}
-                            onChange={refs.change}
-                            onRemove={refs.remove}
-                            placeholder="Player name"
+                        {/* Referral — single select */}
+                        <PlayerPicker
+                            label="Referred By"
+                            hint="The player who referred this new player (single)"
+                            value={form.referrals}
+                            onChange={(val) => set('referrals', val)}
+                            multi={false}
                         />
 
-                        <DynamicList
+                        {/* Friends — multi select */}
+                        <PlayerPicker
                             label="Friends"
-                            icon={IUsers}
-                            items={form.friends}
-                            onAdd={frds.add}
-                            onChange={frds.change}
-                            onRemove={frds.remove}
-                            placeholder="Username or name"
+                            hint="Other players this person knows (multi)"
+                            value={form.friends}
+                            onChange={(val) => set('friends', val)}
+                            multi={true}
                         />
 
-                        <DynamicList
-                            label="Sources"
+                        {/* Sources — free text list */}
+                        <SourcesList
                             items={form.sources}
                             onAdd={srcs.add}
                             onChange={srcs.change}
                             onRemove={srcs.remove}
-                            placeholder="e.g. Instagram Ad"
                         />
 
                     </div>
