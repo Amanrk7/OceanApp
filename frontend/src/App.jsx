@@ -739,7 +739,7 @@ export default function App() {
       <ThemeProvider>
         <style>{CSS}</style>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-          <div className="ob-loading"><div className="ob-spinner" /></div>
+          <div className="ob-loading" style={{ justifyContent: 'center' }} ><div className="ob-spinner" /></div>
         </div>
       </ThemeProvider>
     );
