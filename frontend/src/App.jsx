@@ -584,11 +584,7 @@ function AdminDashboard({ user }) {
           />
           <div className="ob-header" style={{ alignItems: "center", justifyContent: "flex-start", gap: "4px" }}>
             <h1>{navLabels[page] || 'Dashboard'}</h1>
-            {addPlayer && (
-              <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-text)" }}>
-                &gt; Add New Player
-              </span>
-            )}
+            
           </div>
           {errorMsg && <div className="ob-error">{errorMsg}</div>}
           {renderPage()}
