@@ -594,7 +594,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
             <div style={{ padding: '14px 18px', background: C.skyLt, borderLeft: `4px solid ${C.sky}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <IUser />
                 <div>
-                    <p style={{ fontWeight: '700', margin: '0 0 2px', fontSize: '14px' }}>Add a New Player</p>
+                    <p style={{ fontWeight: '700', color: 'white', margin: '0 0 2px', fontSize: '14px' }}>Add a New Player</p>
                     <p style={{ color: '#0369a1', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>
                         Fill in the player's details. Social and payment handles are validated for format. They'll be immediately active in the system.
                     </p>
