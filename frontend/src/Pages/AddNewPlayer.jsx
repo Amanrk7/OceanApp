@@ -11,20 +11,20 @@ const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
         {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
     </svg>
 );
-const ICheck    = () => <Ico d="M20 6L9 17l-5-5" />;
-const IAlert    = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} />;
-const IPlus     = () => <Ico d="M12 5v14M5 12h14" />;
-const IX        = () => <Ico d="M18 6L6 18M6 6l12 12" />;
-const IUser     = () => <Ico d={['M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2', 'M12 11a4 4 0 100-8 4 4 0 000 8z']} />;
-const ILock     = () => <Ico d={['M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z', 'M7 11V7a5 5 0 0110 0v4']} />;
-const IMail     = () => <Ico d={['M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z', 'M22 6l-10 7L2 6']} />;
-const IPhone    = () => <Ico d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />;
-const IUsers    = () => <Ico d={['M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2', 'M23 21v-2a4 4 0 00-3-3.87', 'M16 3.13a4 4 0 010 7.75', 'M9 7a4 4 0 100 8 4 4 0 000-8z']} />;
-const IShield   = () => <Ico d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />;
-const IWarn     = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} size={13} />;
-const ISearch   = () => <Ico d={['M11 17.25a6.25 6.25 0 110-12.5 6.25 6.25 0 010 12.5z', 'M16 16l4.5 4.5']} />;
-const IWallet   = () => <Ico d={['M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z', 'M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z', 'M12 14a1 1 0 100-2 1 1 0 000 2z']} />;
-const ILink     = () => <Ico d={['M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71', 'M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71']} />;
+const ICheck = () => <Ico d="M20 6L9 17l-5-5" />;
+const IAlert = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} />;
+const IPlus = () => <Ico d="M12 5v14M5 12h14" />;
+const IX = () => <Ico d="M18 6L6 18M6 6l12 12" />;
+const IUser = () => <Ico d={['M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2', 'M12 11a4 4 0 100-8 4 4 0 000 8z']} />;
+const ILock = () => <Ico d={['M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z', 'M7 11V7a5 5 0 0110 0v4']} />;
+const IMail = () => <Ico d={['M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z', 'M22 6l-10 7L2 6']} />;
+const IPhone = () => <Ico d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />;
+const IUsers = () => <Ico d={['M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2', 'M23 21v-2a4 4 0 00-3-3.87', 'M16 3.13a4 4 0 010 7.75', 'M9 7a4 4 0 100 8 4 4 0 000-8z']} />;
+const IShield = () => <Ico d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />;
+const IWarn = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} size={13} />;
+const ISearch = () => <Ico d={['M11 17.25a6.25 6.25 0 110-12.5 6.25 6.25 0 010 12.5z', 'M16 16l4.5 4.5']} />;
+const IWallet = () => <Ico d={['M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z', 'M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z', 'M12 14a1 1 0 100-2 1 1 0 000 2z']} />;
+const ILink = () => <Ico d={['M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71', 'M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71']} />;
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -49,14 +49,14 @@ const INPUT = {
 
 // ─── Social handle validation rules ──────────────────────────────────────────
 const SOCIAL_RULES = {
-    facebook:   { pattern: /^[a-zA-Z0-9.]{1,50}$/,          hint: '1–50 chars: letters, numbers, dots only',                       url: (h) => `https://facebook.com/${h}` },
-    telegram:   { pattern: /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/,  hint: '5–32 chars, starts with a letter, letters/numbers/underscores', url: (h) => `https://t.me/${h}` },
-    instagram:  { pattern: /^[a-zA-Z0-9._]{1,30}$/,          hint: '1–30 chars: letters, numbers, dots, underscores',               url: (h) => `https://instagram.com/${h}` },
-    x:          { pattern: /^[a-zA-Z0-9_]{1,15}$/,           hint: '1–15 chars: letters, numbers, underscores',                     url: (h) => `https://x.com/${h}` },
-    snapchat:   { pattern: /^[a-zA-Z][a-zA-Z0-9._-]{1,14}$/, hint: '2–15 chars, starts with a letter',                             url: (h) => `https://snapchat.com/add/${h}` },
-    chimeTag:   { pattern: /^\$[a-zA-Z0-9._-]{2,20}$|^[a-zA-Z0-9._-]{2,20}$/, hint: 'Chime $tag or username (2–20 chars)',          url: null },
-    cashappTag: { pattern: /^\$[a-zA-Z0-9._-]{1,20}$|^[a-zA-Z0-9._-]{1,20}$/, hint: '$cashtag or username (1–20 chars)',            url: (h) => `https://cash.app/${h.startsWith('$') ? h : '$' + h}` },
-    paypalEmail:{ pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,     hint: 'Valid email address linked to PayPal',                          url: null },
+    facebook: { pattern: /^[a-zA-Z0-9.]{1,50}$/, hint: '1–50 chars: letters, numbers, dots only', url: (h) => `https://facebook.com/${h}` },
+    telegram: { pattern: /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/, hint: '5–32 chars, starts with a letter, letters/numbers/underscores', url: (h) => `https://t.me/${h}` },
+    instagram: { pattern: /^[a-zA-Z0-9._]{1,30}$/, hint: '1–30 chars: letters, numbers, dots, underscores', url: (h) => `https://instagram.com/${h}` },
+    x: { pattern: /^[a-zA-Z0-9_]{1,15}$/, hint: '1–15 chars: letters, numbers, underscores', url: (h) => `https://x.com/${h}` },
+    snapchat: { pattern: /^[a-zA-Z][a-zA-Z0-9._-]{1,14}$/, hint: '2–15 chars, starts with a letter', url: (h) => `https://snapchat.com/add/${h}` },
+    chimeTag: { pattern: /^\$[a-zA-Z0-9._-]{2,20}$|^[a-zA-Z0-9._-]{2,20}$/, hint: 'Chime $tag or username (2–20 chars)', url: null },
+    cashappTag: { pattern: /^\$[a-zA-Z0-9._-]{1,20}$|^[a-zA-Z0-9._-]{1,20}$/, hint: '$cashtag or username (1–20 chars)', url: (h) => `https://cash.app/${h.startsWith('$') ? h : '$' + h}` },
+    paypalEmail: { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, hint: 'Valid email address linked to PayPal', url: null },
 };
 
 function validateHandle(platform, handle) {
@@ -70,17 +70,17 @@ function validateHandle(platform, handle) {
 const TIER_MAP = {
     BRONZE: { bg: '#fed7aa', text: '#92400e', emoji: '🥉' },
     SILVER: { bg: '#e0e7ff', text: '#3730a3', emoji: '🥈' },
-    GOLD:   { bg: '#fef3c7', text: '#92400e', emoji: '🥇' },
+    GOLD: { bg: '#fef3c7', text: '#92400e', emoji: '🥇' },
 };
 
 // ─── Player search + multi-select picker ──────────────────────────────────────
 function PlayerPicker({ label, hint, value, onChange, multi = true }) {
-    const [query, setQuery]     = useState('');
+    const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [open, setOpen]       = useState(false);
-    const dropRef               = useRef(null);
-    const debounceRef           = useRef(null);
+    const [open, setOpen] = useState(false);
+    const dropRef = useRef(null);
+    const debounceRef = useRef(null);
 
     useEffect(() => {
         const fn = (e) => { if (dropRef.current && !dropRef.current.contains(e.target)) setOpen(false); };
@@ -120,7 +120,7 @@ function PlayerPicker({ label, hint, value, onChange, multi = true }) {
     const remove = (id) => onChange(value.filter(p => p.id !== id));
 
     const TIER_COLORS = {
-        GOLD:   { bg: '#fef3c7', text: '#92400e' },
+        GOLD: { bg: '#fef3c7', text: '#92400e' },
         SILVER: { bg: '#e0e7ff', text: '#3730a3' },
         BRONZE: { bg: '#fed7aa', text: '#9a3412' },
     };
@@ -224,7 +224,7 @@ function PlayerPicker({ label, hint, value, onChange, multi = true }) {
 function Breadcrumb({ onPlayersClick, onDashboardClick }) {
     const crumbs = [
         { label: 'Dashboard', onClick: onDashboardClick },
-        { label: 'Players',   onClick: onPlayersClick },
+        { label: 'Players', onClick: onPlayersClick },
         { label: 'Add New Player', onClick: null },
     ];
     return (
@@ -303,15 +303,15 @@ function TierBadge({ tier }) {
 // ─── Social / payment field with live format-validation feedback ──────────────
 function ValidatedField({ platform, label, value, onChange, placeholder }) {
     const [focused, setFocused] = useState(false);
-    const status     = validateHandle(platform, value);
-    const rule       = SOCIAL_RULES[platform];
-    const hasVal     = value && value.trim().length > 0;
-    const isAt       = !['chimeTag', 'cashappTag', 'paypalEmail'].includes(platform);
+    const status = validateHandle(platform, value);
+    const rule = SOCIAL_RULES[platform];
+    const hasVal = value && value.trim().length > 0;
+    const isAt = !['chimeTag', 'cashappTag', 'paypalEmail'].includes(platform);
 
     const borderColor = !hasVal ? C.border
-        : status === 'valid'   ? '#22c55e'
-        : status === 'invalid' ? C.red
-        : C.border;
+        : status === 'valid' ? '#22c55e'
+            : status === 'invalid' ? C.red
+                : C.border;
 
     const profileUrl = status === 'valid' && rule?.url ? rule.url(value.trim()) : null;
 
@@ -405,10 +405,10 @@ function SourcesList({ items, onAdd, onChange, onRemove }) {
 // ═══════════════════════════════════════════════════════════════
 export default function AddNewPlayer({ onIssueCreated }) {
     const { setAddPlayer } = useContext(AddPlayerContext);
-    const { shiftActive }  = useContext(ShiftStatusContext);
-    const navigate         = useNavigate();
+    const { shiftActive } = useContext(ShiftStatusContext);
+    const navigate = useNavigate();
 
-    const goToPlayers   = () => { setAddPlayer(false); };
+    const goToPlayers = () => { setAddPlayer(false); };
     const goToDashboard = () => { setAddPlayer(false); navigate('/'); };
 
     const EMPTY = {
@@ -423,18 +423,18 @@ export default function AddNewPlayer({ onIssueCreated }) {
         sources: [''],
     };
 
-    const [form, setForm]       = useState(EMPTY);
+    const [form, setForm] = useState(EMPTY);
     const [loading, setLoading] = useState(false);
-    const [error, setError]     = useState('');
+    const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    const set      = (k, v) => setForm(p => ({ ...p, [k]: v }));
-    const onChange = (e)    => set(e.target.name, e.target.value);
+    const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+    const onChange = (e) => set(e.target.name, e.target.value);
 
     const srcs = {
-        add:    ()     => setForm(p => ({ ...p, sources: [...p.sources, ''] })),
+        add: () => setForm(p => ({ ...p, sources: [...p.sources, ''] })),
         change: (i, v) => setForm(p => ({ ...p, sources: p.sources.map((x, idx) => idx === i ? v : x) })),
-        remove: (i)    => setForm(p => ({ ...p, sources: p.sources.filter((_, idx) => idx !== i) })),
+        remove: (i) => setForm(p => ({ ...p, sources: p.sources.filter((_, idx) => idx !== i) })),
     };
 
     const onSocialChange = useCallback((platform, val) => {
@@ -458,7 +458,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
         e.preventDefault();
         setError(''); setSuccess('');
 
-        if (!form.name.trim())     return setError('Full name is required.');
+        if (!form.name.trim()) return setError('Full name is required.');
         if (!form.username.trim()) return setError('Username is required.');
 
         if (socialWarnings.length > 0) {
@@ -473,23 +473,23 @@ export default function AddNewPlayer({ onIssueCreated }) {
         try {
             setLoading(true);
             await api.players.createPlayer({
-                name:         form.name.trim(),
-                username:     form.username.trim(),
-                email:        form.email.trim()       || null,
-                phone:        form.phone.trim()       || null,
-                tier:         form.tier,
-                facebook:     form.facebook.trim()    || null,
-                telegram:     form.telegram.trim()    || null,
-                instagram:    form.instagram.trim()   || null,
-                x:            form.x.trim()           || null,
-                snapchat:     form.snapchat.trim()    || null,
-                chimeTag:     form.chimeTag.trim()    || null,
-                cashappTag:   form.cashappTag.trim()  || null,
-                paypalEmail:  form.paypalEmail.trim() || null,
+                name: form.name.trim(),
+                username: form.username.trim(),
+                email: form.email.trim() || null,
+                phone: form.phone.trim() || null,
+                tier: form.tier,
+                facebook: form.facebook.trim() || null,
+                telegram: form.telegram.trim() || null,
+                instagram: form.instagram.trim() || null,
+                x: form.x.trim() || null,
+                snapchat: form.snapchat.trim() || null,
+                chimeTag: form.chimeTag.trim() || null,
+                cashappTag: form.cashappTag.trim() || null,
+                paypalEmail: form.paypalEmail.trim() || null,
                 // send IDs — backend resolveUsers already handles numeric IDs
-                referrals:    form.referrals.map(p => String(p.id)),
-                friends:      form.friends.map(p => String(p.id)),
-                sources:      form.sources.filter(s => s.trim()),
+                referrals: form.referrals.map(p => String(p.id)),
+                friends: form.friends.map(p => String(p.id)),
+                sources: form.sources.filter(s => s.trim()),
             });
 
             setSuccess(`✓ Player "${form.name}" created successfully!`);
@@ -505,16 +505,16 @@ export default function AddNewPlayer({ onIssueCreated }) {
     };
 
     const socials = [
-        { key: 'facebook',  label: 'Facebook',    ph: 'johnsmith' },
-        { key: 'telegram',  label: 'Telegram',    ph: 'johnsmith' },
-        { key: 'instagram', label: 'Instagram',   ph: 'johnsmith' },
-        { key: 'x',         label: 'X / Twitter', ph: 'johnsmith' },
-        { key: 'snapchat',  label: 'Snapchat',    ph: 'johnsmith' },
+        { key: 'facebook', label: 'Facebook', ph: 'johnsmith' },
+        { key: 'telegram', label: 'Telegram', ph: 'johnsmith' },
+        { key: 'instagram', label: 'Instagram', ph: 'johnsmith' },
+        { key: 'x', label: 'X / Twitter', ph: 'johnsmith' },
+        { key: 'snapchat', label: 'Snapchat', ph: 'johnsmith' },
     ];
 
     const payments = [
-        { key: 'chimeTag',    label: 'Chime Tag',    ph: '$ChimeUsername' },
-        { key: 'cashappTag',  label: 'Cash App Tag', ph: '$CashtTag'      },
+        { key: 'chimeTag', label: 'Chime Tag', ph: '$ChimeUsername' },
+        { key: 'cashappTag', label: 'Cash App Tag', ph: '$CashtTag' },
         { key: 'paypalEmail', label: 'PayPal Email', ph: 'email@paypal.com' },
     ];
 
@@ -530,6 +530,17 @@ export default function AddNewPlayer({ onIssueCreated }) {
                         <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift before adding players to the system.</p>
                     </div>
                 </div>
+
+                <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
+                    <button onClick={() => navigate('/shifts')} style={{
+                        padding: '9px 18px',
+                        background: 'rgb(14, 165, 233)',
+                        color: 'rgb(255, 255, 255)'
+                    }}
+                    >
+                        Start Shift
+                    </button>
+                </nav>
                 <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '60px 28px', textAlign: 'center' }}>
                     <div style={{ width: '60px', height: '60px', background: C.amberLt, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${C.amberBdr}` }}>
                         <ILock />
