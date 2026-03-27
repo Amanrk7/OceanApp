@@ -242,7 +242,7 @@ function Breadcrumb({ onPlayersClick, onDashboardClick }) {
                             {item.label}
                         </button>
                     ) : (
-                        <span style={{ fontWeight: '700', fontSize: '13px', padding: '2px 6px', color: C.slate }}>{item.label}</span>
+                        <span style={{ fontWeight: '700', fontSize: '13px', padding: '2px 6px' }}>{item.label}</span>
                     )}
                     {i < crumbs.length - 1 && (
                         <span style={{ color: C.grayLt, fontSize: '16px', userSelect: 'none' }}>›</span>
@@ -522,14 +522,6 @@ export default function AddNewPlayer({ onIssueCreated }) {
     if (!shiftActive) {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <Breadcrumb onDashboardClick={goToDashboard} onPlayersClick={goToPlayers} />
-                <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                    <IAlert />
-                    <div>
-                        <p style={{ fontWeight: '700', color: '#78350f', margin: '0 0 2px', fontSize: '14px' }}>Shift Required</p>
-                        <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift before adding players to the system.</p>
-                    </div>
-                </div>
 
                 <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
                     <button onClick={() => navigate('/shifts')} style={{
@@ -541,6 +533,17 @@ export default function AddNewPlayer({ onIssueCreated }) {
                         Start Shift
                     </button>
                 </nav>
+
+                <Breadcrumb onDashboardClick={goToDashboard} onPlayersClick={goToPlayers} />
+                <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <IAlert />
+                    <div>
+                        <p style={{ fontWeight: '700', color: '#78350f', margin: '0 0 2px', fontSize: '14px' }}>Shift Required</p>
+                        <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift before adding players to the system.</p>
+                    </div>
+                </div>
+
+
                 <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '60px 28px', textAlign: 'center' }}>
                     <div style={{ width: '60px', height: '60px', background: C.amberLt, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${C.amberBdr}` }}>
                         <ILock />
