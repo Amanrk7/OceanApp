@@ -234,7 +234,7 @@ function Breadcrumb({ onPlayersClick, onDashboardClick }) {
                         <button
                             type="button"
                             onClick={item.onClick}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.sky, fontWeight: '600', fontSize: '13px', padding: '2px 6px', borderRadius: '6px' }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '13px', padding: '2px 6px', borderRadius: '6px' }}
                             onMouseEnter={e => e.currentTarget.style.background = C.skyLt}
                             onMouseLeave={e => e.currentTarget.style.background = 'none'}
                         >
