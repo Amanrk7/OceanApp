@@ -3,10 +3,8 @@ import { DollarSign, Edit2, Plus, CheckCircle, AlertCircle, X, CreditCard, Recei
 import { api } from '../api';
 
 // ─── Texas (Central) timezone helper ─────────────────────────────────────────
-// All timestamps are stored as UTC; we always display in America/Chicago (CT).
 const TX = { timeZone: 'America/Chicago' };
 
-/** Full datetime string in Texas Central Time */
 function formatTX(date, opts = {}) {
     if (!date) return '—';
     return new Date(date).toLocaleString('en-US', {
@@ -17,7 +15,6 @@ function formatTX(date, opts = {}) {
     });
 }
 
-/** Date-only in Texas CT */
 function formatTXDate(date) {
     if (!date) return '—';
     return new Date(date).toLocaleDateString('en-US', {
@@ -52,6 +49,13 @@ const TD = { padding: '11px 16px', borderBottom: '1px solid #f1f5f9', fontSize: 
 const DB_TO_LABEL = { POINT_RELOAD: 'Point Reload', SERVICE_FEE: 'Service Fee', OTHER: 'Other' };
 const LABEL_TO_DB = { 'Point Reload': 'POINT_RELOAD', 'Service Fee': 'SERVICE_FEE', 'Other': 'OTHER' };
 const CATEGORIES   = ['Point Reload', 'Service Fee', 'Other'];
+
+// ─── Category badge colours ───────────────────────────────────────────────────
+const CATEGORY_BADGE = {
+    POINT_RELOAD: { bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe', label: 'Point Reload' },
+    SERVICE_FEE:  { bg: '#fef3c7', text: '#b45309', border: '#fde68a', label: 'Service Fee'  },
+    OTHER:        { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0', label: 'Other'         },
+};
 
 // ─── Focusable Input ──────────────────────────────────────────────────────────
 function FocusInput({ as: Tag = 'input', style, ...props }) {
@@ -156,6 +160,44 @@ function ModalActions({ onCancel, submitLabel, accent = '#2563eb', loading }) {
     );
 }
 
+// ─── Payment Details Cell ─────────────────────────────────────────────────────
+// Renders the richer details column for a payment row.
+// Parses the wallet info out of the existing `details` string and pairs it
+// with the stored category badge so staff can immediately see what the
+// payment was for.
+function PaymentDetailsCell({ expense }) {
+    // details format: "Payment (METHOD - NAME)"
+    const match = (expense.details || '').match(/Payment \((.+?)\s*-\s*(.+?)\)$/);
+    const walletMethod = match?.[1]?.trim() || null;
+    const walletName   = match?.[2]?.trim() || null;
+
+    const cat = CATEGORY_BADGE[expense.category] || CATEGORY_BADGE.OTHER;
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {/* Category badge */}
+            <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '700',
+                background: cat.bg, color: cat.text, border: `1px solid ${cat.border}`,
+                width: 'fit-content',
+            }}>
+                {cat.label}
+            </span>
+
+            {/* Wallet info */}
+            {walletMethod && (
+                <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
+                    {walletMethod}
+                    {walletName && (
+                        <span style={{ color: '#94a3b8', fontWeight: '400' }}> — {walletName}</span>
+                    )}
+                </span>
+            )}
+        </div>
+    );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export const ExpensesPage = () => {
     const [games,    setGames]    = useState([]);
@@ -174,7 +216,7 @@ export const ExpensesPage = () => {
 
     const [showAddModal,     setShowAddModal]     = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [editingExpense,   setEditingExpense]   = useState(null); // full expense object
+    const [editingExpense,   setEditingExpense]   = useState(null);
 
     const [addFormData, setAddFormData] = useState({
         category: 'Point Reload', amount: '', game: '', pointsAdded: '', notes: '',
@@ -189,10 +231,6 @@ export const ExpensesPage = () => {
     });
 
     // ── Loaders ───────────────────────────────────────────────────────────────
-    /**
-     * Reload games list and return the fresh array.
-     * Returning the data lets callers use it immediately without waiting for state.
-     */
     const refreshGames = async () => {
         try {
             const res = await api.games.getGames(true, { status: filter || '', search: search || '' });
@@ -244,27 +282,50 @@ export const ExpensesPage = () => {
         return acc;
     }, {});
 
-    /** A row is a payment when paymentMade > 0 AND amount == 0 */
     const isPaymentRow = (exp) =>
         parseFloat(exp.paymentMade || 0) > 0 && parseFloat(exp.amount || 0) === 0;
 
     // ── Add expense ───────────────────────────────────────────────────────────
+    // ✅ CHANGE 1: game and pointsAdded are now optional.
+    //   - No selectedGame → expense is recorded without a game link or stock update.
+    //   - pointsAdded defaults to 0 when left blank.
     const handleAddExpense = async (e) => {
         e.preventDefault(); setSubmitting(true); setError(null);
-        const selectedGame = games.find(g => g.name === addFormData.game);
-        if (!selectedGame) { setError('Please select a valid game.'); setSubmitting(false); return; }
-        const pointsAdded = parseInt(addFormData.pointsAdded, 10);
+
+        const selectedGame = addFormData.game
+            ? games.find(g => g.name === addFormData.game)
+            : null;
+
+        const pointsAdded = addFormData.pointsAdded
+            ? parseInt(addFormData.pointsAdded, 10)
+            : 0;
+
+        // If the user typed a game name but it doesn't match any known game, warn them.
+        if (addFormData.game && !selectedGame) {
+            setError('The selected game was not found. Please choose from the list or leave it blank.');
+            setSubmitting(false);
+            return;
+        }
+
         try {
             await api.expenses.createExpense({
-                gameId:      selectedGame.id,
-                details:     `Point Reload (${addFormData.game})`,
+                gameId:      selectedGame?.id || null,
+                details:     selectedGame
+                    ? `Point Reload (${addFormData.game})`
+                    : `Expense (${addFormData.category})`,
                 category:    LABEL_TO_DB[addFormData.category] || 'POINT_RELOAD',
                 amount:      parseFloat(addFormData.amount),
                 pointsAdded,
                 notes:       addFormData.notes || null,
             });
-            // Add points to game stock
-            await api.games.updateGame(selectedGame.id, { pointStock: selectedGame.pointStock + pointsAdded });
+
+            // Only update game stock when a game was chosen and points were provided.
+            if (selectedGame && pointsAdded > 0) {
+                await api.games.updateGame(selectedGame.id, {
+                    pointStock: selectedGame.pointStock + pointsAdded,
+                });
+            }
+
             await Promise.all([refreshExpenses(), refreshGames()]);
             setAddFormData({ category: 'Point Reload', amount: '', game: '', pointsAdded: '', notes: '' });
             setShowAddModal(false);
@@ -289,8 +350,6 @@ export const ExpensesPage = () => {
     };
 
     // ── Edit: save ────────────────────────────────────────────────────────────
-    // KEY FIX: when pointsAdded changes, adjust the linked game's pointStock
-    // by the difference (newPoints − oldPoints) so both stay in sync.
     const handleEditExpense = async (e) => {
         e.preventDefault();
         setEditError(null);
@@ -301,7 +360,6 @@ export const ExpensesPage = () => {
             const categoryDB = LABEL_TO_DB[editFormData.category] || editFormData.category;
 
             if (editFormData.isPayment) {
-                // ── Payment edit ─────────────────────────────────────────────
                 if (!editFormData.walletId) {
                     setEditError('Please select the wallet used for this payment.');
                     setSubmitting(false); return;
@@ -313,12 +371,10 @@ export const ExpensesPage = () => {
                     notes:       editFormData.notes,
                 });
             } else {
-                // ── Expense edit ─────────────────────────────────────────────
-                const newPoints = editFormData.pointsAdded ? parseInt(editFormData.pointsAdded, 10) : 0;
-                const oldPoints = editingExpense.pointsAdded ? parseInt(editingExpense.pointsAdded, 10) : 0;
-                const pointsDiff = newPoints - oldPoints;  // +ve = added more, -ve = removed some
+                const newPoints  = editFormData.pointsAdded ? parseInt(editFormData.pointsAdded, 10) : 0;
+                const oldPoints  = editingExpense.pointsAdded ? parseInt(editingExpense.pointsAdded, 10) : 0;
+                const pointsDiff = newPoints - oldPoints;
 
-                // 1. Persist expense changes
                 await api.expenses.updateExpense(id, {
                     amount:      parseFloat(editFormData.amount),
                     category:    categoryDB,
@@ -326,15 +382,12 @@ export const ExpensesPage = () => {
                     pointsAdded: newPoints || undefined,
                 });
 
-                // 2. Sync game stock when pointsAdded changed ─────────────────
                 if (pointsDiff !== 0 && editingExpense.game?.id) {
-                    // Fetch the freshest stock value before adjusting
                     const freshGames = await refreshGames();
                     const linkedGame  = freshGames.find(g => g.id === editingExpense.game.id);
                     if (linkedGame) {
                         const newStock = linkedGame.pointStock + pointsDiff;
                         await api.games.updateGame(linkedGame.id, { pointStock: newStock });
-                        // One more refresh so the Games page also shows updated stock
                         await refreshGames();
                     }
                 }
@@ -462,8 +515,8 @@ export const ExpensesPage = () => {
                 {/* Tabs */}
                 <div style={{ padding: '14px 28px', borderBottom: '1px solid #f1f5f9', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {TABS.map(tab => {
-                        const active    = categoryFilter === tab;
-                        const isPayTab  = tab === 'Payments';
+                        const active   = categoryFilter === tab;
+                        const isPayTab = tab === 'Payments';
                         return (
                             <button key={tab} onClick={() => setCategoryFilter(tab)} style={{
                                 padding: '5px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', transition: 'all .15s',
@@ -502,28 +555,41 @@ export const ExpensesPage = () => {
                                         onMouseEnter={e => e.currentTarget.style.background = isPay ? '#dcfce7' : '#fafbfc'}
                                         onMouseLeave={e => e.currentTarget.style.background = isPay ? '#f0fdf4' : 'transparent'}>
 
-                                        {/* ── Date in Texas CT ───────────────────────── */}
+                                        {/* Date */}
                                         <td style={{ ...TD, color: '#64748b', whiteSpace: 'nowrap', fontSize: '12px' }}>
                                             {formatTX(expense.createdAt)}
                                         </td>
 
+                                        {/* ── Details cell ────────────────────────────────── */}
+                                        {/* ✅ CHANGE 2: payment rows show a category badge
+                                              + parsed wallet method/name so staff instantly
+                                              knows what the payment was for.              */}
                                         <td style={TD}>
-                                            <div style={{ fontWeight: '600', color: isPay ? '#16a34a' : '#dc2626', marginBottom: expense.pointsAdded > 0 ? '2px' : 0 }}>
-                                                {expense.details}
-                                            </div>
-                                            {expense.pointsAdded > 0 && (
-                                                <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: '600' }}>
-                                                    +{expense.pointsAdded.toLocaleString()} pts
-                                                </div>
+                                            {isPay ? (
+                                                <PaymentDetailsCell expense={expense} />
+                                            ) : (
+                                                <>
+                                                    <div style={{ fontWeight: '600', color: '#dc2626', marginBottom: expense.pointsAdded > 0 ? '2px' : 0 }}>
+                                                        {expense.details}
+                                                    </div>
+                                                    {expense.pointsAdded > 0 && (
+                                                        <div style={{ fontSize: '11px', color: '#16a34a', fontWeight: '600' }}>
+                                                            +{expense.pointsAdded.toLocaleString()} pts
+                                                        </div>
+                                                    )}
+                                                </>
                                             )}
                                         </td>
+
                                         <td style={{ ...TD, color: '#94a3b8' }}>{expense.notes || '—'}</td>
+
                                         <td style={{ ...TD, textAlign: 'right', fontWeight: '700', color: isPay ? '#16a34a' : '#dc2626' }}>
                                             {isPay
                                                 ? `$${parseFloat(expense.paymentMade).toFixed(2)}`
                                                 : expense.amount ? `$${parseFloat(expense.amount).toFixed(2)}` : '—'
                                             }
                                         </td>
+
                                         <td style={{ ...TD, textAlign: 'right' }}>
                                             <button onClick={() => startEdit(expense)}
                                                 style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 10px', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
@@ -548,20 +614,39 @@ export const ExpensesPage = () => {
                             {CATEGORIES.map(o => <option key={o}>{o}</option>)}
                         </FocusInput>
                     </Field>
+
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                         <Field label="Amount ($) *">
-                            <FocusInput type="number" step="0.01" placeholder="0.00" value={addFormData.amount} onChange={e => setAddFormData({ ...addFormData, amount: e.target.value })} required />
+                            <FocusInput
+                                type="number" step="0.01" placeholder="0.00"
+                                value={addFormData.amount}
+                                onChange={e => setAddFormData({ ...addFormData, amount: e.target.value })}
+                                required
+                            />
                         </Field>
-                        <Field label="Points *">
-                            <FocusInput type="number" step="1" min="1" placeholder="e.g. 10000" value={addFormData.pointsAdded} onChange={e => setAddFormData({ ...addFormData, pointsAdded: e.target.value })} required />
+                        {/* ✅ CHANGE 1a: Points is now optional — no `required` attribute */}
+                        <Field label="Points" hint="Optional — leave blank if not a reload">
+                            <FocusInput
+                                type="number" step="1" min="0" placeholder="e.g. 10000"
+                                value={addFormData.pointsAdded}
+                                onChange={e => setAddFormData({ ...addFormData, pointsAdded: e.target.value })}
+                            />
                         </Field>
                     </div>
-                    <Field label="Game *">
-                        <FocusInput as="select" value={addFormData.game} onChange={e => setAddFormData({ ...addFormData, game: e.target.value })} required>
-                            <option value="">— Select a game —</option>
+
+                    {/* ✅ CHANGE 1b: Game is now optional — no `required` attribute */}
+                    <Field label="Game" hint="Optional — leave blank if not tied to a specific game">
+                        <FocusInput
+                            as="select"
+                            value={addFormData.game}
+                            onChange={e => setAddFormData({ ...addFormData, game: e.target.value })}
+                        >
+                            <option value="">— No game —</option>
                             {games.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}
                         </FocusInput>
                     </Field>
+
+                    {/* Live stock preview — only shown when a game AND points are chosen */}
                     {addFormData.game && addFormData.pointsAdded && (() => {
                         const sg = games.find(g => g.name === addFormData.game);
                         if (!sg) return null;
@@ -573,6 +658,7 @@ export const ExpensesPage = () => {
                             </div>
                         );
                     })()}
+
                     <Field label="Notes (optional)">
                         <FocusInput as="textarea" rows={2} value={addFormData.notes} onChange={e => setAddFormData({ ...addFormData, notes: e.target.value })} style={{ resize: 'none', lineHeight: '1.6' }} />
                     </Field>
@@ -614,12 +700,12 @@ export const ExpensesPage = () => {
                                 <Field label="Amount ($) *">
                                     <FocusInput type="number" step="0.01" value={editFormData.amount} onChange={e => setEditFormData({ ...editFormData, amount: e.target.value })} required />
                                 </Field>
-                                <Field label="Points">
+                                {/* Optional in edit too */}
+                                <Field label="Points" hint="Optional">
                                     <FocusInput type="number" step="1" min="0" placeholder="e.g. 10000" value={editFormData.pointsAdded} onChange={e => setEditFormData({ ...editFormData, pointsAdded: e.target.value })} />
                                 </Field>
                             </div>
 
-                            {/* Live preview of how game stock will change */}
                             {editingExpense?.game && editFormData.pointsAdded !== '' && (() => {
                                 const newPts = parseInt(editFormData.pointsAdded || 0, 10);
                                 const oldPts = parseInt(editingExpense.pointsAdded || 0, 10);
