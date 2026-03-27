@@ -6,7 +6,8 @@ import {
     Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import { fmtTXTime } from '../utils/txTime';
-import EditPlayer from './EditPlayer';
+import EditPlayer from './Editplayer';
+
 
 const C = {
     sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
