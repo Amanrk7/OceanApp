@@ -74,70 +74,55 @@ const TIER_MAP = {
 
 // ─── Player search + multi-select picker ──────────────────────────────────────
 function PlayerPicker({ label, hint, value, onChange, multi = true }) {
-    // value: array of { id, name, username } objects
-    const [query, setQuery]       = useState('');
-    const [results, setResults]   = useState([]);
-    const [loading, setLoading]   = useState(false);
-    const [open, setOpen]         = useState(false);
-    const inputRef                = useRef(null);
-    const containerRef            = useRef(null);
-    const debounceRef             = useRef(null);
+    const [query, setQuery]     = useState('');
+    const [results, setResults] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [open, setOpen]       = useState(false);
+    const dropRef               = useRef(null);
+    const debounceRef           = useRef(null);
 
-    // Close dropdown when clicking outside
     useEffect(() => {
-        const handler = (e) => {
-            if (containerRef.current && !containerRef.current.contains(e.target)) {
-                setOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        const fn = (e) => { if (dropRef.current && !dropRef.current.contains(e.target)) setOpen(false); };
+        document.addEventListener('mousedown', fn);
+        return () => document.removeEventListener('mousedown', fn);
     }, []);
 
-    const search = async (q) => {
-        if (q.trim().length < 2) { setResults([]); setOpen(false); return; }
-        setLoading(true);
-        try {
-            const res = await fetch(`/api/players/search?q=${encodeURIComponent(q.trim())}`, {
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-            });
-            const data = await res.json();
-            setResults(data.data || []);
-            setOpen(true);
-        } catch {
-            setResults([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const onInput = (e) => {
-        const q = e.target.value;
-        setQuery(q);
+    useEffect(() => {
+        if (!query.trim() || query.length < 2) { setResults([]); setOpen(false); return; }
         clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => search(q), 280);
-    };
+        debounceRef.current = setTimeout(async () => {
+            try {
+                setLoading(true);
+                const res = await api.players.getPlayers(1, 10, query.trim(), '');
+                setResults(res?.data || []);
+                setOpen(true);
+            } catch { setResults([]); }
+            finally { setLoading(false); }
+        }, 280);
+        return () => clearTimeout(debounceRef.current);
+    }, [query]);
 
-    const select = (player) => {
+    const fmt = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
+
+    const select = (p) => {
+        const entry = { id: p.id, name: p.name, username: p.username };
         if (!multi) {
-            // single-select: replace
-            onChange([{ id: player.id, name: player.name, username: player.username }]);
+            onChange([entry]);
         } else {
-            // multi: add if not already selected
-            if (!value.find(p => p.id === player.id)) {
-                onChange([...value, { id: player.id, name: player.name, username: player.username }]);
-            }
+            if (!value.find(x => x.id === p.id)) onChange([...value, entry]);
         }
         setQuery('');
         setResults([]);
         setOpen(false);
-        inputRef.current?.blur();
     };
 
     const remove = (id) => onChange(value.filter(p => p.id !== id));
 
-    const tierColor = (tier) => TIER_MAP[tier] || TIER_MAP.BRONZE;
+    const TIER_COLORS = {
+        GOLD:   { bg: '#fef3c7', text: '#92400e' },
+        SILVER: { bg: '#e0e7ff', text: '#3730a3' },
+        BRONZE: { bg: '#fed7aa', text: '#9a3412' },
+    };
 
     return (
         <div>
@@ -150,115 +135,86 @@ function PlayerPicker({ label, hint, value, onChange, multi = true }) {
                         <span key={p.id} style={{
                             display: 'inline-flex', alignItems: 'center', gap: '5px',
                             padding: '4px 8px 4px 10px',
-                            background: C.skyLt, border: `1px solid #bae6fd`,
-                            borderRadius: '20px', fontSize: '12px', fontWeight: '600', color: C.skyDk,
+                            background: '#f0f9ff', border: '1px solid #bae6fd',
+                            borderRadius: '20px', fontSize: '12px', fontWeight: '600', color: '#0284c7',
                         }}>
                             {p.name}
-                            <span style={{ opacity: 0.5, fontSize: '10px', fontWeight: '400' }}>@{p.username}</span>
-                            <button
-                                type="button"
-                                onClick={() => remove(p.id)}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 1px', color: C.skyDk, display: 'flex', alignItems: 'center' }}
-                            >
-                                <IX />
+                            <span style={{ opacity: 0.55, fontSize: '10px', fontWeight: '400' }}>@{p.username}</span>
+                            <button type="button" onClick={() => remove(p.id)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 1px', color: '#0284c7', display: 'flex', alignItems: 'center' }}>
+                                <X style={{ width: '12px', height: '12px' }} />
                             </button>
                         </span>
                     ))}
                 </div>
             )}
 
-            {/* Search input */}
+            {/* Search input — hide when single-select and already picked */}
             {(multi || value.length === 0) && (
-                <div ref={containerRef} style={{ position: 'relative' }}>
+                <div ref={dropRef} style={{ position: 'relative' }}>
                     <div style={{ position: 'relative' }}>
-                        <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: C.grayLt, display: 'flex', pointerEvents: 'none' }}>
-                            <ISearch />
-                        </span>
+                        <Search style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', width: '14px', height: '14px', color: '#94a3b8', pointerEvents: 'none' }} />
                         <input
-                            ref={inputRef}
                             type="text"
                             value={query}
-                            onChange={onInput}
-                            onFocus={() => query.trim().length >= 2 && setOpen(true)}
+                            onChange={e => setQuery(e.target.value)}
                             placeholder="Search by name or username…"
-                            style={{ ...INPUT, paddingLeft: '34px', paddingRight: loading ? '34px' : '12px' }}
                             autoComplete="off"
+                            style={{ ...INPUT, paddingLeft: '34px', paddingRight: loading ? '34px' : '12px' }}
                         />
                         {loading && (
-                            <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: C.grayLt }}>…</span>
+                            <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: '#94a3b8' }}>…</span>
                         )}
                     </div>
 
-                    {open && results.length > 0 && (
+                    {/* Dropdown */}
+                    {open && (
                         <div style={{
                             position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 100,
-                            background: C.white, border: `1px solid ${C.border}`,
+                            background: '#fff', border: '1px solid #e2e8f0',
                             borderRadius: '10px', boxShadow: '0 8px 24px rgba(15,23,42,.12)',
-                            maxHeight: '220px', overflowY: 'auto',
+                            overflow: 'hidden', maxHeight: '240px', overflowY: 'auto',
                         }}>
-                            {results.map((p, i) => {
+                            {results.length === 0 ? (
+                                <div style={{ padding: '14px 16px', color: '#94a3b8', fontSize: '13px' }}>
+                                    No players found for "{query}"
+                                </div>
+                            ) : results.map(p => {
                                 const already = value.find(x => x.id === p.id);
-                                const tc = tierColor(p.tier);
+                                const tc = TIER_COLORS[p.tier] || TIER_COLORS.BRONZE;
                                 return (
-                                    <button
-                                        key={p.id}
-                                        type="button"
-                                        disabled={!!already}
-                                        onClick={() => select(p)}
+                                    <div key={p.id}
+                                        onClick={() => !already && select(p)}
+                                        onMouseEnter={e => { if (!already) e.currentTarget.style.background = '#f8fafc'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                                         style={{
-                                            display: 'flex', alignItems: 'center', gap: '10px',
-                                            width: '100%', padding: '9px 14px',
-                                            background: already ? C.bg : C.white,
-                                            border: 'none', borderBottom: i < results.length - 1 ? `1px solid ${C.border}` : 'none',
-                                            cursor: already ? 'not-allowed' : 'pointer',
-                                            textAlign: 'left', fontFamily: 'inherit',
-                                            opacity: already ? 0.5 : 1,
-                                            transition: 'background .12s',
-                                        }}
-                                        onMouseEnter={e => { if (!already) e.currentTarget.style.background = C.skyLt; }}
-                                        onMouseLeave={e => { if (!already) e.currentTarget.style.background = C.white; }}
-                                    >
-                                        {/* Avatar circle */}
-                                        <span style={{
-                                            width: '30px', height: '30px', borderRadius: '50%',
-                                            background: C.skyLt, border: `1px solid #bae6fd`,
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            fontSize: '11px', fontWeight: '700', color: C.skyDk, flexShrink: 0,
+                                            padding: '10px 16px', cursor: already ? 'not-allowed' : 'pointer',
+                                            borderBottom: '1px solid #f1f5f9',
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                            opacity: already ? 0.45 : 1,
                                         }}>
-                                            {p.name.charAt(0).toUpperCase()}
-                                        </span>
-                                        <span style={{ flex: 1, minWidth: 0 }}>
-                                            <span style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: C.slate, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                {p.name}
+                                        <div>
+                                            <div style={{ fontWeight: '600', fontSize: '13px', color: '#0f172a' }}>{p.name}</div>
+                                            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>
+                                                @{p.username}
+                                                {p.email ? ` · ${p.email}` : ''}
+                                            </div>
+                                        </div>
+                                        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                                            <span style={{ fontWeight: '700', fontSize: '13px', color: '#10b981' }}>{fmt(p.balance)}</span>
+                                            <span style={{ fontSize: '10px', padding: '1px 7px', borderRadius: '4px', fontWeight: '700', background: tc.bg, color: tc.text }}>
+                                                {p.tier}
                                             </span>
-                                            <span style={{ fontSize: '11px', color: C.grayLt }}>@{p.username}</span>
-                                        </span>
-                                        <span style={{ padding: '2px 7px', background: tc.bg, color: tc.text, borderRadius: '20px', fontSize: '10px', fontWeight: '700', flexShrink: 0 }}>
-                                            {p.tier}
-                                        </span>
-                                        {already && (
-                                            <span style={{ fontSize: '10px', color: C.grayLt, flexShrink: 0 }}>Added</span>
-                                        )}
-                                    </button>
+                                        </div>
+                                    </div>
                                 );
                             })}
-                        </div>
-                    )}
-
-                    {open && !loading && results.length === 0 && query.trim().length >= 2 && (
-                        <div style={{
-                            position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 100,
-                            background: C.white, border: `1px solid ${C.border}`,
-                            borderRadius: '10px', padding: '14px', textAlign: 'center',
-                            fontSize: '13px', color: C.grayLt,
-                        }}>
-                            No players found for "{query}"
                         </div>
                     )}
                 </div>
             )}
 
-            {hint && <p style={{ margin: '5px 0 0', fontSize: '11px', color: C.grayLt, lineHeight: '1.4' }}>{hint}</p>}
+            {hint && <p style={{ margin: '5px 0 0', fontSize: '11px', color: '#94a3b8', lineHeight: '1.4' }}>{hint}</p>}
         </div>
     );
 }
