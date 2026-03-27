@@ -523,6 +523,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
+                <Breadcrumb onDashboardClick={goToDashboard} onPlayersClick={goToPlayers} />
                 <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
                     <button onClick={() => navigate('/shifts')} style={{
                         padding: '9px 18px',
@@ -534,7 +535,6 @@ export default function AddNewPlayer({ onIssueCreated }) {
                     </button>
                 </nav>
 
-                <Breadcrumb onDashboardClick={goToDashboard} onPlayersClick={goToPlayers} />
                 <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                     <IAlert />
                     <div>
