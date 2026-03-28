@@ -10,6 +10,7 @@ import {
     ArrowUpRight, Gift, Star,
 } from "lucide-react";
 import { tasksAPI } from "../api";
+import { AdminFollowupPanel } from './FollowupTaskCards';
 
 // ── Style tokens (identical to AddTransactionsPage) ───────────────
 const LABEL = {
@@ -73,6 +74,24 @@ const TASK_TYPES = [
         bg: "#f0fdf4",
         border: "#86efac",
         desc: "Set a profit goal with member sub-allocations and % tracking",
+    },
+    {
+        value: 'PLAYER_FOLLOWUP',
+        label: 'Player Followup',
+        icon: Users,
+        color: '#ea580c',
+        bg: '#fff7ed',
+        border: '#fed7aa',
+        desc: 'Auto-generated tasks for inactive and highly-critical players needing outreach',
+    },
+    {
+        value: 'BONUS_FOLLOWUP',
+        label: 'Bonus Followup',
+        icon: Gift,
+        color: '#16a34a',
+        bg: '#f0fdf4',
+        border: '#86efac',
+        desc: 'Auto-generated tasks for players eligible for streak, referral, or match bonuses',
     },
 ];
 
@@ -423,6 +442,7 @@ export default function AdminTaskPage() {
     const [formError, setFormError] = useState("");
     const [success, setSuccess] = useState("");
     const [error, setError] = useState("");
+    const [showFollowupPanel, setShowFollowupPanel] = useState(false);
     const sseRef = useRef(null);
 
     // ── Bootstrap ─────────────────────────────────────────────────
@@ -612,6 +632,12 @@ export default function AdminTaskPage() {
                         >
                             <Plus style={{ width: "15px", height: "15px" }} /> New Task
                         </button>
+                        <button
+                            onClick={() => setShowFollowupPanel(v => !v)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 14px', background: showFollowupPanel ? '#fff7ed' : C.white, border: `1px solid ${showFollowupPanel ? '#fed7aa' : '#e2e8f0'}`, borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer', color: showFollowupPanel ? '#ea580c' : '#475569' }}
+                        >
+                            <Users style={{ width: '13px', height: '13px' }} /> Followup Manager
+                        </button>
                     </div>
                 </div>
 
@@ -639,6 +665,25 @@ export default function AdminTaskPage() {
                     })}
                 </div>
             </div>
+
+            {/* // Add panel (RIGHT AFTER the header card, before alerts): */}
+            {showFollowupPanel && (
+                <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #e2e8f0', boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '24px 28px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid #f1f5f9' }}>
+                        <div style={{ width: '40px', height: '40px', background: '#fff7ed', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Users style={{ width: '18px', height: '18px', color: '#ea580c' }} />
+                        </div>
+                        <div>
+                            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>Followup Task Manager</h3>
+                            <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Assign player and bonus followup tasks to specific team members</p>
+                        </div>
+                    </div>
+                    <AdminFollowupPanel
+                        teamMembers={teamMembers}
+                        onTaskUpdated={loadTasks}
+                    />
+                </div>
+            )}
 
             {/* ════ ALERTS ════ */}
             {error && <Alert type="error">{error}</Alert>}
