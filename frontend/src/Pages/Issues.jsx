@@ -315,7 +315,7 @@ function AddIssueForm({ onClose, onIssueCreated }) {
         width: '100%',
         maxWidth: '680px',
         margin: '0 auto',
-        background: 'var(--color-cards, #fff)',
+        background: 'rgb(255, 255, 255)',
         borderRadius: '16px',
         border: '1px solid var(--color-border, #e2e8f0)',
         boxShadow: '0 4px 24px rgba(15,23,42,.07)',
@@ -329,17 +329,17 @@ function AddIssueForm({ onClose, onIssueCreated }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
         }}>
           <div>
-            <h2 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 3px', color: 'var(--color-text, #0f172a)' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 3px'}}>
               Submit New Issue
             </h2>
-            <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
+            <p style={{ fontSize: '12px', margin: 0 }}>
               Report and track player issues for resolution
             </p>
           </div>
           <button onClick={onClose} style={{
-            background: 'none', border: '1px solid #e2e8f0', borderRadius: '8px',
+            border: '1px solid #e2e8f0', borderRadius: '8px',
             width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: '#64748b', fontSize: '16px', flexShrink: 0,
+            cursor: 'pointer', fontSize: '16px', flexShrink: 0,
           }}>✕</button>
         </div>
 
