@@ -338,11 +338,20 @@ export default function PlayerDashboard() {
         }
     }, [playerId]);
 
+    // useEffect(() => {
+    //     loadPlayer(true);
+    //     const interval = setInterval(() => loadPlayer(false), 5000);
+    //     return () => clearInterval(interval);
+    // }, [loadPlayer]);
     useEffect(() => {
-        loadPlayer(true);
-        const interval = setInterval(() => loadPlayer(false), 5000);
-        return () => clearInterval(interval);
-    }, [loadPlayer]);
+    loadPlayer(true);
+
+    // ← Don't poll while user is editing
+    if (showEdit) return;
+
+    const interval = setInterval(() => loadPlayer(false), 5000);
+    return () => clearInterval(interval);
+}, [loadPlayer, showEdit]);  // ← add showEdit to deps
 
     // Called by EditPlayer onSaved — reload immediately + flash "Saved"
     const handleSaved = useCallback(() => {
