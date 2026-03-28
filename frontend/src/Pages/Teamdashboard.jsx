@@ -832,7 +832,9 @@ export default function TeamDashboard({ currentUser, activeShift }) {
   useEffect(() => {
     loadTasks();
     console.log("the current user is: ", currentUser);
-    const es = tasksAPI.connectSSE();
+    const token = localStorage.getItem('authToken');
+const sseUrl = `${API}/tasks/events${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+const es = new EventSource(sseUrl, { withCredentials: true });
     sseRef.current = es;
     es.addEventListener("connected", () => console.log("SSE connected ✓"));
 
