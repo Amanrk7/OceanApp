@@ -283,8 +283,7 @@ function AddIssueForm({ onClose, onIssueCreated }) {
     fontSize: '14px',
     fontFamily: 'inherit',
     boxSizing: 'border-box',
-    background: 'var(--color-input-bg, #fff)',
-    color: 'var(--color-text, #0f172a)',
+    color: 'rgb(15, 23, 42)',
     outline: 'none',
     transition: 'border-color .15s',
   };
@@ -294,7 +293,7 @@ function AddIssueForm({ onClose, onIssueCreated }) {
     fontWeight: '600',
     fontSize: '12px',
     marginBottom: '6px',
-    color: '#64748b',
+    color: 'rgb(15, 23, 42)',
     textTransform: 'uppercase',
     letterSpacing: '0.4px',
   };
@@ -320,6 +319,7 @@ function AddIssueForm({ onClose, onIssueCreated }) {
         border: '1px solid var(--color-border, #e2e8f0)',
         boxShadow: '0 4px 24px rgba(15,23,42,.07)',
         overflow: 'hidden',
+        color: 'rgb(15, 23, 42)',
       }}>
 
         {/* Header */}
