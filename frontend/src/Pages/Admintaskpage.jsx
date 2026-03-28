@@ -463,22 +463,11 @@ export default function AdminTaskPage() {
 
 
     function setupSSE() {
-        const sse = new EventSource(`${API}/tasks/events`, { withCredentials: true });
         const token = localStorage.getItem('authToken');
-        const url = token
-            ? `${API}/tasks/events?token=${encodeURIComponent(token)}`
-            : `${API}/tasks/events`;
-
-  const sse = new EventSource(url, { withCredentials: true });
-        sse.onmessage = (e) => {
-            try {
-                const { type, data } = JSON.parse(e.data);
-                if (type === "task_created") setTasks(prev => [data, ...prev.filter(t => t.id !== data.id)]);
-                if (type === "task_updated") setTasks(prev => prev.map(t => t.id === data.id ? data : t));
-                if (type === "task_deleted") setTasks(prev => prev.filter(t => t.id !== data.id));
-            } catch (_) { }
-        };
-        sseRef.current = sse;
+const url = token
+    ? `${API}/tasks/events?token=${encodeURIComponent(token)}`
+    : `${API}/tasks/events`;
+const sse = new EventSource(url, { withCredentials: true });
     }
 
     async function loadTasks() {
@@ -596,7 +585,7 @@ export default function AdminTaskPage() {
     //     acc[tt.value] = filtered.filter(t => t.taskType === tt.value);
     //     return acc;
     // }, {});
-    const grouped = tasks.reduce((acc, t) => {
+const grouped = filtered.reduce((acc, t) => {
   const key = t.taskType || 'STANDARD';
   if (!acc[key]) acc[key] = [];
   acc[key].push(t);
@@ -646,7 +635,7 @@ export default function AdminTaskPage() {
                         </button>
                         <button
                             onClick={() => setShowFollowupPanel(v => !v)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 14px', background: showFollowupPanel ? '#fff7ed' : C.white, border: `1px solid ${showFollowupPanel ? '#fed7aa' : '#e2e8f0'}`, borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer', color: showFollowupPanel ? '#ea580c' : '#475569' }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 14px', background: showFollowupPanel ? '#fff7ed' : '#fff', border: `1px solid ${showFollowupPanel ? '#fed7aa' : '#e2e8f0'}`, borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer', color: showFollowupPanel ? '#ea580c' : '#475569' }}
                         >
                             <Users style={{ width: '13px', height: '13px' }} /> Followup Manager
                         </button>
