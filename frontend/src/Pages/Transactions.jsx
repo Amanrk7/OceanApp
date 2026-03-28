@@ -604,7 +604,7 @@ export default function Transactions() {
               color: filterTab === tab.id ? '#0ea5e9' : '#64748b',
               borderBottom: filterTab === tab.id ? '2px solid #0ea5e9' : '2px solid transparent',
               cursor: 'pointer', transition: 'all 0.15s',
-              display: 'flex', alignItems: 'center', gap: '6px',
+              display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '0px'
             }}>
               {tab.label}
               {tab.badge && (
@@ -655,9 +655,9 @@ export default function Transactions() {
                       letterSpacing: '0.4px', borderBottom: '1px solid #e2e8f0',
                       whiteSpace: 'nowrap', background: '#f8fafc',
                       ...(h === 'Fee' || h === 'Received / Paid'
-                        ? { color: '#0369a1', background: '#f0f9ff' }
+                        ? { color: '#64748b' }
                         : {}),
-                      ...(h === 'Actions' ? { color: '#92400e', background: '#fffbeb' } : {}),
+                      ...(h === 'Actions' ? { color: '#64748b' } : {}),
                     }}>{h}</th>
                   ))}
                 </tr>
