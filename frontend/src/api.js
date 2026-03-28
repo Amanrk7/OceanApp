@@ -586,10 +586,12 @@ export const tasksAPI = {
   getTeamMembers: async () => fetchAPI("/team-members"),
 
   connectSSE: () => {
-    const sseUrl = `${API_BASE_URL}/tasks/events`;
-    const es = new EventSource(sseUrl, { withCredentials: true });
-    return es;
-  },
+  const token = localStorage.getItem('authToken');
+  const url = token
+    ? `${API_BASE_URL}/tasks/events?token=${encodeURIComponent(token)}`
+    : `${API_BASE_URL}/tasks/events`;
+  return new EventSource(url, { withCredentials: true });
+},
 };
 
 export const reportsAPI = {
