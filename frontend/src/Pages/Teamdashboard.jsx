@@ -7,10 +7,12 @@ import {
   TrendingUp, Users, List, ChevronDown, ChevronUp,
   Calendar, Plus, X, Check,
   UserCheck, Phone, Mail, Camera, Instagram, Send, User,
-  ClipboardList, Lock, Unlock, Undo2
+  ClipboardList, Lock, Unlock, Undo2, Gift 
 } from "lucide-react";
 import { tasksAPI } from "../api";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
+import { PlayerFollowupCard, BonusFollowupCard } from './FollowupTaskCards';
+
 
 
 // ─── Inline SVG icons ─────────────────────────────────────────────────────────
@@ -925,6 +927,9 @@ export default function TeamDashboard({ currentUser, activeShift }) {
   const completedCount = tasks.filter(t => t.status === "COMPLETED").length;
   const overdueCount = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length;
   const missingInfoPending = tasks.filter(t => t.taskType === "MISSING_INFO" && t.status !== "COMPLETED").length;
+  // ADD to the filtered task grouping section (after existing const declarations):
+  const playerFollowup = filtered.filter(t => t.taskType === 'PLAYER_FOLLOWUP');
+  const bonusFollowup = filtered.filter(t => t.taskType === 'BONUS_FOLLOWUP');
 
 
   if (!shiftActive) {
@@ -981,6 +986,17 @@ export default function TeamDashboard({ currentUser, activeShift }) {
               <ClipboardList style={{ width: "10px", height: "10px" }} /> {missingInfoPending} info task{missingInfoPending > 1 ? "s" : ""}
             </span>
           )}
+          {/* // UPDATE the header badge section - add this alongside existing badges: */}
+          {playerFollowup.filter(t => t.status !== 'COMPLETED').length > 0 && (
+            <span style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '11px', fontWeight: '700', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <AlertCircle style={{ width: '10px', height: '10px' }} /> {playerFollowup.filter(t => t.status !== 'COMPLETED').length} player followup
+            </span>
+          )}
+          {bonusFollowup.filter(t => t.status !== 'COMPLETED').length > 0 && (
+            <span style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '11px', fontWeight: '700', background: '#fffbeb', color: '#b45309', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Gift style={{ width: '10px', height: '10px' }} /> {bonusFollowup.filter(t => t.status !== 'COMPLETED').length} bonus followup
+            </span>
+          )}
         </div>
         <div style={{ display: "flex", gap: "4px" }}>
           {["all", "pending", "done"].map(f => (
@@ -1022,6 +1038,40 @@ export default function TeamDashboard({ currentUser, activeShift }) {
                   currentUser={resolvedUser}
                   onClaim={handleClaimTask}
                   onInfoSubmitted={handleInfoSubmitted}
+                />
+              ))}
+            </div>
+          )}
+
+          {playerFollowup.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', padding: '0 2px' }}>
+                🔴 Player Followup Tasks
+              </div>
+              {playerFollowup.map(task => (
+                <PlayerFollowupCard
+                  key={task.id}
+                  task={task}
+                  currentUser={resolvedUser}
+                  onClaim={handleClaimTask}
+                  onUpdated={handleInfoSubmitted}
+                />
+              ))}
+            </div>
+          )}
+
+          {bonusFollowup.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', padding: '0 2px' }}>
+                🎁 Bonus Followup Tasks
+              </div>
+              {bonusFollowup.map(task => (
+                <BonusFollowupCard
+                  key={task.id}
+                  task={task}
+                  currentUser={resolvedUser}
+                  onClaim={handleClaimTask}
+                  onUpdated={handleInfoSubmitted}
                 />
               ))}
             </div>
