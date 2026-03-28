@@ -464,6 +464,12 @@ export default function AdminTaskPage() {
 
     function setupSSE() {
         const sse = new EventSource(`${API}/tasks/events`, { withCredentials: true });
+        const token = localStorage.getItem('authToken');
+        const url = token
+            ? `${API}/tasks/events?token=${encodeURIComponent(token)}`
+            : `${API}/tasks/events`;
+
+  const sse = new EventSource(url, { withCredentials: true });
         sse.onmessage = (e) => {
             try {
                 const { type, data } = JSON.parse(e.data);
