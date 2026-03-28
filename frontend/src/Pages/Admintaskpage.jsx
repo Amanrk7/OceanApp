@@ -592,10 +592,16 @@ export default function AdminTaskPage() {
         return true;
     });
 
-    const grouped = TASK_TYPES.reduce((acc, tt) => {
-        acc[tt.value] = filtered.filter(t => t.taskType === tt.value);
-        return acc;
-    }, {});
+    // const grouped = TASK_TYPES.reduce((acc, tt) => {
+    //     acc[tt.value] = filtered.filter(t => t.taskType === tt.value);
+    //     return acc;
+    // }, {});
+    const grouped = tasks.reduce((acc, t) => {
+  const key = t.taskType || 'STANDARD';
+  if (!acc[key]) acc[key] = [];
+  acc[key].push(t);
+  return acc;
+}, {});
 
     const totalCompleted = tasks.filter(t => t.status === "COMPLETED").length;
     const totalPending = tasks.filter(t => t.status === "PENDING").length;
@@ -741,7 +747,14 @@ export default function AdminTaskPage() {
             ) : (
                 Object.entries(grouped).map(([type, typeTasks]) => {
                     if (typeTasks.length === 0) return null;
-                    const meta = TASK_TYPES.find(t => t.value === type);
+                    const meta = TASK_TYPES.find(t => t.value === type) || {
+    value: type,
+    label: type.replace(/_/g, ' '),
+    icon: List,
+    color: '#64748b',
+    bg: '#f1f5f9',
+    border: '#cbd5e1',
+  };
                     const TIcon = meta.icon;
                     return (
                         <div key={type}>
