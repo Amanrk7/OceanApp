@@ -639,7 +639,7 @@ export default function BonusPage() {
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                             <thead>
                                 <tr style={{ background: "#f8fafc", position: "sticky", top: 0, zIndex: 1 }}>
-                                    {["#", "Player", "Bonus Type", "Amount", "Game", "Bal. Before → After", "Date"].map(h => (
+                                    {["#", "Player", "Bonus Type", "Amount", "Game", "Bal. Before → After", "Status", "Date"].map(h => (
                                         <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontWeight: "600", color: "#64748b", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.4px", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>{h}</th>
                                     ))}
                                 </tr>
@@ -693,6 +693,26 @@ export default function BonusPage() {
                                                     : <span style={{ color: "#cbd5e1" }}>—</span>
                                                 }
                                             </td>
+
+                                            // ── In the ledger row (after the Bal. Before → After cell), add:
+{/* Status */}
+<td style={{ padding: "11px 14px" }}>
+    {b.status === 'CANCELLED' ? (
+        <span style={{
+            display: 'inline-block', padding: '3px 9px', borderRadius: '6px',
+            fontSize: '11px', fontWeight: '700',
+            background: '#fee2e2', color: '#991b1b',
+        }}>CANCELLED</span>
+    ) : b.status === 'COMPLETED' ? (
+        <span style={{
+            display: 'inline-block', padding: '3px 9px', borderRadius: '6px',
+            fontSize: '11px', fontWeight: '700',
+            background: '#dcfce7', color: '#166534',
+        }}>COMPLETED</span>
+    ) : (
+        <span style={{ color: '#cbd5e1', fontSize: '12px' }}>—</span>
+    )}
+</td>
 
                                             {/* Date */}
                                             <td style={{ padding: "11px 14px", color: "#64748b", whiteSpace: "nowrap", fontSize: "12px" }}>
