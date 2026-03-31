@@ -164,8 +164,8 @@ const [friendSearchOpen, setFriendSearchOpen] = useState(false);
 const friendSearchRef = useRef(null);
 
 // In the useEffect that initializes form from player:
-setReferredByPlayer(player.referredBy || null);
-setFriendsList(player.friendsList || []);
+// setReferredByPlayer(player.referredBy || null);
+// setFriendsList(player.friendsList || []);
 
     useEffect(() => {
         if (!player) return;
@@ -189,6 +189,8 @@ setFriendsList(player.friendsList || []);
             cashappTag:       player.socials?.cashappTag  || '',
             paypalEmail:      player.socials?.paypalEmail || '',
         });
+        setReferredByPlayer(player.referredBy || null);
+    setFriendsList(player.friendsList || []);
         setError(''); setSuccess('');
     }, [player]);
 
