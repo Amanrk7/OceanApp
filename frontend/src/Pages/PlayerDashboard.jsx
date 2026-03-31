@@ -865,7 +865,7 @@ const t = TX_TYPE_MAP[typeKey] || {
                                     const receivedAmt = isDeposit ? depositAmt - feeVal : null;
 
                                     const isPartial    = isCashout && isPending && paidAmt > 0 && paidAmt < depositAmt;
-                                    const statusLabel  = isPartial ? 'PARTIAL' : tx.status;
+                                    // const statusLabel  = isPartial ? 'PARTIAL' : tx.status;
                                     // const statusBg     = isPartial ? '#fef3c7' : isCompleted ? '#dcfce7' : isPending ? '#fef3c7' : '#fee2e2';
                                     // const statusColor  = isPartial ? '#92400e' : isCompleted ? '#166534' : isPending ? '#92400e' : '#991b1b';
                                     const isCancelled = tx.status === 'CANCELLED';
