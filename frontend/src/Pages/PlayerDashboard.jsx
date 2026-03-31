@@ -22,39 +22,39 @@ const C = {
 const TIER = {
     BRONZE: { bg: '#fed7aa', text: '#92400e', emoji: '🥉', label: 'Bronze' },
     SILVER: { bg: '#e0e7ff', text: '#3730a3', emoji: '🥈', label: 'Silver' },
-    GOLD:   { bg: '#fef3c7', text: '#92400e', emoji: '🥇', label: 'Gold' },
+    GOLD: { bg: '#fef3c7', text: '#92400e', emoji: '🥇', label: 'Gold' },
 };
 const STATUS_MAP = {
-    ACTIVE:          { bg: '#dcfce7', text: '#166534', dot: '#16a34a',  label: 'Active'        },
-    CRITICAL:        { bg: '#fef9c3', text: '#854d0e', dot: '#d97706',  label: 'Critical'      },
-    HIGHLY_CRITICAL: { bg: '#ffedd5', text: '#9a3412', dot: '#ea580c',  label: 'High Critical' },
-    INACTIVE:        { bg: '#fee2e2', text: '#991b1b', dot: '#dc2626',  label: 'Inactive'      },
+    ACTIVE: { bg: '#dcfce7', text: '#166534', dot: '#16a34a', label: 'Active' },
+    CRITICAL: { bg: '#fef9c3', text: '#854d0e', dot: '#d97706', label: 'Critical' },
+    HIGHLY_CRITICAL: { bg: '#ffedd5', text: '#9a3412', dot: '#ea580c', label: 'High Critical' },
+    INACTIVE: { bg: '#fee2e2', text: '#991b1b', dot: '#dc2626', label: 'Inactive' },
 };
 
-const card   = (extra = {}) => ({ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', ...extra });
-const pill   = (bg, text)    => ({ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', background: bg, color: text });
+const card = (extra = {}) => ({ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', ...extra });
+const pill = (bg, text) => ({ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', background: bg, color: text });
 
 const BONUS_LABEL_MAP = {
-    'streak bonus':  { label: 'Streak Bonus',   emoji: '🔥', bg: '#fffbeb', text: '#92400e' },
-    'referral bonus':{ label: 'Referral Bonus', emoji: '👤', bg: '#f0fdf4', text: '#166534' },
-    'match bonus':   { label: 'Match Bonus',    emoji: '💰', bg: '#eff6ff', text: '#1d4ed8' },
-    'special bonus': { label: 'Special Bonus',  emoji: '⭐', bg: '#faf5ff', text: '#6b21a8' },
-    'bonus':         { label: 'Bonus',          emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
-    'bonus_credited':{ label: 'Bonus',          emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
+    'streak bonus': { label: 'Streak Bonus', emoji: '🔥', bg: '#fffbeb', text: '#92400e' },
+    'referral bonus': { label: 'Referral Bonus', emoji: '👤', bg: '#f0fdf4', text: '#166534' },
+    'match bonus': { label: 'Match Bonus', emoji: '💰', bg: '#eff6ff', text: '#1d4ed8' },
+    'special bonus': { label: 'Special Bonus', emoji: '⭐', bg: '#faf5ff', text: '#6b21a8' },
+    'bonus': { label: 'Bonus', emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
+    'bonus_credited': { label: 'Bonus', emoji: '🎁', bg: '#f1f5f9', text: '#475569' },
 };
 function resolveBonusInfo(tx) {
     return BONUS_LABEL_MAP[(tx.type || '').toLowerCase().trim()] || BONUS_LABEL_MAP['bonus'];
 }
 
 const TX_TYPE_MAP = {
-    deposit:         { label: 'Deposit',        color: '#10b981', bg: '#f0fdf4' },
-    cashout:         { label: 'Cashout',        color: '#dc2626', bg: '#fff1f2' },
-    'streak bonus':  { label: 'Streak Bonus',   color: '#f59e0b', bg: '#fffbeb' },
-    'referral bonus':{ label: 'Referral Bonus', color: '#10b981', bg: '#f0fdf4' },
-    'match bonus':   { label: 'Match Bonus',    color: '#3b82f6', bg: '#eff6ff' },
-    'special bonus': { label: 'Special Bonus',  color: '#8b5cf6', bg: '#faf5ff' },
-    'bonus_credited':{ label: 'Bonus',          color: '#d97706', bg: '#fffbeb' },
-    'bonus':         { label: 'Bonus',          color: '#d97706', bg: '#fffbeb' },
+    deposit: { label: 'Deposit', color: '#10b981', bg: '#f0fdf4' },
+    cashout: { label: 'Cashout', color: '#dc2626', bg: '#fff1f2' },
+    'streak bonus': { label: 'Streak Bonus', color: '#f59e0b', bg: '#fffbeb' },
+    'referral bonus': { label: 'Referral Bonus', color: '#10b981', bg: '#f0fdf4' },
+    'match bonus': { label: 'Match Bonus', color: '#3b82f6', bg: '#eff6ff' },
+    'special bonus': { label: 'Special Bonus', color: '#8b5cf6', bg: '#faf5ff' },
+    'bonus_credited': { label: 'Bonus', color: '#d97706', bg: '#fffbeb' },
+    'bonus': { label: 'Bonus', color: '#d97706', bg: '#fffbeb' },
 };
 
 function fmtDuration(ms) {
@@ -114,22 +114,22 @@ function TxPaymentProgress({ paid, total }) {
 }
 
 function StreakFreezeCard({ player }) {
-    const streak   = player.streak?.currentStreak ?? 0;
-    const freeze   = player.streakFreeze;
+    const streak = player.streak?.currentStreak ?? 0;
+    const freeze = player.streakFreeze;
     const isFrozen = freeze?.isFrozen;
-    const isAuto   = freeze?.isAutoFreeze;
-    const until    = freeze?.freezeUntil ? new Date(freeze.freezeUntil) : null;
-    const msLeft   = until ? Math.max(0, until - Date.now()) : 0;
+    const isAuto = freeze?.isAutoFreeze;
+    const until = freeze?.freezeUntil ? new Date(freeze.freezeUntil) : null;
+    const msLeft = until ? Math.max(0, until - Date.now()) : 0;
     const lastPlayed = player.streak?.lastPlayedDate;
 
     const STREAK_COLORS = [
         { days: 30, color: '#10b981', bg: '#f0fdf4', border: '#86efac', label: 'Legend' },
         { days: 15, color: '#ef4444', bg: '#fef2f2', border: '#fca5a5', label: 'Blazing' },
         { days: 10, color: '#f97316', bg: '#fff7ed', border: '#fdba74', label: 'Fire' },
-        { days: 7,  color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', label: 'Hot Streak' },
-        { days: 5,  color: '#8b5cf6', bg: '#faf5ff', border: '#ddd6fe', label: 'On A Roll' },
-        { days: 3,  color: '#0ea5e9', bg: '#f0f9ff', border: '#bae6fd', label: 'Warming Up' },
-        { days: 2,  color: '#64748b', bg: '#f1f5f9', border: '#cbd5e1', label: 'Starter' },
+        { days: 7, color: '#f59e0b', bg: '#fffbeb', border: '#fde68a', label: 'Hot Streak' },
+        { days: 5, color: '#8b5cf6', bg: '#faf5ff', border: '#ddd6fe', label: 'On A Roll' },
+        { days: 3, color: '#0ea5e9', bg: '#f0f9ff', border: '#bae6fd', label: 'Warming Up' },
+        { days: 2, color: '#64748b', bg: '#f1f5f9', border: '#cbd5e1', label: 'Starter' },
     ];
     const tierS = STREAK_COLORS.find(t => streak >= t.days);
 
@@ -209,9 +209,9 @@ function StreakFreezeCard({ player }) {
 }
 
 function DeleteModal({ player, onClose, onDeleted }) {
-    const [pwd, setPwd]       = useState('');
+    const [pwd, setPwd] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError]   = useState('');
+    const [error, setError] = useState('');
     const handleDelete = async () => {
         if (!pwd.trim()) return setError('Admin password is required.');
         setError('');
@@ -304,9 +304,9 @@ function PeopleChip({ person, emoji = '👤', onClick }) {
 
 
 const TIER_CONFIG = {
-    BRONZE: { label: 'Bronze', emoji: '🥉', color: '#b45309', bg: '#fef3c7', weeklyTarget: 500,  cashoutLimit: 250, nextTier: 'SILVER' },
-    SILVER: { label: 'Silver', emoji: '🥈', color: '#3730a3', bg: '#e0e7ff', weeklyTarget: 1000, cashoutLimit: 500, nextTier: 'GOLD'   },
-    GOLD:   { label: 'Gold',   emoji: '🥇', color: '#92400e', bg: '#fef3c7', weeklyTarget: null, cashoutLimit: 750, nextTier: null     },
+    BRONZE: { label: 'Bronze', emoji: '🥉', color: '#b45309', bg: '#fef3c7', weeklyTarget: 500, cashoutLimit: 250, nextTier: 'SILVER' },
+    SILVER: { label: 'Silver', emoji: '🥈', color: '#3730a3', bg: '#e0e7ff', weeklyTarget: 1000, cashoutLimit: 500, nextTier: 'GOLD' },
+    GOLD: { label: 'Gold', emoji: '🥇', color: '#92400e', bg: '#fef3c7', weeklyTarget: null, cashoutLimit: 750, nextTier: null },
 };
 
 // ─── Inline "saved" flash chip ────────────────────────────────────────────────
@@ -329,15 +329,15 @@ function SavedFlash({ show }) {
 // ══════════════════════════════════════════════════════════════════════════════
 export default function PlayerDashboard() {
     const { playerId } = useParams();
-    const navigate     = useNavigate();
+    const navigate = useNavigate();
 
-    const [player,      setPlayer]      = useState(null);
-    const [loading,     setLoading]     = useState(true);
-    const [error,       setError]       = useState('');
-    const [chartDays,   setChartDays]   = useState(14);
-    const [showDelete,  setShowDelete]  = useState(false);
-    const [showEdit,    setShowEdit]    = useState(false);    // ← NEW
-    const [savedFlash,  setSavedFlash]  = useState(false);   // ← NEW: "Saved" chip
+    const [player, setPlayer] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [chartDays, setChartDays] = useState(14);
+    const [showDelete, setShowDelete] = useState(false);
+    const [showEdit, setShowEdit] = useState(false);    // ← NEW
+    const [savedFlash, setSavedFlash] = useState(false);   // ← NEW: "Saved" chip
     const [lastUpdated, setLastUpdated] = useState(null);
 
     const loadPlayer = useCallback(async (isInitial = false) => {
@@ -361,14 +361,14 @@ export default function PlayerDashboard() {
     //     return () => clearInterval(interval);
     // }, [loadPlayer]);
     useEffect(() => {
-    loadPlayer(true);
+        loadPlayer(true);
 
-    // ← Don't poll while user is editing
-    if (showEdit) return;
+        // ← Don't poll while user is editing
+        if (showEdit) return;
 
-    const interval = setInterval(() => loadPlayer(false), 5000);
-    return () => clearInterval(interval);
-}, [loadPlayer, showEdit]);  // ← add showEdit to deps
+        const interval = setInterval(() => loadPlayer(false), 5000);
+        return () => clearInterval(interval);
+    }, [loadPlayer, showEdit]);  // ← add showEdit to deps
 
     // Called by EditPlayer onSaved — reload immediately + flash "Saved"
     const handleSaved = useCallback(() => {
@@ -395,8 +395,8 @@ export default function PlayerDashboard() {
 
     if (!player) return null;
 
-    const tier    = TIER[player.tier]          || TIER.BRONZE;
-    const tierCfg = TIER_CONFIG[player.tier]   || TIER_CONFIG.BRONZE;
+    const tier = TIER[player.tier] || TIER.BRONZE;
+    const tierCfg = TIER_CONFIG[player.tier] || TIER_CONFIG.BRONZE;
     const weeklyTarget = tierCfg.weeklyTarget;
 
     const weeklyDeposits = (() => {
@@ -408,9 +408,9 @@ export default function PlayerDashboard() {
             .reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
     })();
 
-    const tierPct     = weeklyTarget ? Math.min(100, Math.round((weeklyDeposits / weeklyTarget) * 100)) : 100;
-    const amtToNext   = weeklyTarget ? Math.max(0, weeklyTarget - weeklyDeposits) : 0;
-    const status      = STATUS_MAP[player.status] || STATUS_MAP.ACTIVE;
+    const tierPct = weeklyTarget ? Math.min(100, Math.round((weeklyDeposits / weeklyTarget) * 100)) : 100;
+    const amtToNext = weeklyTarget ? Math.max(0, weeklyTarget - weeklyDeposits) : 0;
+    const status = STATUS_MAP[player.status] || STATUS_MAP.ACTIVE;
 
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
     const todayTransactions = (player.transactionHistory || []).filter(tx => {
@@ -433,9 +433,9 @@ export default function PlayerDashboard() {
         if (tx.type === 'deposit') txMap[dateKey].deposits += parseFloat(tx.amount) || 0;
         if (tx.type === 'cashout') txMap[dateKey].cashouts += parseFloat(tx.amount) || 0;
     });
-    const sortedData  = Object.values(txMap).sort((a, b) => new Date(a.date) - new Date(b.date));
-    const cutoff      = new Date(); cutoff.setDate(cutoff.getDate() - chartDays); cutoff.setHours(0, 0, 0, 0);
-    const chartData   = sortedData.filter(e => new Date(e.date) >= cutoff);
+    const sortedData = Object.values(txMap).sort((a, b) => new Date(a.date) - new Date(b.date));
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - chartDays); cutoff.setHours(0, 0, 0, 0);
+    const chartData = sortedData.filter(e => new Date(e.date) >= cutoff);
     const finalChartData = chartData.length > 0 ? chartData : sortedData.slice(-chartDays);
 
     const sourceTags = player.source && player.source !== '—'
@@ -446,23 +446,23 @@ export default function PlayerDashboard() {
         : player.tier === 'GOLD' ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #0ea5e9, #7c3aed)';
 
     const TX_HEADERS = [
-        { label: 'Date',           style: {} },
-        { label: 'ID',             style: {} },
-        { label: 'Type',           style: {} },
-        { label: 'Amount',         style: {} },
-        { label: 'Fee',            style: {} },
-        { label: 'Received / Paid',style: {} },
-        { label: 'Game',           style: {} },
-        { label: 'Wallet',         style: {} },
+        { label: 'Date', style: {} },
+        { label: 'ID', style: {} },
+        { label: 'Type', style: {} },
+        { label: 'Amount', style: {} },
+        { label: 'Fee', style: {} },
+        { label: 'Received / Paid', style: {} },
+        { label: 'Game', style: {} },
+        { label: 'Wallet', style: {} },
         { label: 'Before → After', style: {} },
-        { label: 'Status',         style: {} },
+        { label: 'Status', style: {} },
     ];
 
     // ── Payment handle display config ─────────────────────────
     const paymentFields = [
-        { key: 'chimeTag',    label: 'Chime',    emoji: '🟢', prefix: '',   urlFn: null },
-        { key: 'cashappTag',  label: 'Cash App', emoji: '💚', prefix: '$',  urlFn: (v) => `https://cash.app/${v.startsWith('$') ? v : '$' + v}` },
-        { key: 'paypalEmail', label: 'PayPal',   emoji: '🔵', prefix: '',   urlFn: (v) => `https://paypal.com/paypalme/${v}` },
+        { key: 'chimeTag', label: 'Chime', emoji: '🟢', prefix: '', urlFn: null },
+        { key: 'cashappTag', label: 'Cash App', emoji: '💚', prefix: '$', urlFn: (v) => `https://cash.app/${v.startsWith('$') ? v : '$' + v}` },
+        { key: 'paypalEmail', label: 'PayPal', emoji: '🔵', prefix: '', urlFn: (v) => `https://paypal.com/paypalme/${v}` },
     ];
 
     return (
@@ -472,7 +472,7 @@ export default function PlayerDashboard() {
             <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', width: 'fit-content', flexWrap: 'wrap' }}>
                 {[
                     { label: 'Dashboard', onClick: () => navigate('/') },
-                    { label: 'Players',   onClick: () => navigate('/?page=players') },
+                    { label: 'Players', onClick: () => navigate('/?page=players') },
                     { label: player.name, onClick: null },
                 ].map((item, i, arr) => (
                     <React.Fragment key={i}>
@@ -507,19 +507,19 @@ export default function PlayerDashboard() {
                             </span>
                             {sourceTags.map((src, i) => <span key={i} style={pill('#f1f5f9', C.gray)}>📍 {src}</span>)}
                         </div>
-                        
+
                         {player.referredBy && (
-    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span style={{ fontSize: '12px', color: C.grayLt }}>Referred by:</span>
-        <span
-            onClick={() => navigate(`/playerDashboard/${player.referredBy.id}`)}
-            style={{ ...pill('#f0fdf4', '#16a34a'), fontSize: '12px', cursor: 'pointer' }}
-            onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
-            onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-            👤 {player.referredBy.name || `ID ${player.referredBy.id}`} →
-        </span>
-    </div>
-)}
+                            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '12px', color: C.grayLt }}>Referred by:</span>
+                                <span
+                                    onClick={() => navigate(`/playerDashboard/${player.referredBy.id}`)}
+                                    style={{ ...pill('#f0fdf4', '#16a34a'), fontSize: '12px', cursor: 'pointer' }}
+                                    onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
+                                    👤 {player.referredBy.name || `ID ${player.referredBy.id}`} →
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -548,13 +548,13 @@ export default function PlayerDashboard() {
 
             {/* ── STAT ROW ────────────────────────────────────────────────── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px' }}>
-                <StatCard label="Balance"             value={`$${parseFloat(player.balance || 0).toFixed(2)}`}                    color="#10b981" />
-                <StatCard label="Cashout Limit"       value={`$${parseFloat(player.cashoutLimit || 250).toFixed(0)}`}             color={C.amber} />
-                <StatCard label="Streak"              value={`${player.streak?.currentStreak || 0} days`}
+                <StatCard label="Balance" value={`$${parseFloat(player.balance || 0).toFixed(2)}`} color="#10b981" />
+                <StatCard label="Cashout Limit" value={`$${parseFloat(player.cashoutLimit || 250).toFixed(0)}`} color={C.amber} />
+                <StatCard label="Streak" value={`${player.streak?.currentStreak || 0} days`}
                     color={player.streakFreeze?.isFrozen ? '#1d4ed8' : C.violet}
                     sub={player.streakFreeze?.isFrozen ? `🧊 Frozen · ${fmtDuration(Math.max(0, new Date(player.streakFreeze.freezeUntil) - Date.now()))}` : `Last: ${player.streak?.lastPlayedDate || '—'}`} />
-                <StatCard label="Today's Deposits"    value={`$${todayDeposits.toFixed(2)}`}                                      color="#10b981" />
-                <StatCard label="Today's Cashouts"    value={`$${todayCashouts.toFixed(2)}`}                                      color={C.red} />
+                <StatCard label="Today's Deposits" value={`$${todayDeposits.toFixed(2)}`} color="#10b981" />
+                <StatCard label="Today's Cashouts" value={`$${todayCashouts.toFixed(2)}`} color={C.red} />
                 <StatCard label="Total Bonuses Earned" value={`$${parseFloat(player.bonusTracker?.totalBonusEarned || 0).toFixed(2)}`}
                     sub={`${Object.keys(player.bonusTracker?.bonusByType || {}).length} types`} color="#8b5cf6" />
             </div>
@@ -577,13 +577,13 @@ export default function PlayerDashboard() {
                 </div>
                 {(() => {
                     const BONUS_META = {
-                        Streak:   { emoji: '🔥', bg: '#fffbeb', text: '#92400e', border: '#fde68a' },
+                        Streak: { emoji: '🔥', bg: '#fffbeb', text: '#92400e', border: '#fde68a' },
                         Referral: { emoji: '👤', bg: '#f0fdf4', text: '#166534', border: '#86efac' },
-                        Match:    { emoji: '💰', bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' },
-                        Special:  { emoji: '⭐', bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe' },
-                        Other:    { emoji: '🎁', bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' },
+                        Match: { emoji: '💰', bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' },
+                        Special: { emoji: '⭐', bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe' },
+                        Other: { emoji: '🎁', bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' },
                     };
-                    const byType  = player.bonusTracker?.bonusByType || {};
+                    const byType = player.bonusTracker?.bonusByType || {};
                     const entries = Object.entries(byType).sort((a, b) => b[1] - a[1]);
                     if (entries.length === 0) return <p style={{ color: C.grayLt, fontSize: '13px', textAlign: 'center', padding: '16px 0', margin: 0 }}>No bonuses recorded yet</p>;
                     return (
@@ -591,16 +591,16 @@ export default function PlayerDashboard() {
                             <div style={{ display: 'flex', height: '8px', borderRadius: '99px', overflow: 'hidden', gap: '2px' }}>
                                 {entries.map(([type, amt]) => {
                                     const total = entries.reduce((s, [, v]) => s + v, 0);
-                                    const pct   = total > 0 ? (amt / total) * 100 : 0;
-                                    const meta  = BONUS_META[type] || BONUS_META.Other;
+                                    const pct = total > 0 ? (amt / total) * 100 : 0;
+                                    const meta = BONUS_META[type] || BONUS_META.Other;
                                     return <div key={type} title={`${type}: $${amt.toFixed(2)}`} style={{ width: `${pct}%`, background: meta.text, borderRadius: '99px', minWidth: '4px', transition: 'width .4s ease' }} />;
                                 })}
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px', marginTop: '4px' }}>
                                 {entries.map(([type, amt]) => {
-                                    const meta  = BONUS_META[type] || BONUS_META.Other;
+                                    const meta = BONUS_META[type] || BONUS_META.Other;
                                     const total = entries.reduce((s, [, v]) => s + v, 0);
-                                    const pct   = total > 0 ? Math.round((amt / total) * 100) : 0;
+                                    const pct = total > 0 ? Math.round((amt / total) * 100) : 0;
                                     return (
                                         <div key={type} style={{ padding: '12px 14px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: '10px' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -677,37 +677,39 @@ export default function PlayerDashboard() {
             </div>
 
             {/* ── REFERRALS & FRIENDS ───────────────────────────────────────── */}
-            
+
             {/* ── REFERRALS & FRIENDS ───────────────────────────────────────── */}
-{((player.referralsList?.length > 0) || (player.friendsList?.length > 0)) && (
-    <div style={card({ padding: '20px 22px' })}>
-        {player.referralsList?.length > 0 && (
-            <div style={{ marginBottom: player.friendsList?.length > 0 ? '18px' : 0 }}>
-                <SectionHeader title="Referrals" count={player.referralsList.length} />
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {player.referralsList.map(r => (
-                        <PeopleChip key={r.id} person={r} emoji="🎯"
-                            onClick={() => navigate(`/playerDashboard/${r.id}`)} />
-                    ))}
+            {((player.referralsList?.length > 0) || (player.friendsList?.length > 0)) && (
+                <div style={card({ padding: '20px 22px' })}>
+                    {player.referralsList?.length > 0 && (
+                        <div style={{ marginBottom: player.friendsList?.length > 0 ? '18px' : 0 }}>
+                            <SectionHeader title="Referrals" count={player.referralsList.length} />
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                {player.referralsList.map(r => (
+                                    <PeopleChip key={r.id} person={r} emoji="🎯"
+                                        onClick={() => navigate(`/playerDashboard/${r.id}`)} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    {player.friendsList?.length > 0 && (() => {
+                        const uniqueFriends = player.friendsList.filter(
+                            (f, i, arr) => arr.findIndex(x => x.id === f.id) === i
+                        );
+                        return (
+                            <div>
+                                <SectionHeader title="Friends" count={uniqueFriends.length} />
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                    {uniqueFriends.map(f => (
+                                        <PeopleChip key={f.id} person={f} emoji="🤝"
+                                            onClick={() => navigate(`/playerDashboard/${f.id}`)} />
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })()}
                 </div>
-            </div>
-        )}
-       {player.friendsList?.length > 0 && (() => {
-    const uniqueFriends = player.friendsList.filter(
-        (f, i, arr) => arr.findIndex(x => x.id === f.id) === i
-    );
-    return (
-        <div>
-            <SectionHeader title="Friends" count={uniqueFriends.length} />
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {uniqueFriends.map(f => (
-                    <PeopleChip key={f.id} person={f} emoji="🤝"
-                        onClick={() => navigate(`/playerDashboard/${f.id}`)} />
-                ))}
-            </div>
-        </div>
-    );
-})()}
+            )}
 
             {/* ── GRANTED BONUSES ──────────────────────────────────────────── */}
             <div style={card({ padding: '20px 22px' })}>
@@ -766,7 +768,7 @@ export default function PlayerDashboard() {
                             <Tooltip content={<CustomChartTooltip />} />
                             <Legend formatter={value => <span style={{ fontSize: '12px', color: C.gray, fontWeight: '600' }}>{value}</span>} />
                             <Area type="monotone" dataKey="deposits" stroke="#10b981" strokeWidth={2.5} fill="url(#dGrad)" name="Deposits" dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
-                            <Area type="monotone" dataKey="cashouts" stroke={C.red}    strokeWidth={2.5} fill="url(#cGrad)" name="Cashouts" dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
+                            <Area type="monotone" dataKey="cashouts" stroke={C.red} strokeWidth={2.5} fill="url(#cGrad)" name="Cashouts" dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
                         </AreaChart>
                     </ResponsiveContainer>
                 ) : (
@@ -784,13 +786,13 @@ export default function PlayerDashboard() {
                     <SectionHeader title="Social Media" />
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {[
-                            { key: 'email',     label: 'Email',     emoji: '📧' },
-                            { key: 'phone',     label: 'Phone',     emoji: '📱' },
-                            { key: 'facebook',  label: 'Facebook',  emoji: '📘', prefix: '@' },
-                            { key: 'telegram',  label: 'Telegram',  emoji: '✈️', prefix: '@' },
+                            { key: 'email', label: 'Email', emoji: '📧' },
+                            { key: 'phone', label: 'Phone', emoji: '📱' },
+                            { key: 'facebook', label: 'Facebook', emoji: '📘', prefix: '@' },
+                            { key: 'telegram', label: 'Telegram', emoji: '✈️', prefix: '@' },
                             { key: 'instagram', label: 'Instagram', emoji: '📸', prefix: '@' },
-                            { key: 'x',         label: 'X',         emoji: '🐦', prefix: '@' },
-                            { key: 'snapchat',  label: 'Snapchat',  emoji: '👻', prefix: '@' },
+                            { key: 'x', label: 'X', emoji: '🐦', prefix: '@' },
+                            { key: 'snapchat', label: 'Snapchat', emoji: '👻', prefix: '@' },
                         ].map(({ key, label, emoji, prefix = '' }) => {
                             const val = player.socials?.[key];
                             if (!val) return null;
@@ -802,7 +804,7 @@ export default function PlayerDashboard() {
                                 </div>
                             );
                         })}
-                        {!['email','phone','facebook','telegram','instagram','x','snapchat'].some(k => player.socials?.[k]) && (
+                        {!['email', 'phone', 'facebook', 'telegram', 'instagram', 'x', 'snapchat'].some(k => player.socials?.[k]) && (
                             <p style={{ color: C.grayLt, fontSize: '13px', margin: 0 }}>No social profiles linked</p>
                         )}
                     </div>
@@ -880,37 +882,37 @@ export default function PlayerDashboard() {
                                     // const typeKey    = (tx.type || '').toLowerCase();
                                     // const t          = TX_TYPE_MAP[typeKey] || { label: tx.type, color: C.gray, bg: C.bg };
                                     // AFTER: also try lowercase, and use amber for unrecognised bonus types
-const typeKey = (tx.type || '').toLowerCase();
-const isCustomBonus = !TX_TYPE_MAP[typeKey] && typeKey !== 'deposit' && typeKey !== 'cashout';
-const t = TX_TYPE_MAP[typeKey] || {
-    label: tx.type,
-    color: isCustomBonus ? '#7c3aed' : C.gray,
-    bg:    isCustomBonus ? '#f5f3ff' : C.bg,
-};
-                                    const isDeposit  = tx.type === 'deposit';
-                                    const isCashout  = tx.type === 'cashout';
-                                    const isPending  = tx.status === 'PENDING';
-                                    const isCompleted= tx.status === 'COMPLETED';
+                                    const typeKey = (tx.type || '').toLowerCase();
+                                    const isCustomBonus = !TX_TYPE_MAP[typeKey] && typeKey !== 'deposit' && typeKey !== 'cashout';
+                                    const t = TX_TYPE_MAP[typeKey] || {
+                                        label: tx.type,
+                                        color: isCustomBonus ? '#7c3aed' : C.gray,
+                                        bg: isCustomBonus ? '#f5f3ff' : C.bg,
+                                    };
+                                    const isDeposit = tx.type === 'deposit';
+                                    const isCashout = tx.type === 'cashout';
+                                    const isPending = tx.status === 'PENDING';
+                                    const isCompleted = tx.status === 'COMPLETED';
 
-                                    const depositAmt  = parseFloat(tx.amount || 0);
-                                    const feeVal      = parseFloat(tx.fee || 0);
-                                    const paidAmt     = parseFloat(tx.paidAmount || 0);
+                                    const depositAmt = parseFloat(tx.amount || 0);
+                                    const feeVal = parseFloat(tx.fee || 0);
+                                    const paidAmt = parseFloat(tx.paidAmount || 0);
                                     const receivedAmt = isDeposit ? depositAmt - feeVal : null;
 
-                                    const isPartial    = isCashout && isPending && paidAmt > 0 && paidAmt < depositAmt;
+                                    const isPartial = isCashout && isPending && paidAmt > 0 && paidAmt < depositAmt;
                                     // const statusLabel  = isPartial ? 'PARTIAL' : tx.status;
                                     // const statusBg     = isPartial ? '#fef3c7' : isCompleted ? '#dcfce7' : isPending ? '#fef3c7' : '#fee2e2';
                                     // const statusColor  = isPartial ? '#92400e' : isCompleted ? '#166534' : isPending ? '#92400e' : '#991b1b';
                                     const isCancelled = tx.status === 'CANCELLED';
-const statusBg    = isCancelled ? '#f1f5f9' : isPartial ? '#fef3c7' : isCompleted ? '#dcfce7' : isPending ? '#fef3c7' : '#fee2e2';
-const statusColor = isCancelled ? '#64748b' : isPartial ? '#92400e' : isCompleted ? '#166534' : isPending ? '#92400e' : '#991b1b';
-const statusLabel = isCancelled ? 'CANCELLED' : isPartial ? 'PARTIAL' : tx.status;
+                                    const statusBg = isCancelled ? '#f1f5f9' : isPartial ? '#fef3c7' : isCompleted ? '#dcfce7' : isPending ? '#fef3c7' : '#fee2e2';
+                                    const statusColor = isCancelled ? '#64748b' : isPartial ? '#92400e' : isCompleted ? '#166534' : isPending ? '#92400e' : '#991b1b';
+                                    const statusLabel = isCancelled ? 'CANCELLED' : isPartial ? 'PARTIAL' : tx.status;
 
-                                    const stockBefore   = tx.gameStockBefore;
-                                    const stockAfter    = tx.gameStockAfter;
+                                    const stockBefore = tx.gameStockBefore;
+                                    const stockAfter = tx.gameStockAfter;
                                     const effectiveAfter = isCashout && stockBefore != null ? stockBefore + paidAmt : stockAfter;
-                                    const remainingPts   = isCashout ? depositAmt - paidAmt : 0;
-                                    const txId           = tx.id ? `TXN${String(tx.id).padStart(6, '0')}` : '—';
+                                    const remainingPts = isCashout ? depositAmt - paidAmt : 0;
+                                    const txId = tx.id ? `TXN${String(tx.id).padStart(6, '0')}` : '—';
 
                                     return (
                                         <tr key={tx.id}
