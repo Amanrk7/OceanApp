@@ -274,17 +274,34 @@ function CustomChartTooltip({ active, payload, label }) {
     );
 }
 
-function PeopleChip({ person, emoji = '👤' }) {
+// function PeopleChip({ person, emoji = '👤' }) {
+//     return (
+//         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '6px 12px', borderRadius: '10px', background: C.bg, border: `1px solid ${C.border}`, fontSize: '12px', color: C.slate }}>
+//             <span>{emoji}</span>
+//             <div>
+//                 <div style={{ fontWeight: '700' }}>{person.name || person.username}</div>
+//                 {person.username && person.name && <div style={{ fontSize: '10px', color: C.grayLt }}>@{person.username}</div>}
+//             </div>
+//         </div>
+//     );
+// }
+// Update PeopleChip to accept onClick:
+function PeopleChip({ person, emoji = '👤', onClick }) {
     return (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '6px 12px', borderRadius: '10px', background: C.bg, border: `1px solid ${C.border}`, fontSize: '12px', color: C.slate }}>
+        <div onClick={onClick}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '6px 12px', borderRadius: '10px', background: C.bg, border: `1px solid ${C.border}`, fontSize: '12px', color: C.slate, cursor: onClick ? 'pointer' : 'default', transition: 'background .15s' }}
+            onMouseEnter={e => { if (onClick) e.currentTarget.style.background = C.skyLt; }}
+            onMouseLeave={e => { if (onClick) e.currentTarget.style.background = C.bg; }}>
             <span>{emoji}</span>
             <div>
-                <div style={{ fontWeight: '700' }}>{person.name || person.username}</div>
+                <div style={{ fontWeight: '700', color: onClick ? C.sky : C.slate }}>{person.name || person.username}</div>
                 {person.username && person.name && <div style={{ fontSize: '10px', color: C.grayLt }}>@{person.username}</div>}
             </div>
+            {onClick && <span style={{ fontSize: '10px', color: C.sky }}>→</span>}
         </div>
     );
 }
+
 
 const TIER_CONFIG = {
     BRONZE: { label: 'Bronze', emoji: '🥉', color: '#b45309', bg: '#fef3c7', weeklyTarget: 500,  cashoutLimit: 250, nextTier: 'SILVER' },
@@ -490,14 +507,19 @@ export default function PlayerDashboard() {
                             </span>
                             {sourceTags.map((src, i) => <span key={i} style={pill('#f1f5f9', C.gray)}>📍 {src}</span>)}
                         </div>
+                        
                         {player.referredBy && (
-                            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{ fontSize: '12px', color: C.grayLt }}>Referred by:</span>
-                                <span style={{ ...pill('#f0fdf4', '#16a34a'), fontSize: '12px' }}>
-                                    👤 {player.referredBy.name || `ID ${player.referredBy.id || player.referredBy}`}
-                                </span>
-                            </div>
-                        )}
+    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span style={{ fontSize: '12px', color: C.grayLt }}>Referred by:</span>
+        <span
+            onClick={() => navigate(`/playerDashboard/${player.referredBy.id}`)}
+            style={{ ...pill('#f0fdf4', '#16a34a'), fontSize: '12px', cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
+            👤 {player.referredBy.name || `ID ${player.referredBy.id}`} →
+        </span>
+    </div>
+)}
                     </div>
                 </div>
 
@@ -655,26 +677,16 @@ export default function PlayerDashboard() {
             </div>
 
             {/* ── REFERRALS & FRIENDS ───────────────────────────────────────── */}
-            {((player.referralsList?.length > 0) || (player.friendsList?.length > 0)) && (
-                <div style={{ display: 'grid', gridTemplateColumns: player.referralsList?.length && player.friendsList?.length ? '1fr 1fr' : '1fr', gap: '16px' }}>
-                    {player.referralsList?.length > 0 && (
-                        <div style={card({ padding: '18px 22px' })}>
-                            <SectionHeader title="Referred Players" count={player.referralsList.length} />
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                {player.referralsList.map(r => <PeopleChip key={r.id} person={r} emoji="🎯" />)}
-                            </div>
-                        </div>
-                    )}
-                    {player.friendsList?.length > 0 && (
-                        <div style={card({ padding: '18px 22px' })}>
-                            <SectionHeader title="Friends" count={player.friendsList.length} />
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                {player.friendsList.map(f => <PeopleChip key={f.id} person={f} emoji="🤝" />)}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
+            
+            {player.referralsList.map(r => (
+    <PeopleChip key={r.id} person={r} emoji="🎯"
+        onClick={() => navigate(`/playerDashboard/${r.id}`)} />
+))}
+
+{player.friendsList.map(f => (
+    <PeopleChip key={f.id} person={f} emoji="🤝"
+        onClick={() => navigate(`/playerDashboard/${f.id}`)} />
+))}
 
             {/* ── GRANTED BONUSES ──────────────────────────────────────────── */}
             <div style={card({ padding: '20px 22px' })}>
