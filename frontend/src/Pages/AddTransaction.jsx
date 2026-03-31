@@ -396,13 +396,13 @@ function AddTransactionsPage() {
             .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0)
         : 0;
     const cashoutOverLimit = !isDeposit && !streakWaived && cashoutLimit > 0 && (todayCashoutTotal + amt) > cashoutLimit;
-    const walletInsufficient = !isDeposit && selWallet && amt > selWallet.balance;
+    // const walletInsufficient = !isDeposit && selWallet && amt > selWallet.balance;
     const gameRequired = !form.gameId;
 
-    const canSubmit =
-        !!player?.id && amt > 0 && !!form.walletId && !!form.gameId &&
-        stockOk && !cashoutOverLimit && !walletInsufficient && !submitting &&
-        feeAmt >= 0 && (amt === 0 || feeAmt <= amt);
+ const canSubmit =
+  !!player?.id && amt > 0 && !!form.walletId && !!form.gameId &&
+  stockOk && !cashoutOverLimit && !submitting &&
+  feeAmt >= 0 && (amt === 0 || feeAmt <= amt);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -413,7 +413,7 @@ function AddTransactionsPage() {
         if (!form.gameId) { setError("Please select a game — required for all transactions."); return; }
         if (!stockOk) { setError(`Insufficient game stock — need ${stockNeeded.toFixed(2)} pts.`); return; }
         if (cashoutOverLimit) { setError(`Cashout exceeds limit of ${fmt(cashoutLimit)}.`); return; }
-        if (walletInsufficient) { setError(`Wallet only has ${fmt(selWallet?.balance)}.`); return; }
+        // if (walletInsufficient) { setError(`Wallet only has ${fmt(selWallet?.balance)}.`); return; }
         if (feeAmt < 0 || feeAmt > amt) { setError("Fee must be between $0 and the deposit amount."); return; }
 
         try {
@@ -618,10 +618,10 @@ function AddTransactionsPage() {
                                 </p>
                             )}
                             {selWallet && amt > 0 && !isDeposit && (
-                                <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: walletInsufficient ? "#ef4444" : "#64748b" }}>
-                                    {walletInsufficient ? `⚠ Only ${fmt(selWallet.balance)} available` : `${fmt(selWallet.balance)} → ${fmt(selWallet.balance - amt)}`}
-                                </p>
-                            )}
+  <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: "#64748b" }}>
+    Wallet balance: {fmt(selWallet.balance)}
+  </p>
+)}
                         </div>
                     </div>
 
