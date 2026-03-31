@@ -694,25 +694,24 @@ export default function BonusPage() {
                                                 }
                                             </td>
 
-                                            // ── In the ledger row (after the Bal. Before → After cell), add:
-{/* Status */}
-<td style={{ padding: "11px 14px" }}>
-    {b.status === 'CANCELLED' ? (
-        <span style={{
-            display: 'inline-block', padding: '3px 9px', borderRadius: '6px',
-            fontSize: '11px', fontWeight: '700',
-            background: '#fee2e2', color: '#991b1b',
-        }}>CANCELLED</span>
-    ) : b.status === 'COMPLETED' ? (
-        <span style={{
-            display: 'inline-block', padding: '3px 9px', borderRadius: '6px',
-            fontSize: '11px', fontWeight: '700',
-            background: '#dcfce7', color: '#166534',
-        }}>COMPLETED</span>
-    ) : (
-        <span style={{ color: '#cbd5e1', fontSize: '12px' }}>—</span>
-    )}
-</td>
+                                            {/* Status */}
+                                            <td style={{ padding: "11px 14px" }}>
+                                                {b.status === 'CANCELLED' ? (
+                                                    <span style={{
+                                                        display: 'inline-block', padding: '3px 9px', borderRadius: '6px',
+                                                        fontSize: '11px', fontWeight: '700',
+                                                        background: '#fee2e2', color: '#991b1b',
+                                                    }}>CANCELLED</span>
+                                                ) : b.status === 'COMPLETED' ? (
+                                                    <span style={{
+                                                        display: 'inline-block', padding: '3px 9px', borderRadius: '6px',
+                                                        fontSize: '11px', fontWeight: '700',
+                                                        background: '#dcfce7', color: '#166534',
+                                                    }}>COMPLETED</span>
+                                                ) : (
+                                                    <span style={{ color: '#cbd5e1', fontSize: '12px' }}>—</span>
+                                                )}
+                                            </td>
 
                                             {/* Date */}
                                             <td style={{ padding: "11px 14px", color: "#64748b", whiteSpace: "nowrap", fontSize: "12px" }}>
