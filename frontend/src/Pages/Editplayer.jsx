@@ -70,6 +70,73 @@ function AtInput({ value, onChange, placeholder = 'handle' }) {
     );
 }
 
+// ── Add this component above EditPlayer export ──────────────────────────
+function PlayerSearch({ label, hint, value, onChange, exclude = [] }) {
+    const [query, setQuery] = useState(value?.name || '');
+    const [results, setResults] = useState([]);
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+
+    useEffect(() => {
+        if (!query.trim() || query.length < 2) { setResults([]); setOpen(false); return; }
+        const t = setTimeout(async () => {
+            try {
+                const r = await api.players.getPlayers(1, 10, query, '');
+                setResults((r?.data || []).filter(p => !exclude.includes(p.id)));
+                setOpen(true);
+            } catch { }
+        }, 300);
+        return () => clearTimeout(t);
+    }, [query]);
+
+    useEffect(() => {
+        const fn = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+        document.addEventListener('mousedown', fn);
+        return () => document.removeEventListener('mousedown', fn);
+    }, []);
+
+    const select = (p) => {
+        onChange(p);
+        setQuery(p.name);
+        setOpen(false);
+    };
+    const clear = () => { onChange(null); setQuery(''); };
+
+    return (
+        <div ref={ref} style={{ position: 'relative' }}>
+            <label style={LABEL}>{label}</label>
+            <div style={{ position: 'relative' }}>
+                <input
+                    value={query}
+                    onChange={e => { setQuery(e.target.value); if (value) onChange(null); }}
+                    placeholder="Search by name or username…"
+                    style={{ ...INPUT, paddingRight: value ? '32px' : '12px' }}
+                />
+                {(value || query) && (
+                    <button type="button" onClick={clear} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: C.grayLt, fontSize: '14px', lineHeight: 1 }}>✕</button>
+                )}
+            </div>
+            {hint && <p style={{ margin: '3px 0 0', fontSize: '10px', color: C.grayLt }}>{hint}</p>}
+            {open && results.length > 0 && (
+                <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200, background: C.white, border: `1px solid ${C.border}`, borderRadius: '10px', boxShadow: '0 8px 24px rgba(15,23,42,.12)', overflow: 'hidden', maxHeight: '200px', overflowY: 'auto' }}>
+                    {results.map(p => (
+                        <div key={p.id} onClick={() => select(p)}
+                            style={{ padding: '9px 14px', cursor: 'pointer', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between' }}
+                            onMouseEnter={e => e.currentTarget.style.background = C.bg}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                            <div>
+                                <div style={{ fontWeight: '600', fontSize: '13px', color: C.slate }}>{p.name}</div>
+                                <div style={{ fontSize: '11px', color: C.grayLt }}>@{p.username}</div>
+                            </div>
+                            <span style={{ fontSize: '12px', fontWeight: '700', color: '#10b981' }}>${parseFloat(p.balance).toFixed(2)}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ══════════════════════════════════════════════════════════════
 // EDIT PLAYER MODAL
 // ══════════════════════════════════════════════════════════════
@@ -88,6 +155,17 @@ export default function EditPlayer({ player, onClose, onSaved }) {
     const [loading, setLoading] = useState(false);
     const [error,   setError]   = useState('');
     const [success, setSuccess] = useState('');
+    // Add to useState initializer:
+const [referredByPlayer, setReferredByPlayer] = useState(null);
+const [friendsList, setFriendsList] = useState([]);
+const [friendSearch, setFriendSearch] = useState('');
+const [friendResults, setFriendResults] = useState([]);
+const [friendSearchOpen, setFriendSearchOpen] = useState(false);
+const friendSearchRef = useRef(null);
+
+// In the useEffect that initializes form from player:
+setReferredByPlayer(player.referredBy || null);
+setFriendsList(player.friendsList || []);
 
     useEffect(() => {
         if (!player) return;
@@ -113,6 +191,25 @@ export default function EditPlayer({ player, onClose, onSaved }) {
         });
         setError(''); setSuccess('');
     }, [player]);
+
+    useEffect(() => {
+    if (!friendSearch.trim() || friendSearch.length < 2) { setFriendResults([]); return; }
+    const t = setTimeout(async () => {
+        try {
+            const r = await api.players.getPlayers(1, 10, friendSearch, '');
+            const currentIds = [player.id, ...friendsList.map(f => f.id)];
+            setFriendResults((r?.data || []).filter(p => !currentIds.includes(p.id)));
+            setFriendSearchOpen(true);
+        } catch { }
+    }, 300);
+    return () => clearTimeout(t);
+}, [friendSearch, friendsList]);
+
+useEffect(() => {
+    const fn = e => { if (friendSearchRef.current && !friendSearchRef.current.contains(e.target)) setFriendSearchOpen(false); };
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
+}, []);
 
     const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
@@ -145,6 +242,8 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                 cashappTag:       form.cashappTag.trim() || null,
                 paypalEmail:      form.paypalEmail.trim()|| null,
                 source:           form.source.trim()     || null,
+                referredById:     referredByPlayer?.id ?? null,
+                friendIds:        friendsList.map(f => f.id),
             });
             setSuccess('Player updated!');
             setTimeout(() => { onSaved(); onClose(); }, 700);
@@ -302,6 +401,68 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                                 ))}
                             </div>
                         </div>
+
+                        {/* ── 6. Referred By ──────────────────────────────────────── */}
+<div>
+    <SectionHead>Referred By — optional</SectionHead>
+    <PlayerSearch
+        label="Referred by player"
+        hint="The player who referred this person"
+        value={referredByPlayer}
+        onChange={setReferredByPlayer}
+        exclude={[player.id]}
+    />
+    {referredByPlayer && (
+        <div style={{ marginTop: '8px', padding: '8px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+            <span>👤</span>
+            <span style={{ fontWeight: '700', color: '#166534' }}>{referredByPlayer.name}</span>
+            <span style={{ color: C.grayLt }}>@{referredByPlayer.username}</span>
+        </div>
+    )}
+</div>
+
+{/* ── 7. Friends ──────────────────────────────────────────── */}
+<div>
+    <SectionHead>Friends — optional</SectionHead>
+
+    {/* Current friends chips */}
+    {friendsList.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+            {friendsList.map(f => (
+                <div key={f.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 10px', background: C.skyLt, border: `1px solid #bae6fd`, borderRadius: '20px', fontSize: '12px', color: C.skyDk }}>
+                    🤝 {f.name}
+                    <button type="button" onClick={() => setFriendsList(prev => prev.filter(x => x.id !== f.id))}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.sky, fontSize: '13px', lineHeight: 1, padding: 0 }}>✕</button>
+                </div>
+            ))}
+        </div>
+    )}
+
+    {/* Friend search */}
+    <div ref={friendSearchRef} style={{ position: 'relative' }}>
+        <input
+            value={friendSearch}
+            onChange={e => setFriendSearch(e.target.value)}
+            placeholder="Search to add a friend…"
+            style={INPUT}
+        />
+        {friendSearchOpen && friendResults.length > 0 && (
+            <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200, background: C.white, border: `1px solid ${C.border}`, borderRadius: '10px', boxShadow: '0 8px 24px rgba(15,23,42,.12)', overflow: 'hidden', maxHeight: '200px', overflowY: 'auto' }}>
+                {friendResults.map(p => (
+                    <div key={p.id} onClick={() => { setFriendsList(prev => [...prev, { id: p.id, name: p.name, username: p.username }]); setFriendSearch(''); setFriendSearchOpen(false); }}
+                        style={{ padding: '9px 14px', cursor: 'pointer', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between' }}
+                        onMouseEnter={e => e.currentTarget.style.background = C.bg}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        <div>
+                            <div style={{ fontWeight: '600', fontSize: '13px', color: C.slate }}>{p.name}</div>
+                            <div style={{ fontSize: '11px', color: C.grayLt }}>@{p.username}</div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )}
+    </div>
+</div>
 
                         {/* ── 5. Payment Handles ──────────────────────────── */}
                         <div>
