@@ -692,19 +692,22 @@ export default function PlayerDashboard() {
                 </div>
             </div>
         )}
-        {player.friendsList?.length > 0 && (
-            <div>
-                <SectionHeader title="Friends" count={player.friendsList.length} />
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {player.friendsList.map(f => (
-                        <PeopleChip key={f.id} person={f} emoji="🤝"
-                            onClick={() => navigate(`/playerDashboard/${f.id}`)} />
-                    ))}
-                </div>
+       {player.friendsList?.length > 0 && (() => {
+    const uniqueFriends = player.friendsList.filter(
+        (f, i, arr) => arr.findIndex(x => x.id === f.id) === i
+    );
+    return (
+        <div>
+            <SectionHeader title="Friends" count={uniqueFriends.length} />
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {uniqueFriends.map(f => (
+                    <PeopleChip key={f.id} person={f} emoji="🤝"
+                        onClick={() => navigate(`/playerDashboard/${f.id}`)} />
+                ))}
             </div>
-        )}
-    </div>
-)}
+        </div>
+    );
+})()}
 
             {/* ── GRANTED BONUSES ──────────────────────────────────────────── */}
             <div style={card({ padding: '20px 22px' })}>
