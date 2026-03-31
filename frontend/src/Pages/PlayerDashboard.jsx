@@ -844,8 +844,16 @@ export default function PlayerDashboard() {
                                     </tr>
                                 )
                                 : (player.transactionHistory || []).slice(0, 40).map(tx => {
-                                    const typeKey    = (tx.type || '').toLowerCase();
-                                    const t          = TX_TYPE_MAP[typeKey] || { label: tx.type, color: C.gray, bg: C.bg };
+                                    // const typeKey    = (tx.type || '').toLowerCase();
+                                    // const t          = TX_TYPE_MAP[typeKey] || { label: tx.type, color: C.gray, bg: C.bg };
+                                    // AFTER: also try lowercase, and use amber for unrecognised bonus types
+const typeKey = (tx.type || '').toLowerCase();
+const isCustomBonus = !TX_TYPE_MAP[typeKey] && typeKey !== 'deposit' && typeKey !== 'cashout';
+const t = TX_TYPE_MAP[typeKey] || {
+    label: tx.type,
+    color: isCustomBonus ? '#7c3aed' : C.gray,
+    bg:    isCustomBonus ? '#f5f3ff' : C.bg,
+};
                                     const isDeposit  = tx.type === 'deposit';
                                     const isCashout  = tx.type === 'cashout';
                                     const isPending  = tx.status === 'PENDING';
@@ -858,8 +866,12 @@ export default function PlayerDashboard() {
 
                                     const isPartial    = isCashout && isPending && paidAmt > 0 && paidAmt < depositAmt;
                                     const statusLabel  = isPartial ? 'PARTIAL' : tx.status;
-                                    const statusBg     = isPartial ? '#fef3c7' : isCompleted ? '#dcfce7' : isPending ? '#fef3c7' : '#fee2e2';
-                                    const statusColor  = isPartial ? '#92400e' : isCompleted ? '#166534' : isPending ? '#92400e' : '#991b1b';
+                                    // const statusBg     = isPartial ? '#fef3c7' : isCompleted ? '#dcfce7' : isPending ? '#fef3c7' : '#fee2e2';
+                                    // const statusColor  = isPartial ? '#92400e' : isCompleted ? '#166534' : isPending ? '#92400e' : '#991b1b';
+                                    const isCancelled = tx.status === 'CANCELLED';
+const statusBg    = isCancelled ? '#f1f5f9' : isPartial ? '#fef3c7' : isCompleted ? '#dcfce7' : isPending ? '#fef3c7' : '#fee2e2';
+const statusColor = isCancelled ? '#64748b' : isPartial ? '#92400e' : isCompleted ? '#166534' : isPending ? '#92400e' : '#991b1b';
+const statusLabel = isCancelled ? 'CANCELLED' : isPartial ? 'PARTIAL' : tx.status;
 
                                     const stockBefore   = tx.gameStockBefore;
                                     const stockAfter    = tx.gameStockAfter;
@@ -869,7 +881,7 @@ export default function PlayerDashboard() {
 
                                     return (
                                         <tr key={tx.id}
-                                            style={{ borderBottom: `1px solid ${C.border}`, background: isCashout && isPending ? '#fffdf5' : 'transparent' }}
+                                            style={{ borderBottom: `1px solid ${C.border}`, background: isCashout && isPending ? '#fffdf5' : 'transparent', opacity: tx.status === 'CANCELLED' ? 0.55 : 1, }}
                                             onMouseEnter={e => e.currentTarget.style.background = isCashout && isPending ? '#fffbeb' : C.bg}
                                             onMouseLeave={e => e.currentTarget.style.background = isCashout && isPending ? '#fffdf5' : 'transparent'}>
 
