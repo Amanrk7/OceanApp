@@ -678,15 +678,33 @@ export default function PlayerDashboard() {
 
             {/* ── REFERRALS & FRIENDS ───────────────────────────────────────── */}
             
-            {player.referralsList.map(r => (
-    <PeopleChip key={r.id} person={r} emoji="🎯"
-        onClick={() => navigate(`/playerDashboard/${r.id}`)} />
-))}
-
-{player.friendsList.map(f => (
-    <PeopleChip key={f.id} person={f} emoji="🤝"
-        onClick={() => navigate(`/playerDashboard/${f.id}`)} />
-))}
+            {/* ── REFERRALS & FRIENDS ───────────────────────────────────────── */}
+{((player.referralsList?.length > 0) || (player.friendsList?.length > 0)) && (
+    <div style={card({ padding: '20px 22px' })}>
+        {player.referralsList?.length > 0 && (
+            <div style={{ marginBottom: player.friendsList?.length > 0 ? '18px' : 0 }}>
+                <SectionHeader title="Referrals" count={player.referralsList.length} />
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {player.referralsList.map(r => (
+                        <PeopleChip key={r.id} person={r} emoji="🎯"
+                            onClick={() => navigate(`/playerDashboard/${r.id}`)} />
+                    ))}
+                </div>
+            </div>
+        )}
+        {player.friendsList?.length > 0 && (
+            <div>
+                <SectionHeader title="Friends" count={player.friendsList.length} />
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {player.friendsList.map(f => (
+                        <PeopleChip key={f.id} person={f} emoji="🤝"
+                            onClick={() => navigate(`/playerDashboard/${f.id}`)} />
+                    ))}
+                </div>
+            </div>
+        )}
+    </div>
+)}
 
             {/* ── GRANTED BONUSES ──────────────────────────────────────────── */}
             <div style={card({ padding: '20px 22px' })}>
