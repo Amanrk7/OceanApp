@@ -43,7 +43,7 @@ const clrInv = v => (v ?? 0) <= 0 ? '#16a34a' : '#dc2626';
 // ─── Design tokens ────────────────────────────────────────────────────
 const T = {
   card: { background: '#fff', borderRadius: '14px', border: '1px solid #e2e8f0', boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '28px 32px' },
-  overlay: { position: 'fixed', inset: 0, background: 'rgba(15,23,42,.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(3px)' },
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(15,23,42,.6)', zIndex: 1000, display: 'flex', alignItems: 'start', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(3px)' },
   modal: { background: '#fff', borderRadius: '18px', boxShadow: '0 24px 64px rgba(15,23,42,.3)', width: '100%', maxWidth: '720px', maxHeight: '92vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' },
   th: { padding: '10px 14px', fontWeight: '600', color: '#64748b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left', whiteSpace: 'nowrap' },
   td: { padding: '11px 14px', fontSize: '13px', color: '#0f172a', borderBottom: '1px solid #f1f5f9' },
