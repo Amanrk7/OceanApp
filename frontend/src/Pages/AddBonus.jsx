@@ -138,27 +138,39 @@ export default function BonusPage() {
     const hasReferrer = !!(player?.referredBy);
     const referrerInfo = player?.referredBy || null;
 
-    // Check if THIS player already received their referral bonus
-    const playerReferralUsed = player
-        ? (player.transactionHistory || []).some(tx =>
+    // Check if THIS player already received their referral bonus.
+    // Primary: scan player transaction history (loaded via getPlayer).
+    // Fallback: scan ledger for entries tagged [ref:refId] (new individual-grant system).
+    const playerReferralUsed = (() => {
+        if (!player) return false;
+        const inHistory = (player.transactionHistory || []).some(tx =>
             tx.type === "Referral Bonus" ||
             (typeof tx.type === "string" && tx.type.toLowerCase().includes("referral"))
-        )
-        : false;
+        );
+        if (inHistory) return true;
+        const refId = referrerInfo ? parseInt(referrerInfo?.id || referrerInfo) : null;
+        if (!refId) return false;
+        const refTag = "[ref:" + refId + "]";
+        return ledger.some(entry =>
+            entry.status !== "CANCELLED" &&
+            entry.playerId === player.id &&
+            (entry.description || "").toLowerCase().includes("referral bonus") &&
+            (entry.description || "").includes(refTag)
+        );
+    })();
 
-    // Check if the referrer already received their bonus FOR THIS specific player
-    // by scanning the already-loaded ledger for a "Referral Bonus" entry where:
-    //   - recipient is the referrer (playerId matches)
-    //   - description mentions this player's name (backend stores "Referral Bonus from Game — PlayerName's deposit")
+    // Check if the referrer already received their bonus FOR THIS specific player.
+    // We embed a tagged marker "[pid:X]" in notes at submit time so the backend
+    // stores it in the description. ID-based — immune to name changes or overlaps.
     const referrerBonusUsedForPlayer = (() => {
         if (!player || !referrerInfo) return false;
         const refId = parseInt(referrerInfo?.id || referrerInfo);
-        const playerNameLower = (player.name || "").toLowerCase();
+        const pidTag = "[pid:" + player.id + "]";
         return ledger.some(entry =>
             entry.status !== "CANCELLED" &&
             entry.playerId === refId &&
             (entry.description || "").toLowerCase().includes("referral bonus") &&
-            (entry.description || "").toLowerCase().includes(playerNameLower)
+            (entry.description || "").includes(pidTag)
         );
     })();
 
@@ -289,6 +301,20 @@ export default function BonusPage() {
             recipientPlayerId = player.id;
         }
 
+        // Build notes with embedded ID tags so the ledger entry can be
+        // reliably identified later without relying on name matching.
+        let finalNotes = notes.trim();
+        if (bonusType === "referral") {
+            if (referralTarget === "referrer") {
+                // Tag with the player ID so we can detect "already granted for this player" later
+                finalNotes = "[pid:" + player.id + "]" + (finalNotes ? " — " + finalNotes : "");
+            } else {
+                // Tag with the referrer ID so we can detect "player already received from this referrer" later
+                const refId = referrerInfo?.id || referrerInfo;
+                finalNotes = "[ref:" + refId + "]" + (finalNotes ? " — " + finalNotes : "");
+            }
+        }
+
         try {
             setSubmitting(true);
             await api.bonuses.grantBonus({
@@ -296,7 +322,7 @@ export default function BonusPage() {
                 amount: amt,
                 gameId: selectedGameId,
                 bonusType: bonusTypePayload,
-                notes: notes.trim() || undefined,
+                notes: finalNotes || undefined,
             });
 
             let msg = "";
