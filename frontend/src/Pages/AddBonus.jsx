@@ -54,7 +54,7 @@ const BONUS_TYPES = [
         label: "Referral Bonus",
         icon: Users,
         color: { bg: "#f0fdf4", border: "#86efac", dot: "#22c55e", text: "#166534", badge: "#dcfce7" },
-        description: () => "One-time only — player must have a referrer. Both player AND referrer each receive the amount. Game deducted 2×.",
+        description: () => "Player must have a referrer. Grant individually to the player OR the referrer — game deducted 1× only.",
     },
     {
         id: "other",
@@ -87,6 +87,10 @@ export default function BonusPage() {
     const [amount, setAmount] = useState("");
     const [selectedGameId, setSelectedGameId] = useState("");
     const [notes, setNotes] = useState("");
+
+    // ── Referral target: 'player' = grant to the selected player,
+    //                     'referrer' = grant to their referrer ─────────────────
+    const [referralTarget, setReferralTarget] = useState("player");
 
     // ── Data state ────────────────────────────────────────────────────────────
     const [games, setGames] = useState([]);
@@ -132,16 +136,22 @@ export default function BonusPage() {
     // ── Derived values from player ────────────────────────────────────────────
     const streak = player?.streak?.currentStreak ?? player?.currentStreak ?? 0;
     const hasReferrer = !!(player?.referredBy);
+    const referrerInfo = player?.referredBy || null;
 
-    // Check if referral bonus was already used (any "Referral Bonus" in transaction history)
-    const referralUsedEver = player
+    // Check referral bonus usage
+    const playerReferralUsed = player
         ? (player.transactionHistory || []).some(tx =>
             tx.type === "Referral Bonus" ||
             (typeof tx.type === "string" && tx.type.toLowerCase().includes("referral"))
         )
         : false;
 
-    const referralEligible = hasReferrer && !referralUsedEver;
+    const referralEligible = hasReferrer;
+
+    // ── Reset referralTarget when bonusType changes ───────────────────────────
+    useEffect(() => {
+        setReferralTarget("player");
+    }, [bonusType]);
 
     // ── Auto-fill amount when bonus type / player changes ─────────────────────
     useEffect(() => {
@@ -151,13 +161,6 @@ export default function BonusPage() {
             setAmount("");
         }
     }, [bonusType, player, streak]);
-
-    // ── Redirect to streak when switching to referral but ineligible ──────────
-    useEffect(() => {
-        if (bonusType === "referral" && player && !referralEligible) {
-            // don't auto-switch; just let validation block submission so admin sees why
-        }
-    }, [bonusType, player, referralEligible]);
 
     // ── Player search dropdown ────────────────────────────────────────────────
     useEffect(() => {
@@ -198,18 +201,26 @@ export default function BonusPage() {
         setQuery("");
         setAmount("");
         setSelectedGameId("");
+        setReferralTarget("player");
     };
 
     // ── Derived values for form logic ─────────────────────────────────────────
     const amt = parseFloat(amount) || 0;
     const selectedGame = games.find(g => g.id === selectedGameId) || null;
 
-    // Referral bonus deducts from game TWICE (player + referrer), so needs 2× stock
-    const stockNeeded = bonusType === "referral" ? amt * 2 : amt;
+    // Referral grants 1× only (individual grant)
+    const stockNeeded = amt;
     const stockOk = selectedGame ? stockNeeded <= selectedGame.pointStock : false;
 
     const customLabelOk = bonusType === "streak" || bonusType === "referral" || customLabel.trim().length > 0;
     const referralOk = bonusType !== "referral" || referralEligible;
+
+    // For referral: recipient name shown in UI
+    const referralRecipientName = bonusType === "referral"
+        ? referralTarget === "player"
+            ? player?.name
+            : (referrerInfo?.name || `ID ${referrerInfo?.id || referrerInfo}`)
+        : null;
 
     const canSubmit =
         !!player?.id &&
@@ -229,23 +240,43 @@ export default function BonusPage() {
         if (!selectedGameId) { setError("Please select a game."); return; }
         if (!amt || amt <= 0) { setError("Enter a valid bonus amount."); return; }
         if (bonusType === "other" && !customLabel.trim()) { setError("Enter a label for the custom bonus."); return; }
-        if (bonusType === "referral" && !hasReferrer) { setError("This player was not referred by anyone — referral bonus cannot be granted."); return; }
-        if (bonusType === "referral" && referralUsedEver) { setError("Referral bonus has already been granted to this player (one-time only)."); return; }
+        if (bonusType === "referral" && !hasReferrer) {
+            setError("This player was not referred by anyone — referral bonus cannot be granted.");
+            return;
+        }
         if (!stockOk) {
-            const needed = bonusType === "referral" ? `${(amt * 2).toFixed(0)} pts (2× for player + referrer)` : `${amt.toFixed(0)} pts`;
-            setError(`Insufficient game stock. ${selectedGame?.name} has ${selectedGame?.pointStock?.toFixed(0)} pts, need ${needed}.`);
+            setError(`Insufficient game stock. ${selectedGame?.name} has ${selectedGame?.pointStock?.toFixed(0)} pts, need ${amt.toFixed(0)} pts.`);
             return;
         }
 
-        const bonusTypePayload =
-            bonusType === "streak" ? "streak" :
-            bonusType === "referral" ? "referral" :
-            customLabel.trim();
+        // For referral: use a custom bonusType string so backend treats it as individual grant (1× deduction).
+        // Determine recipient: player or referrer.
+        let recipientPlayerId = player.id;
+        let bonusTypePayload;
+
+        if (bonusType === "streak") {
+            bonusTypePayload = "streak";
+            recipientPlayerId = player.id;
+        } else if (bonusType === "referral") {
+            // Send as custom "Referral Bonus" so backend grants to ONE person only (1× game deduction)
+            bonusTypePayload = "Referral Bonus";
+            if (referralTarget === "referrer") {
+                // Grant to the referrer — use their ID as the player
+                const refId = referrerInfo?.id || referrerInfo;
+                if (!refId) { setError("Could not resolve referrer ID."); return; }
+                recipientPlayerId = parseInt(refId);
+            } else {
+                recipientPlayerId = player.id;
+            }
+        } else {
+            bonusTypePayload = customLabel.trim();
+            recipientPlayerId = player.id;
+        }
 
         try {
             setSubmitting(true);
             await api.bonuses.grantBonus({
-                playerId: player.id,
+                playerId: recipientPlayerId,
                 amount: amt,
                 gameId: selectedGameId,
                 bonusType: bonusTypePayload,
@@ -256,8 +287,10 @@ export default function BonusPage() {
             if (bonusType === "streak") {
                 msg = `${fmt(amt)} Streak Bonus granted to ${player.name} from ${selectedGame?.name}. Streak has been reset to 0.`;
             } else if (bonusType === "referral") {
-                const referrerName = player.referredBy?.name || `ID ${player.referredBy?.id || player.referredBy}`;
-                msg = `${fmt(amt)} Referral Bonus granted to ${player.name} AND referrer ${referrerName} from ${selectedGame?.name}. Total ${fmt(amt * 2)} deducted from game.`;
+                const recipientName = referralTarget === "player"
+                    ? player.name
+                    : (referrerInfo?.name || `ID ${referrerInfo?.id || referrerInfo}`);
+                msg = `${fmt(amt)} Referral Bonus granted to ${recipientName} from ${selectedGame?.name}.`;
             } else {
                 msg = `${fmt(amt)} ${customLabel.trim()} granted to ${player.name} from ${selectedGame?.name}.`;
             }
@@ -267,6 +300,7 @@ export default function BonusPage() {
             setNotes("");
             setSelectedGameId("");
             setCustomLabel("");
+            setReferralTarget("player");
 
             // Refresh player to reflect new balance/streak
             const fresh = await api.players.getPlayer(player.id);
@@ -286,6 +320,7 @@ export default function BonusPage() {
         setCustomLabel("");
         setError("");
         setSuccess("");
+        setReferralTarget("player");
         clearPlayer();
         setBonusType("streak");
     };
@@ -343,7 +378,7 @@ export default function BonusPage() {
                         <p style={{ fontWeight: "700", color: "#78350f", margin: "0 0 2px", fontSize: "14px" }}>Award Player Bonuses</p>
                         <p style={{ color: "#92400e", margin: 0, fontSize: "12px", lineHeight: "1.6" }}>
                             <strong>Streak Bonus:</strong> $1 per consecutive day — auto-filled, streak resets after granting.&nbsp;
-                            <strong>Referral Bonus:</strong> One-time only — both player and referrer receive the amount; game deducted 2×.&nbsp;
+                            <strong>Referral Bonus:</strong> Grant individually to the player OR their referrer — enter deposit ÷ 2 as the amount. Game deducted 1× only.&nbsp;
                             <strong>Custom Bonus:</strong> Enter a label and any amount.
                         </p>
                     </div>
@@ -441,9 +476,8 @@ export default function BonusPage() {
                                         )}
                                         {/* Referrer badge */}
                                         {hasReferrer && (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: referralUsedEver ? "#fef3c7" : "#f0fdf4", border: `1px solid ${referralUsedEver ? "#fcd34d" : "#86efac"}`, borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: referralUsedEver ? "#92400e" : "#166534" }}>
-                                                👤 Referred by {player.referredBy?.name || `ID ${player.referredBy?.id || player.referredBy}`}
-                                                {referralUsedEver && <span style={{ fontWeight: "400", fontSize: "11px" }}> · bonus used</span>}
+                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166534" }}>
+                                                👤 Referred by {referrerInfo?.name || `ID ${referrerInfo?.id || referrerInfo}`}
                                             </span>
                                         )}
                                         {!hasReferrer && (
@@ -470,12 +504,11 @@ export default function BonusPage() {
                                 const playerStreak = player ? streak : 0;
                                 const desc = bt.description(playerStreak);
 
-                                // Determine if this type is disabled for the current player
                                 let typeDisabled = false;
                                 let disabledNote = null;
-                                if (bt.id === "referral" && player) {
-                                    if (!hasReferrer) { typeDisabled = true; disabledNote = "No referrer"; }
-                                    else if (referralUsedEver) { typeDisabled = true; disabledNote = "Already used"; }
+                                if (bt.id === "referral" && player && !hasReferrer) {
+                                    typeDisabled = true;
+                                    disabledNote = "No referrer";
                                 }
 
                                 return (
@@ -510,19 +543,74 @@ export default function BonusPage() {
                             })}
                         </div>
 
-                        {/* Referral bonus detail callout */}
+                        {/* ── Referral target selector ── */}
                         {bonusType === "referral" && player && referralEligible && (
-                            <div style={{ marginTop: "12px", padding: "12px 14px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "10px", fontSize: "13px", color: "#166534" }}>
-                                <div style={{ fontWeight: "700", marginBottom: "4px" }}>👤 Referral Bonus Details</div>
-                                <div style={{ fontSize: "12px", lineHeight: "1.6" }}>
-                                    <strong>{player.name}</strong> will receive the amount you enter below.<br />
-                                    Referrer <strong>{player.referredBy?.name || `ID ${player.referredBy?.id || player.referredBy}`}</strong> will also receive the same amount.<br />
-                                    <span style={{ color: "#d97706", fontWeight: "600" }}>Game stock will be deducted twice (2× the entered amount).</span>
+                            <div style={{ marginTop: "12px", padding: "14px 16px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "10px" }}>
+                                <div style={{ fontWeight: "700", fontSize: "13px", color: "#166534", marginBottom: "10px" }}>
+                                    👤 Who receives this Referral Bonus?
+                                </div>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                                    {/* Grant to Player */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setReferralTarget("player")}
+                                        style={{
+                                            display: "flex", alignItems: "flex-start", gap: "10px",
+                                            padding: "12px 14px", borderRadius: "8px", cursor: "pointer",
+                                            border: `2px solid ${referralTarget === "player" ? "#22c55e" : "#d1fae5"}`,
+                                            background: referralTarget === "player" ? "#dcfce7" : "#f0fdf4",
+                                            fontFamily: "inherit", textAlign: "left", transition: "all .15s",
+                                        }}>
+                                        <div style={{ width: "32px", height: "32px", borderRadius: "8px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: referralTarget === "player" ? "#22c55e" : "#bbf7d0", flexDirection: "column" }}>
+                                            <span style={{ fontSize: "14px" }}>🙋</span>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: "700", fontSize: "12px", color: "#14532d" }}>Grant to Player</div>
+                                            <div style={{ fontSize: "11px", color: "#166534", marginTop: "2px", lineHeight: "1.4" }}>
+                                                <strong>{player.name}</strong>
+                                                {playerReferralUsed && <span style={{ color: "#d97706", marginLeft: "5px", fontWeight: "600" }}>⚠ already received</span>}
+                                            </div>
+                                        </div>
+                                        {referralTarget === "player" && <CheckCircle style={{ width: "14px", height: "14px", color: "#22c55e", flexShrink: 0, marginTop: "2px" }} />}
+                                    </button>
+
+                                    {/* Grant to Referrer */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setReferralTarget("referrer")}
+                                        style={{
+                                            display: "flex", alignItems: "flex-start", gap: "10px",
+                                            padding: "12px 14px", borderRadius: "8px", cursor: "pointer",
+                                            border: `2px solid ${referralTarget === "referrer" ? "#22c55e" : "#d1fae5"}`,
+                                            background: referralTarget === "referrer" ? "#dcfce7" : "#f0fdf4",
+                                            fontFamily: "inherit", textAlign: "left", transition: "all .15s",
+                                        }}>
+                                        <div style={{ width: "32px", height: "32px", borderRadius: "8px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: referralTarget === "referrer" ? "#22c55e" : "#bbf7d0" }}>
+                                            <span style={{ fontSize: "14px" }}>👤</span>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: "700", fontSize: "12px", color: "#14532d" }}>Grant to Referrer</div>
+                                            <div style={{ fontSize: "11px", color: "#166534", marginTop: "2px", lineHeight: "1.4" }}>
+                                                <strong>{referrerInfo?.name || `ID ${referrerInfo?.id || referrerInfo}`}</strong>
+                                            </div>
+                                        </div>
+                                        {referralTarget === "referrer" && <CheckCircle style={{ width: "14px", height: "14px", color: "#22c55e", flexShrink: 0, marginTop: "2px" }} />}
+                                    </button>
+                                </div>
+
+                                {/* Info note */}
+                                <div style={{ marginTop: "10px", fontSize: "12px", color: "#166534", lineHeight: "1.6", padding: "8px 12px", background: "#bbf7d030", borderRadius: "6px", border: "1px solid #d1fae5" }}>
+                                    💡 Enter the bonus amount (typically the new player's deposit ÷ 2). Game stock deducted <strong>1×</strong> only.
+                                    {referralTarget === "player" && playerReferralUsed && (
+                                        <div style={{ marginTop: "4px", color: "#d97706", fontWeight: "600" }}>
+                                            ⚠ Note: {player.name} appears to have already received a referral bonus.
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
 
-                        {/* Custom label input — only shown when "other" is selected */}
+                        {/* Custom label input */}
                         {bonusType === "other" && (
                             <div style={{ marginTop: "12px" }}>
                                 <label style={LABEL}>
@@ -562,7 +650,7 @@ export default function BonusPage() {
                                     <span style={{ marginLeft: "6px", fontWeight: "500", textTransform: "none", letterSpacing: 0, color: "#f59e0b" }}>auto-filled</span>
                                 )}
                                 {bonusType === "referral" && (
-                                    <span style={{ marginLeft: "6px", fontWeight: "500", textTransform: "none", letterSpacing: 0, color: "#22c55e" }}>each player gets this</span>
+                                    <span style={{ marginLeft: "6px", fontWeight: "500", textTransform: "none", letterSpacing: 0, color: "#22c55e" }}>deposit ÷ 2</span>
                                 )}
                             </label>
                             <input
@@ -590,7 +678,7 @@ export default function BonusPage() {
                             )}
                             {bonusType === "referral" && amt > 0 && (
                                 <div style={{ fontSize: "11px", color: "#16a34a", marginTop: "4px", fontWeight: "600" }}>
-                                    Total payout: {fmt(amt * 2)} ({fmt(amt)} × 2)
+                                    Granting {fmt(amt)} to {referralTarget === "player" ? player?.name : (referrerInfo?.name || "referrer")}
                                 </div>
                             )}
                         </div>
@@ -600,8 +688,8 @@ export default function BonusPage() {
                             <label style={LABEL}>
                                 Select Game * — points deducted from this game
                                 {bonusType === "referral" && amt > 0 && (
-                                    <span style={{ marginLeft: "6px", fontWeight: "500", textTransform: "none", letterSpacing: 0, color: "#d97706" }}>
-                                        needs {(amt * 2).toFixed(0)} pts (2×)
+                                    <span style={{ marginLeft: "6px", fontWeight: "500", textTransform: "none", letterSpacing: 0, color: "#22c55e" }}>
+                                        needs {amt.toFixed(0)} pts (1×)
                                     </span>
                                 )}
                             </label>
@@ -614,8 +702,7 @@ export default function BonusPage() {
                                     style={{ ...INPUT, cursor: "pointer", appearance: "none", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}>
                                     <option value="">— Choose a game —</option>
                                     {games.map(g => (
-                                        <option key={g.id} value={g.id}
-                                            disabled={bonusType === "referral" ? g.pointStock < amt * 2 : g.pointStock <= 0}>
+                                        <option key={g.id} value={g.id} disabled={g.pointStock <= 0}>
                                             {g.name}  ·  {g.pointStock.toFixed(0)} pts available
                                             {g.pointStock <= 0 ? "  (No stock)" : g.pointStock <= 500 ? "  (Low stock)" : ""}
                                         </option>
@@ -634,7 +721,6 @@ export default function BonusPage() {
                                     </span>
                                     <span style={{ color: stockOk ? "#16a34a" : "#ef4444", fontWeight: "700" }}>
                                         −{stockNeeded.toFixed(0)} pts
-                                        {bonusType === "referral" && <span style={{ fontWeight: "400", fontSize: "10px", color: "#64748b", marginLeft: "4px" }}>(2×)</span>}
                                     </span>
                                 </div>
                             )}
@@ -647,7 +733,7 @@ export default function BonusPage() {
                         <textarea
                             placeholder={
                                 bonusType === "streak" ? "e.g., 'Weekly streak reward'…" :
-                                bonusType === "referral" ? "e.g., 'Referral bonus for first deposit'…" :
+                                bonusType === "referral" ? "e.g., 'Referral bonus for new player deposit'…" :
                                 "e.g., 'Tournament prize', 'Weekend promotion'…"
                             }
                             rows={2}
@@ -663,28 +749,27 @@ export default function BonusPage() {
                             <div>
                                 <div style={{ fontWeight: "700", fontSize: "13px", color: stockOk && referralOk ? "#166534" : "#991b1b" }}>
                                     {!referralOk
-                                        ? "⚠ Cannot grant — referral not eligible"
+                                        ? "⚠ Cannot grant — player has no referrer"
                                         : stockOk ? "✓ Ready to grant" : "⚠ Cannot grant — insufficient game stock"
                                     }
                                 </div>
                                 <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
                                     {bonusType === "streak" ? "Streak Bonus" :
-                                     bonusType === "referral" ? "Referral Bonus" :
+                                     bonusType === "referral" ? `Referral Bonus → ${referralTarget === "player" ? player.name : (referrerInfo?.name || "referrer")}` :
                                      (customLabel.trim() || "Custom Bonus")}
-                                    {" "}&middot;{" "}{selectedGame.name}{" "}&middot;{" "}{player.name}
+                                    {" "}&middot;{" "}{selectedGame.name}{" "}&middot;{" "}
+                                    {bonusType === "referral"
+                                        ? (referralTarget === "player" ? player.name : (referrerInfo?.name || "referrer"))
+                                        : player.name
+                                    }
                                     {bonusType === "streak" && <span style={{ color: "#f59e0b", marginLeft: "6px" }}>· Streak resets to 0</span>}
-                                    {bonusType === "referral" && <span style={{ color: "#166534", marginLeft: "6px" }}>· Also credits {player.referredBy?.name || "referrer"}</span>}
+                                    {bonusType === "referral" && <span style={{ color: "#166534", marginLeft: "6px" }}>· 1× game deduction</span>}
                                 </div>
                             </div>
                             <div style={{ textAlign: "right", flexShrink: 0, marginLeft: "16px" }}>
                                 <span style={{ fontSize: "22px", fontWeight: "900", color: stockOk && referralOk ? "#10b981" : "#ef4444" }}>
                                     +{fmt(amt)}
                                 </span>
-                                {bonusType === "referral" && (
-                                    <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
-                                        +{fmt(amt)} to each · {fmt(amt * 2)} total
-                                    </div>
-                                )}
                             </div>
                         </div>
                     )}
@@ -710,8 +795,14 @@ export default function BonusPage() {
                             {submitting
                                 ? <><span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⏳</span> Granting…</>
                                 : bonusType === "referral"
-                                    ? <><Users style={{ width: "15px", height: "15px" }} /> Grant Referral Bonus {amt > 0 ? `(+${fmt(amt)} each)` : ""}</>
-                                    : <><Gift style={{ width: "15px", height: "15px" }} /> Grant {bonusType === "streak" ? "Streak Bonus" : (customLabel.trim() || "Custom Bonus")} {amt > 0 ? `(+${fmt(amt)})` : ""}</>
+                                    ? <><Users style={{ width: "15px", height: "15px" }} />
+                                        Grant Referral Bonus to {referralTarget === "player" ? player?.name || "Player" : (referrerInfo?.name || "Referrer")}
+                                        {amt > 0 ? ` (+${fmt(amt)})` : ""}
+                                      </>
+                                    : <><Gift style={{ width: "15px", height: "15px" }} />
+                                        Grant {bonusType === "streak" ? "Streak Bonus" : (customLabel.trim() || "Custom Bonus")}
+                                        {amt > 0 ? ` (+${fmt(amt)})` : ""}
+                                      </>
                             }
                         </button>
                     </div>
@@ -764,31 +855,21 @@ export default function BonusPage() {
                                             onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"}
                                             onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                                             style={{ borderBottom: "1px solid #f1f5f9" }}>
-
-                                            {/* # */}
                                             <td style={{ padding: "11px 14px", color: "#cbd5e1", fontSize: "12px" }}>#{ledger.length - i}</td>
-
-                                            {/* Player */}
                                             <td style={{ padding: "11px 14px" }}>
                                                 <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "13px" }}>{b.playerName || "—"}</div>
                                                 <div style={{ fontSize: "11px", color: "#94a3b8" }}>ID: {b.playerId}</div>
                                             </td>
-
-                                            {/* Bonus Type */}
                                             <td style={{ padding: "11px 14px" }}>
                                                 <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", background: bt.bg, color: bt.color, borderRadius: "6px", fontSize: "11px", fontWeight: "700" }}>
                                                     {bt.emoji} {bt.label}
                                                 </span>
                                             </td>
-
-                                            {/* Amount */}
                                             <td style={{ padding: "11px 14px" }}>
                                                 <span style={{ fontWeight: "800", color: "#d97706", fontSize: "15px" }}>
                                                     +{fmt(b.amount)}
                                                 </span>
                                             </td>
-
-                                            {/* Game */}
                                             <td style={{ padding: "11px 14px" }}>
                                                 {b.gameName
                                                     ? <span style={{ display: "inline-block", padding: "3px 9px", background: "#f1f5f9", borderRadius: "6px", fontSize: "12px", fontWeight: "500", color: "#475569", whiteSpace: "nowrap" }}>
@@ -797,16 +878,12 @@ export default function BonusPage() {
                                                     : <span style={{ color: "#cbd5e1" }}>—</span>
                                                 }
                                             </td>
-
-                                            {/* Balance before → after */}
                                             <td style={{ padding: "11px 14px", fontSize: "12px", color: "#64748b", whiteSpace: "nowrap" }}>
                                                 {b.balanceBefore != null && b.balanceAfter != null
                                                     ? <><span>${parseFloat(b.balanceBefore).toFixed(2)}</span>{" "}<span style={{ color: "#22c55e", fontWeight: "700" }}>→ ${parseFloat(b.balanceAfter).toFixed(2)}</span></>
                                                     : <span style={{ color: "#cbd5e1" }}>—</span>
                                                 }
                                             </td>
-
-                                            {/* Status */}
                                             <td style={{ padding: "11px 14px" }}>
                                                 {b.status === 'CANCELLED' ? (
                                                     <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', background: '#fee2e2', color: '#991b1b' }}>CANCELLED</span>
@@ -816,8 +893,6 @@ export default function BonusPage() {
                                                     <span style={{ color: '#cbd5e1', fontSize: '12px' }}>—</span>
                                                 )}
                                             </td>
-
-                                            {/* Date */}
                                             <td style={{ padding: "11px 14px", color: "#64748b", whiteSpace: "nowrap", fontSize: "12px" }}>
                                                 {fmtTX(b.createdAt)}
                                             </td>
