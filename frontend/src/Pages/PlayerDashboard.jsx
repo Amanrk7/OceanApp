@@ -698,7 +698,17 @@ export default function PlayerDashboard() {
                         );
                         return (
                             <div>
-                                <SectionHeader title="Friends" count={uniqueFriends.length} />
+                                {/* <SectionHeader title="Friends" count={uniqueFriends.length} /> */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${C.border}` }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Friends</p>
+                                        <span style={{ padding: '1px 7px', background: C.skyLt, color: C.sky, borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>{uniqueFriends.length}</span>
+                                    </div>
+                                    <button onClick={() => setShowEdit(true)}
+                                        style={{ padding: '6px 14px', background: C.skyLt, border: `1px solid #bae6fd`, borderRadius: '8px', color: C.skyDk, fontWeight: '700', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                        ✏️ Edit Friends
+                                    </button>
+                                </div>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                     {uniqueFriends.map(f => (
                                         <PeopleChip key={f.id} person={f} emoji="🤝"
@@ -783,7 +793,14 @@ export default function PlayerDashboard() {
 
                 {/* Social handles */}
                 <div style={card({ padding: '18px 22px' })}>
-                    <SectionHeader title="Social Media" />
+                    {/* <SectionHeader title="Social Media" /> */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${C.border}` }}>
+                        <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Social Media</p>
+                        <button onClick={() => setShowEdit(true)}
+                            style={{ padding: '6px 14px', background: C.skyLt, border: `1px solid #bae6fd`, borderRadius: '8px', color: C.skyDk, fontWeight: '700', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            ✏️ Edit Socials
+                        </button>
+                    </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {[
                             { key: 'email', label: 'Email', emoji: '📧' },
@@ -812,7 +829,14 @@ export default function PlayerDashboard() {
 
                 {/* Payment handles */}
                 <div style={card({ padding: '18px 22px' })}>
-                    <SectionHeader title="Payment Handles" />
+                    {/* <SectionHeader title="Payment Handles" /> */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${C.border}` }}>
+                        <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Payment Handles</p>
+                        <button onClick={() => setShowEdit(true)}
+                            style={{ padding: '6px 14px', background: C.violetLt, border: `1px solid ${C.violetBdr}`, borderRadius: '8px', color: C.violet, fontWeight: '700', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            ✏️ Edit Handles
+                        </button>
+                    </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {paymentFields.map(({ key, label, emoji, prefix, urlFn }) => {
                             const val = player.socials?.[key];
