@@ -555,18 +555,22 @@ function AddTransactionsPage() {
                                 </select>
                                 <ChevronDown style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
                             </div>
-                            {/* {selWallet && amt > 0 && isDeposit && ( */}
-                            {selWallet && amt > 0 && (
+                            {selWallet && amt > 0 && isDeposit && (
+
                                 <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: "#22c55e" }}>
                                     ✓ {fmt(selWallet.balance)} → {fmt(selWallet.balance + amt - feeAmt)}
                                     {feeAmt > 0 && <span style={{ fontWeight: "400", color: "#94a3b8", fontSize: "11px" }}> (deposit − fee)</span>}
                                 </p>
                             )}
-                            {/* {selWallet && amt > 0 && !isDeposit && (
-                                <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: "#64748b" }}>
-                                    Wallet balance: {fmt(selWallet.balance)}
+                            {selWallet && amt > 0 && !isDeposit && (
+                                // <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: "#64748b" }}>
+                                //     Wallet balance: {fmt(selWallet.balance)}
+                                // </p>
+                                <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: "#22c55e" }}>
+                                    ✓ {fmt(selWallet.balance)} → {fmt(selWallet.balance - amt - feeAmt)}
+                                    {feeAmt > 0 && <span style={{ fontWeight: "400", color: "#94a3b8", fontSize: "11px" }}> (cashout + fee)</span>}
                                 </p>
-                            )} */}
+                            )}
                         </div>
                     </div>
 
