@@ -98,6 +98,9 @@ function BonusToggle({ bonus, amount, player, enabled, onToggle, eligible = true
 function LedgerRow({ tx, undoingId, onUndo }) {
     const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
     const navigate = useNavigate();
+    
+    const [hover, setHover] = React.useState(false);
+
     const isUndoing = undoingId === tx.id;
     const canUndo = (tx.status === "COMPLETED" || tx.status === "PENDING") && !isUndoing;
     const isDepositRow = ["Deposit", "deposit"].includes(tx.type);
@@ -136,7 +139,12 @@ function LedgerRow({ tx, undoingId, onUndo }) {
             <td style={{ padding: "10px 12px", color: "#0ea5e9", fontWeight: "700", fontSize: "12px", whiteSpace: "nowrap" }}>#{tx.id}</td>
             <td style={{ padding: "10px 12px" }}>
                 <div onClick={() => handleView(tx.playerName ? { id: tx.playerId, name: tx.playerName } : null)}
-                    style={{ fontWeight: "600", color: "#0f172a", fontSize: "13px", whiteSpace: "nowrap" }}>{tx.playerName || "—"}</div>
+                    onMouseEnter={() => setHover(true)}
+                    onMouseLeave={() => setHover(false)}
+                    style={{
+                        fontWeight: "600", fontSize: "13px", whiteSpace: "nowrap", cursor: "pointer",
+                        color: hover ? "rgb(14, 165, 233)" : "#0f172a"
+                    }}>{tx.playerName || "—"}</div>
                 {tx.email && <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "1px", maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.email}</div>}
             </td>
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
