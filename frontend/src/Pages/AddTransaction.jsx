@@ -66,6 +66,14 @@ const DEPOSIT_BONUSES = [
         subtitle: "20% of deposit — for promotions or special occasions",
         calc: (amt) => amt * 0.2,
     },
+    {
+        id: "referral",
+        label: "Referral Bonus Eligibility",
+        icon: Users,
+        color: { bg: "#f0fdf4", border: "#86efac", dot: "#16a34a", text: "#166534" },
+        subtitle: "Records x÷2 eligibility — staff grants it from Bonus page",
+        calc: () => 0,   // no immediate deduction
+    },
 ];
 
 function BonusToggle({ bonus, amount, player, enabled, onToggle, eligible = true, disabledReason = "" }) {
@@ -98,7 +106,7 @@ function BonusToggle({ bonus, amount, player, enabled, onToggle, eligible = true
 function LedgerRow({ tx, undoingId, onUndo }) {
     const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
     const navigate = useNavigate();
-    
+
     const [hover, setHover] = useState(false);
 
     const isUndoing = undoingId === tx.id;
@@ -244,6 +252,8 @@ function AddTransactionsPage() {
     const { shiftActive } = useContext(ShiftStatusContext);
     const navigate = useNavigate();
 
+    const [bonusReferral, setBonusReferral] = useState(false);
+    const [referralAlreadyRecorded, setReferralAlreadyRecorded] = useState(false);
     const [form, setForm] = useState(EMPTY);
     const [player, setPlayer] = useState(null);
     const [eligLoading, setEligLoading] = useState(false);
@@ -335,7 +345,17 @@ function AddTransactionsPage() {
         if (usedMatchToday) setForm(f => ({ ...f, bonusMatch: false }));
     };
 
+    const checkReferralStatus = async (fp) => {
+        if (!fp?.id || !fp?.referredBy) { setReferralAlreadyRecorded(false); return; }
+        try {
+            const r = await api.referralBonuses.getEligible(fp.id);
+            const hasPending = (r?.data || []).some(e => e.side === 'referred');
+            setReferralAlreadyRecorded(hasPending);
+        } catch { setReferralAlreadyRecorded(false); }
+    };
+
     const selectPlayer = async (p) => {
+        checkReferralStatus(fp)
         setQuery(p.name); setShowDrop(false); setResults([]);
         setPlayer(null); setMatchUsedToday(false);
         setForm(f => ({ ...EMPTY, txType: f.txType }));
@@ -394,7 +414,7 @@ function AddTransactionsPage() {
         try {
             setSubmitting(true);
             const payload = isDeposit
-                ? { playerId: player.id, amount: amt, fee: feeAmt, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, gameId: form.gameId, notes: form.notes, bonusMatch: form.bonusMatch && amt > 0, bonusSpecial: form.bonusSpecial && amt > 0 }
+                ? { playerId: player.id, amount: amt, fee: feeAmt, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, gameId: form.gameId, notes: form.notes, bonusMatch: form.bonusMatch && amt > 0, bonusSpecial: form.bonusSpecial && amt > 0, bonusReferral: bonusReferral && !referralAlreadyRecorded, }
                 : { playerId: player.id, amount: amt, fee: feeAmt, gameId: form.gameId, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, notes: form.notes };
 
             const data = isDeposit ? await api.transactions.deposit(payload) : await api.transactions.cashout(payload);
@@ -675,6 +695,45 @@ function AddTransactionsPage() {
                         </>
                     )}
 
+                    {/* Referral Bonus Eligibility Toggle */}
+                    {isDeposit && player?.referredBy && (
+                        <div style={{
+                            border: `1px solid ${(bonusReferral && !referralAlreadyRecorded) ? '#86efac' : referralAlreadyRecorded ? '#fde68a' : '#e2e8f0'}`,
+                            borderRadius: '10px', padding: '13px 16px',
+                            background: referralAlreadyRecorded ? '#fffbeb' : bonusReferral ? '#f0fdf4' : '#fafafa',
+                            transition: 'all .15s',
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flex: 1 }}>
+                                    <div style={{ width: '34px', height: '34px', borderRadius: '9px', flexShrink: 0, background: bonusReferral ? '#dcfce7' : '#f1f5f9', border: `1px solid ${bonusReferral ? '#86efac' : '#e2e8f0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Users style={{ width: '15px', height: '15px', color: bonusReferral ? '#16a34a' : '#94a3b8' }} />
+                                    </div>
+                                    <div>
+                                        <div style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a' }}>Referral Bonus Eligibility</div>
+                                        {referralAlreadyRecorded
+                                            ? <div style={{ fontSize: '11px', color: '#d97706', marginTop: '2px', fontWeight: '600' }}>⚠ Already recorded for this player — grant from Bonus page</div>
+                                            : <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', lineHeight: '1.5' }}>
+                                                Records <strong>${amt > 0 ? (amt / 2).toFixed(2) : 'x÷2'}</strong> eligibility for both{' '}
+                                                <strong>{player?.name}</strong> and referrer{' '}
+                                                <strong>{player?.referredBy?.name || `ID ${player?.referredBy?.id || player?.referredBy}`}</strong>.
+                                                Actual grant happens on the Bonus page.
+                                            </div>
+                                        }
+                                        {bonusReferral && !referralAlreadyRecorded && amt > 0 && (
+                                            <span style={{ display: 'inline-block', marginTop: '6px', padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', background: '#dcfce7', border: '1px solid #86efac', color: '#166534' }}>
+                                                ${(amt / 2).toFixed(2)} will be eligible for each party
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div
+                                    onClick={() => !referralAlreadyRecorded && amt > 0 && setBonusReferral(v => !v)}
+                                    style={{ width: '40px', height: '23px', borderRadius: '12px', flexShrink: 0, marginTop: '2px', background: bonusReferral && !referralAlreadyRecorded ? '#16a34a' : '#cbd5e1', cursor: (referralAlreadyRecorded || amt <= 0) ? 'not-allowed' : 'pointer', position: 'relative', transition: 'background .2s', opacity: referralAlreadyRecorded ? 0.5 : 1 }}>
+                                    <div style={{ width: '17px', height: '17px', borderRadius: '50%', background: '#fff', position: 'absolute', top: '3px', left: bonusReferral && !referralAlreadyRecorded ? '20px' : '3px', transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     {/* Notes */}
                     <div>
                         <label style={LABEL}>Notes (optional)</label>
