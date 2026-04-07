@@ -235,7 +235,7 @@ function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess
         {/* Player */}
         <td style={{ padding: '12px 14px', minWidth: '130px' }}>
           <div
-            onClick={() => handleView(b.playerName ? { id: b.playerId, name: b.playerName } : null)}
+            onClick={() => handleView(tx.playerId ? { id: tx.playerId, name: tx.playerName } : null)}
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
             style={{ fontWeight: '600', color: hover ? "rgb(14, 165, 233)" : "#0f172a", fontSize: '13px', cursor: "pointer" }}>
