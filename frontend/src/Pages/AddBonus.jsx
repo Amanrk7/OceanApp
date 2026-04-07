@@ -4,6 +4,7 @@ import { api } from "../api";
 import { fmtTX } from "../utils/txTime";
 import { useNavigate } from 'react-router-dom';
 import { ShiftStatusContext } from "../Context/membershiftStatus";
+import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
 
 const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', flexShrink: 0 }}>
@@ -70,6 +71,7 @@ const BONUS_TYPES = [
 // ═════════════════════════════════════════════════════════════════════════════
 export default function BonusPage() {
     const { shiftActive } = useContext(ShiftStatusContext);
+    const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
     const navigate = useNavigate();
 
     // ── Player search state ───────────────────────────────────────────────────
@@ -103,6 +105,9 @@ export default function BonusPage() {
     const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState("");
     const [error, setError] = useState("");
+
+    const [hover, setHover] = useState(false);
+
 
     // ── Load games ────────────────────────────────────────────────────────────
     const loadGames = useCallback(async (silent = false) => {
@@ -787,8 +792,8 @@ export default function BonusPage() {
                         <textarea
                             placeholder={
                                 bonusType === "streak" ? "e.g., 'Weekly streak reward'…" :
-                                bonusType === "referral" ? "e.g., 'Referral bonus for new player deposit'…" :
-                                "e.g., 'Tournament prize', 'Weekend promotion'…"
+                                    bonusType === "referral" ? "e.g., 'Referral bonus for new player deposit'…" :
+                                        "e.g., 'Tournament prize', 'Weekend promotion'…"
                             }
                             rows={2}
                             value={notes}
@@ -809,8 +814,8 @@ export default function BonusPage() {
                                 </div>
                                 <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
                                     {bonusType === "streak" ? "Streak Bonus" :
-                                     bonusType === "referral" ? `Referral Bonus → ${referralTarget === "player" ? player.name : (referrerInfo?.name || "referrer")}` :
-                                     (customLabel.trim() || "Custom Bonus")}
+                                        bonusType === "referral" ? `Referral Bonus → ${referralTarget === "player" ? player.name : (referrerInfo?.name || "referrer")}` :
+                                            (customLabel.trim() || "Custom Bonus")}
                                     {" "}&middot;{" "}{selectedGame.name}{" "}&middot;{" "}
                                     {bonusType === "referral"
                                         ? (referralTarget === "player" ? player.name : (referrerInfo?.name || "referrer"))
@@ -852,11 +857,11 @@ export default function BonusPage() {
                                     ? <><Users style={{ width: "15px", height: "15px" }} />
                                         Grant Referral Bonus to {referralTarget === "player" ? player?.name || "Player" : (referrerInfo?.name || "Referrer")}
                                         {amt > 0 ? ` (+${fmt(amt)})` : ""}
-                                      </>
+                                    </>
                                     : <><Gift style={{ width: "15px", height: "15px" }} />
                                         Grant {bonusType === "streak" ? "Streak Bonus" : (customLabel.trim() || "Custom Bonus")}
                                         {amt > 0 ? ` (+${fmt(amt)})` : ""}
-                                      </>
+                                    </>
                             }
                         </button>
                     </div>
@@ -911,7 +916,9 @@ export default function BonusPage() {
                                             style={{ borderBottom: "1px solid #f1f5f9" }}>
                                             <td style={{ padding: "11px 14px", color: "#cbd5e1", fontSize: "12px" }}>#{ledger.length - i}</td>
                                             <td style={{ padding: "11px 14px" }}>
-                                                <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "13px" }}>{b.playerName || "—"}</div>
+                                                <div onClick={() => handleView(b.playerName ? { id: b.playerId, name: b.playerName } : null)}
+                                                    onMouseEnter={() => setHover(true)}
+                                                    onMouseLeave={() => setHover(false)} style={{ fontWeight: "600", color: hover ? "rgb(14, 165, 233)" : "#0f172a", fontSize: "13px" }}>{b.playerName || "—"}</div>
                                                 <div style={{ fontSize: "11px", color: "#94a3b8" }}>ID: {b.playerId}</div>
                                             </td>
                                             <td style={{ padding: "11px 14px" }}>
