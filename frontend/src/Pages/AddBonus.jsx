@@ -108,6 +108,10 @@ export default function BonusPage() {
 
     const [hover, setHover] = useState(false);
 
+    const handleView = (player) => {
+        setSelectedPlayer(player);
+        navigate(`/playerDashboard/${player.id}`);
+    };
 
     // ── Load games ────────────────────────────────────────────────────────────
     const loadGames = useCallback(async (silent = false) => {
