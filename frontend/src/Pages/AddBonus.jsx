@@ -922,7 +922,7 @@ export default function BonusPage() {
                                             <td style={{ padding: "11px 14px" }}>
                                                 <div
                                                     onClick={() => handleView(b.playerName ? { id: b.playerId, name: b.playerName } : null)}
-                                                    style={{ fontWeight: "600", color: "#0f172a", fontSize: "13px", cursor: "pointer" }}
+                                                    style={{ fontWeight: "600", fontSize: "13px", cursor: "pointer" }}
                                                     className="hover-color"
                                                 >
                                                     {b.playerName || "—"}
