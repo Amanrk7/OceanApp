@@ -188,15 +188,25 @@ const ManageWalletsPage = () => {
     };
 
     // ── live toggle ──────────────────────────────────────────────────────────
+    // const handleLiveToggle = async (wallet) => {
+    //     setTogglingId(wallet.id);
+    //     try {
+    //         await api.wallets.updateWallet(wallet.id, { isLive: !wallet.isLive });
+    //         await loadWallets(true);
+    //         flash(`${wallet.name} is now ${!wallet.isLive ? 'LIVE' : 'offline'}`);
+    //     } catch (err) { setGlobalError(err.message || 'Failed to update wallet status'); }
+    //     finally { setTogglingId(null); }
+    // };
     const handleLiveToggle = async (wallet) => {
-        setTogglingId(wallet.id);
-        try {
-            await api.wallets.updateWallet(wallet.id, { isLive: !wallet.isLive });
-            await loadWallets(true);
-            flash(`${wallet.name} is now ${!wallet.isLive ? 'LIVE' : 'offline'}`);
-        } catch (err) { setGlobalError(err.message || 'Failed to update wallet status'); }
-        finally { setTogglingId(null); }
-    };
+    setTogglingId(wallet.id);
+    const newStatus = !wallet.isLive;          // ← capture BEFORE the await
+    try {
+        await api.wallets.updateWallet(wallet.id, { isLive: newStatus });
+        await loadWallets(true);
+        flash(`${wallet.name} is now ${newStatus ? 'LIVE' : 'offline'}`);  // ← use captured value
+    } catch (err) { setGlobalError(err.message || 'Failed to update wallet status'); }
+    finally { setTogglingId(null); }
+};
 
     // ── add ──────────────────────────────────────────────────────────────────
     const handleAdd = async (e) => {
