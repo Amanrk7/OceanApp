@@ -256,13 +256,29 @@ function AddTransactionsPage() {
         } catch (e) { console.error(e); }
     }, []);
 
+    // const loadWallets = useCallback(async () => {
+    //     try {
+    //         const r = await api.wallets.getGroupedWallets(true);
+    //         const flat = (r?.data || []).flatMap(g => g.subAccounts.map(s => ({ ...s, label: `${g.method} — ${s.name}  (${fmt(s.balance)})`, methodName: g.method, methodId: g.id })));
+    //         setWallets(flat);
+    //     } catch (e) { console.error(e); }
+    // }, []);
     const loadWallets = useCallback(async () => {
-        try {
-            const r = await api.wallets.getGroupedWallets(true);
-            const flat = (r?.data || []).flatMap(g => g.subAccounts.map(s => ({ ...s, label: `${g.method} — ${s.name}  (${fmt(s.balance)})`, methodName: g.method, methodId: g.id })));
-            setWallets(flat);
-        } catch (e) { console.error(e); }
-    }, []);
+  try {
+    const r = await api.wallets.getGroupedWallets(true);
+    const flat = (r?.data || []).flatMap(g =>
+      g.subAccounts
+        .filter(s => s.isLive !== false)   // ← ADD THIS LINE
+        .map(s => ({
+          ...s,
+          label: `${g.method} — ${s.name}  (${fmt(s.balance)})`,
+          methodName: g.method,
+          methodId: g.id
+        }))
+    );
+    setWallets(flat);
+  } catch (e) { console.error(e); }
+}, []);
 
     const loadLedger = useCallback(async () => {
         try {
