@@ -81,6 +81,9 @@ export default function BonusPage() {
     const [searching, setSearching] = useState(false);
     const [eligLoading, setEligLoading] = useState(false);
     const [showDrop, setShowDrop] = useState(false);
+    const [eligibleBonuses, setEligibleBonuses] = useState([]);
+    const [selectedRbId, setSelectedRbId] = useState(null);   // ReferralBonus record id
+    const [referralSide, setReferralSide] = useState('referred'); // 'referrer' | 'referred'
     const dropRef = useRef(null);
 
     // ── Form state ────────────────────────────────────────────────────────────
@@ -112,6 +115,24 @@ export default function BonusPage() {
         setSelectedPlayer(player);
         navigate(`/playerDashboard/${player.id}`);
     };
+
+    // Load eligible bonuses whenever player changes:
+    useEffect(() => {
+        if (!player?.id) { setEligibleBonuses([]); setSelectedRbId(null); return; }
+        setEligLoading(true);
+        api.referralBonuses.getEligible(player.id)
+            .then(r => { setEligibleBonuses(r?.data || []); })
+            .catch(() => setEligibleBonuses([]))
+            .finally(() => setEligLoading(false));
+    }, [player?.id]);
+
+    // Auto-fill amount when a referral record is selected:
+    useEffect(() => {
+        if (bonusType !== 'referral') return;
+        const rb = eligibleBonuses.find(e => e.id === selectedRbId);
+        if (rb) setAmount(rb.bonusAmount.toFixed(2));
+        else setAmount('');
+    }, [selectedRbId, bonusType, eligibleBonuses]);
 
     // ── Load games ────────────────────────────────────────────────────────────
     const loadGames = useCallback(async (silent = false) => {
@@ -313,15 +334,31 @@ export default function BonusPage() {
         // Build notes with embedded ID tags so the ledger entry can be
         // reliably identified later without relying on name matching.
         let finalNotes = notes.trim();
-        if (bonusType === "referral") {
-            if (referralTarget === "referrer") {
-                // Tag with the player ID so we can detect "already granted for this player" later
-                finalNotes = "[pid:" + player.id + "]" + (finalNotes ? " — " + finalNotes : "");
-            } else {
-                // Tag with the referrer ID so we can detect "player already received from this referrer" later
-                const refId = referrerInfo?.id || referrerInfo;
-                finalNotes = "[ref:" + refId + "]" + (finalNotes ? " — " + finalNotes : "");
+
+
+        if (bonusType === 'referral') {
+            if (!selectedRbId) { setError('Please select a referral bonus record.'); return; }
+            try {
+                setSubmitting(true);
+                const result = await api.referralBonuses.claim(selectedRbId, {
+                    side: referralSide,
+                    gameId: selectedGameId,
+                    notes: notes.trim() || undefined,
+                });
+                setSuccess(result.message);
+                setAmount(''); setNotes(''); setSelectedGameId(''); setSelectedRbId(null);
+                const fresh = await api.players.getPlayer(player.id);
+                setPlayer(fresh?.data || player);
+                await Promise.all([loadGames(true), loadLedger()]);
+                // Refresh eligible bonuses
+                const rb = await api.referralBonuses.getEligible(player.id);
+                setEligibleBonuses(rb?.data || []);
+            } catch (err) {
+                setError(err.message || 'Failed to claim referral bonus.');
+            } finally {
+                setSubmitting(false);
             }
+            return;
         }
 
         try {
@@ -595,80 +632,58 @@ export default function BonusPage() {
                         </div>
 
                         {/* ── Referral target selector ── */}
-                        {bonusType === "referral" && player && referralEligible && (
-                            <div style={{ marginTop: "12px", padding: "14px 16px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "10px" }}>
-                                <div style={{ fontWeight: "700", fontSize: "13px", color: "#166534", marginBottom: "10px" }}>
-                                    👤 Who receives this Referral Bonus?
-                                </div>
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                                    {/* Grant to Player */}
-                                    <button
-                                        type="button"
-                                        onClick={() => setReferralTarget("player")}
-                                        style={{
-                                            display: "flex", alignItems: "flex-start", gap: "10px",
-                                            padding: "12px 14px", borderRadius: "8px", cursor: "pointer",
-                                            border: `2px solid ${referralTarget === "player" ? (playerReferralUsed ? "#f59e0b" : "#22c55e") : (playerReferralUsed ? "#fde68a" : "#d1fae5")}`,
-                                            background: referralTarget === "player" ? (playerReferralUsed ? "#fffbeb" : "#dcfce7") : (playerReferralUsed ? "#fffbeb80" : "#f0fdf4"),
-                                            fontFamily: "inherit", textAlign: "left", transition: "all .15s",
-                                        }}>
-                                        <div style={{ width: "32px", height: "32px", borderRadius: "8px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: referralTarget === "player" ? (playerReferralUsed ? "#fcd34d" : "#22c55e") : (playerReferralUsed ? "#fde68a" : "#bbf7d0") }}>
-                                            <span style={{ fontSize: "14px" }}>🙋</span>
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: "700", fontSize: "12px", color: playerReferralUsed ? "#92400e" : "#14532d" }}>Grant to Player</div>
-                                            <div style={{ fontSize: "11px", marginTop: "2px", lineHeight: "1.4", color: playerReferralUsed ? "#92400e" : "#166534" }}>
-                                                <strong>{player.name}</strong>
-                                                {playerReferralUsed
-                                                    ? <span style={{ marginLeft: "5px", fontWeight: "600" }}>⚠ already received</span>
-                                                    : <span style={{ marginLeft: "5px", color: "#4ade80" }}>· eligible</span>
-                                                }
-                                            </div>
-                                        </div>
-                                        {referralTarget === "player" && <CheckCircle style={{ width: "14px", height: "14px", color: playerReferralUsed ? "#f59e0b" : "#22c55e", flexShrink: 0, marginTop: "2px" }} />}
-                                    </button>
-
-                                    {/* Grant to Referrer */}
-                                    <button
-                                        type="button"
-                                        onClick={() => setReferralTarget("referrer")}
-                                        style={{
-                                            display: "flex", alignItems: "flex-start", gap: "10px",
-                                            padding: "12px 14px", borderRadius: "8px", cursor: "pointer",
-                                            border: `2px solid ${referralTarget === "referrer" ? (referrerBonusUsedForPlayer ? "#f59e0b" : "#22c55e") : (referrerBonusUsedForPlayer ? "#fde68a" : "#d1fae5")}`,
-                                            background: referralTarget === "referrer" ? (referrerBonusUsedForPlayer ? "#fffbeb" : "#dcfce7") : (referrerBonusUsedForPlayer ? "#fffbeb80" : "#f0fdf4"),
-                                            fontFamily: "inherit", textAlign: "left", transition: "all .15s",
-                                        }}>
-                                        <div style={{ width: "32px", height: "32px", borderRadius: "8px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: referralTarget === "referrer" ? (referrerBonusUsedForPlayer ? "#fcd34d" : "#22c55e") : (referrerBonusUsedForPlayer ? "#fde68a" : "#bbf7d0") }}>
-                                            <span style={{ fontSize: "14px" }}>👤</span>
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: "700", fontSize: "12px", color: referrerBonusUsedForPlayer ? "#92400e" : "#14532d" }}>Grant to Referrer</div>
-                                            <div style={{ fontSize: "11px", marginTop: "2px", lineHeight: "1.4", color: referrerBonusUsedForPlayer ? "#92400e" : "#166534" }}>
-                                                <strong>{referrerInfo?.name || `ID ${referrerInfo?.id || referrerInfo}`}</strong>
-                                                {referrerBonusUsedForPlayer
-                                                    ? <span style={{ marginLeft: "5px", fontWeight: "600" }}>⚠ already received</span>
-                                                    : <span style={{ marginLeft: "5px", color: "#4ade80" }}>· eligible</span>
-                                                }
-                                            </div>
-                                        </div>
-                                        {referralTarget === "referrer" && <CheckCircle style={{ width: "14px", height: "14px", color: referrerBonusUsedForPlayer ? "#f59e0b" : "#22c55e", flexShrink: 0, marginTop: "2px" }} />}
-                                    </button>
+                        {/* ── Referral Bonus: eligible records picker ── */}
+                        {bonusType === 'referral' && player && (
+                            <div style={{ marginTop: '12px', padding: '14px 16px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px' }}>
+                                <div style={{ fontWeight: '700', fontSize: '13px', color: '#166534', marginBottom: '10px' }}>
+                                    👤 Select Referral Bonus Record
                                 </div>
 
-                                {/* Info note */}
-                                <div style={{ marginTop: "10px", fontSize: "12px", color: "#166534", lineHeight: "1.6", padding: "8px 12px", background: "#bbf7d030", borderRadius: "6px", border: "1px solid #d1fae5" }}>
-                                    💡 Enter the bonus amount (typically the new player's deposit ÷ 2). Game stock deducted <strong>1×</strong> only. Each person can only receive this bonus <strong>once</strong> per referral.
-                                    {referralTarget === "player" && playerReferralUsed && (
-                                        <div style={{ marginTop: "4px", color: "#d97706", fontWeight: "600" }}>
-                                            ⚠ {player.name} has already received their referral bonus — granting again will be a duplicate.
-                                        </div>
-                                    )}
-                                    {referralTarget === "referrer" && referrerBonusUsedForPlayer && (
-                                        <div style={{ marginTop: "4px", color: "#d97706", fontWeight: "600" }}>
-                                            ⚠ {referrerInfo?.name || "Referrer"} has already received their referral bonus for {player.name} — granting again will be a duplicate.
-                                        </div>
-                                    )}
+                                {eligLoading && (
+                                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Loading eligible records…</div>
+                                )}
+
+                                {!eligLoading && eligibleBonuses.length === 0 && (
+                                    <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '12px', color: '#92400e' }}>
+                                        ⚠ No unclaimed referral bonus eligibility found for {player.name}.
+                                        Record it first by toggling "Referral Bonus Eligibility" during their deposit on the Transactions page.
+                                    </div>
+                                )}
+
+                                {!eligLoading && eligibleBonuses.length > 0 && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {eligibleBonuses.map(rb => {
+                                            const isSelected = selectedRbId === rb.id;
+                                            const isBside = rb.side === 'referred';   // B = the player we searched
+                                            const sideLabel = isBside
+                                                ? `${player.name} was referred by ${rb.counterpartName}`
+                                                : `${player.name} referred ${rb.counterpartName}`;
+                                            return (
+                                                <div key={rb.id} onClick={() => { setSelectedRbId(rb.id); setReferralSide(rb.side); }}
+                                                    style={{ padding: '12px 14px', borderRadius: '8px', cursor: 'pointer', border: `2px solid ${isSelected ? '#16a34a' : '#d1fae5'}`, background: isSelected ? '#dcfce7' : '#f0fdf4', transition: 'all .15s' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                        <div>
+                                                            <div style={{ fontWeight: '700', fontSize: '12px', color: '#14532d' }}>
+                                                                {isBside ? '🙋 Player bonus (B side)' : '👤 Referrer bonus (A side)'}
+                                                            </div>
+                                                            <div style={{ fontSize: '11px', color: '#166534', marginTop: '2px' }}>{sideLabel}</div>
+                                                            <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '4px' }}>
+                                                                Deposit was <strong>${rb.depositAmount.toFixed(2)}</strong> → bonus = <strong>${rb.bonusAmount.toFixed(2)}</strong>
+                                                            </div>
+                                                        </div>
+                                                        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
+                                                            <div style={{ fontSize: '18px', fontWeight: '900', color: '#16a34a' }}>${rb.bonusAmount.toFixed(2)}</div>
+                                                            {isSelected && <CheckCircle style={{ width: '14px', height: '14px', color: '#16a34a', marginTop: '4px' }} />}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                <div style={{ marginTop: '10px', fontSize: '12px', color: '#166534', lineHeight: '1.6', padding: '8px 12px', background: '#bbf7d030', borderRadius: '6px', border: '1px solid #d1fae5' }}>
+                                    💡 Amount is auto-filled from the deposit record. Game stock deducted <strong>1×</strong> per claim. Grant A and B separately — each is its own record.
                                 </div>
                             </div>
                         )}
