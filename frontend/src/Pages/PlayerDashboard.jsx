@@ -331,6 +331,8 @@ export default function PlayerDashboard() {
     const { playerId } = useParams();
     const navigate = useNavigate();
 
+    const [eligibleBonuses, setEligibleBonuses] = useState([]);
+    const [eligLoading, setEligLoading] = useState(false);
     const [player, setPlayer] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -347,6 +349,7 @@ export default function PlayerDashboard() {
             setError('');
             const res = await api.players.getPlayer(parseInt(playerId));
             setPlayer(res.data);
+            loadEligible(parseInt(playerId));
             setLastUpdated(new Date());
         } catch (err) {
             setError(err.message || 'Failed to load player.');
@@ -354,6 +357,15 @@ export default function PlayerDashboard() {
             if (isInitial) setLoading(false);
         }
     }, [playerId]);
+
+    const loadEligible = async (pid) => {
+        setEligLoading(true);
+        try {
+            const r = await api.referralBonuses.getEligible(pid);
+            setEligibleBonuses(r?.data || []);
+        } catch { setEligibleBonuses([]); }
+        finally { setEligLoading(false); }
+    };
 
     // useEffect(() => {
     //     loadPlayer(true);
@@ -372,6 +384,7 @@ export default function PlayerDashboard() {
 
     // Called by EditPlayer onSaved — reload immediately + flash "Saved"
     const handleSaved = useCallback(() => {
+        loadEligible(parseInt(playerId));
         loadPlayer(false);
         setSavedFlash(true);
         setTimeout(() => setSavedFlash(false), 2500);
@@ -560,6 +573,56 @@ export default function PlayerDashboard() {
             </div>
 
             <StreakFreezeCard player={player} />
+
+            {/* ── ELIGIBLE BONUSES ─────────────────────────────────────── */}
+            {(eligLoading || eligibleBonuses.length > 0) && (
+                <div style={card({ padding: '20px 24px', border: '1.5px solid #86efac' })}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid #d1fae5' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                                🎯 Eligible Bonuses
+                            </p>
+                            {eligibleBonuses.length > 0 && (
+                                <span style={{ padding: '1px 8px', background: '#dcfce7', color: '#16a34a', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>
+                                    {eligibleBonuses.length} pending
+                                </span>
+                            )}
+                        </div>
+                        <button onClick={() => navigate(`/?page=bonuses`)}
+                            style={{ padding: '6px 14px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', color: '#16a34a', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
+                            Grant on Bonus page →
+                        </button>
+                    </div>
+
+                    {eligLoading
+                        ? <p style={{ color: C.grayLt, fontSize: '13px', margin: 0 }}>Loading…</p>
+                        : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {eligibleBonuses.map(rb => {
+                                    const isBside = rb.side === 'referred';
+                                    const label = isBside
+                                        ? `Referred by ${rb.counterpartName} — you can claim $${rb.bonusAmount.toFixed(2)}`
+                                        : `You referred ${rb.counterpartName} — you can claim $${rb.bonusAmount.toFixed(2)}`;
+                                    const sub = `Based on $${rb.depositAmount.toFixed(2)} deposit · recorded ${new Date(rb.createdAt).toLocaleDateString()}`;
+                                    return (
+                                        <div key={rb.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px', flexWrap: 'wrap', gap: '10px' }}>
+                                            <div>
+                                                <div style={{ fontWeight: '700', fontSize: '13px', color: '#166534' }}>
+                                                    {isBside ? '🙋' : '👤'} {label}
+                                                </div>
+                                                <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '3px' }}>{sub}</div>
+                                            </div>
+                                            <span style={{ fontSize: '20px', fontWeight: '900', color: '#16a34a', flexShrink: 0 }}>
+                                                +${rb.bonusAmount.toFixed(2)}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )
+                    }
+                </div>
+            )}
 
             {/* ── BONUS BREAKDOWN ──────────────────────────────────────────── */}
             <div style={card({ padding: '20px 22px' })}>
