@@ -190,9 +190,7 @@ export default function Attendance() {
                         <div>
                           <div style={{ fontWeight: '500', color: '#0f172a', cursor: 'pointer', fontSize: '13px' }}
                             onClick={() => handleView(player)}
-                            onMouseEnter={e => e.currentTarget.style.color = C.sky}
-                            onMouseLeave={e => e.currentTarget.style.color = '#0f172a'}
-
+                            className="hover-color"
                           >
                             {player.name || player.username}
                           </div>
