@@ -5,6 +5,7 @@ import {
     ArrowDownLeft, ArrowUpRight, Zap, Gift, Star, Wallet, Clock,
 } from "lucide-react";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
+import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
 
 import { api } from "../api";
 
@@ -127,7 +128,11 @@ function LedgerRow({ tx, undoingId, onUndo }) {
         <tr onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={e => e.currentTarget.style.background = "transparent"} style={{ borderBottom: "1px solid #f1f5f9", opacity: tx.status === "CANCELLED" ? 0.6 : 1 }}>
             <td style={{ padding: "10px 12px", color: "#0ea5e9", fontWeight: "700", fontSize: "12px", whiteSpace: "nowrap" }}>#{tx.id}</td>
             <td style={{ padding: "10px 12px" }}>
-                <div style={{ fontWeight: "600", color: "#0f172a", fontSize: "13px", whiteSpace: "nowrap" }}>{tx.playerName || "—"}</div>
+                <div
+                    onMouseEnter={(e) => e.target.style.color = '#0b6ea8'}
+                    onMouseLeave={(e) => e.target.style.color = '#0ea5e9'}
+                    onClick={() => handleView(player)}
+                    style={{ fontWeight: "600", color: "#0f172a", fontSize: "13px", whiteSpace: "nowrap" }}>{tx.playerName || "—"}</div>
                 {tx.email && <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "1px", maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.email}</div>}
             </td>
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
@@ -224,6 +229,7 @@ function AddTransactionsPage() {
     // ── No referral bonus in deposit flow — use Bonus page for that ──
     const EMPTY = { txType: "deposit", amount: "", fee: "", gameId: "", walletId: "", notes: "", bonusMatch: false, bonusSpecial: false };
 
+    const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
     const { shiftActive } = useContext(ShiftStatusContext);
     const navigate = useNavigate();
 
@@ -255,6 +261,11 @@ function AddTransactionsPage() {
             setGames(r?.data || []);
         } catch (e) { console.error(e); }
     }, []);
+
+    const handleView = (player) => {
+        setSelectedPlayer(player);
+        navigate(`/playerDashboard/${player.id}`);
+    };
 
     // const loadWallets = useCallback(async () => {
     //     try {
