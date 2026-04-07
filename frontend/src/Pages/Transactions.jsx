@@ -3,6 +3,7 @@ import { RotateCcw, RefreshCw, CheckCircle, DollarSign, ChevronDown, ChevronUp, 
 import { api } from '../api';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ShiftStatusContext } from "../Context/membershiftStatus";
+import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
 
 
 const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
@@ -184,7 +185,10 @@ function StatusBadge({ status, paidAmount, totalAmount }) {
 
 // ─── Transaction Row ──────────────────────────────────────────────────────────
 function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess, onError }) {
+  const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
+  const navigate = useNavigate();
   const [showPartial, setShowPartial] = useState(false);
+  const [hover, setHover] = useState(false);
 
   const isUndoing = undoingId === tx.id;
   const isApproving = approvingId === tx.id;
@@ -203,6 +207,11 @@ function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess
   const isPartial = isCashoutRow && isPending && paidAmount > 0 && paidAmount < totalAmount;
 
   const typeStyle = TYPE_COLORS[tx.type] || { bg: '#f1f5f9', text: '#475569' };
+
+  const handleView = (player) => {
+    setSelectedPlayer(player);
+    navigate(`/playerDashboard/${player.id}`);
+  };
 
   return (
     <>
@@ -225,7 +234,13 @@ function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess
 
         {/* Player */}
         <td style={{ padding: '12px 14px', minWidth: '130px' }}>
-          <div style={{ fontWeight: '600', color: '#0f172a', fontSize: '13px' }}>{tx.playerName || '—'}</div>
+          <div
+            onClick={() => handleView(b.playerName ? { id: b.playerId, name: b.playerName } : null)}
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+            style={{ fontWeight: '600', color: hover ? "rgb(14, 165, 233)" : "#0f172a", fontSize: '13px', cursor: "pointer" }}>
+            {tx.playerName || '—'}
+          </div>
           {tx.email && <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>{tx.email}</div>}
         </td>
 
@@ -280,51 +295,51 @@ function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess
 
         {/* Balance before → after */}
         {/* Balance before → after */}
-<td style={{ padding: '12px 14px', fontSize: '12px', whiteSpace: 'nowrap' }}>
-  {tx.gameStockBefore != null && tx.gameStockAfter != null && (() => {
-    const isCashoutTx = isCashout(tx);
-    const stockBefore = parseFloat(tx.gameStockBefore);
-    const stockAfter = parseFloat(tx.gameStockAfter);
-    const paid = parseFloat(tx.paidAmount) || 0;
-    const total = parseFloat(tx.amount) || 0;
+        <td style={{ padding: '12px 14px', fontSize: '12px', whiteSpace: 'nowrap' }}>
+          {tx.gameStockBefore != null && tx.gameStockAfter != null && (() => {
+            const isCashoutTx = isCashout(tx);
+            const stockBefore = parseFloat(tx.gameStockBefore);
+            const stockAfter = parseFloat(tx.gameStockAfter);
+            const paid = parseFloat(tx.paidAmount) || 0;
+            const total = parseFloat(tx.amount) || 0;
 
-    // For cashouts: only show points recovered proportional to what's been paid
-    const effectiveAfter = isCashoutTx ? stockBefore + paid : stockAfter;
-    const remaining = isCashoutTx ? total - paid : 0;
-    const isUp = effectiveAfter >= stockBefore;
+            // For cashouts: only show points recovered proportional to what's been paid
+            const effectiveAfter = isCashoutTx ? stockBefore + paid : stockAfter;
+            const remaining = isCashoutTx ? total - paid : 0;
+            const isUp = effectiveAfter >= stockBefore;
 
-    return (
-      <div>
-        <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '1px' }}>Game Points</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span style={{ color: '#94a3b8' }}>{stockBefore.toFixed(0)}</span>
-          <span style={{ color: isUp ? '#22c55e' : '#ef4444', fontWeight: '700' }}>
-            {' → '}{effectiveAfter.toFixed(0)}
-          </span>
-        </div>
-        {isCashoutTx && remaining > 0 && (
-          <div style={{ marginTop: '4px' }}>
-            <div style={{ height: '4px', background: '#e2e8f0', borderRadius: '99px', overflow: 'hidden', width: '80px' }}>
-              <div style={{
-                height: '100%',
-                width: `${total > 0 ? Math.min((paid / total) * 100, 100) : 0}%`,
-                background: paid > 0 ? '#22c55e' : '#e2e8f0',
-                borderRadius: '99px',
-                transition: 'width .4s ease'
-              }} />
-            </div>
-            <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '2px' }}>
-              {remaining.toFixed(0)} pts pending
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  })()}
-  {tx.gameStockBefore == null && (
-    <span style={{ color: '#e2e8f0' }}>—</span>
-  )}
-</td>
+            return (
+              <div>
+                <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '1px' }}>Game Points</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ color: '#94a3b8' }}>{stockBefore.toFixed(0)}</span>
+                  <span style={{ color: isUp ? '#22c55e' : '#ef4444', fontWeight: '700' }}>
+                    {' → '}{effectiveAfter.toFixed(0)}
+                  </span>
+                </div>
+                {isCashoutTx && remaining > 0 && (
+                  <div style={{ marginTop: '4px' }}>
+                    <div style={{ height: '4px', background: '#e2e8f0', borderRadius: '99px', overflow: 'hidden', width: '80px' }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${total > 0 ? Math.min((paid / total) * 100, 100) : 0}%`,
+                        background: paid > 0 ? '#22c55e' : '#e2e8f0',
+                        borderRadius: '99px',
+                        transition: 'width .4s ease'
+                      }} />
+                    </div>
+                    <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '2px' }}>
+                      {remaining.toFixed(0)} pts pending
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          {tx.gameStockBefore == null && (
+            <span style={{ color: '#e2e8f0' }}>—</span>
+          )}
+        </td>
 
         {/* Status */}
         <td style={{ padding: '12px 14px' }}>
@@ -418,10 +433,10 @@ export default function Transactions() {
   //   return 'all';
   // });
   const [filterTab, setFilterTab] = useState(() => {
-  const saved = sessionStorage.getItem('transactions_initialTab');
-  sessionStorage.removeItem('transactions_initialTab'); // always clear it
-  return saved === 'pending' ? 'pending' : 'all'; // only accept 'pending', nothing else
-});
+    const saved = sessionStorage.getItem('transactions_initialTab');
+    sessionStorage.removeItem('transactions_initialTab'); // always clear it
+    return saved === 'pending' ? 'pending' : 'all'; // only accept 'pending', nothing else
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [undoingId, setUndoingId] = useState(null);
