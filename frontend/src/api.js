@@ -682,6 +682,16 @@ export const reportsAPI = {
   },
 };
 
+export const referralBonusAPI = {
+  getEligible: (playerId) => fetchAPI(`/players/${playerId}/eligible-bonuses`),
+  claim: (rbId, { side, gameId, notes }) =>
+    fetchAPI(`/referral-bonuses/${rbId}/claim`, {
+      method: 'POST',
+      body: JSON.stringify({ side, gameId, notes }),
+    }),
+  getLedger: () => fetchAPI('/referral-bonuses'),
+};
+
 // ═══════════════════════════════════════════════════════════════
 // CONSOLIDATED API EXPORT
 // ═══════════════════════════════════════════════════════════════
@@ -701,6 +711,7 @@ export const api = {
   streak: streakAPI,
   tasks: tasksAPI,
   reports: reportsAPI,
+  referralBonuses: referralBonusAPI,
   clearCache: () => cache.clearAll(),
   getCacheStatus: () => ({ items: Object.keys(cache.data).length, keys: Object.keys(cache.data) })
 };
