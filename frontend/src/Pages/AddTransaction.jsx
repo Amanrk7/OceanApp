@@ -135,7 +135,7 @@ function LedgerRow({ tx, undoingId, onUndo }) {
         <tr onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={e => e.currentTarget.style.background = "transparent"} style={{ borderBottom: "1px solid #f1f5f9", opacity: tx.status === "CANCELLED" ? 0.6 : 1 }}>
             <td style={{ padding: "10px 12px", color: "#0ea5e9", fontWeight: "700", fontSize: "12px", whiteSpace: "nowrap" }}>#{tx.id}</td>
             <td style={{ padding: "10px 12px" }}>
-                <div onClick={() => handleView(tx.playerName)}
+                <div onClick={() => handleView(tx.playerName ? { id: tx.playerId, name: tx.playerName } : null)}
                     style={{ fontWeight: "600", color: "#0f172a", fontSize: "13px", whiteSpace: "nowrap" }}>{tx.playerName || "—"}</div>
                 {tx.email && <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "1px", maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.email}</div>}
             </td>
