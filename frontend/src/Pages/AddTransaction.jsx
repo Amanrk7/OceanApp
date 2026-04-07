@@ -99,7 +99,7 @@ function LedgerRow({ tx, undoingId, onUndo }) {
     const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
     const navigate = useNavigate();
     
-    const [hover, setHover] = React.useState(false);
+    const [hover, setHover] = useState(false);
 
     const isUndoing = undoingId === tx.id;
     const canUndo = (tx.status === "COMPLETED" || tx.status === "PENDING") && !isUndoing;
