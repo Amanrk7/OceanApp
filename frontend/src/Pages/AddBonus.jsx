@@ -920,9 +920,13 @@ export default function BonusPage() {
                                             style={{ borderBottom: "1px solid #f1f5f9" }}>
                                             <td style={{ padding: "11px 14px", color: "#cbd5e1", fontSize: "12px" }}>#{ledger.length - i}</td>
                                             <td style={{ padding: "11px 14px" }}>
-                                                <div onClick={() => handleView(b.playerName ? { id: b.playerId, name: b.playerName } : null)}
+                                                <div
+                                                    onClick={() => handleView(b.playerName ? { id: b.playerId, name: b.playerName } : null)}
                                                     onMouseEnter={() => setHover(true)}
-                                                    onMouseLeave={() => setHover(false)} style={{ fontWeight: "600", color: hover ? "rgb(14, 165, 233)" : "#0f172a", fontSize: "13px" }}>{b.playerName || "—"}</div>
+                                                    onMouseLeave={() => setHover(false)}
+                                                    style={{ fontWeight: "600", color: hover ? "rgb(14, 165, 233)" : "#0f172a", fontSize: "13px", cursor: "pointer" }}>
+                                                    {b.playerName || "—"}
+                                                </div>
                                                 <div style={{ fontSize: "11px", color: "#94a3b8" }}>ID: {b.playerId}</div>
                                             </td>
                                             <td style={{ padding: "11px 14px" }}>
