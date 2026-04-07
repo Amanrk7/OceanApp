@@ -188,7 +188,7 @@ export default function Attendance() {
                           {(player.name || player.username || '?')[0].toUpperCase()}
                         </div>
                         <div>
-                          <div style={{ fontWeight: '500', color: '#0f172a', cursor: 'pointer', fontSize: '13px' }}
+                          <div style={{ fontWeight: '500', cursor: 'pointer', fontSize: '13px' }}
                             onClick={() => handleView(player)}
                             className="hover-color"
                           >
