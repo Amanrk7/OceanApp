@@ -676,7 +676,6 @@ export default function PlayerDashboard() {
                 </div>
             </div>
 
-            {/* ── REFERRALS & FRIENDS ───────────────────────────────────────── */}
 
             {/* ── REFERRALS & FRIENDS ───────────────────────────────────────── */}
             {((player.referralsList?.length > 0) || (player.friendsList?.length > 0)) && (
@@ -863,10 +862,10 @@ export default function PlayerDashboard() {
                         {!paymentFields.some(({ key }) => player.socials?.[key]) && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', width: '100%' }}>
                                 <p style={{ color: C.grayLt, fontSize: '13px', margin: 0, flex: 1 }}>No payment handles added yet</p>
-                                <button onClick={() => setShowEdit(true)}
+                                {/* <button onClick={() => setShowEdit(true)}
                                     style={{ padding: '6px 14px', background: C.violetLt, border: `1px solid ${C.violetBdr}`, borderRadius: '8px', color: C.violet, fontWeight: '700', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                                     + Add Handles
-                                </button>
+                                </button> */}
                             </div>
                         )}
                     </div>
