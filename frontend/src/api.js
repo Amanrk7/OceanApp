@@ -9,26 +9,59 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
 // CACHE MANAGEMENT
 // ═══════════════════════════════════════════════════════════════
 
+// const cache = {
+//   data: {},
+//   timestamps: {},
+//   ttl: 5 * 60 * 1000,
+
+//   set(key, data, customTtl = null) {
+//     this.data[key] = data;
+//     this.timestamps[key] = Date.now();
+//     if (customTtl) this.ttl = customTtl;
+//   },
+
+//   get(key) {
+//     if (!this.data[key]) return null;
+//     const age = Date.now() - this.timestamps[key];
+//     if (age > this.ttl) {
+//       delete this.data[key];
+//       delete this.timestamps[key];
+//       return null;
+//     }
+//     return this.data[key];
+//   },
+
+//   clear(key) {
+//     delete this.data[key];
+//     delete this.timestamps[key];
+//   },
+
+//   clearAll() {
+//     this.data = {};
+//     this.timestamps = {};
+//   }
+// };
+
+// ─── CACHE: fix TTL mutation bug ─────────────────────────────
 const cache = {
   data: {},
   timestamps: {},
-  ttl: 5 * 60 * 1000,
+  DEFAULT_TTL: 5 * 60 * 1000,
 
   set(key, data, customTtl = null) {
-    this.data[key] = data;
+    this.data[key] = { value: data, ttl: customTtl || this.DEFAULT_TTL };
     this.timestamps[key] = Date.now();
-    if (customTtl) this.ttl = customTtl;
   },
 
   get(key) {
     if (!this.data[key]) return null;
     const age = Date.now() - this.timestamps[key];
-    if (age > this.ttl) {
+    if (age > this.data[key].ttl) {
       delete this.data[key];
       delete this.timestamps[key];
       return null;
     }
-    return this.data[key];
+    return this.data[key].value;
   },
 
   clear(key) {
@@ -42,6 +75,12 @@ const cache = {
   }
 };
 
+// Add this helper near the top of the file, after the cache object:
+function broadcastWalletChange() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('walletsChanged'));
+  }
+}
 // ═══════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════
@@ -474,6 +513,33 @@ export const streakAPI = {
 // WALLETS API
 // ═══════════════════════════════════════════════════════════════
 
+// export const walletsAPI = {
+//   getGroupedWallets: async (forceRefresh = false) => {
+//     const cacheKey = 'wallets_grouped';
+//     if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
+//     const data = await fetchAPI('/wallets');
+//     cache.set(cacheKey, data, 2 * 60 * 1000);
+//     return data;
+//   },
+
+//   createWallet: async (walletData) => {
+//     const data = await fetchAPI('/wallets', { method: 'POST', body: JSON.stringify(walletData) });
+//     cache.clearAll();
+//     return data;
+//   },
+
+//   updateWallet: async (id, walletData) => {
+//     const data = await fetchAPI(`/wallets/${id}`, { method: 'PATCH', body: JSON.stringify(walletData) });
+//     cache.clearAll();
+//     return data;
+//   },
+
+//   deleteWallet: async (id) => {
+//     const data = await fetchAPI(`/wallets/${id}`, { method: 'DELETE' });
+//     cache.clearAll();
+//     return data;
+//   }
+// };
 export const walletsAPI = {
   getGroupedWallets: async (forceRefresh = false) => {
     const cacheKey = 'wallets_grouped';
@@ -485,22 +551,27 @@ export const walletsAPI = {
 
   createWallet: async (walletData) => {
     const data = await fetchAPI('/wallets', { method: 'POST', body: JSON.stringify(walletData) });
-    cache.clearAll();
+    cache.clear('wallets_grouped');                          // ← only clear wallets, not everything
+    broadcastWalletChange();
     return data;
   },
 
   updateWallet: async (id, walletData) => {
     const data = await fetchAPI(`/wallets/${id}`, { method: 'PATCH', body: JSON.stringify(walletData) });
-    cache.clearAll();
+    cache.clear('wallets_grouped');
+    broadcastWalletChange();
     return data;
   },
 
   deleteWallet: async (id) => {
     const data = await fetchAPI(`/wallets/${id}`, { method: 'DELETE' });
-    cache.clearAll();
+    cache.clear('wallets_grouped');
+    broadcastWalletChange();
     return data;
   }
 };
+
+
 
 // ═══════════════════════════════════════════════════════════════
 // ATTENDANCE API
