@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     CheckCircle, AlertCircle, RefreshCw, Search, X, Zap,
     ChevronDown, Flame, Trophy, ChevronLeft, ChevronRight,
@@ -6,16 +7,18 @@ import {
     Snowflake, Clock, AlertTriangle, Plus, Unlock,
 } from "lucide-react";
 import { api } from "../api";
+import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
+
 
 // ─── Streak Tiers ─────────────────────────────────────────────────────────────
 const STREAK_TIERS = [
-    { days: 2,  bonus: 2,  label: "Starter",    color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1", ring: "#94a3b8" },
-    { days: 3,  bonus: 3,  label: "Warming Up", color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd", ring: "#38bdf8" },
-    { days: 5,  bonus: 5,  label: "On A Roll",  color: "#8b5cf6", bg: "#faf5ff", border: "#ddd6fe", ring: "#a78bfa" },
-    { days: 7,  bonus: 7,  label: "Hot Streak", color: "#f59e0b", bg: "#fffbeb", border: "#fde68a", ring: "#fbbf24" },
-    { days: 10, bonus: 15, label: "Fire",        color: "#f97316", bg: "#fff7ed", border: "#fdba74", ring: "#fb923c" },
-    { days: 15, bonus: 28, label: "Blazing",     color: "#ef4444", bg: "#fef2f2", border: "#fca5a5", ring: "#f87171" },
-    { days: 30, bonus: 38, label: "LEGEND",      color: "#10b981", bg: "#f0fdf4", border: "#86efac", ring: "#34d399", special: true },
+    { days: 2, bonus: 2, label: "Starter", color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1", ring: "#94a3b8" },
+    { days: 3, bonus: 3, label: "Warming Up", color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd", ring: "#38bdf8" },
+    { days: 5, bonus: 5, label: "On A Roll", color: "#8b5cf6", bg: "#faf5ff", border: "#ddd6fe", ring: "#a78bfa" },
+    { days: 7, bonus: 7, label: "Hot Streak", color: "#f59e0b", bg: "#fffbeb", border: "#fde68a", ring: "#fbbf24" },
+    { days: 10, bonus: 15, label: "Fire", color: "#f97316", bg: "#fff7ed", border: "#fdba74", ring: "#fb923c" },
+    { days: 15, bonus: 28, label: "Blazing", color: "#ef4444", bg: "#fef2f2", border: "#fca5a5", ring: "#f87171" },
+    { days: 30, bonus: 38, label: "LEGEND", color: "#10b981", bg: "#f0fdf4", border: "#86efac", ring: "#34d399", special: true },
 ];
 
 function getEarnedTier(streak) {
@@ -60,14 +63,14 @@ const CARD = {
 // Delegates to api.streak.* (add streakAPI to api.js — see api_streak_addition.js)
 // Uses the same fetchAPI helper as the rest of the app: correct base URL + auth token.
 const freezeApi = {
-    freeze:   (playerId, hours, note) => api.streak.freeze(playerId, hours, note),
-    extend:   (playerId, hours, note) => api.streak.extendFreeze(playerId, hours, note),
-    unfreeze: (playerId)              => api.streak.unfreeze(playerId),
+    freeze: (playerId, hours, note) => api.streak.freeze(playerId, hours, note),
+    extend: (playerId, hours, note) => api.streak.extendFreeze(playerId, hours, note),
+    unfreeze: (playerId) => api.streak.unfreeze(playerId),
 };
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 function Avatar({ name, size = 36 }) {
-    const COLORS = ["#6366f1","#8b5cf6","#ec4899","#f43f5e","#f97316","#0ea5e9","#10b981","#14b8a6","#a855f7","#06b6d4"];
+    const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f43f5e", "#f97316", "#0ea5e9", "#10b981", "#14b8a6", "#a855f7", "#06b6d4"];
     const idx = name ? (name.charCodeAt(0) + (name.charCodeAt(1) || 0)) % COLORS.length : 0;
     const initials = name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "??";
     return (
@@ -145,14 +148,14 @@ function GameChips({ games, loading }) {
     if (!games || games.length === 0) return <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>;
 
     const shown = games.slice(0, 2);
-    const rest  = games.length - 2;
+    const rest = games.length - 2;
 
     return (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "flex-start" }}>
             {shown.map((g, i) => {
-                const name  = typeof g === "string" ? g : g.name;
+                const name = typeof g === "string" ? g : g.name;
                 const before = typeof g === "object" ? g.stockBefore : null;
-                const after  = typeof g === "object" ? g.stockAfter  : null;
+                const after = typeof g === "object" ? g.stockAfter : null;
                 const c = gameColor(name);
                 const hasDelta = before != null && after != null;
                 const delta = hasDelta ? (before - after) : null; // points consumed
@@ -283,18 +286,18 @@ function BonusGuide({ open, onClose }) {
 
 // ─── Freeze Modal ─────────────────────────────────────────────────────────────
 function FreezeModal({ mode, player, currentFreeze, onConfirm, onClose }) {
-    const [hours, setHours]   = useState(24);
-    const [note, setNote]     = useState("");
+    const [hours, setHours] = useState(24);
+    const [note, setNote] = useState("");
     const [loading, setLoading] = useState(false);
-    const [error, setError]   = useState("");
+    const [error, setError] = useState("");
 
-    const streak  = player?.streak?.currentStreak ?? player?.currentStreak ?? 0;
-    const isFreeze   = mode === "freeze";
-    const isExtend   = mode === "extend";
+    const streak = player?.streak?.currentStreak ?? player?.currentStreak ?? 0;
+    const isFreeze = mode === "freeze";
+    const isExtend = mode === "extend";
     const isUnfreeze = mode === "unfreeze";
 
     const currentUntil = currentFreeze?.freezeUntil ? new Date(currentFreeze.freezeUntil) : null;
-    const extendBase   = isExtend && currentUntil && currentUntil > new Date() ? currentUntil : new Date();
+    const extendBase = isExtend && currentUntil && currentUntil > new Date() ? currentUntil : new Date();
     const newFreezeUntil = isUnfreeze ? null : new Date(extendBase.getTime() + hours * 3_600_000);
 
     const handle = async () => {
@@ -311,9 +314,9 @@ function FreezeModal({ mode, player, currentFreeze, onConfirm, onClose }) {
     };
 
     const modeConfig = {
-        freeze:   { icon: <Snowflake style={{ width: "16px", height: "16px", color: "#1d4ed8" }} />, bg: "#eff6ff", border: "#bfdbfe", title: "Freeze Streak", subtitle: "Protects the streak from resetting for a set time", btnColor: "#1d4ed8", btnLabel: `Freeze for ${hours}h` },
-        extend:   { icon: <Plus style={{ width: "16px", height: "16px", color: "#7c3aed" }} />,       bg: "#faf5ff", border: "#ddd6fe", title: "Extend Freeze",  subtitle: "Add more time to the existing freeze", btnColor: "#7c3aed", btnLabel: `Extend by ${hours}h` },
-        unfreeze: { icon: <Unlock style={{ width: "16px", height: "16px", color: "#dc2626" }} />,    bg: "#fef2f2", border: "#fca5a5", title: "Unfreeze Streak", subtitle: "Immediately resets streak to 0 — cannot be undone", btnColor: "#dc2626", btnLabel: "Confirm Reset to 0" },
+        freeze: { icon: <Snowflake style={{ width: "16px", height: "16px", color: "#1d4ed8" }} />, bg: "#eff6ff", border: "#bfdbfe", title: "Freeze Streak", subtitle: "Protects the streak from resetting for a set time", btnColor: "#1d4ed8", btnLabel: `Freeze for ${hours}h` },
+        extend: { icon: <Plus style={{ width: "16px", height: "16px", color: "#7c3aed" }} />, bg: "#faf5ff", border: "#ddd6fe", title: "Extend Freeze", subtitle: "Add more time to the existing freeze", btnColor: "#7c3aed", btnLabel: `Extend by ${hours}h` },
+        unfreeze: { icon: <Unlock style={{ width: "16px", height: "16px", color: "#dc2626" }} />, bg: "#fef2f2", border: "#fca5a5", title: "Unfreeze Streak", subtitle: "Immediately resets streak to 0 — cannot be undone", btnColor: "#dc2626", btnLabel: "Confirm Reset to 0" },
     }[mode];
 
     return (
@@ -443,10 +446,10 @@ function FreezeModal({ mode, player, currentFreeze, onConfirm, onClose }) {
 // ─── Redeem Modal ─────────────────────────────────────────────────────────────
 function RedeemModal({ player, tier, games, loading, onConfirm, onClose }) {
     const [gameId, setGameId] = useState("");
-    const [notes, setNotes]   = useState("");
-    const streak   = player?.streak?.currentStreak ?? player?.currentStreak ?? 0;
-    const selGame  = games.find(g => String(g.id) === String(gameId));
-    const stockOk  = !selGame || selGame.pointStock >= tier.bonus;
+    const [notes, setNotes] = useState("");
+    const streak = player?.streak?.currentStreak ?? player?.currentStreak ?? 0;
+    const selGame = games.find(g => String(g.id) === String(gameId));
+    const stockOk = !selGame || selGame.pointStock >= tier.bonus;
 
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -545,24 +548,34 @@ function RedeemModal({ player, tier, games, loading, onConfirm, onClose }) {
 
 // ─── Player Row ───────────────────────────────────────────────────────────────
 function PlayerRow({ player, depositGames, gamesLoading, onRedeem, onFreezeAction, justRedeemed }) {
-    const streak     = player?.streak?.currentStreak ?? player?.currentStreak ?? 0;
-    const tier       = getEarnedTier(streak);
-    const canRedeem  = !!tier && streak > 0;
+    const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
+    const navigate = useNavigate();
+
+    const streak = player?.streak?.currentStreak ?? player?.currentStreak ?? 0;
+    const tier = getEarnedTier(streak);
+    const canRedeem = !!tier && streak > 0;
     const lastPlayed = player?.streak?.lastPlayedDate || player?.lastPlayedDate;
-    const freeze     = player?.streakFreeze;
-    const isFrozen   = freeze?.isFrozen;
+    const freeze = player?.streakFreeze;
+    const isFrozen = freeze?.isFrozen;
 
     // Time left on freeze
-    const freezeUntil  = freeze?.freezeUntil ? new Date(freeze.freezeUntil) : null;
-    const msLeft       = freezeUntil ? Math.max(0, freezeUntil - Date.now()) : 0;
+    const freezeUntil = freeze?.freezeUntil ? new Date(freeze.freezeUntil) : null;
+    const msLeft = freezeUntil ? Math.max(0, freezeUntil - Date.now()) : 0;
     const isAutoFreeze = freeze?.isAutoFreeze;
-    const strBroken    = freeze?.streakBroken;
+    const strBroken = freeze?.streakBroken;
+
+    const [hover, setHover] = useState(false);
 
     // Row background
     const rowBg = justRedeemed ? "#f0fdf4"
         : strBroken ? "#fff5f5"
-        : isFrozen  ? "#f0f9ff"
-        : "transparent";
+            : isFrozen ? "#f0f9ff"
+                : "transparent";
+
+    const handleView = (player) => {
+        setSelectedPlayer(player);
+        navigate(`/playerDashboard/${player.id}`);
+    };
 
     return (
         <tr
@@ -575,7 +588,14 @@ function PlayerRow({ player, depositGames, gamesLoading, onRedeem, onFreezeActio
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <Avatar name={player.name} size={34} />
                     <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: "700", fontSize: "13px", color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "145px" }}>{player.name}</div>
+                        <div
+                            onClick={() => handleView(player.name ? { id: player.id, name: player.name } : null)}
+                            onMouseEnter={() => setHover(true)}
+                            onMouseLeave={() => setHover(false)}
+                            style={{
+                                fontWeight: "700", fontSize: "13px", cursor: "pointer",
+                                color: hover ? "rgb(14, 165, 233)" : "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "145px"
+                            }}>{player.name}</div>
                         <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "1px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "145px" }}>
                             {player.email || player.username || `ID ${player.id}`}
                         </div>
@@ -708,31 +728,31 @@ function PlayerRow({ player, depositGames, gamesLoading, onRedeem, onFreezeActio
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PlaytimePage() {
-    const [players, setPlayers]               = useState([]);
-    const [total, setTotal]                   = useState(0);
-    const [page, setPage]                     = useState(1);
+    const [players, setPlayers] = useState([]);
+    const [total, setTotal] = useState(0);
+    const [page, setPage] = useState(1);
     const LIMIT = 20;
-    const [search, setSearch]                 = useState("");
+    const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [filter, setFilter]                 = useState("all");
-    const [loading, setLoading]               = useState(true);
-    const [error, setError]                   = useState("");
-    const [success, setSuccess]               = useState("");
-    const [games, setGames]                   = useState([]);
-    const [redeemTarget, setRedeemTarget]     = useState(null);
-    const [redeemTier, setRedeemTier]         = useState(null);
-    const [redeemLoading, setRedeemLoading]   = useState(false);
-    const [justRedeemed, setJustRedeemed]     = useState(new Set());
-    const [guideOpen, setGuideOpen]           = useState(true);
-    const [autoRefresh, setAutoRefresh]       = useState(true);
-    const [lastRefresh, setLastRefresh]       = useState(new Date());
+    const [filter, setFilter] = useState("all");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+    const [games, setGames] = useState([]);
+    const [redeemTarget, setRedeemTarget] = useState(null);
+    const [redeemTier, setRedeemTier] = useState(null);
+    const [redeemLoading, setRedeemLoading] = useState(false);
+    const [justRedeemed, setJustRedeemed] = useState(new Set());
+    const [guideOpen, setGuideOpen] = useState(true);
+    const [autoRefresh, setAutoRefresh] = useState(true);
+    const [lastRefresh, setLastRefresh] = useState(new Date());
 
     // Freeze modal state
     const [freezeModal, setFreezeModal] = useState(null); // { mode, player, currentFreeze }
     const [freezeLoading, setFreezeLoading] = useState(false);
 
     // Per-player deposit games cache: id → Array<{name, stockBefore, stockAfter}>
-    const [playerGames, setPlayerGames]           = useState({});
+    const [playerGames, setPlayerGames] = useState({});
     const [playerGamesLoading, setPlayerGamesLoading] = useState(new Set());
     const detailCache = useRef({});
     const sseRef = useRef(null);
@@ -791,7 +811,7 @@ export default function PlaytimePage() {
                                 gameMap.set(name, {
                                     name,
                                     stockBefore: t.gameStockBefore ?? null,
-                                    stockAfter:  t.gameStockAfter  ?? null,
+                                    stockAfter: t.gameStockAfter ?? null,
                                 });
                             }
                         });
@@ -813,7 +833,7 @@ export default function PlaytimePage() {
         try {
             const r = await api.games.getGames(true, { status: "", search: "" });
             setGames(r?.data || []);
-        } catch {}
+        } catch { }
     }, []);
 
     useEffect(() => { loadGames(); }, [loadGames]);
@@ -838,17 +858,17 @@ export default function PlaytimePage() {
             es.addEventListener("task_updated", refresh);
             es.addEventListener("task_created", refresh);
             es.addEventListener("player_updated", refresh);
-            es.onerror = () => {};
-        } catch {}
+            es.onerror = () => { };
+        } catch { }
         return () => { sseRef.current?.close(); };
     }, [loadPlayers]);
 
     // ── Stats ─────────────────────────────────────────────────────────────────
     const stats = useMemo(() => {
-        const eligible  = players.filter(p => getEarnedTier(p?.streak?.currentStreak ?? p?.currentStreak ?? 0) !== null).length;
+        const eligible = players.filter(p => getEarnedTier(p?.streak?.currentStreak ?? p?.currentStreak ?? 0) !== null).length;
         const legendary = players.filter(p => (p?.streak?.currentStreak ?? p?.currentStreak ?? 0) >= 30).length;
-        const frozen    = players.filter(p => p?.streakFreeze?.isFrozen).length;
-        const streaks   = players.map(p => p?.streak?.currentStreak ?? p?.currentStreak ?? 0);
+        const frozen = players.filter(p => p?.streakFreeze?.isFrozen).length;
+        const streaks = players.map(p => p?.streak?.currentStreak ?? p?.currentStreak ?? 0);
         const avg = streaks.length ? Math.round(streaks.reduce((a, b) => a + b, 0) / streaks.length) : 0;
         return { eligible, legendary, frozen, avg };
     }, [players]);
@@ -856,8 +876,8 @@ export default function PlaytimePage() {
     // ── Filtered players ──────────────────────────────────────────────────────
     const filtered = useMemo(() => players.filter(p => {
         const streak = p?.streak?.currentStreak ?? p?.currentStreak ?? 0;
-        if (filter === "eligible")  return getEarnedTier(streak) !== null;
-        if (filter === "frozen")    return p?.streakFreeze?.isFrozen;
+        if (filter === "eligible") return getEarnedTier(streak) !== null;
+        if (filter === "frozen") return p?.streakFreeze?.isFrozen;
         if (filter === "ineligible") return getEarnedTier(streak) === null;
         return true;
     }), [players, filter]);
@@ -908,7 +928,7 @@ export default function PlaytimePage() {
         try {
             setFreezeLoading(true);
             let result;
-            if (mode === "freeze")   result = await freezeApi.freeze(playerId, hours, note);
+            if (mode === "freeze") result = await freezeApi.freeze(playerId, hours, note);
             else if (mode === "extend") result = await freezeApi.extend(playerId, hours, note);
             else if (mode === "unfreeze") result = await freezeApi.unfreeze(playerId);
 
@@ -938,11 +958,11 @@ export default function PlaytimePage() {
             {/* ── Stat Strip ── */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
                 {[
-                    { Icon: Users,      label: "Total Players",     value: total,            color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd" },
-                    { Icon: Flame,      label: "Eligible for Bonus", value: stats.eligible,   color: "#f59e0b", bg: "#fffbeb", border: "#fde68a" },
-                    { Icon: Snowflake,  label: "Streak Frozen",     value: stats.frozen,      color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe" },
-                    { Icon: Trophy,     label: "Legend (30-day)",   value: stats.legendary,   color: "#10b981", bg: "#f0fdf4", border: "#86efac" },
-                    { Icon: TrendingUp, label: "Avg Streak (page)", value: `${stats.avg}d`,   color: "#8b5cf6", bg: "#faf5ff", border: "#ddd6fe" },
+                    { Icon: Users, label: "Total Players", value: total, color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd" },
+                    { Icon: Flame, label: "Eligible for Bonus", value: stats.eligible, color: "#f59e0b", bg: "#fffbeb", border: "#fde68a" },
+                    { Icon: Snowflake, label: "Streak Frozen", value: stats.frozen, color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe" },
+                    { Icon: Trophy, label: "Legend (30-day)", value: stats.legendary, color: "#10b981", bg: "#f0fdf4", border: "#86efac" },
+                    { Icon: TrendingUp, label: "Avg Streak (page)", value: `${stats.avg}d`, color: "#8b5cf6", bg: "#faf5ff", border: "#ddd6fe" },
                 ].map(({ Icon, label, value, color, bg, border }) => (
                     <div key={label} style={{ ...CARD, padding: "14px 18px", display: "flex", alignItems: "center", gap: "12px" }}>
                         <div style={{ width: "38px", height: "38px", borderRadius: "10px", background: bg, border: `1px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -1044,15 +1064,15 @@ export default function PlaytimePage() {
                                 <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
                                     <tr style={{ background: "#f8fafc" }}>
                                         {[
-                                            { label: "Player",        w: "185px" },
-                                            { label: "Tier",          w: "70px"  },
-                                            { label: "Balance",       w: "90px"  },
-                                            { label: "Streak",        w: "130px" },
+                                            { label: "Player", w: "185px" },
+                                            { label: "Tier", w: "70px" },
+                                            { label: "Balance", w: "90px" },
+                                            { label: "Streak", w: "130px" },
                                             { label: "To Next Bonus", w: "165px" },
-                                            { label: "Last Deposit",  w: "110px" },
+                                            { label: "Last Deposit", w: "110px" },
                                             { label: "Games & Stock", w: "180px" },
-                                            { label: "Bonus Ready",   w: "100px" },
-                                            { label: "Actions",       w: "170px" },
+                                            { label: "Bonus Ready", w: "100px" },
+                                            { label: "Actions", w: "170px" },
                                         ].map(col => (
                                             <th key={col.label} style={{ textAlign: col.label === "Actions" ? "right" : "left", padding: "10px 12px", fontWeight: "700", color: "#64748b", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: "2px solid #e2e8f0", whiteSpace: "nowrap", width: col.w, minWidth: col.w, background: "#f8fafc" }}>
                                                 {col.label}
@@ -1141,4 +1161,3 @@ export default function PlaytimePage() {
         </div>
     );
 }
-
