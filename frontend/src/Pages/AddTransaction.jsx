@@ -575,7 +575,7 @@ function AddTransactionsPage() {
                                                     Referred by <strong>{referrerName}</strong>.
                                                     {amt > 0
                                                         ? <> A deposit of <strong>{fmt(amt)}</strong> will create a <strong>${referralBonusAmt.toFixed(2)}</strong> eligibility for both <strong>{player.name}</strong> and <strong>{referrerName}</strong> — toggle below to record it, then grant from the Bonus page.</>
-                                                        : <> Enter a deposit amount above to see the referral bonus amount.</>
+                                                        : <> Enter a deposit amount below to see the referral bonus amount.</>
                                                     }
                                                 </>
                                             }
