@@ -1,14 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useContext } from "react";
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     CheckCircle, AlertCircle, Search, X, RefreshCw, ChevronDown,
-    ArrowDownLeft, ArrowUpRight, Zap, Gift, Star, Wallet, Clock,
+    ArrowDownLeft, ArrowUpRight, Zap, Gift, Star, Wallet, Clock, Users,
 } from "lucide-react";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
-
 import { api } from "../api";
-
 
 // ─── Inline SVG icons ─────────────────────────────────────────────────────────
 const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
@@ -66,14 +64,6 @@ const DEPOSIT_BONUSES = [
         subtitle: "20% of deposit — for promotions or special occasions",
         calc: (amt) => amt * 0.2,
     },
-    {
-        id: "referral",
-        label: "Referral Bonus Eligibility",
-        icon: Users,
-        color: { bg: "#f0fdf4", border: "#86efac", dot: "#16a34a", text: "#166534" },
-        subtitle: "Records x÷2 eligibility — staff grants it from Bonus page",
-        calc: () => 0,   // no immediate deduction
-    },
 ];
 
 function BonusToggle({ bonus, amount, player, enabled, onToggle, eligible = true, disabledReason = "" }) {
@@ -106,14 +96,12 @@ function BonusToggle({ bonus, amount, player, enabled, onToggle, eligible = true
 function LedgerRow({ tx, undoingId, onUndo }) {
     const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
     const navigate = useNavigate();
-
     const [hover, setHover] = useState(false);
 
     const isUndoing = undoingId === tx.id;
     const canUndo = (tx.status === "COMPLETED" || tx.status === "PENDING") && !isUndoing;
-    const isDepositRow = ["Deposit", "deposit"].includes(tx.type);
     const isCashoutRow = ["Cashout", "cashout"].includes(tx.type);
-    const positive = !["Cashout", "cashout"].includes(tx.type);
+    const positive = !isCashoutRow;
 
     const handleView = (player) => {
         setSelectedPlayer(player);
@@ -123,7 +111,7 @@ function LedgerRow({ tx, undoingId, onUndo }) {
     let displayType = tx.type;
     let typeColor = { bg: "#f1f5f9", text: "#475569" };
     if (["Deposit", "deposit"].includes(tx.type)) { displayType = "Deposit"; typeColor = { bg: "#dcfce7", text: "#166534" }; }
-    else if (["Cashout", "cashout"].includes(tx.type)) { displayType = "Cashout"; typeColor = { bg: "#fee2e2", text: "#991b1b" }; }
+    else if (isCashoutRow) { displayType = "Cashout"; typeColor = { bg: "#fee2e2", text: "#991b1b" }; }
     else if (tx.bonusType === "match") { displayType = "Match Bonus"; typeColor = { bg: "#eff6ff", text: "#0369a1" }; }
     else if (tx.bonusType === "special") { displayType = "Special Bonus"; typeColor = { bg: "#faf5ff", text: "#6b21a8" }; }
     else if (tx.bonusType === "streak") { displayType = "Streak Bonus"; typeColor = { bg: "#fffbeb", text: "#92400e" }; }
@@ -133,7 +121,6 @@ function LedgerRow({ tx, undoingId, onUndo }) {
     const paidAmount = parseFloat(tx.paidAmount) || 0;
     const totalAmount = parseFloat(tx.amount) || 0;
     const isPartial = isCashoutRow && isPending && paidAmount > 0 && paidAmount < totalAmount;
-
     const statusLabel = isPartial ? "PARTIAL" : tx.status;
     const statusColor =
         statusLabel === "COMPLETED" ? { bg: "#dcfce7", text: "#166534" } :
@@ -147,12 +134,8 @@ function LedgerRow({ tx, undoingId, onUndo }) {
             <td style={{ padding: "10px 12px", color: "#0ea5e9", fontWeight: "700", fontSize: "12px", whiteSpace: "nowrap" }}>#{tx.id}</td>
             <td style={{ padding: "10px 12px" }}>
                 <div onClick={() => handleView(tx.playerName ? { id: tx.playerId, name: tx.playerName } : null)}
-                    onMouseEnter={() => setHover(true)}
-                    onMouseLeave={() => setHover(false)}
-                    style={{
-                        fontWeight: "600", fontSize: "13px", whiteSpace: "nowrap", cursor: "pointer",
-                        color: hover ? "rgb(14, 165, 233)" : "#0f172a"
-                    }}>{tx.playerName || "—"}</div>
+                    onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+                    style={{ fontWeight: "600", fontSize: "13px", whiteSpace: "nowrap", cursor: "pointer", color: hover ? "rgb(14, 165, 233)" : "#0f172a" }}>{tx.playerName || "—"}</div>
                 {tx.email && <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "1px", maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.email}</div>}
             </td>
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
@@ -164,63 +147,44 @@ function LedgerRow({ tx, undoingId, onUndo }) {
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
                 {tx.fee != null && tx.fee > 0
                     ? <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "12px" }}>−{fmt(tx.fee)}</span>
-                    : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>
-                }
+                    : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>}
             </td>
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
-                {isDepositRow
-                    ? <span style={{ fontWeight: "700", fontSize: "13px", color: "#0ea5e9" }}>
-                        {fmt((parseFloat(tx.amount) || 0) - (parseFloat(tx.fee) || 0))}
-                    </span>
+                {["Deposit", "deposit"].includes(tx.type)
+                    ? <span style={{ fontWeight: "700", fontSize: "13px", color: "#0ea5e9" }}>{fmt((parseFloat(tx.amount) || 0) - (parseFloat(tx.fee) || 0))}</span>
                     : isCashoutRow
                         ? <div style={{ minWidth: "110px" }}>
-                            <div style={{ fontSize: "11px", color: "#64748b", marginBottom: "3px" }}>
-                                {fmt(paidAmount)} / {fmt(totalAmount)}
-                            </div>
+                            <div style={{ fontSize: "11px", color: "#64748b", marginBottom: "3px" }}>{fmt(paidAmount)} / {fmt(totalAmount)}</div>
                             <div style={{ height: "5px", background: "#fee2e2", borderRadius: "99px", overflow: "hidden" }}>
                                 <div style={{ height: "100%", width: `${totalAmount > 0 ? Math.min((paidAmount / totalAmount) * 100, 100) : 0}%`, background: paidAmount >= totalAmount ? "#10b981" : "#f59e0b", borderRadius: "99px" }} />
                             </div>
                         </div>
-                        : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>
-                }
+                        : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>}
             </td>
             <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
                 {tx.gameName ? <span style={{ display: "inline-block", padding: "2px 8px", background: "#f1f5f9", borderRadius: "5px", fontSize: "11px", fontWeight: "500", color: "#475569" }}>{tx.gameName}</span> : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>}
             </td>
             <td style={{ padding: "10px 12px" }}>
-                {(tx.walletMethod || tx.walletName) ? (
-                    <div>
+                {(tx.walletMethod || tx.walletName)
+                    ? <div>
                         <div style={{ fontSize: "12px", fontWeight: "600", color: "#0f172a", whiteSpace: "nowrap" }}>{tx.walletMethod || "—"}</div>
                         <div style={{ fontSize: "11px", color: "#94a3b8", whiteSpace: "nowrap" }}>{tx.walletName || ""}</div>
                     </div>
-                ) : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>}
+                    : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>}
             </td>
             <td style={{ padding: "10px 12px", fontSize: "12px", whiteSpace: "nowrap" }}>
                 {tx.gameStockBefore != null && tx.gameStockAfter != null && (() => {
-                    const isCashoutTx = ["Cashout", "cashout"].includes(tx.type);
                     const stockBefore = parseFloat(tx.gameStockBefore);
                     const stockAfter = parseFloat(tx.gameStockAfter);
-                    const paid = parseFloat(tx.paidAmount) || 0;
-                    const total = parseFloat(tx.amount) || 0;
-                    const effectiveAfter = isCashoutTx ? stockBefore + paid : stockAfter;
-                    const remaining = isCashoutTx ? total - paid : 0;
-                    const isUp = effectiveAfter >= stockBefore;
+                    const isUp = stockAfter >= stockBefore;
                     return (
                         <div>
                             <div style={{ fontSize: "10px", color: "#94a3b8", marginBottom: "1px" }}>Game Points</div>
                             <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                                 <span style={{ color: "#94a3b8" }}>{stockBefore.toFixed(0)}</span>
                                 <span style={{ color: "#94a3b8", margin: "0 2px" }}>→</span>
-                                <span style={{ color: isUp ? "#22c55e" : "#ef4444", fontWeight: "700" }}>{effectiveAfter.toFixed(0)}</span>
+                                <span style={{ color: isUp ? "#22c55e" : "#ef4444", fontWeight: "700" }}>{stockAfter.toFixed(0)}</span>
                             </div>
-                            {isCashoutTx && remaining > 0 && (
-                                <div style={{ marginTop: "3px" }}>
-                                    <div style={{ height: "4px", background: "#e2e8f0", borderRadius: "99px", overflow: "hidden", width: "80px" }}>
-                                        <div style={{ height: "100%", width: `${total > 0 ? Math.min((paid / total) * 100, 100) : 0}%`, background: paid > 0 ? "#22c55e" : "#e2e8f0", borderRadius: "99px" }} />
-                                    </div>
-                                    <div style={{ fontSize: "9px", color: "#94a3b8", marginTop: "2px" }}>{remaining.toFixed(0)} pts pending</div>
-                                </div>
-                            )}
                         </div>
                     );
                 })()}
@@ -245,8 +209,10 @@ function LedgerRow({ tx, undoingId, onUndo }) {
     );
 }
 
+// ═════════════════════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═════════════════════════════════════════════════════════════════════════════
 function AddTransactionsPage() {
-    // ── No referral bonus in deposit flow — use Bonus page for that ──
     const EMPTY = { txType: "deposit", amount: "", fee: "", gameId: "", walletId: "", notes: "", bonusMatch: false, bonusSpecial: false };
 
     const { shiftActive } = useContext(ShiftStatusContext);
@@ -254,6 +220,7 @@ function AddTransactionsPage() {
 
     const [bonusReferral, setBonusReferral] = useState(false);
     const [referralAlreadyRecorded, setReferralAlreadyRecorded] = useState(false);
+    const [referralCheckLoading, setReferralCheckLoading] = useState(false);
     const [form, setForm] = useState(EMPTY);
     const [player, setPlayer] = useState(null);
     const [eligLoading, setEligLoading] = useState(false);
@@ -277,33 +244,18 @@ function AddTransactionsPage() {
 
     const loadGames = useCallback(async (force = false) => {
         try {
-            if (force) { api.clearCache?.(); api.games?.clearCache?.(); }
             const r = await api.games.getGames(force, { status: "", search: "" });
             setGames(r?.data || []);
         } catch (e) { console.error(e); }
     }, []);
 
-
-
-    // const loadWallets = useCallback(async () => {
-    //     try {
-    //         const r = await api.wallets.getGroupedWallets(true);
-    //         const flat = (r?.data || []).flatMap(g => g.subAccounts.map(s => ({ ...s, label: `${g.method} — ${s.name}  (${fmt(s.balance)})`, methodName: g.method, methodId: g.id })));
-    //         setWallets(flat);
-    //     } catch (e) { console.error(e); }
-    // }, []);
     const loadWallets = useCallback(async () => {
         try {
             const r = await api.wallets.getGroupedWallets(true);
             const flat = (r?.data || []).flatMap(g =>
                 g.subAccounts
-                    .filter(s => s.isLive !== false)   // ← ADD THIS LINE
-                    .map(s => ({
-                        ...s,
-                        label: `${g.method} — ${s.name}  (${fmt(s.balance)})`,
-                        methodName: g.method,
-                        methodId: g.id
-                    }))
+                    .filter(s => s.isLive !== false)
+                    .map(s => ({ ...s, label: `${g.method} — ${s.name}  (${fmt(s.balance)})`, methodName: g.method, methodId: g.id }))
             );
             setWallets(flat);
         } catch (e) { console.error(e); }
@@ -345,26 +297,51 @@ function AddTransactionsPage() {
         if (usedMatchToday) setForm(f => ({ ...f, bonusMatch: false }));
     };
 
-    const checkReferralStatus = async (fp) => {
-        if (!fp?.id || !fp?.referredBy) { setReferralAlreadyRecorded(false); return; }
+    // ── FIX: checkReferralStatus now receives the already-fetched full player ──
+    const checkReferralStatus = async (fullPlayer) => {
+        if (!fullPlayer?.id || !fullPlayer?.referredBy) {
+            setReferralAlreadyRecorded(false);
+            return;
+        }
+        setReferralCheckLoading(true);
         try {
-            const r = await api.referralBonuses.getEligible(fp.id);
+            const r = await api.referralBonuses.getEligible(fullPlayer.id);
+            // If there's already an unclaimed 'referred' side record, don't allow re-recording
             const hasPending = (r?.data || []).some(e => e.side === 'referred');
             setReferralAlreadyRecorded(hasPending);
-        } catch { setReferralAlreadyRecorded(false); }
+        } catch {
+            setReferralAlreadyRecorded(false);
+        } finally {
+            setReferralCheckLoading(false);
+        }
     };
 
+    // ── FIX: moved checkReferralStatus INSIDE try block, after fp is defined ──
     const selectPlayer = async (p) => {
-        checkReferralStatus(fp)
         setQuery(p.name); setShowDrop(false); setResults([]);
-        setPlayer(null); setMatchUsedToday(false);
+        setPlayer(null); setMatchUsedToday(false); setReferralAlreadyRecorded(false);
         setForm(f => ({ ...EMPTY, txType: f.txType }));
+        setBonusReferral(false);
         setEligLoading(true);
-        try { const r = await api.players.getPlayer(p.id); const fp = r?.data || p; setPlayer(fp); computeEligibility(fp); }
-        catch { setPlayer(p); } finally { setEligLoading(false); }
+        try {
+            const r = await api.players.getPlayer(p.id);
+            const fp = r?.data || p;
+            setPlayer(fp);
+            computeEligibility(fp);
+            await checkReferralStatus(fp);  // ← fp is now defined
+        } catch {
+            setPlayer(p);
+        } finally {
+            setEligLoading(false);
+        }
     };
 
-    const clearPlayer = () => { setPlayer(null); setQuery(""); setMatchUsedToday(false); setForm(f => ({ ...EMPTY, txType: f.txType })); };
+    const clearPlayer = () => {
+        setPlayer(null); setQuery(""); setMatchUsedToday(false); setBonusReferral(false);
+        setReferralAlreadyRecorded(false);
+        setForm(f => ({ ...EMPTY, txType: f.txType }));
+    };
+
     const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
     const amt = parseFloat(form.amount) || 0;
@@ -380,12 +357,9 @@ function AddTransactionsPage() {
     const matchAmt = (form.bonusMatch && amt > 0) ? amt * 0.5 : 0;
     const specialAmt = (form.bonusSpecial && amt > 0) ? amt * 0.2 : 0;
     const totalBonus = matchAmt + specialAmt;
-
-    const stockNeeded = isDeposit
-        ? amt + matchAmt + specialAmt
-        : amt;
-
+    const stockNeeded = isDeposit ? amt + matchAmt + specialAmt : amt;
     const stockOk = !selGame || stockNeeded <= selGame.pointStock;
+
     const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     const todayCashoutTotal = (!isDeposit && player)
         ? (player.transactionHistory || [])
@@ -393,7 +367,11 @@ function AddTransactionsPage() {
             .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0)
         : 0;
     const cashoutOverLimit = !isDeposit && !streakWaived && cashoutLimit > 0 && (todayCashoutTotal + amt) > cashoutLimit;
-    const gameRequired = !form.gameId;
+
+    // Referral info derived values
+    const playerHasReferrer = !!(player?.referredBy);
+    const referrerName = player?.referredBy?.name || (player?.referredBy ? `ID ${player.referredBy}` : null);
+    const referralBonusAmt = amt > 0 ? parseFloat((amt / 2).toFixed(2)) : 0;
 
     const canSubmit =
         !!player?.id && amt > 0 && !!form.walletId && !!form.gameId &&
@@ -406,7 +384,7 @@ function AddTransactionsPage() {
         if (!player?.id) { setError("Please select a player."); return; }
         if (!amt) { setError("Enter a valid amount."); return; }
         if (!form.walletId) { setError("Please select a wallet."); return; }
-        if (!form.gameId) { setError("Please select a game — required for all transactions."); return; }
+        if (!form.gameId) { setError("Please select a game."); return; }
         if (!stockOk) { setError(`Insufficient game stock — need ${stockNeeded.toFixed(2)} pts.`); return; }
         if (cashoutOverLimit) { setError(`Cashout exceeds limit of ${fmt(cashoutLimit)}.`); return; }
         if (feeAmt < 0 || feeAmt > amt) { setError("Fee must be between $0 and the deposit amount."); return; }
@@ -414,15 +392,36 @@ function AddTransactionsPage() {
         try {
             setSubmitting(true);
             const payload = isDeposit
-                ? { playerId: player.id, amount: amt, fee: feeAmt, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, gameId: form.gameId, notes: form.notes, bonusMatch: form.bonusMatch && amt > 0, bonusSpecial: form.bonusSpecial && amt > 0, bonusReferral: bonusReferral && !referralAlreadyRecorded, }
-                : { playerId: player.id, amount: amt, fee: feeAmt, gameId: form.gameId, walletId: parseInt(form.walletId), walletMethod: selWallet?.methodName || selWallet?.method || null, walletName: selWallet?.name || null, notes: form.notes };
+                ? {
+                    playerId: player.id, amount: amt, fee: feeAmt,
+                    walletId: parseInt(form.walletId),
+                    walletMethod: selWallet?.methodName || selWallet?.method || null,
+                    walletName: selWallet?.name || null,
+                    gameId: form.gameId, notes: form.notes,
+                    bonusMatch: form.bonusMatch && amt > 0,
+                    bonusSpecial: form.bonusSpecial && amt > 0,
+                    bonusReferral: bonusReferral && !referralAlreadyRecorded && playerHasReferrer,
+                }
+                : {
+                    playerId: player.id, amount: amt, fee: feeAmt,
+                    gameId: form.gameId, walletId: parseInt(form.walletId),
+                    walletMethod: selWallet?.methodName || selWallet?.method || null,
+                    walletName: selWallet?.name || null,
+                    notes: form.notes,
+                };
 
-            const data = isDeposit ? await api.transactions.deposit(payload) : await api.transactions.cashout(payload);
+            const data = isDeposit
+                ? await api.transactions.deposit(payload)
+                : await api.transactions.cashout(payload);
 
-            let msg = data.message || (isDeposit ? "Deposit recorded successfully!" : "Cashout recorded — status set to Pending. Approve it from the Transactions page.");
-            if (feeAmt > 0 && isDeposit) msg += ` Wallet credited with ${fmt(amt - feeAmt)} (${fmt(amt)} deposit − ${fmt(feeAmt)} fee).`;
+            let msg = data.message || (isDeposit
+                ? "Deposit recorded successfully!"
+                : "Cashout recorded — status set to Pending.");
+            if (feeAmt > 0 && isDeposit) msg += ` Wallet credited with ${fmt(amt - feeAmt)}.`;
             setSuccess(msg);
-            setForm(EMPTY); setQuery(""); setPlayer(null); setMatchUsedToday(false);
+
+            setForm(EMPTY); setQuery(""); setPlayer(null);
+            setMatchUsedToday(false); setBonusReferral(false); setReferralAlreadyRecorded(false);
             api.clearCache?.();
             await Promise.all([loadLedger(), loadGames(true), loadWallets()]);
         } catch (err) {
@@ -434,7 +433,7 @@ function AddTransactionsPage() {
         try {
             setUndoingId(txId); setError(""); setUndoSuccess("");
             await api.transactions.undoTransaction(String(txId).replace(/\D/g, ""));
-            api.clearCache?.(); api.games?.clearCache?.();
+            api.clearCache?.();
             await Promise.all([loadLedger(), loadWallets(), loadGames(true)]);
             if (player && playerIdFromTx && player.id === playerIdFromTx) {
                 try { const r = await api.players.getPlayer(player.id); const u = r?.data || player; setPlayer(u); computeEligibility(u); } catch { }
@@ -446,14 +445,11 @@ function AddTransactionsPage() {
         finally { setUndoingId(null); }
     };
 
-
     if (!shiftActive) {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
-                    <button onClick={() => navigate('/shifts')} style={{ padding: '9px 18px', background: 'rgb(14, 165, 233)', color: 'rgb(255, 255, 255)' }}>
-                        Start Shift
-                    </button>
+                    <button onClick={() => navigate('/shifts')} style={{ padding: '9px 18px', background: 'rgb(14, 165, 233)', color: '#fff' }}>Start Shift</button>
                 </nav>
                 <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                     <IAlert />
@@ -501,16 +497,9 @@ function AddTransactionsPage() {
                         <p style={{ color: isDeposit ? "#166634" : "#92400e", margin: 0, fontSize: "12px", lineHeight: "1.5" }}>
                             {isDeposit
                                 ? "Player receives the full deposit amount. The wallet is credited with (deposit − fee). Game stock deducted for full deposit + bonuses."
-                                : "Cashout is saved as PENDING. Go to the Transactions page to approve it (full or partial payments). Balance is deducted immediately."
+                                : "Cashout is saved as PENDING. Go to the Transactions page to approve it (full or partial payments). Balance is deducted at approval."
                             }
                         </p>
-                        {!isDeposit && (
-                            <div style={{ marginTop: "8px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                                {["1️⃣ Record cashout → PENDING", "2️⃣ Optional partial payments", "3️⃣ Admin marks DONE → COMPLETED"].map(s => (
-                                    <span key={s} style={{ fontSize: "11px", padding: "3px 8px", background: "#fef3c7", borderRadius: "5px", color: "#92400e", fontWeight: "600" }}>{s}</span>
-                                ))}
-                            </div>
-                        )}
                     </div>
                 </div>
 
@@ -545,8 +534,7 @@ function AddTransactionsPage() {
                                                     <span style={{ fontSize: "10px", padding: "1px 6px", borderRadius: "4px", fontWeight: "700", display: "inline-block", marginTop: "2px", background: p.tier === "GOLD" ? "#fef3c7" : p.tier === "SILVER" ? "#e0e7ff" : "#fed7aa", color: p.tier === "GOLD" ? "#92400e" : p.tier === "SILVER" ? "#3730a3" : "#9a3412" }}>{p.tier}</span>
                                                 </div>
                                             </div>
-                                        ))
-                                    }
+                                        ))}
                                 </div>
                             )}
                             {eligLoading && <div style={{ marginTop: "6px", fontSize: "12px", color: "#94a3b8" }}>Loading player data…</div>}
@@ -557,7 +545,51 @@ function AddTransactionsPage() {
                                     {streak > 0 && <span style={{ padding: "4px 10px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#92400e" }}>🔥 {streak}-day streak</span>}
                                     {matchUsedToday && <span style={{ padding: "4px 10px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#92400e" }}>⚠ Match bonus used today</span>}
                                     {!isDeposit && cashoutLimit > 0 && !streakWaived && <span style={{ padding: "4px 10px", background: cashoutOverLimit ? "#fee2e2" : "#fef2f2", border: `1px solid ${cashoutOverLimit ? "#fca5a5" : "#fecaca"}`, borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#991b1b" }}>Daily limit: {fmt(cashoutLimit - todayCashoutTotal)} remaining (of {fmt(cashoutLimit)})</span>}
-                                    {!isDeposit && streakWaived && <span style={{ padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166534" }}>✓ Limit waived (30-day streak)</span>}
+                                    {!isDeposit && streakWaived && <span style={{ padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166634" }}>✓ Limit waived (30-day streak)</span>}
+                                </div>
+                            )}
+
+                            {/* ── Referral bonus INFO banner — shown whenever player has referrer ── */}
+                            {player && !eligLoading && isDeposit && playerHasReferrer && (
+                                <div style={{
+                                    marginTop: "10px",
+                                    padding: "13px 16px",
+                                    background: referralAlreadyRecorded ? "#fffbeb" : "#f0fdf4",
+                                    border: `1px solid ${referralAlreadyRecorded ? "#fde68a" : "#86efac"}`,
+                                    borderRadius: "10px",
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    gap: "10px",
+                                }}>
+                                    <Users style={{ width: "16px", height: "16px", color: referralAlreadyRecorded ? "#d97706" : "#16a34a", flexShrink: 0, marginTop: "1px" }} />
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: "700", fontSize: "13px", color: referralAlreadyRecorded ? "#92400e" : "#166534" }}>
+                                            {referralAlreadyRecorded
+                                                ? "⚠ Referral bonus already pending for this player"
+                                                : "🎯 Referral bonus eligible"}
+                                        </div>
+                                        <div style={{ fontSize: "12px", color: referralAlreadyRecorded ? "#d97706" : "#16a34a", marginTop: "3px", lineHeight: "1.5" }}>
+                                            {referralAlreadyRecorded
+                                                ? `A referral bonus record already exists — go to the Bonus page to grant it.`
+                                                : <>
+                                                    Referred by <strong>{referrerName}</strong>.
+                                                    {amt > 0
+                                                        ? <> A deposit of <strong>{fmt(amt)}</strong> will create a <strong>${referralBonusAmt.toFixed(2)}</strong> eligibility for both <strong>{player.name}</strong> and <strong>{referrerName}</strong> — toggle below to record it, then grant from the Bonus page.</>
+                                                        : <> Enter a deposit amount above to see the referral bonus amount.</>
+                                                    }
+                                                </>
+                                            }
+                                        </div>
+                                        {!referralAlreadyRecorded && referralCheckLoading && (
+                                            <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "4px" }}>Checking status…</div>
+                                        )}
+                                    </div>
+                                    {!referralAlreadyRecorded && amt > 0 && (
+                                        <div style={{ flexShrink: 0, textAlign: "right" }}>
+                                            <div style={{ fontSize: "18px", fontWeight: "900", color: "#16a34a" }}>${referralBonusAmt.toFixed(2)}</div>
+                                            <div style={{ fontSize: "10px", color: "#4ade80" }}>each party</div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -579,8 +611,8 @@ function AddTransactionsPage() {
                                     {feeAmt > 0
                                         ? isDeposit
                                             ? `Wallet gets: ${fmt(amt - feeAmt)} (${fmt(amt)} − ${fmt(feeAmt)} fee)`
-                                            : `Wallet pays: ${fmt(amt + feeAmt)} (${fmt(amt)} cashout + ${fmt(feeAmt)} bank fee)`
-                                        : isDeposit ? "No fee — wallet gets full deposit amount" : "No fee — wallet pays exact cashout amount"}
+                                            : `Wallet pays: ${fmt(amt + feeAmt)} (${fmt(amt)} + ${fmt(feeAmt)} fee)`
+                                        : isDeposit ? "No fee — wallet gets full deposit" : "No fee — wallet pays exact amount"}
                                 </p>
                             )}
                         </div>
@@ -595,16 +627,12 @@ function AddTransactionsPage() {
                                 <ChevronDown style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
                             </div>
                             {selWallet && amt > 0 && isDeposit && (
-
                                 <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: "#22c55e" }}>
                                     ✓ {fmt(selWallet.balance)} → {fmt(selWallet.balance + amt - feeAmt)}
                                     {feeAmt > 0 && <span style={{ fontWeight: "400", color: "#94a3b8", fontSize: "11px" }}> (deposit − fee)</span>}
                                 </p>
                             )}
                             {selWallet && amt > 0 && !isDeposit && (
-                                // <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: "#64748b" }}>
-                                //     Wallet balance: {fmt(selWallet.balance)}
-                                // </p>
                                 <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: "#22c55e" }}>
                                     ✓ {fmt(selWallet.balance)} → {fmt(selWallet.balance - amt - feeAmt)}
                                     {feeAmt > 0 && <span style={{ fontWeight: "400", color: "#94a3b8", fontSize: "11px" }}> (cashout + fee)</span>}
@@ -617,14 +645,14 @@ function AddTransactionsPage() {
                     <div>
                         <label style={LABEL}>Game <span style={{ color: "#ef4444" }}>*</span> required for all transactions</label>
                         <div style={{ position: "relative" }}>
-                            <select value={form.gameId} onChange={e => set("gameId", e.target.value)} style={{ ...SELECT, borderColor: gameRequired ? "#fca5a5" : "#e2e8f0" }}>
+                            <select value={form.gameId} onChange={e => set("gameId", e.target.value)} style={{ ...SELECT, borderColor: !form.gameId ? "#fca5a5" : "#e2e8f0" }}>
                                 <option value="">— Select a game —</option>
                                 {games.map(g => <option key={g.id} value={g.id} disabled={g.pointStock <= 0}>{g.name}  ({(g.pointStock ?? 0).toFixed(0)} pts){g.pointStock <= 0 ? " — EMPTY" : ""}</option>)}
                             </select>
                             <ChevronDown style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
                         </div>
                         {selGame && (
-                            <div style={{ marginTop: "8px", padding: "10px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: "500", background: !stockOk ? "#fee2e2" : "#f0fdf4", border: `1px solid ${!stockOk ? "#fca5a5" : "#86efac"}`, color: !stockOk ? "#991b1b" : "#166534" }}>
+                            <div style={{ marginTop: "8px", padding: "10px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: "500", background: !stockOk ? "#fee2e2" : "#f0fdf4", border: `1px solid ${!stockOk ? "#fca5a5" : "#86efac"}`, color: !stockOk ? "#991b1b" : "#166634" }}>
                                 {isDeposit
                                     ? (!stockOk
                                         ? `⚠ Insufficient — ${selGame.name} has ${selGame.pointStock.toFixed(2)} pts, need ${stockNeeded.toFixed(2)}`
@@ -633,7 +661,6 @@ function AddTransactionsPage() {
                                 }
                             </div>
                         )}
-                        {gameRequired && <p style={{ color: "#ef4444", fontSize: "11px", marginTop: "4px" }}>⚠ Game is required to proceed</p>}
                     </div>
 
                     {/* Bonus section — deposits only */}
@@ -645,14 +672,14 @@ function AddTransactionsPage() {
                                     <Zap style={{ width: "15px", height: "15px", color: "#f59e0b" }} /> Deposit Bonuses
                                 </div>
                                 <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 14px" }}>
-                                    Match bonus: once per day · For referral bonuses, use the <strong>Bonus page</strong> to grant individually to player or referrer.
+                                    Match bonus: once per day · Referral bonuses: toggle below to record eligibility, then grant from Bonus page.
                                 </p>
                                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                                     <BonusToggle bonus={DEPOSIT_BONUSES[0]} amount={amt} player={player} enabled={form.bonusMatch} onToggle={v => set("bonusMatch", v)} eligible={!matchUsedToday} disabledReason="Match bonus already used today for this player" />
                                     <BonusToggle bonus={DEPOSIT_BONUSES[1]} amount={amt} player={player} enabled={form.bonusSpecial} onToggle={v => set("bonusSpecial", v)} />
                                 </div>
 
-                                {/* Summary panel */}
+                                {/* Transaction summary */}
                                 {amt > 0 && (
                                     <div style={{ marginTop: "14px", borderRadius: "10px", border: "1px solid #e2e8f0", overflow: "hidden" }}>
                                         <div style={{ background: "#f8fafc", padding: "9px 16px", borderBottom: "1px solid #e2e8f0" }}>
@@ -660,11 +687,11 @@ function AddTransactionsPage() {
                                         </div>
                                         <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
                                             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-                                                <span style={{ color: "#64748b" }}>Deposit amount entered</span>
+                                                <span style={{ color: "#64748b" }}>Deposit amount</span>
                                                 <span style={{ fontWeight: "700", color: "#0f172a" }}>{fmt(amt)}</span>
                                             </div>
                                             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", padding: "8px 12px", background: "#f0fdf4", borderRadius: "8px", border: "1px solid #86efac" }}>
-                                                <span style={{ color: "#166534", fontWeight: "600" }}>👤 Player receives (full amount)</span>
+                                                <span style={{ color: "#166534", fontWeight: "600" }}>👤 Player receives</span>
                                                 <span style={{ fontWeight: "800", color: "#10b981" }}>{fmt(amt)}</span>
                                             </div>
                                             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", padding: "8px 12px", background: "#f0f9ff", borderRadius: "8px", border: "1px solid #bae6fd" }}>
@@ -674,12 +701,7 @@ function AddTransactionsPage() {
                                                 </span>
                                                 <span style={{ fontWeight: "800", color: "#0369a1" }}>{fmt(amt - feeAmt)}</span>
                                             </div>
-                                            {feeAmt > 0 && (
-                                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#94a3b8", paddingLeft: "4px" }}>
-                                                    <span>Fee retained</span>
-                                                    <span style={{ color: "#f59e0b", fontWeight: "600" }}>{fmt(feeAmt)}</span>
-                                                </div>
-                                            )}
+                                            {feeAmt > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#94a3b8", paddingLeft: "4px" }}><span>Fee</span><span style={{ color: "#f59e0b", fontWeight: "600" }}>{fmt(feeAmt)}</span></div>}
                                             {matchAmt > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}><span style={{ color: "#64748b" }}>Match bonus (50%)</span><span style={{ fontWeight: "700", color: "#3b82f6" }}>+ {fmt(matchAmt)}</span></div>}
                                             {specialAmt > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}><span style={{ color: "#64748b" }}>Special bonus (20%)</span><span style={{ fontWeight: "700", color: "#a855f7" }}>+ {fmt(specialAmt)}</span></div>}
                                             <div style={{ height: "1px", background: "#e2e8f0", margin: "2px 0" }} />
@@ -695,45 +717,53 @@ function AddTransactionsPage() {
                         </>
                     )}
 
-                    {/* Referral Bonus Eligibility Toggle */}
-                    {isDeposit && player?.referredBy && (
+                    {/* ── Referral Bonus Eligibility Toggle — only shown when player has a referrer ── */}
+                    {isDeposit && player && playerHasReferrer && (
                         <div style={{
-                            border: `1px solid ${(bonusReferral && !referralAlreadyRecorded) ? '#86efac' : referralAlreadyRecorded ? '#fde68a' : '#e2e8f0'}`,
-                            borderRadius: '10px', padding: '13px 16px',
-                            background: referralAlreadyRecorded ? '#fffbeb' : bonusReferral ? '#f0fdf4' : '#fafafa',
-                            transition: 'all .15s',
+                            border: `1px solid ${referralAlreadyRecorded ? "#fde68a" : bonusReferral ? "#86efac" : "#e2e8f0"}`,
+                            borderRadius: "10px", padding: "13px 16px",
+                            background: referralAlreadyRecorded ? "#fffbeb" : bonusReferral ? "#f0fdf4" : "#fafafa",
+                            transition: "all .15s",
+                            opacity: referralAlreadyRecorded ? 0.75 : 1,
                         }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flex: 1 }}>
-                                    <div style={{ width: '34px', height: '34px', borderRadius: '9px', flexShrink: 0, background: bonusReferral ? '#dcfce7' : '#f1f5f9', border: `1px solid ${bonusReferral ? '#86efac' : '#e2e8f0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Users style={{ width: '15px', height: '15px', color: bonusReferral ? '#16a34a' : '#94a3b8' }} />
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", flex: 1 }}>
+                                    <div style={{ width: "34px", height: "34px", borderRadius: "9px", flexShrink: 0, background: bonusReferral && !referralAlreadyRecorded ? "#dcfce7" : "#f1f5f9", border: `1px solid ${bonusReferral && !referralAlreadyRecorded ? "#86efac" : "#e2e8f0"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <Users style={{ width: "15px", height: "15px", color: bonusReferral && !referralAlreadyRecorded ? "#16a34a" : "#94a3b8" }} />
                                     </div>
                                     <div>
-                                        <div style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a' }}>Referral Bonus Eligibility</div>
+                                        <div style={{ fontWeight: "700", fontSize: "13px", color: "#0f172a" }}>Record Referral Bonus Eligibility</div>
                                         {referralAlreadyRecorded
-                                            ? <div style={{ fontSize: '11px', color: '#d97706', marginTop: '2px', fontWeight: '600' }}>⚠ Already recorded for this player — grant from Bonus page</div>
-                                            : <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', lineHeight: '1.5' }}>
-                                                Records <strong>${amt > 0 ? (amt / 2).toFixed(2) : 'x÷2'}</strong> eligibility for both{' '}
-                                                <strong>{player?.name}</strong> and referrer{' '}
-                                                <strong>{player?.referredBy?.name || `ID ${player?.referredBy?.id || player?.referredBy}`}</strong>.
-                                                Actual grant happens on the Bonus page.
+                                            ? <div style={{ fontSize: "11px", color: "#d97706", marginTop: "2px", fontWeight: "600" }}>
+                                                ⚠ Already recorded — grant the pending bonus from the Bonus page
+                                            </div>
+                                            : <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px", lineHeight: "1.5" }}>
+                                                Records <strong>${amt > 0 ? referralBonusAmt.toFixed(2) : "x÷2"}</strong> eligibility for{" "}
+                                                <strong>{player?.name}</strong> and referrer <strong>{referrerName}</strong>.
+                                                No game deduction now — grant is done separately on the Bonus page.
                                             </div>
                                         }
                                         {bonusReferral && !referralAlreadyRecorded && amt > 0 && (
-                                            <span style={{ display: 'inline-block', marginTop: '6px', padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', background: '#dcfce7', border: '1px solid #86efac', color: '#166534' }}>
-                                                ${(amt / 2).toFixed(2)} will be eligible for each party
-                                            </span>
+                                            <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
+                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 10px", borderRadius: "20px", fontSize: "12px", fontWeight: "700", background: "#dcfce7", border: "1px solid #86efac", color: "#166534" }}>
+                                                    👤 {player?.name}: +${referralBonusAmt.toFixed(2)}
+                                                </span>
+                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 10px", borderRadius: "20px", fontSize: "12px", fontWeight: "700", background: "#dcfce7", border: "1px solid #86efac", color: "#166534" }}>
+                                                    👤 {referrerName}: +${referralBonusAmt.toFixed(2)}
+                                                </span>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
                                 <div
                                     onClick={() => !referralAlreadyRecorded && amt > 0 && setBonusReferral(v => !v)}
-                                    style={{ width: '40px', height: '23px', borderRadius: '12px', flexShrink: 0, marginTop: '2px', background: bonusReferral && !referralAlreadyRecorded ? '#16a34a' : '#cbd5e1', cursor: (referralAlreadyRecorded || amt <= 0) ? 'not-allowed' : 'pointer', position: 'relative', transition: 'background .2s', opacity: referralAlreadyRecorded ? 0.5 : 1 }}>
-                                    <div style={{ width: '17px', height: '17px', borderRadius: '50%', background: '#fff', position: 'absolute', top: '3px', left: bonusReferral && !referralAlreadyRecorded ? '20px' : '3px', transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }} />
+                                    style={{ width: "40px", height: "23px", borderRadius: "12px", flexShrink: 0, marginTop: "2px", background: bonusReferral && !referralAlreadyRecorded ? "#16a34a" : "#cbd5e1", cursor: (referralAlreadyRecorded || amt <= 0) ? "not-allowed" : "pointer", position: "relative", transition: "background .2s", opacity: referralAlreadyRecorded ? 0.5 : 1 }}>
+                                    <div style={{ width: "17px", height: "17px", borderRadius: "50%", background: "#fff", position: "absolute", top: "3px", left: bonusReferral && !referralAlreadyRecorded ? "20px" : "3px", transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
                                 </div>
                             </div>
                         </div>
                     )}
+
                     {/* Notes */}
                     <div>
                         <label style={LABEL}>Notes (optional)</label>
@@ -761,7 +791,7 @@ function AddTransactionsPage() {
                         <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#94a3b8" }}>Deposits complete immediately · Cashouts start as Pending — approve via Transactions page</p>
                     </div>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                        <div onClick={() => setAutoRefresh(!autoRefresh)} style={{ padding: "6px 12px", borderRadius: "8px", border: "1px solid #e2e8f0", background: autoRefresh ? "#dcfce7" : "#fff", color: autoRefresh ? "#166534" : "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}>
+                        <div onClick={() => setAutoRefresh(!autoRefresh)} style={{ padding: "6px 12px", borderRadius: "8px", border: "1px solid #e2e8f0", background: autoRefresh ? "#dcfce7" : "#fff", color: autoRefresh ? "#166634" : "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}>
                             <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: autoRefresh ? "#22c55e" : "#cbd5e1" }} />Auto {autoRefresh ? "ON" : "OFF"}
                         </div>
                         <button onClick={() => loadLedger()} disabled={ledgerLoading} style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "7px 12px", cursor: "pointer", color: "#64748b", display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: "600" }}>
@@ -779,23 +809,15 @@ function AddTransactionsPage() {
                 ) : ledger.length === 0 ? (
                     <div style={{ padding: "48px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No transactions yet</div>
                 ) : (
-                    <div style={{ width: "100%", overflowX: "auto", overflowY: "auto", maxHeight: "560px", scrollbarWidth: "thin", scrollbarColor: "#cbd5e1 #f8fafc" }}>
+                    <div style={{ width: "100%", overflowX: "auto", overflowY: "auto", maxHeight: "560px", scrollbarWidth: "thin" }}>
                         <table style={{ width: "100%", minWidth: "900px", borderCollapse: "collapse", fontSize: "13px" }}>
                             <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
                                 <tr style={{ background: "#f8fafc" }}>
                                     {[
-                                        { label: "ID", w: "60px" },
-                                        { label: "Player", w: "150px" },
-                                        { label: "Type", w: "120px" },
-                                        { label: "Amount", w: "100px" },
-                                        { label: "Fee", w: "80px" },
-                                        { label: "Received / Paid", w: "130px" },
-                                        { label: "Game", w: "110px" },
-                                        { label: "Wallet", w: "130px" },
-                                        { label: "Before → After", w: "155px" },
-                                        { label: "Status", w: "95px" },
-                                        { label: "Date", w: "155px" },
-                                        { label: "", w: "80px" },
+                                        { label: "ID", w: "60px" }, { label: "Player", w: "150px" }, { label: "Type", w: "120px" },
+                                        { label: "Amount", w: "100px" }, { label: "Fee", w: "80px" }, { label: "Received / Paid", w: "130px" },
+                                        { label: "Game", w: "110px" }, { label: "Wallet", w: "130px" }, { label: "Before → After", w: "155px" },
+                                        { label: "Status", w: "95px" }, { label: "Date", w: "155px" }, { label: "", w: "80px" },
                                     ].map(col => (
                                         <th key={col.label} style={{ textAlign: "left", padding: "10px 12px", fontWeight: "700", color: "#64748b", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.4px", borderBottom: "2px solid #e2e8f0", whiteSpace: "nowrap", width: col.w, minWidth: col.w, background: "#f8fafc" }}>
                                             {col.label}
