@@ -572,7 +572,7 @@ export default function PlayerDashboard() {
                             )}
                         </div>
                         <button
-                            onClick={() => navigate(`/?page=bonuses`)}
+                            onClick={() => navigate(`/?page=addBonus`)}
                             style={{ padding: '6px 14px', background: eligibleBonuses.length > 0 ? '#f0fdf4' : C.bg, border: `1px solid ${eligibleBonuses.length > 0 ? '#86efac' : C.border}`, borderRadius: '8px', color: eligibleBonuses.length > 0 ? '#16a34a' : C.gray, fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
                             {eligibleBonuses.length > 0 ? 'Grant on Bonus page →' : 'Bonus page →'}
                         </button>
