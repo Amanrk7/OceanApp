@@ -630,7 +630,7 @@ export default function PlayerDashboard() {
                                             <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '4px' }}>{sub}</div>
                                             <div style={{ marginTop: '6px' }}>
                                                 <button
-                                                    onClick={() => navigate(`/?page=bonuses`)}
+                                                    onClick={() => navigate(`/?page=addBonus`)}
                                                     style={{ padding: '4px 12px', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '6px', color: '#166634', fontWeight: '700', fontSize: '11px', cursor: 'pointer' }}>
                                                     Grant from Bonus page →
                                                 </button>
