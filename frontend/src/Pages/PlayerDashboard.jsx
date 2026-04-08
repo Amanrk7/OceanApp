@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import { fmtTXTime } from '../utils/txTime';
 import EditPlayer from './Editplayer';
+import PendingBonusesCard from './PendingBonusesCard';
 
 
 const C = {
@@ -547,6 +548,12 @@ export default function PlayerDashboard() {
             </div>
 
             <StreakFreezeCard player={player} />
+
+            {/* ── PENDING MILESTONE + REFERRAL WEEKLY BONUSES ── */}
+            <PendingBonusesCard
+                playerId={player.id}
+                onRefresh={() => loadPlayer(false)}
+            />
 
             {/* ── ELIGIBLE REFERRAL BONUSES ────────────────────────────────────────────── */}
             {(player.referredBy || eligLoading || eligibleBonuses.length > 0) && (
