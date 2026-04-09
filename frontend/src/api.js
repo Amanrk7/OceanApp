@@ -346,6 +346,9 @@ export const playersAPI = {
     const data = await fetchAPI(`/players/search?q=${encodeURIComponent(query.trim())}`);
     return data;
   },
+  getPendingBonuses: async (playerId) => {
+    return fetchAPI(`/players/${playerId}/pending-bonuses`);
+},
 };
 
 // ═══════════════════════════════════════════════════════════════
