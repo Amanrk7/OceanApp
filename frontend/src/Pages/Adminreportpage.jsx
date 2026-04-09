@@ -384,13 +384,19 @@ function AuditVerification({ endSnapshot, transactions }) {
 
     const expectedWallet = (deposits ?? 0) - depositFees - (cashouts ?? 0) - cashoutFees;
     const cashDiscrepancy = (walletChange ?? 0) - expectedWallet;
-    // Round to nearest integer before checking — float arithmetic on point stocks
-    // (e.g. 900 - 250 - 10 = 639.9999999) produces phantom ±1 discrepancies.
     const ptDiscrepancy = Math.round(endSnapshot.gameDiscrepancy ?? 0);
 
+    // ── NEW: Funds ↔ Game Points Balance ────────────────────────
+    // deposits + bonuses - cashouts should equal |game points deducted|
+    const expectedGameDeduction = (deposits ?? 0) + (bonuses ?? 0) - (cashouts ?? 0);
+    const actualGameDeduction = Math.abs(gameChange ?? 0);
+    const fundsPointsDiscrepancy = Math.round(actualGameDeduction - expectedGameDeduction);
+    const fundsPointsOk = Math.abs(fundsPointsDiscrepancy) < 2;
+    // ─────────────────────────────────────────────────────────────
+
     const cashOk = Math.abs(cashDiscrepancy) < 0.02;
-    const ptsOk = Math.abs(ptDiscrepancy) < 2; // ±1 rounding tolerance for float pts
-    const allOk = cashOk && ptsOk;
+    const ptsOk = Math.abs(ptDiscrepancy) < 2;
+    const allOk = cashOk && ptsOk && fundsPointsOk;  // ← include new check
 
     const iconColor = allOk ? "#16a34a" : "#dc2626";
     const bgColor = allOk ? "#f0fdf4" : "#fef2f2";
@@ -409,52 +415,112 @@ function AuditVerification({ endSnapshot, transactions }) {
                 </div>
             </div>
             <div style={{ padding: "16px" }}>
-                {/* Two check rows */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
-                    {/* Cash Flow Check */}
-                    <div style={{ border: `1px solid ${cashOk ? "#86efac" : "#fca5a5"}`, borderRadius: "8px", overflow: "hidden" }}>
-                        <div style={{ padding: "8px 12px", background: cashOk ? "#f0fdf4" : "#fef2f2", borderBottom: `1px solid ${cashOk ? "#86efac" : "#fca5a5"}`, fontSize: "11px", fontWeight: "700", color: cashOk ? "#15803d" : "#991b1b", textTransform: "uppercase", letterSpacing: "0.4px" }}>
-                            Cash Flow Check
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "12px" }}>
+
+                    {/* Row 1: Cash Flow + Point Stock (existing side-by-side) */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                        {/* Cash Flow Check — unchanged */}
+                        <div style={{ border: `1px solid ${cashOk ? "#86efac" : "#fca5a5"}`, borderRadius: "8px", overflow: "hidden" }}>
+                            <div style={{ padding: "8px 12px", background: cashOk ? "#f0fdf4" : "#fef2f2", borderBottom: `1px solid ${cashOk ? "#86efac" : "#fca5a5"}`, fontSize: "11px", fontWeight: "700", color: cashOk ? "#15803d" : "#991b1b", textTransform: "uppercase", letterSpacing: "0.4px" }}>
+                                Cash Flow Check
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
+                                {[
+                                    { label: "Actual Change (Snapshots)", val: signNum(walletChange ?? 0), color: clrNum(walletChange) },
+                                    { label: "Expected Change (Activities)", val: signNum(expectedWallet), color: clrNum(expectedWallet) },
+                                    { label: "Cash Discrepancy", val: cashOk ? "$0.00" : signNum(cashDiscrepancy), color: cashOk ? "#16a34a" : "#dc2626" },
+                                ].map(({ label, val, color }) => (
+                                    <div key={label} style={{ padding: "10px 12px", textAlign: "center", borderRight: "1px solid #f1f5f9" }}>
+                                        <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.3px", marginBottom: "4px" }}>{label}</div>
+                                        <div style={{ fontSize: "15px", fontWeight: "800", color }}>{val}</div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
-                            {[
-                                { label: "Actual Change (Snapshots)", val: signNum(walletChange ?? 0), color: clrNum(walletChange) },
-                                { label: "Expected Change (Activities)", val: signNum(expectedWallet), color: clrNum(expectedWallet) },
-                                { label: "Cash Discrepancy", val: cashOk ? "$0.00" : signNum(cashDiscrepancy), color: cashOk ? "#16a34a" : "#dc2626" },
-                            ].map(({ label, val, color }) => (
-                                <div key={label} style={{ padding: "10px 12px", textAlign: "center", borderRight: "1px solid #f1f5f9" }}>
-                                    <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.3px", marginBottom: "4px" }}>{label}</div>
-                                    <div style={{ fontSize: "15px", fontWeight: "800", color }}>{val}</div>
-                                </div>
-                            ))}
+
+                        {/* Point Stock Check — unchanged */}
+                        <div style={{ border: `1px solid ${ptsOk ? "#86efac" : "#fca5a5"}`, borderRadius: "8px", overflow: "hidden" }}>
+                            <div style={{ padding: "8px 12px", background: ptsOk ? "#f0fdf4" : "#fef2f2", borderBottom: `1px solid ${ptsOk ? "#86efac" : "#fca5a5"}`, fontSize: "11px", fontWeight: "700", color: ptsOk ? "#15803d" : "#991b1b", textTransform: "uppercase", letterSpacing: "0.4px" }}>
+                                Point Stock Check
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
+                                {[
+                                    { label: "Actual Change (Snapshots)", val: signPts(gameChange ?? 0) + " pts", color: clrNum(gameChange, true) },
+                                    { label: "Expected Change (Activities)", val: signPts(-(deposits + bonuses - cashouts)) + " pts", color: "#475569" },
+                                    { label: "Point Discrepancy", val: ptsOk ? "0 pts" : signPts(ptDiscrepancy) + " pts", color: ptsOk ? "#16a34a" : "#dc2626" },
+                                ].map(({ label, val, color }) => (
+                                    <div key={label} style={{ padding: "10px 12px", textAlign: "center", borderRight: "1px solid #f1f5f9" }}>
+                                        <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.3px", marginBottom: "4px" }}>{label}</div>
+                                        <div style={{ fontSize: "15px", fontWeight: "800", color }}>{val}</div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                    {/* Point Stock Check */}
-                    <div style={{ border: `1px solid ${ptsOk ? "#86efac" : "#fca5a5"}`, borderRadius: "8px", overflow: "hidden" }}>
-                        <div style={{ padding: "8px 12px", background: ptsOk ? "#f0fdf4" : "#fef2f2", borderBottom: `1px solid ${ptsOk ? "#86efac" : "#fca5a5"}`, fontSize: "11px", fontWeight: "700", color: ptsOk ? "#15803d" : "#991b1b", textTransform: "uppercase", letterSpacing: "0.4px" }}>
-                            Point Stock Check
+
+                    {/* ── NEW Row 2: Funds ↔ Game Points Balance (full width) ── */}
+                    <div style={{ border: `1px solid ${fundsPointsOk ? "#86efac" : "#fca5a5"}`, borderRadius: "8px", overflow: "hidden" }}>
+                        <div style={{ padding: "8px 12px", background: fundsPointsOk ? "#f0fdf4" : "#fef2f2", borderBottom: `1px solid ${fundsPointsOk ? "#86efac" : "#fca5a5"}`, fontSize: "11px", fontWeight: "700", color: fundsPointsOk ? "#15803d" : "#991b1b", textTransform: "uppercase", letterSpacing: "0.4px", display: "flex", alignItems: "center", gap: "6px" }}>
+                            Funds ↔ Game Points Balance
+                            <span style={{ fontSize: "10px", fontWeight: "500", textTransform: "none", opacity: 0.8 }}>
+                                (Deposits + Bonuses − Cashouts = |Game Pts Deducted|)
+                            </span>
                         </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr" }}>
                             {[
-                                { label: "Actual Change (Snapshots)", val: signPts(gameChange ?? 0) + " pts", color: clrNum(gameChange, true) },
-                                { label: "Expected Change (Activities)", val: signPts(-(deposits + bonuses - cashouts)) + " pts", color: "#475569" },
-                                { label: "Point Discrepancy", val: ptsOk ? "0 pts" : signPts(ptDiscrepancy) + " pts", color: ptsOk ? "#16a34a" : "#dc2626" },
-                            ].map(({ label, val, color }) => (
+                                {
+                                    label: "Expected Game Deduction",
+                                    val: `${expectedGameDeduction.toFixed(0)} pts`,
+                                    sub: `$${(deposits ?? 0).toFixed(0)} + $${(bonuses ?? 0).toFixed(0)} − $${(cashouts ?? 0).toFixed(0)}`,
+                                    color: "#475569",
+                                },
+                                {
+                                    label: "Actual Game Deduction",
+                                    val: `${actualGameDeduction.toFixed(0)} pts`,
+                                    sub: `from snapshots`,
+                                    color: clrNum(gameChange, true),
+                                },
+                                {
+                                    label: "Funds↔Points Discrepancy",
+                                    val: fundsPointsOk ? "0 pts" : `${fundsPointsDiscrepancy >= 0 ? "+" : ""}${fundsPointsDiscrepancy} pts`,
+                                    sub: fundsPointsOk ? "Balanced ✓" : "Mismatch ⚠",
+                                    color: fundsPointsOk ? "#16a34a" : "#dc2626",
+                                },
+                                {
+                                    label: "Formula Breakdown",
+                                    val: `${expectedGameDeduction.toFixed(0)}`,
+                                    sub: `${(deposits ?? 0).toFixed(0)}+${(bonuses ?? 0).toFixed(0)}−${(cashouts ?? 0).toFixed(0)}=${expectedGameDeduction.toFixed(0)}`,
+                                    color: "#7c3aed",
+                                },
+                            ].map(({ label, val, sub, color }) => (
                                 <div key={label} style={{ padding: "10px 12px", textAlign: "center", borderRight: "1px solid #f1f5f9" }}>
                                     <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.3px", marginBottom: "4px" }}>{label}</div>
                                     <div style={{ fontSize: "15px", fontWeight: "800", color }}>{val}</div>
+                                    {sub && <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "2px" }}>{sub}</div>}
                                 </div>
                             ))}
                         </div>
+                        {!fundsPointsOk && (
+                            <div style={{ padding: "8px 12px", background: "#fef2f2", borderTop: "1px solid #fca5a5", fontSize: "11px", color: "#991b1b", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <AlertTriangle style={{ width: "12px", height: "12px", flexShrink: 0 }} />
+                                Game point deduction ({actualGameDeduction.toFixed(0)} pts) does not match expected
+                                ({expectedGameDeduction.toFixed(0)} pts = Deposits ${(deposits ?? 0).toFixed(2)} +
+                                Bonuses ${(bonuses ?? 0).toFixed(2)} − Cashouts ${(cashouts ?? 0).toFixed(2)}).
+                                Discrepancy: {Math.abs(fundsPointsDiscrepancy)} pts.
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Summary formula row */}
-                <div style={{ padding: "10px 14px", background: bgColor, border: `1px solid ${borderColor}`, borderLeft: `4px solid ${leftBorder}`, borderRadius: "8px", fontSize: "12px" }}>
+                {/* Summary formula row — add fundsPointsOk status */}
+                <div style={{ padding: "10px 14px", background: allOk ? "#f0fdf4" : "#fef2f2", border: `1px solid ${allOk ? "#86efac" : "#fca5a5"}`, borderLeft: `4px solid ${allOk ? "#16a34a" : "#dc2626"}`, borderRadius: "8px", fontSize: "12px" }}>
                     {!allOk && (
                         <div style={{ fontWeight: "700", color: "#991b1b", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
                             <AlertTriangle style={{ width: "13px", height: "13px" }} />
-                            A discrepancy was found (Cash: {fmtMoney(Math.abs(cashDiscrepancy))}; Points: {Math.abs(ptDiscrepancy).toFixed(0)}). Please review the activity log.
+                            {!cashOk && `Cash discrepancy: ${fmtMoney(Math.abs(cashDiscrepancy))}. `}
+                            {!ptsOk && `Point discrepancy: ${Math.abs(ptDiscrepancy)} pts. `}
+                            {!fundsPointsOk && `Funds↔Points mismatch: ${Math.abs(fundsPointsDiscrepancy)} pts. `}
+                            Please review the activity log.
                         </div>
                     )}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", color: "#475569" }}>
@@ -465,15 +531,18 @@ function AuditVerification({ endSnapshot, transactions }) {
                         {totalFees > 0 && <span>Fees: <b style={{ color: "#b45309" }}>−{fmtMoney(totalFees)}</b></span>}
                         <span>Wallet Δ: <b style={{ color: clrNum(walletChange) }}>{signNum(walletChange)}</b></span>
                         <span>Game Δ: <b style={{ color: "#7c3aed" }}>{signPts(gameChange)} pts</b></span>
+                        <span>Funds↔Pts: <b style={{ color: fundsPointsOk ? "#16a34a" : "#dc2626" }}>{fundsPointsOk ? "✓ Balanced" : `⚠ ${Math.abs(fundsPointsDiscrepancy)} pts off`}</b></span>
                     </div>
                     <div style={{ marginTop: "6px", fontSize: "11px", color: "#94a3b8", fontStyle: "italic" }}>
-                        Verification Check: Actual Change should equal Expected Change for both Cash and Points.
+                        Verification: Cash Actual = Cash Expected · Points Actual = Points Expected · Deposits+Bonuses−Cashouts = |Game Pts Change|
                     </div>
                 </div>
             </div>
         </div>
     );
 }
+
+
 
 // ── Member Feedback Panel ─────────────────────────────────────
 function FeedbackPanel({ shift }) {
@@ -552,10 +621,10 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
     let startSnapshot = shift.startSnapshot ?? null;
     let endSnapshot = shift.endSnapshot ?? null;
     if (!startSnapshot && shift.checkin?.balanceNote) {
-        try { startSnapshot = JSON.parse(shift.checkin.balanceNote); } catch (_) {}
+        try { startSnapshot = JSON.parse(shift.checkin.balanceNote); } catch (_) { }
     }
     if (!endSnapshot && shift.checkin?.additionalNotes) {
-        try { const p = JSON.parse(shift.checkin.additionalNotes); endSnapshot = p.endSnapshot ?? null; } catch (_) {}
+        try { const p = JSON.parse(shift.checkin.additionalNotes); endSnapshot = p.endSnapshot ?? null; } catch (_) { }
     }
 
     const hasReconciliation = startSnapshot && endSnapshot;
@@ -927,10 +996,10 @@ function buildShiftAuditHtml(team, shift) {
     let startSnapshot = shift.startSnapshot ?? null;
     let endSnapshot = shift.endSnapshot ?? null;
     if (!startSnapshot && shift.checkin?.balanceNote) {
-        try { startSnapshot = JSON.parse(shift.checkin.balanceNote); } catch (_) {}
+        try { startSnapshot = JSON.parse(shift.checkin.balanceNote); } catch (_) { }
     }
     if (!endSnapshot && shift.checkin?.additionalNotes) {
-        try { const p = JSON.parse(shift.checkin.additionalNotes); endSnapshot = p.endSnapshot ?? null; } catch (_) {}
+        try { const p = JSON.parse(shift.checkin.additionalNotes); endSnapshot = p.endSnapshot ?? null; } catch (_) { }
     }
 
     const effortReason = shift.effortReason ?? null;
@@ -1053,8 +1122,8 @@ function buildShiftAuditHtml(team, shift) {
     <div class="audit-section">
       <div class="audit-header gray-hdr">📋 Shift Activity Log (${txns.length})</div>
       ${txns.length === 0
-        ? `<p style="padding:16px;text-align:center;color:#94a3b8;font-style:italic">No transactions recorded</p>`
-        : `<table>
+            ? `<p style="padding:16px;text-align:center;color:#94a3b8;font-style:italic">No transactions recorded</p>`
+            : `<table>
           <thead><tr><th>Time</th><th>Source</th><th>Type</th><th>Details</th><th class="ta-r">Amount / Points</th></tr></thead>
           <tbody>${activityRows}</tbody>
         </table>`}
@@ -1136,7 +1205,7 @@ function buildShiftAuditHtml(team, shift) {
               </div>
               <div style="flex:1">
                 <div style="display:flex;gap:3px;margin-bottom:5px">
-                  ${[1,2,3,4,5,6,7,8,9,10].map(n => `<div style="flex:1;height:6px;border-radius:3px;background:${n <= effort ? effortColor : "#e2e8f0"}"></div>`).join("")}
+                  ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<div style="flex:1;height:6px;border-radius:3px;background:${n <= effort ? effortColor : "#e2e8f0"}"></div>`).join("")}
                 </div>
                 <div style="font-size:11px;color:#64748b">${effort >= 8 ? "Excellent effort" : effort >= 5 ? "Moderate effort" : "Low effort this shift"}</div>
               </div>
