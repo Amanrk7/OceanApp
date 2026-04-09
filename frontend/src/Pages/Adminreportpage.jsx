@@ -1131,6 +1131,65 @@ function buildShiftAuditHtml(team, shift) {
 
     // ── Audit Verification ─────────────────────────────────────
     let auditVerHtml = "";
+    // if (endSnapshot) {
+    //     const { deposits = 0, cashouts = 0, bonuses = 0, netProfit: np = 0, walletChange = 0, gameChange = 0 } = endSnapshot;
+    //     const depFees = txns.filter(t => t.type === "DEPOSIT")
+    //         .reduce((s, t) => { const m = (t.notes || "").match(/fee:([\d.]+)/); return s + (m ? parseFloat(m[1]) : 0); }, 0);
+    //     const coFees = txns.filter(t => t.type === "WITHDRAWAL")
+    //         .reduce((s, t) => { const m = (t.notes || "").match(/fee:([\d.]+)/); return s + (m ? parseFloat(m[1]) : 0); }, 0);
+    //     const expectedW = deposits - depFees - cashouts - coFees;
+    //     const cashDisc = walletChange - expectedW;
+    //     const ptDisc = Math.round(endSnapshot.gameDiscrepancy ?? 0);
+    //     const cashOk = Math.abs(cashDisc) < 0.02;
+    //     const ptsOk = Math.abs(ptDisc) < 2;
+    //     const allOk = cashOk && ptsOk;
+    //     const statusColor = allOk ? "#16a34a" : "#dc2626";
+    //     const statusBg = allOk ? "#f0fdf4" : "#fef2f2";
+    //     const statusBorder = allOk ? "#86efac" : "#fca5a5";
+    //     const feesNote = (depFees + coFees) > 0
+    //         ? ` | Dep fees −${fmtMoney(depFees)}${coFees > 0 ? ` · CO fees −${fmtMoney(coFees)}` : ""}`
+    //         : "";
+
+    //     auditVerHtml = `
+    //     <div class="audit-section">
+    //       <div class="audit-header" style="background:${statusBg};border-bottom:1px solid ${statusBorder};color:${statusColor}">
+    //         ${allOk ? "✓" : "⚠"} Audit Verification — ${allOk ? "All Clear" : "Discrepancy Found"}
+    //       </div>
+    //       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px">
+    //         <!-- Cash Flow Check -->
+    //         <div style="border:1px solid ${cashOk ? "#86efac" : "#fca5a5"};border-radius:6px;overflow:hidden">
+    //           <div style="padding:6px 10px;background:${cashOk ? "#f0fdf4" : "#fef2f2"};font-size:10px;font-weight:700;color:${cashOk ? "#15803d" : "#991b1b"};text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid ${cashOk ? "#86efac" : "#fca5a5"}">Cash Flow Check</div>
+    //           <table style="margin:0">
+    //             <tr><td class="gray" style="font-size:10px;width:55%">Actual Change (Snapshots)</td><td class="ta-r b" style="color:${walletChange >= 0 ? "#16a34a" : "#dc2626"}">${walletChange >= 0 ? "+" : "−"}${fmtMoney(Math.abs(walletChange))}</td></tr>
+    //             <tr><td class="gray" style="font-size:10px">Expected Change (Activities)</td><td class="ta-r b" style="color:${expectedW >= 0 ? "#16a34a" : "#dc2626"}">${expectedW >= 0 ? "+" : "−"}${fmtMoney(Math.abs(expectedW))}</td></tr>
+    //             <tr style="background:#fafafa"><td class="gray" style="font-size:10px"><b>Cash Discrepancy</b></td><td class="ta-r b" style="color:${cashOk ? "#16a34a" : "#dc2626"}">${cashOk ? "$0.00" : (cashDisc >= 0 ? "+" : "−") + fmtMoney(Math.abs(cashDisc))}</td></tr>
+    //           </table>
+    //         </div>
+    //         <!-- Point Stock Check -->
+    //         <div style="border:1px solid ${ptsOk ? "#86efac" : "#fca5a5"};border-radius:6px;overflow:hidden">
+    //           <div style="padding:6px 10px;background:${ptsOk ? "#f0fdf4" : "#fef2f2"};font-size:10px;font-weight:700;color:${ptsOk ? "#15803d" : "#991b1b"};text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid ${ptsOk ? "#86efac" : "#fca5a5"}">Point Stock Check</div>
+    //           <table style="margin:0">
+    //             <tr><td class="gray" style="font-size:10px;width:55%">Actual Change (Snapshots)</td><td class="ta-r b" style="color:${gameChange <= 0 ? "#16a34a" : "#dc2626"}">${gameChange >= 0 ? "+" : ""}${Math.round(gameChange)} pts</td></tr>
+    //             <tr><td class="gray" style="font-size:10px">Expected Change (Activities)</td><td class="ta-r b">${Math.round(-(deposits + bonuses - cashouts)) >= 0 ? "+" : ""}${Math.round(-(deposits + bonuses - cashouts))} pts</td></tr>
+    //             <tr style="background:#fafafa"><td class="gray" style="font-size:10px"><b>Point Discrepancy</b></td><td class="ta-r b" style="color:${ptsOk ? "#16a34a" : "#dc2626"}">${ptsOk ? "0 pts" : (ptDisc >= 0 ? "+" : "") + ptDisc + " pts"}</td></tr>
+    //           </table>
+    //         </div>
+    //       </div>
+    //       <div style="margin:0 12px 12px;padding:10px 12px;background:${statusBg};border:1px solid ${statusBorder};border-left:4px solid ${statusColor};border-radius:6px;font-size:11px">
+    //         ${!allOk ? `<div style="font-weight:700;color:${statusColor};margin-bottom:6px">⚠ A discrepancy was found (Cash: ${fmtMoney(Math.abs(cashDisc))}; Points: ${Math.abs(ptDisc)}). Please review the activity log.</div>` : ""}
+    //         <span style="color:#475569">
+    //           Deposits <b style="color:#16a34a">${fmtMoney(deposits)}</b> &nbsp;−&nbsp;
+    //           Cashouts <b style="color:#dc2626">${fmtMoney(cashouts)}</b> &nbsp;=&nbsp;
+    //           Net Profit <b style="color:${np >= 0 ? "#16a34a" : "#dc2626"}">${fmtMoney(np)}</b> &nbsp;|&nbsp;
+    //           Bonuses <b style="color:#c2410c">${fmtMoney(bonuses)}</b>${feesNote} &nbsp;|&nbsp;
+    //           Wallet Δ <b style="color:${walletChange >= 0 ? "#16a34a" : "#dc2626"}">${walletChange >= 0 ? "+" : ""}${fmtMoney(walletChange)}</b> &nbsp;|&nbsp;
+    //           Game Δ <b style="color:#7c3aed">${gameChange >= 0 ? "+" : ""}${Math.round(gameChange)} pts</b>
+    //         </span>
+    //         <div style="color:#94a3b8;font-style:italic;margin-top:4px;font-size:10px">Verification Check: Actual Change should equal Expected Change for both Cash and Points.</div>
+    //       </div>
+    //     </div>`;
+    // }
+
     if (endSnapshot) {
         const { deposits = 0, cashouts = 0, bonuses = 0, netProfit: np = 0, walletChange = 0, gameChange = 0 } = endSnapshot;
         const depFees = txns.filter(t => t.type === "DEPOSIT")
@@ -1142,7 +1201,15 @@ function buildShiftAuditHtml(team, shift) {
         const ptDisc = Math.round(endSnapshot.gameDiscrepancy ?? 0);
         const cashOk = Math.abs(cashDisc) < 0.02;
         const ptsOk = Math.abs(ptDisc) < 2;
-        const allOk = cashOk && ptsOk;
+
+        // ── Funds ↔ Game Points Balance ──────────────────────────────
+        const expectedGameDeduction = deposits + bonuses - cashouts;
+        const actualGameDeduction = Math.abs(gameChange);
+        const fundsPointsDiscrepancy = Math.round(actualGameDeduction - expectedGameDeduction);
+        const fundsPointsOk = Math.abs(fundsPointsDiscrepancy) < 2;
+        // ─────────────────────────────────────────────────────────────
+
+        const allOk = cashOk && ptsOk && fundsPointsOk;
         const statusColor = allOk ? "#16a34a" : "#dc2626";
         const statusBg = allOk ? "#f0fdf4" : "#fef2f2";
         const statusBorder = allOk ? "#86efac" : "#fca5a5";
@@ -1155,7 +1222,7 @@ function buildShiftAuditHtml(team, shift) {
           <div class="audit-header" style="background:${statusBg};border-bottom:1px solid ${statusBorder};color:${statusColor}">
             ${allOk ? "✓" : "⚠"} Audit Verification — ${allOk ? "All Clear" : "Discrepancy Found"}
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 12px 0">
             <!-- Cash Flow Check -->
             <div style="border:1px solid ${cashOk ? "#86efac" : "#fca5a5"};border-radius:6px;overflow:hidden">
               <div style="padding:6px 10px;background:${cashOk ? "#f0fdf4" : "#fef2f2"};font-size:10px;font-weight:700;color:${cashOk ? "#15803d" : "#991b1b"};text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid ${cashOk ? "#86efac" : "#fca5a5"}">Cash Flow Check</div>
@@ -1175,17 +1242,58 @@ function buildShiftAuditHtml(team, shift) {
               </table>
             </div>
           </div>
-          <div style="margin:0 12px 12px;padding:10px 12px;background:${statusBg};border:1px solid ${statusBorder};border-left:4px solid ${statusColor};border-radius:6px;font-size:11px">
-            ${!allOk ? `<div style="font-weight:700;color:${statusColor};margin-bottom:6px">⚠ A discrepancy was found (Cash: ${fmtMoney(Math.abs(cashDisc))}; Points: ${Math.abs(ptDisc)}). Please review the activity log.</div>` : ""}
+
+          <!-- ── NEW: Funds ↔ Game Points Balance (full width) ── -->
+          <div style="padding:0 12px 0;margin-top:12px">
+            <div style="border:1px solid ${fundsPointsOk ? "#86efac" : "#fca5a5"};border-radius:6px;overflow:hidden">
+              <div style="padding:6px 10px;background:${fundsPointsOk ? "#f0fdf4" : "#fef2f2"};font-size:10px;font-weight:700;color:${fundsPointsOk ? "#15803d" : "#991b1b"};text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid ${fundsPointsOk ? "#86efac" : "#fca5a5"}">
+                Funds ↔ Game Points Balance
+                <span style="font-size:9px;font-weight:500;text-transform:none;opacity:0.8;margin-left:6px">(Deposits + Bonuses − Cashouts = |Game Pts Deducted|)</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr">
+                <div style="padding:8px 10px;text-align:center;border-right:1px solid #f1f5f9">
+                  <div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px">Expected Game Deduction</div>
+                  <div style="font-size:13px;font-weight:800;color:#475569">${expectedGameDeduction.toFixed(0)} pts</div>
+                  <div style="font-size:9px;color:#94a3b8;margin-top:2px">$${deposits.toFixed(0)}+$${bonuses.toFixed(0)}−$${cashouts.toFixed(0)}</div>
+                </div>
+                <div style="padding:8px 10px;text-align:center;border-right:1px solid #f1f5f9">
+                  <div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px">Actual Game Deduction</div>
+                  <div style="font-size:13px;font-weight:800;color:${gameChange <= 0 ? "#16a34a" : "#dc2626"}">${actualGameDeduction.toFixed(0)} pts</div>
+                  <div style="font-size:9px;color:#94a3b8;margin-top:2px">from snapshots</div>
+                </div>
+                <div style="padding:8px 10px;text-align:center;border-right:1px solid #f1f5f9">
+                  <div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px">Funds↔Points Discrepancy</div>
+                  <div style="font-size:13px;font-weight:800;color:${fundsPointsOk ? "#16a34a" : "#dc2626"}">${fundsPointsOk ? "0 pts" : `${fundsPointsDiscrepancy >= 0 ? "+" : ""}${fundsPointsDiscrepancy} pts`}</div>
+                  <div style="font-size:9px;color:#94a3b8;margin-top:2px">${fundsPointsOk ? "Balanced ✓" : "Mismatch ⚠"}</div>
+                </div>
+                <div style="padding:8px 10px;text-align:center">
+                  <div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px">Formula Breakdown</div>
+                  <div style="font-size:13px;font-weight:800;color:#7c3aed">${expectedGameDeduction.toFixed(0)}</div>
+                  <div style="font-size:9px;color:#94a3b8;margin-top:2px">${deposits.toFixed(0)}+${bonuses.toFixed(0)}−${cashouts.toFixed(0)}=${expectedGameDeduction.toFixed(0)}</div>
+                </div>
+              </div>
+              ${!fundsPointsOk ? `
+              <div style="padding:7px 10px;background:#fef2f2;border-top:1px solid #fca5a5;font-size:10px;color:#991b1b">
+                ⚠ Game point deduction (${actualGameDeduction.toFixed(0)} pts) does not match expected
+                (${expectedGameDeduction.toFixed(0)} pts = Deposits $${deposits.toFixed(2)} + Bonuses $${bonuses.toFixed(2)} − Cashouts $${cashouts.toFixed(2)}).
+                Discrepancy: ${Math.abs(fundsPointsDiscrepancy)} pts.
+              </div>` : ""}
+            </div>
+          </div>
+          <!-- ── End Funds ↔ Game Points Balance ── -->
+
+          <div style="margin:12px 12px 12px;padding:10px 12px;background:${statusBg};border:1px solid ${statusBorder};border-left:4px solid ${statusColor};border-radius:6px;font-size:11px">
+            ${!allOk ? `<div style="font-weight:700;color:${statusColor};margin-bottom:6px">⚠ ${!cashOk ? `Cash discrepancy: ${fmtMoney(Math.abs(cashDisc))}. ` : ""}${!ptsOk ? `Point discrepancy: ${Math.abs(ptDisc)} pts. ` : ""}${!fundsPointsOk ? `Funds↔Points mismatch: ${Math.abs(fundsPointsDiscrepancy)} pts. ` : ""}Please review the activity log.</div>` : ""}
             <span style="color:#475569">
               Deposits <b style="color:#16a34a">${fmtMoney(deposits)}</b> &nbsp;−&nbsp;
               Cashouts <b style="color:#dc2626">${fmtMoney(cashouts)}</b> &nbsp;=&nbsp;
               Net Profit <b style="color:${np >= 0 ? "#16a34a" : "#dc2626"}">${fmtMoney(np)}</b> &nbsp;|&nbsp;
               Bonuses <b style="color:#c2410c">${fmtMoney(bonuses)}</b>${feesNote} &nbsp;|&nbsp;
               Wallet Δ <b style="color:${walletChange >= 0 ? "#16a34a" : "#dc2626"}">${walletChange >= 0 ? "+" : ""}${fmtMoney(walletChange)}</b> &nbsp;|&nbsp;
-              Game Δ <b style="color:#7c3aed">${gameChange >= 0 ? "+" : ""}${Math.round(gameChange)} pts</b>
+              Game Δ <b style="color:#7c3aed">${gameChange >= 0 ? "+" : ""}${Math.round(gameChange)} pts</b> &nbsp;|&nbsp;
+              Funds↔Pts <b style="color:${fundsPointsOk ? "#16a34a" : "#dc2626"}">${fundsPointsOk ? "✓ Balanced" : `⚠ ${Math.abs(fundsPointsDiscrepancy)} pts off`}</b>
             </span>
-            <div style="color:#94a3b8;font-style:italic;margin-top:4px;font-size:10px">Verification Check: Actual Change should equal Expected Change for both Cash and Points.</div>
+            <div style="color:#94a3b8;font-style:italic;margin-top:4px;font-size:10px">Verification: Cash Actual = Cash Expected · Points Actual = Points Expected · Deposits+Bonuses−Cashouts = |Game Pts Change|</div>
           </div>
         </div>`;
     }
