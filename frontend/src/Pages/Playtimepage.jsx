@@ -43,6 +43,24 @@ const fmtDuration = (ms) => {
     return `${m}m`;
 };
 
+const fmtCT = (raw) => {
+    if (!raw) return null;
+    try {
+        const d = new Date(raw);
+        if (isNaN(d)) return raw; // fallback if already a plain string like "Apr 9"
+        return d.toLocaleString("en-US", {
+            timeZone: "America/Chicago",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+        }); // → "Apr 9, 7:10 AM"
+    } catch {
+        return raw;
+    }
+};
+
 // ─── Shared Styles ────────────────────────────────────────────────────────────
 const LABEL = {
     display: "block", fontSize: "11px", fontWeight: "700",
@@ -643,12 +661,31 @@ function PlayerRow({ player, depositGames, gamesLoading, onRedeem, onFreezeActio
             </td>
 
             {/* Last deposit date */}
-            <td style={{ padding: "11px 12px", whiteSpace: "nowrap" }}>
+            {/* <td style={{ padding: "11px 12px", whiteSpace: "nowrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                     <Calendar style={{ width: "11px", height: "11px", color: "#94a3b8" }} />
                     <span style={{ fontSize: "11px", color: "#64748b", fontWeight: "500" }}>{lastPlayed || "—"}</span>
                 </div>
-            </td>
+            </td> */}
+            {/* Last deposit date */}
+<td style={{ padding: "11px 12px", whiteSpace: "nowrap" }}>
+    {lastPlayed ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <Calendar style={{ width: "11px", height: "11px", color: "#94a3b8", flexShrink: 0 }} />
+                <span style={{ fontSize: "12px", color: "#0f172a", fontWeight: "600" }}>
+                    {fmtCT(lastPlayed)?.split(",")[0]}  {/* "Apr 9" */}
+                </span>
+            </div>
+            <span style={{ fontSize: "10px", color: "#94a3b8", paddingLeft: "15px" }}>
+                {fmtCT(lastPlayed)?.split(",")[1]?.trim()}  {/* "7:10 AM" */}
+            </span>
+        </div>
+    ) : (
+        <span style={{ fontSize: "12px", color: "#cbd5e1" }}>—</span>
+    )}
+</td>
+            
 
             {/* Games (with stock info) */}
             <td style={{ padding: "11px 12px", minWidth: "150px", maxWidth: "200px" }}>
