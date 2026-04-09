@@ -114,6 +114,168 @@ function TxPaymentProgress({ paid, total }) {
     );
 }
 
+function DailyMilestoneBar({ todayDeposits, pendingBonuses }) {
+    const MILESTONE_STEP = 50;
+    const BONUS_PER_MILESTONE = 5;
+
+    const milestonesReached = Math.floor(todayDeposits / MILESTONE_STEP);
+    const progressIntoNext = todayDeposits % MILESTONE_STEP;
+    const pct = milestonesReached > 0 || progressIntoNext > 0
+        ? ((progressIntoNext / MILESTONE_STEP) * 100)
+        : 0;
+    const toNext = parseFloat((MILESTONE_STEP - progressIntoNext).toFixed(2));
+
+    // Which milestone values are pending-unclaimed from PendingBonusesCard data
+    const pendingMilestoneValues = (pendingBonuses || []).map(m => m.milestone);
+    const claimedMilestoneValues = Array.from({ length: milestonesReached }, (_, i) => (i + 1) * MILESTONE_STEP)
+        .filter(v => !pendingMilestoneValues.includes(v));
+
+    // Show up to (milestonesReached + 1) slots, min 3 max 6
+    const slotsToShow = Math.max(3, Math.min(6, milestonesReached + 2));
+    const slots = Array.from({ length: slotsToShow }, (_, i) => (i + 1) * MILESTONE_STEP);
+
+    // Bar fill: fill past each completed segment fully, then partial for current
+    const totalBarWidth = slotsToShow * MILESTONE_STEP;
+    const fillPct = Math.min((todayDeposits / totalBarWidth) * 100, 100);
+
+    const dividers = slots.slice(0, -1).map(v => ({
+        left: `${(v / totalBarWidth) * 100}%`,
+        reached: todayDeposits >= v,
+    }));
+
+    if (todayDeposits === 0 && (pendingBonuses || []).length === 0) {
+        return (
+            <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '18px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', paddingBottom: '10px', borderBottom: `1px solid ${C.border}` }}>
+                    <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Daily Deposit Milestones</p>
+                    <span style={{ padding: '1px 7px', background: C.bg, color: C.grayLt, borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>$50 each · resets at midnight</span>
+                </div>
+                <p style={{ margin: 0, fontSize: '13px', color: C.grayLt, textAlign: 'center', padding: '10px 0' }}>
+                    No deposits recorded today — first $50 deposit unlocks a bonus
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${milestonesReached > 0 ? '#86efac' : C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '18px 24px' }}>
+
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${milestonesReached > 0 ? '#d1fae5' : C.border}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: milestonesReached > 0 ? '#16a34a' : C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                        Daily Deposit Milestones
+                    </p>
+                    <span style={{ padding: '1px 7px', background: '#fffbeb', color: '#d97706', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>$50 each</span>
+                    {milestonesReached > 0 && (
+                        <span style={{ padding: '1px 7px', background: '#dcfce7', color: '#16a34a', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>
+                            {milestonesReached} reached
+                        </span>
+                    )}
+                    {pendingMilestoneValues.length > 0 && (
+                        <span style={{ padding: '1px 7px', background: '#fffbeb', color: '#d97706', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>
+                            {pendingMilestoneValues.length} pending grant
+                        </span>
+                    )}
+                </div>
+                <span style={{ fontSize: '11px', color: C.grayLt }}>resets at midnight</span>
+            </div>
+
+            {/* Amount + next milestone */}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '28px', fontWeight: '800', color: milestonesReached > 0 ? '#16a34a' : C.slate, lineHeight: 1 }}>
+                    ${todayDeposits.toFixed(2)}
+                </span>
+                <span style={{ fontSize: '13px', color: C.gray }}>deposited today</span>
+                {milestonesReached < slotsToShow && (
+                    <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: '700', color: '#d97706' }}>
+                        ${toNext.toFixed(2)} to next milestone
+                    </span>
+                )}
+                {milestonesReached >= slotsToShow && (
+                    <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: '700', color: '#16a34a' }}>
+                        All visible milestones reached 🎉
+                    </span>
+                )}
+            </div>
+
+            {/* Progress bar with dividers */}
+            <div style={{ position: 'relative', height: '14px', background: '#e2e8f0', borderRadius: '99px', overflow: 'hidden', marginBottom: '6px' }}>
+                <div style={{
+                    position: 'absolute', left: 0, top: 0, height: '100%',
+                    width: `${fillPct}%`,
+                    background: milestonesReached > 0
+                        ? 'linear-gradient(90deg, #16a34a, #22c55e)'
+                        : 'linear-gradient(90deg, #0ea5e9, #7c3aed)',
+                    borderRadius: '99px',
+                    transition: 'width .5s ease',
+                }} />
+                {dividers.map((d, i) => (
+                    <div key={i} style={{
+                        position: 'absolute', left: d.left, top: 0,
+                        width: '2px', height: '100%',
+                        background: '#fff', opacity: 0.7,
+                    }} />
+                ))}
+            </div>
+
+            {/* Tick labels */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: C.grayLt, marginBottom: '14px', paddingLeft: '2px', paddingRight: '2px' }}>
+                <span>$0</span>
+                {slots.map(v => (
+                    <span key={v} style={{ fontWeight: todayDeposits >= v ? '700' : '400', color: todayDeposits >= v ? '#16a34a' : C.grayLt }}>
+                        ${v} {todayDeposits >= v ? '✓' : ''}
+                    </span>
+                ))}
+            </div>
+
+            {/* Milestone slot cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(140px, 1fr))`, gap: '10px' }}>
+                {slots.map(v => {
+                    const reached = todayDeposits >= v;
+                    const isPending = pendingMilestoneValues.includes(v);
+                    const isClaimed = claimedMilestoneValues.includes(v);
+
+                    let bg, border, textColor, badgeBg, badgeColor, badgeLabel, statusNote;
+                    if (!reached) {
+                        bg = C.bg; border = C.border; textColor = C.grayLt;
+                        badgeBg = C.bg; badgeColor = C.grayLt;
+                        badgeLabel = `$${(v - todayDeposits).toFixed(0)} away`;
+                        statusNote = 'not yet reached';
+                    } else if (isPending) {
+                        bg = '#fffbeb'; border = '#fde68a'; textColor = '#92400e';
+                        badgeBg = '#fff'; badgeColor = '#d97706';
+                        badgeLabel = 'pending grant';
+                        statusNote = 'ready to grant on Bonus page';
+                    } else if (isClaimed) {
+                        bg = '#f0fdf4'; border = '#86efac'; textColor = '#166534';
+                        badgeBg = '#fff'; badgeColor = '#16a34a';
+                        badgeLabel = 'granted';
+                        statusNote = 'bonus was granted';
+                    } else {
+                        // reached but no record yet (bonus engine runs async)
+                        bg = '#fffbeb'; border = '#fde68a'; textColor = '#92400e';
+                        badgeBg = '#fff'; badgeColor = '#d97706';
+                        badgeLabel = 'unlocked';
+                        statusNote = 'go to Bonus page to grant';
+                    }
+
+                    return (
+                        <div key={v} style={{ padding: '12px 14px', background: bg, border: `1px solid ${border}`, borderRadius: '10px', opacity: reached ? 1 : 0.55, transition: 'opacity .2s' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                <span style={{ fontSize: '11px', fontWeight: '700', color: textColor }}>${v} milestone</span>
+                                <span style={{ fontSize: '9px', padding: '1px 5px', background: badgeBg, borderRadius: '20px', color: badgeColor, fontWeight: '700' }}>{badgeLabel}</span>
+                            </div>
+                            <div style={{ fontSize: '18px', fontWeight: '800', color: textColor }}>+${BONUS_PER_MILESTONE.toFixed(2)}</div>
+                            <div style={{ fontSize: '10px', color: textColor, marginTop: '3px', opacity: 0.8 }}>{statusNote}</div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
 function StreakFreezeCard({ player }) {
     const streak = player.streak?.currentStreak ?? 0;
     const freeze = player.streakFreeze;
@@ -322,6 +484,7 @@ export default function PlayerDashboard() {
     const navigate = useNavigate();
 
     const [eligibleBonuses, setEligibleBonuses] = useState([]);
+    const [pendingMilestones, setPendingMilestones] = useState([]);
     const [eligLoading, setEligLoading] = useState(false);
     const [player, setPlayer] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -339,6 +502,10 @@ export default function PlayerDashboard() {
             setError('');
             const res = await api.players.getPlayer(parseInt(playerId));
             setPlayer(res.data);
+            try {
+    const pb = await api.players.getPendingBonuses(parseInt(playerId));
+    setPendingMilestones(pb?.data?.milestones || []);
+} catch { setPendingMilestones([]); }
             loadEligible(parseInt(playerId));
             setLastUpdated(new Date());
         } catch (err) {
@@ -549,6 +716,11 @@ export default function PlayerDashboard() {
 
             <StreakFreezeCard player={player} />
 
+<DailyMilestoneBar
+    todayDeposits={todayDeposits}
+    pendingBonuses={pendingMilestones}
+/>
+            
             {/* ── PENDING MILESTONE + REFERRAL WEEKLY BONUSES ── */}
             <PendingBonusesCard
                 playerId={player.id}
