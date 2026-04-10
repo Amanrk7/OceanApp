@@ -276,6 +276,181 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses }) {
     );
 }
 
+// ── Add this component near the other sub-components ─────────────────────────
+function PlayerActivityStats({ player }) {
+    const txns = player.transactionHistory || [];
+
+    const now = new Date();
+    const startOf = (daysAgo) => {
+        const d = new Date(now);
+        d.setDate(d.getDate() - daysAgo);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    };
+    const start1d  = startOf(0);   // today only
+    const start7d  = startOf(7);
+    const start30d = startOf(30);
+
+    const parseTxDate = (tx) => new Date(tx.date || tx.createdAt || tx.timestamp);
+
+    const sum = (type, since) =>
+        txns
+            .filter(tx => tx.type === type && parseTxDate(tx) >= since)
+            .reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
+
+    const count = (type, since) =>
+        txns.filter(tx => tx.type === type && parseTxDate(tx) >= since).length;
+
+    const isBonusTx = (tx) => {
+        const t = (tx.type || '').toLowerCase();
+        return t.includes('bonus') || t === 'referral bonus' || t === 'streak bonus' ||
+               t === 'match bonus' || t === 'special bonus';
+    };
+
+    const bonusSum = (since) =>
+        txns
+            .filter(tx => isBonusTx(tx) && parseTxDate(tx) >= since)
+            .reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
+
+    const bonusCount = (since) =>
+        txns.filter(tx => isBonusTx(tx) && parseTxDate(tx) >= since).length;
+
+    const dep1d   = sum('deposit', start1d);
+    const dep7d   = sum('deposit', start7d);
+    const dep30d  = sum('deposit', start30d);
+
+    const cash1d  = sum('cashout', start1d);
+    const cash7d  = sum('cashout', start7d);
+    const cash30d = sum('cashout', start30d);
+
+    const bon1d   = bonusSum(start1d);
+    const bon7d   = bonusSum(start7d);
+    const bon30d  = bonusSum(start30d);
+    const bonTotal = parseFloat(player.bonusTracker?.totalBonusEarned || 0);
+
+    const depCount30  = count('deposit', start30d);
+    const cashCount30 = count('cashout', start30d);
+    const bonCount30  = bonusCount(start30d);
+
+    const fmt = (n) => `$${parseFloat(n).toFixed(2)}`;
+    const net = (dep, cash) => {
+        const v = dep - cash;
+        return { label: `${v >= 0 ? '+' : ''}${fmt(v)}`, color: v >= 0 ? '#10b981' : '#ef4444' };
+    };
+
+    const PERIODS = [
+        { label: '1 day',    hColor: '#059669', bgAlpha: 'rgba(16,185,129,.04)',  dep: dep1d,   cash: cash1d,  bon: bon1d,   total: false },
+        { label: '7 days',   hColor: '#0284c7', bgAlpha: 'rgba(14,165,233,.04)',  dep: dep7d,   cash: cash7d,  bon: bon7d,   total: false },
+        { label: '30 days',  hColor: '#7c3aed', bgAlpha: 'rgba(139,92,246,.04)', dep: dep30d,  cash: cash30d, bon: bon30d,  total: false },
+        { label: 'All-time', hColor: '#d97706', bgAlpha: 'rgba(249,115,22,.05)', dep: dep30d,  cash: cash30d, bon: bonTotal, total: true },
+    ];
+
+    const ROWS = [
+        { key: 'dep',  label: 'Deposits',      dot: '#10b981', getVal: (p) => p.dep,  color: '#10b981' },
+        { key: 'cash', label: 'Cashouts',       dot: '#ef4444', getVal: (p) => p.cash, color: '#ef4444' },
+        { key: 'bon',  label: 'Bonuses earned', dot: '#8b5cf6', getVal: (p) => p.bon,  color: '#8b5cf6' },
+    ];
+
+    const thStyle = {
+        fontSize: '11px', fontWeight: '700', textTransform: 'uppercase',
+        letterSpacing: '0.5px', color: C.gray, padding: '0 10px 10px',
+        textAlign: 'right', whiteSpace: 'nowrap',
+    };
+    const tdBase = {
+        padding: '9px 10px', borderTop: `1px solid ${C.border}`,
+        textAlign: 'right', fontSize: '13px', fontWeight: '700',
+    };
+
+    return (
+        <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '18px 22px' }}>
+
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${C.border}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Activity Summary</p>
+                    <span style={{ padding: '1px 7px', background: '#faf5ff', color: '#7c3aed', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>Deposits · Cashouts · Bonuses</span>
+                </div>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', color: '#16a34a', fontWeight: '700' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+                    LIVE
+                </span>
+            </div>
+
+            {/* Table */}
+            <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '480px' }}>
+                    <thead>
+                        <tr>
+                            <th style={{ ...thStyle, textAlign: 'left', paddingLeft: 0, color: 'transparent' }}>—</th>
+                            {PERIODS.map(p => (
+                                <th key={p.label} style={{ ...thStyle, color: p.hColor, background: p.bgAlpha }}>
+                                    {p.label}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {ROWS.map(row => (
+                            <tr key={row.key}>
+                                <td style={{ ...tdBase, textAlign: 'left', paddingLeft: 0, display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', fontSize: '12px', color: C.gray }}>
+                                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: row.dot, flexShrink: 0 }} />
+                                    {row.label}
+                                </td>
+                                {PERIODS.map(p => {
+                                    const isTotal = p.total && row.key !== 'bon';
+                                    return (
+                                        <td key={p.label} style={{ ...tdBase, color: row.color, background: p.bgAlpha }}>
+                                            {fmt(row.getVal(p))}
+                                            {isTotal && (
+                                                <span style={{ fontSize: '9px', color: C.grayLt, fontWeight: '400', marginLeft: '3px' }}>30d</span>
+                                            )}
+                                            {p.total && row.key === 'bon' && (
+                                                <span style={{ fontSize: '9px', color: '#16a34a', fontWeight: '700', marginLeft: '3px' }}>★</span>
+                                            )}
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        ))}
+
+                        {/* Net row */}
+                        <tr>
+                            <td style={{ ...tdBase, textAlign: 'left', paddingLeft: 0, display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', fontSize: '12px', color: C.grayLt }}>
+                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: C.border, flexShrink: 0 }} />
+                                Net (dep − cash)
+                            </td>
+                            {PERIODS.map(p => {
+                                const { label, color } = net(p.dep, p.cash);
+                                return (
+                                    <td key={p.label} style={{ ...tdBase, color, fontSize: '12px', background: p.bgAlpha }}>
+                                        {label}
+                                    </td>
+                                );
+                            })}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Summary chips */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px', paddingTop: '12px', borderTop: `1px solid ${C.border}`, alignItems: 'center' }}>
+                <span style={{ padding: '4px 10px', background: '#f0fdf4', color: '#059669', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>
+                    {depCount30} deposit{depCount30 !== 1 ? 's' : ''} (30d)
+                </span>
+                <span style={{ padding: '4px 10px', background: '#fff1f2', color: '#dc2626', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>
+                    {cashCount30} cashout{cashCount30 !== 1 ? 's' : ''} (30d)
+                </span>
+                <span style={{ padding: '4px 10px', background: '#faf5ff', color: '#7c3aed', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>
+                    {bonCount30} bonus{bonCount30 !== 1 ? 'es' : ''} (30d)
+                </span>
+                <span style={{ fontSize: '11px', color: C.grayLt, marginLeft: 'auto' }}>
+                    ★ All-time from bonus tracker &nbsp;·&nbsp; deposits/cashouts limited to 30d history
+                </span>
+            </div>
+        </div>
+    );
+}
+
 function StreakFreezeCard({ player }) {
     const streak = player.streak?.currentStreak ?? 0;
     const freeze = player.streakFreeze;
@@ -715,6 +890,9 @@ export default function PlayerDashboard() {
             </div>
 
             <StreakFreezeCard player={player} />
+
+            {/* ── NEW: Activity stats ── */}
+<PlayerActivityStats player={player} />
 
 <DailyMilestoneBar
     todayDeposits={todayDeposits}
