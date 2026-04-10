@@ -5,100 +5,81 @@ import AddNewPlayer from './AddNewPlayer';
 import EditPlayer from './Editplayer';
 import { AddPlayerContext } from "../Context/addPlayer";
 import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
-import { Search, Plus, RefreshCw, Eye, Pencil, Trash2, X, } from 'lucide-react';
+import { Search, Plus, RefreshCw, Eye, Pencil, Trash2, ChevronLeft, ChevronRight, Users, TrendingUp, AlertTriangle, UserX } from 'lucide-react';
 import { FaFacebookF, FaInstagram, FaSnapchatGhost, FaTelegramPlane } from "react-icons/fa";
-import { SiGmail, SiX } from "react-icons/si"; // Gmail icon
+import { SiGmail, SiX } from "react-icons/si";
 
-// ─── Style constants ──────────────────────────────────────────
 const C = {
     sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
     red: '#dc2626', redLt: '#fff1f2', redBdr: '#fecdd3',
     green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
-    amber: '#d97706',
+    amber: '#d97706', amberLt: '#fffbeb',
+    violet: '#7c3aed', violetLt: '#f5f3ff',
     border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
     slate: '#0f172a', gray: '#64748b', grayLt: '#94a3b8',
 };
-const TH = {
-    textAlign: 'left', padding: '10px 14px', fontWeight: '600',
-    color: '#64748b', fontSize: '11px', textTransform: 'uppercase',
-    letterSpacing: '0.4px', borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap',
-    background: '#f8fafc',
-};
-const TD = { padding: '11px 14px', borderBottom: '1px solid #f1f5f9', fontSize: '13px', color: '#0f172a' };
 
-const TIER_COLORS = {
-    BRONZE: { bg: '#fed7aa', text: '#92400e', label: 'Bronze', cashout: 250 },
-    SILVER: { bg: '#e0e7ff', text: '#3730a3', label: 'Silver', cashout: 500 },
-    GOLD: { bg: '#fef3c7', text: '#92400e', label: 'Gold', cashout: 750 },
+const TIER = {
+    BRONZE: { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa', dot: '#f97316', label: 'Bronze' },
+    SILVER: { bg: '#eef2ff', text: '#3730a3', border: '#c7d2fe', dot: '#6366f1', label: 'Silver' },
+    GOLD:   { bg: '#fefce8', text: '#854d0e', border: '#fde68a', dot: '#eab308', label: 'Gold'   },
 };
-const STATUS_COLORS = {
-    ACTIVE: { bg: '#dcfce7', text: '#166534', label: 'Active' },
-    CRITICAL: { bg: '#fef9c3', text: '#854d0e', label: 'Critical' },
-    HIGHLY_CRITICAL: { bg: '#ffedd5', text: '#9a3412', label: 'High Crit.' },
-    INACTIVE: { bg: '#fee2e2', text: '#991b1b', label: 'Inactive' },
-    SUSPENDED: { bg: '#fee2e2', text: '#991b1b', label: 'Suspended' },
-    BANNED: { bg: '#f3e8ff', text: '#6b21a8', label: 'Banned' },
+const STATUS = {
+    ACTIVE:          { bg: '#f0fdf4', text: '#15803d', border: '#86efac', dot: '#22c55e', label: 'Active'     },
+    CRITICAL:        { bg: '#fefce8', text: '#854d0e', border: '#fde68a', dot: '#eab308', label: 'Critical'   },
+    HIGHLY_CRITICAL: { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa', dot: '#f97316', label: 'High Crit.' },
+    INACTIVE:        { bg: '#fef2f2', text: '#991b1b', border: '#fecaca', dot: '#ef4444', label: 'Inactive'   },
+    SUSPENDED:       { bg: '#fef2f2', text: '#991b1b', border: '#fecaca', dot: '#ef4444', label: 'Suspended'  },
+    BANNED:          { bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe', dot: '#8b5cf6', label: 'Banned'     },
 };
 
 const SOCIALS = [
-    { key: "email", icon: SiGmail, bg: "#d2e6ff", color: "#fff" },
-    { key: "facebook", icon: FaFacebookF, bg: "#1877f2", color: "#fff" },
-    { key: "telegram", icon: FaTelegramPlane, bg: "#26a5e4", color: "#fff" },
-    { key: "instagram", icon: FaInstagram, bg: "#e1306c", color: "#fff" },
-    { key: "x", icon: SiX, bg: "#000", color: "#fff" },
-    { key: "snapchat", icon: FaSnapchatGhost, bg: "#f7d300", color: "#000" },
+    { key: 'email',     icon: SiGmail,         bg: '#4285f4', label: 'Email'     },
+    { key: 'facebook',  icon: FaFacebookF,      bg: '#1877f2', label: 'Facebook'  },
+    { key: 'telegram',  icon: FaTelegramPlane,  bg: '#26a5e4', label: 'Telegram'  },
+    { key: 'instagram', icon: FaInstagram,      bg: '#e1306c', label: 'Instagram' },
+    { key: 'x',         icon: SiX,              bg: '#000000', label: 'X'         },
+    { key: 'snapchat',  icon: FaSnapchatGhost,  bg: '#f7d300', label: 'Snapchat'  },
 ];
 
-const getTier = t => TIER_COLORS[t] || TIER_COLORS.BRONZE;
-const getStatus = s => STATUS_COLORS[s] || STATUS_COLORS.ACTIVE;
+const getTier   = t => TIER[t]   || TIER.BRONZE;
+const getStatus = s => STATUS[s] || STATUS.ACTIVE;
 
-// ─── Avatar ───────────────────────────────────────────────────
-function Avatar({ name }) {
-    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+function Avatar({ name, size = 36 }) {
+    const initials = (name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    const colors = [
+        ['#6366f1','#eef2ff'], ['#0ea5e9','#f0f9ff'], ['#10b981','#f0fdf4'],
+        ['#f59e0b','#fffbeb'], ['#8b5cf6','#f5f3ff'], ['#ec4899','#fdf2f8'],
+    ];
+    const [fg, bg] = colors[(name || '').charCodeAt(0) % colors.length];
     return (
         <div style={{
-            width: '32px', height: '32px', borderRadius: '50%', background: '#6366f1',
-            color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: '700', fontSize: '11px', flexShrink: 0,
+            width: size, height: size, borderRadius: '50%', background: bg,
+            color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: '700', fontSize: size * 0.35, flexShrink: 0,
+            border: `1.5px solid ${fg}30`,
         }}>{initials}</div>
     );
 }
 
-// ─── Social badges cell ───────────────────────────────────────
-function SocialsBadges({ player }) {
+function SocialsBadges({ socials }) {
     return (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
             {SOCIALS.map(s => {
-                const value = player.socials[s.key];
-                const hasSocial = Boolean(value);
+                const has = Boolean(socials?.[s.key]);
                 const Icon = s.icon;
-
                 return (
-                    <span
-                        key={s.key}
-                        className="social-badge"
-                        title={
-                            hasSocial
-                                ? `${s.key}: @${value}`
-                                : `${s.key}: not provided`
-                        }
+                    <span key={s.key} title={has ? `${s.label}: ${socials[s.key]}` : `${s.label}: not set`}
                         style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '22px',
-                            height: '22px',
-                            borderRadius: '5px',
-                            background: s.bg,
-                            color: s.color,
-                            fontSize: '14px',
-                            cursor: 'default',
-                            opacity: hasSocial ? 1 : 0.4,
-                            border: hasSocial ? 'none' : '1px dashed #666',
-                        }}
-                    >
+                            width: '24px', height: '24px', borderRadius: '6px',
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            background: has ? s.bg : 'transparent',
+                            border: has ? 'none' : `1.5px dashed ${C.border}`,
+                            color: has ? (s.bg === '#f7d300' ? '#000' : '#fff') : C.grayLt,
+                            fontSize: '11px', cursor: 'default', flexShrink: 0,
+                            opacity: has ? 1 : 0.5,
+                        }}>
                         <Icon />
-                        {!hasSocial && "?"}
                     </span>
                 );
             })}
@@ -106,99 +87,66 @@ function SocialsBadges({ player }) {
     );
 }
 
-// ─── Delete confirmation modal ────────────────────────────────
+function StatCard({ icon: Icon, label, value, color, bg, border, sub }) {
+    return (
+        <div style={{
+            background: bg, border: `1px solid ${border}`, borderRadius: '12px',
+            padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px',
+        }}>
+            <div style={{
+                width: '40px', height: '40px', borderRadius: '10px',
+                background: C.white, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: `1px solid ${border}`, flexShrink: 0,
+            }}>
+                <Icon size={18} color={color} />
+            </div>
+            <div>
+                <div style={{ fontSize: '11px', fontWeight: '700', color, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '2px' }}>{label}</div>
+                <div style={{ fontSize: '24px', fontWeight: '900', color, lineHeight: 1 }}>{value}</div>
+                {sub && <div style={{ fontSize: '11px', color, opacity: 0.7, marginTop: '2px' }}>{sub}</div>}
+            </div>
+        </div>
+    );
+}
+
 function DeleteModal({ player, onClose, onDeleted }) {
     const [pwd, setPwd] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-
     const handleDelete = async () => {
-        if (!pwd.trim()) return setError('Admin password is required.');
-        setError('');
+        if (!pwd.trim()) { setError('Password required.'); return; }
         try {
             setLoading(true);
             await api.players.deletePlayer(player.id, pwd);
-            onDeleted();
-            onClose();
-        } catch (err) {
-            setError(err.message || 'Incorrect password or server error.');
-        } finally {
-            setLoading(false);
-        }
+            onDeleted(); onClose();
+        } catch (err) { setError(err.message || 'Incorrect password.'); }
+        finally { setLoading(false); }
     };
-
     return (
-        <div
-            onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-            style={{
-                position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)',
-                zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
-            }}
-        >
-            <div style={{
-                background: C.white, borderRadius: '14px', boxShadow: '0 24px 60px rgba(15,23,42,.25)',
-                width: '100%', maxWidth: '420px', overflow: 'hidden',
-            }}>
-                {/* Header */}
-                <div style={{
-                    padding: '18px 20px', background: C.redLt,
-                    borderBottom: `1px solid ${C.redBdr}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                }}>
-                    <div>
-                        <p style={{ margin: 0, fontWeight: '800', fontSize: '15px', color: '#7f1d1d' }}>
-                            🗑 Delete Player
-                        </p>
-                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: C.red }}>
-                            This action is permanent and cannot be undone.
-                        </p>
-                    </div>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.grayLt, fontSize: '18px' }}>✕</button>
+        <div onClick={e => e.target === e.currentTarget && onClose()}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.55)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ background: C.white, borderRadius: '16px', width: '100%', maxWidth: '400px', overflow: 'hidden', boxShadow: '0 24px 60px rgba(15,23,42,.2)' }}>
+                <div style={{ padding: '20px 24px', borderBottom: `1px solid ${C.redBdr}`, background: C.redLt }}>
+                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#7f1d1d', marginBottom: '2px' }}>Delete player</div>
+                    <div style={{ fontSize: '12px', color: C.red }}>This is permanent and cannot be undone.</div>
                 </div>
-
-                {/* Body */}
-                <div style={{ padding: '20px' }}>
-                    <div style={{
-                        padding: '12px 14px', background: '#fff8f1', border: `1px solid #fed7aa`,
-                        borderRadius: '8px', marginBottom: '16px',
-                    }}>
-                        <p style={{ margin: 0, fontWeight: '700', color: C.slate, fontSize: '13px' }}>{player.name}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: C.gray }}>
-                            @{player.username} · {player.email}
-                        </p>
+                <div style={{ padding: '20px 24px' }}>
+                    <div style={{ padding: '12px 14px', background: C.bg, borderRadius: '8px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
+                        <div style={{ fontWeight: '700', fontSize: '13px' }}>{player.name}</div>
+                        <div style={{ fontSize: '11px', color: C.gray, marginTop: '2px' }}>@{player.username} · {player.email}</div>
                     </div>
-
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: C.gray, textTransform: 'uppercase', marginBottom: '6px' }}>
-                        Admin Password *
-                    </label>
-                    <input
-                        type="password"
-                        value={pwd}
-                        onChange={e => setPwd(e.target.value)}
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Admin password</label>
+                    <input type="password" value={pwd} onChange={e => setPwd(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleDelete()}
-                        placeholder="Enter your admin password to confirm"
-                        style={{
-                            width: '100%', padding: '10px 12px', border: `1px solid ${error ? C.red : C.border}`,
-                            borderRadius: '8px', fontSize: '13px', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none',
-                        }}
-                    />
-                    {error && <p style={{ margin: '6px 0 0', fontSize: '12px', color: C.red }}>{error}</p>}
+                        placeholder="Enter to confirm deletion"
+                        style={{ width: '100%', padding: '10px 12px', border: `1px solid ${error ? C.red : C.border}`, borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }} />
+                    {error && <div style={{ fontSize: '12px', color: C.red, marginTop: '6px' }}>{error}</div>}
                 </div>
-
-                {/* Footer */}
-                <div style={{
-                    padding: '14px 20px', borderTop: `1px solid ${C.border}`,
-                    display: 'flex', gap: '10px', background: C.bg,
-                }}>
-                    <button onClick={onClose} disabled={loading} style={{
-                        flex: 1, padding: '10px', background: C.white, border: `1px solid ${C.border}`,
-                        borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px', color: C.slate,
-                    }}>Cancel</button>
-                    <button onClick={handleDelete} disabled={loading} style={{
-                        flex: 2, padding: '10px', background: loading ? '#e2e8f0' : C.red,
-                        color: loading ? C.grayLt : '#fff', border: 'none', borderRadius: '8px',
-                        fontWeight: '700', fontSize: '13px', cursor: loading ? 'not-allowed' : 'pointer',
-                    }}>
-                        {loading ? '⏳ Deleting…' : '🗑 Confirm Delete'}
+                <div style={{ padding: '14px 24px', borderTop: `1px solid ${C.border}`, background: C.bg, display: 'flex', gap: '10px' }}>
+                    <button onClick={onClose} style={{ flex: 1, padding: '10px', background: C.white, border: `1px solid ${C.border}`, borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px', fontFamily: 'inherit' }}>Cancel</button>
+                    <button onClick={handleDelete} disabled={loading}
+                        style={{ flex: 2, padding: '10px', background: loading ? C.border : C.red, color: loading ? C.grayLt : '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                        {loading ? 'Deleting…' : 'Confirm delete'}
                     </button>
                 </div>
             </div>
@@ -206,9 +154,8 @@ function DeleteModal({ player, onClose, onDeleted }) {
     );
 }
 
-// ══════════════════════════════════════════════════════════════
-// MAIN PLAYERS PAGE
-// ══════════════════════════════════════════════════════════════
+const TH = { padding: '10px 16px', fontWeight: '700', fontSize: '11px', color: C.grayLt, textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left', borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap', background: C.bg };
+
 export default function Players() {
     const navigate = useNavigate();
     const { addPlayer, setAddPlayer } = useContext(AddPlayerContext);
@@ -219,26 +166,17 @@ export default function Players() {
     const [filterTab, setFilterTab] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
+    const [editPlayer, setEditPlayer] = useState(null);
+    const [deletePlayer, setDeletePlayer] = useState(null);
     const itemsPerPage = 10;
-
-    // Modals
-    const [editPlayer, setEditPlayer] = useState(null);   // player object | null
-    const [deletePlayer, setDeletePlayer] = useState(null);   // player object | null
 
     const loadPlayers = useCallback(async () => {
         try {
             setLoading(true);
-            const result = await api.players.getPlayers(
-                currentPage, itemsPerPage, searchTerm,
-                filterTab === 'all' ? '' : filterTab,
-            );
-            console.log("data: ", result);
+            const result = await api.players.getPlayers(currentPage, itemsPerPage, searchTerm, filterTab === 'all' ? '' : filterTab);
             setData(result);
-        } catch (err) {
-            console.error('Failed to load players:', err);
-        } finally {
-            setLoading(false);
-        }
+        } catch (err) { console.error(err); }
+        finally { setLoading(false); }
     }, [currentPage, searchTerm, filterTab]);
 
     useEffect(() => { loadPlayers(); }, [loadPlayers]);
@@ -247,216 +185,188 @@ export default function Players() {
 
     const players = data?.data || [];
     const pagination = data?.pagination || { page: 1, limit: 10, total: 0, pages: 1 };
-    const pageCount = Math.min(pagination.pages, 10);
 
-    const handleView = (player) => {
-        setSelectedPlayer(player);
-        navigate(`/playerDashboard/${player.id}`);
-    };
-
+    const handleView = (p) => { setSelectedPlayer(p); navigate(`/playerDashboard/${p.id}`); };
     const handleSearch = (e) => { setSearchTerm(e.target.value); setCurrentPage(1); };
 
     const TABS = [
-        { id: 'all', label: 'All Players' },
-        { id: 'ACTIVE', label: 'Active' },
-        { id: 'CRITICAL', label: 'Critical' },
-        { id: 'HIGHLY_CRITICAL', label: 'Highly Critical' },
-        { id: 'INACTIVE', label: 'Inactive' },
+        { id: 'all',            label: 'All' },
+        { id: 'ACTIVE',         label: 'Active' },
+        { id: 'CRITICAL',       label: 'Critical' },
+        { id: 'HIGHLY_CRITICAL',label: 'High Critical' },
+        { id: 'INACTIVE',       label: 'Inactive' },
     ];
 
-    // Shared icon-button style
-    const iconBtn = (bg, color, hoverBg) => ({
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        width: '30px', height: '30px', borderRadius: '7px', border: 'none',
-        background: bg, color, cursor: 'pointer', transition: 'background .15s',
-        flexShrink: 0,
-    });
+    const statusCounts = TABS.slice(1).reduce((acc, t) => {
+        acc[t.id] = players.filter(p => p.status === t.id).length;
+        return acc;
+    }, {});
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: 'inherit' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-            {/* ── Top Bar ── */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            {/* ── Top stat cards ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                <StatCard icon={Users}         label="Total players"   value={pagination.total || 0}             color="#0284c7" bg="#f0f9ff" border="#bae6fd" />
+                <StatCard icon={TrendingUp}    label="Active"          value={statusCounts.ACTIVE ?? 0}          color="#15803d" bg="#f0fdf4" border="#86efac" />
+                <StatCard icon={AlertTriangle} label="Critical"        value={(statusCounts.CRITICAL ?? 0) + (statusCounts.HIGHLY_CRITICAL ?? 0)} color="#b45309" bg="#fffbeb" border="#fde68a" />
+                <StatCard icon={UserX}         label="Inactive"        value={statusCounts.INACTIVE ?? 0}        color="#991b1b" bg="#fef2f2" border="#fecaca" />
+            </div>
+
+            {/* ── Controls bar ── */}
+            <div style={{ background: C.white, borderRadius: '12px', border: `1px solid ${C.border}`, padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
                 {/* Tabs */}
-                <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #f1f5f9' }}>
+                <div style={{ display: 'flex', gap: '0' }}>
                     {TABS.map(tab => {
                         const active = filterTab === tab.id;
                         return (
                             <button key={tab.id} onClick={() => { setFilterTab(tab.id); setCurrentPage(1); }}
                                 style={{
-                                    padding: '10px 16px', background: 'none', border: 'none', fontWeight: '600',
-                                    fontSize: '13px', color: active ? C.sky : '#64748b',
-                                    borderBottom: active ? `2px solid ${C.sky}` : '2px solid transparent',
-                                    marginBottom: '-2px', cursor: 'pointer', transition: 'all .15s', whiteSpace: 'nowrap',
-                                    borderBottomLeftRadius: '0px',
-                                    borderBottomRightRadius: '0px',
-                                }}>{tab.label}</button>
+                                    padding: '14px 16px', background: 'none', border: 'none',
+                                    fontWeight: active ? '700' : '600', fontSize: '13px',
+                                    color: active ? C.sky : C.gray,
+                                    borderBottom: `2px solid ${active ? C.sky : 'transparent'}`,
+                                    marginBottom: '-1px', cursor: 'pointer', transition: 'all .15s',
+                                    whiteSpace: 'nowrap', fontFamily: 'inherit',
+                                }}>
+                                {tab.label}
+                            </button>
                         );
                     })}
                 </div>
 
                 {/* Right controls */}
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '10px 0' }}>
                     <div style={{ position: 'relative' }}>
-                        <Search style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', width: '14px', height: '14px', color: '#94a3b8', pointerEvents: 'none' }} />
-                        <input type="text" placeholder="Search name or email…" value={searchTerm} onChange={handleSearch}
-                            style={{ padding: '9px 12px 9px 32px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', fontFamily: 'inherit', color: '#0f172a', outline: 'none', width: '220px', background: '#fff' }} />
+                        <Search style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '14px', height: '14px', color: C.grayLt, pointerEvents: 'none' }} />
+                        <input type="text" placeholder="Search players…" value={searchTerm} onChange={handleSearch}
+                            style={{ padding: '8px 12px 8px 32px', border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '13px', fontFamily: 'inherit', outline: 'none', width: '200px', background: C.bg, color: C.slate }} />
                     </div>
-                    <button onClick={() => loadPlayers()}
-                        style={{ padding: '9px 12px', background: C.white, border: `1px solid ${C.border}`, borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: C.gray, fontWeight: '600' }}>
-                        <RefreshCw style={{ width: '13px', height: '13px' }} /> Refresh
+                    <button onClick={loadPlayers}
+                        style={{ padding: '8px 14px', background: C.white, border: `1px solid ${C.border}`, borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '13px', color: C.gray, fontWeight: '600', fontFamily: 'inherit' }}>
+                        <RefreshCw style={{ width: '13px', height: '13px', animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+                        Refresh
                     </button>
                     <button onClick={() => setAddPlayer(true)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '9px 18px', background: C.sky, color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                        <Plus style={{ width: '14px', height: '14px' }} /> Add Player
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 18px', background: C.sky, color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        <Plus style={{ width: '14px', height: '14px' }} /> Add player
                     </button>
                 </div>
             </div>
 
-            {/* ── Table Card ── */}
-            <div style={{ background: '#fff', borderRadius: '14px', border: '1px solid #e2e8f0', boxShadow: '0 2px 12px rgba(15,23,42,.07)', overflow: 'hidden' }}>
+            {/* ── Table ── */}
+            <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 1px 8px rgba(15,23,42,.05)', overflow: 'hidden' }}>
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                         <thead>
                             <tr>
                                 <th style={TH}>Player</th>
-                                <th style={TH}>Email</th>
+                                <th style={TH}>Contact</th>
                                 <th style={TH}>Tier</th>
                                 <th style={TH}>Balance</th>
-                                <th style={TH}>Cashout Limit</th>
+                                <th style={TH}>Cashout limit</th>
                                 <th style={TH}>Socials</th>
                                 <th style={TH}>Status</th>
-                                {/* <th style={TH}>Last Login</th> */}
                                 <th style={{ ...TH, textAlign: 'center' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={9} style={{ padding: '48px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                            <RefreshCw style={{ width: '14px', height: '14px', animation: 'spin 1s linear infinite' }} /> Loading players…
+                                    <td colSpan={8} style={{ padding: '60px', textAlign: 'center', color: C.grayLt }}>
+                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                            <RefreshCw style={{ width: '14px', height: '14px', animation: 'spin 1s linear infinite' }} />
+                                            Loading players…
                                         </div>
                                     </td>
                                 </tr>
                             ) : players.length === 0 ? (
                                 <tr>
-                                    <td colSpan={9} style={{ padding: '48px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+                                    <td colSpan={8} style={{ padding: '60px', textAlign: 'center', color: C.grayLt, fontSize: '14px' }}>
                                         No players found
                                     </td>
                                 </tr>
-                            ) : players.map(player => {
-                                const tier = getTier(player.tier);
+                            ) : players.map((player, idx) => {
+                                const tier   = getTier(player.tier);
                                 const status = getStatus(player.status);
-                                const lastLogin = player.lastLoginAt
-                                    ? new Date(player.lastLoginAt).toLocaleDateString()
-                                    : 'Never';
-                                // Cashout limit: prefer stored value, fall back to tier default
-                                const cashoutDisplay = player.cashoutLimit
-                                    ? `$${parseFloat(player.cashoutLimit).toFixed(0)}`
-                                    : `$${TIER_COLORS[player.tier]?.cashout ?? 250}`;
-
+                                const cashout = player.cashoutLimit ? `$${parseFloat(player.cashoutLimit).toFixed(0)}` : '$250';
+                                const isEven = idx % 2 === 0;
                                 return (
                                     <tr key={player.id}
-                                        onMouseEnter={e => e.currentTarget.style.background = '#fafbfc'}
-                                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                        style={{ cursor: 'default' }}
-                                    >
+                                        onMouseEnter={e => e.currentTarget.style.background = '#f8faff'}
+                                        onMouseLeave={e => e.currentTarget.style.background = isEven ? C.white : '#fcfcfc'}
+                                        style={{ background: isEven ? C.white : '#fcfcfc', cursor: 'default', transition: 'background .12s' }}>
+
                                         {/* Player */}
-                                        <td style={TD}>
+                                        <td style={{ padding: '13px 16px', borderBottom: `1px solid ${C.bg}` }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                 <Avatar name={player.name} />
                                                 <div>
-                                                    <div
-                                                        style={{ fontWeight: '600', color: '#0f172a', cursor: 'pointer', fontSize: '13px' }}
-                                                        onClick={() => handleView(player)}
+                                                    <div onClick={() => handleView(player)}
+                                                        style={{ fontWeight: '700', color: C.slate, cursor: 'pointer', fontSize: '13px', transition: 'color .12s' }}
                                                         onMouseEnter={e => e.currentTarget.style.color = C.sky}
-                                                        onMouseLeave={e => e.currentTarget.style.color = '#0f172a'}
-                                                    >{player.name}</div>
-                                                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>@{player.username}</div>
+                                                        onMouseLeave={e => e.currentTarget.style.color = C.slate}>
+                                                        {player.name}
+                                                    </div>
+                                                    <div style={{ fontSize: '11px', color: C.grayLt, marginTop: '1px' }}>@{player.username}</div>
                                                 </div>
                                             </div>
                                         </td>
 
-                                        {/* Email */}
-                                        <td style={{ ...TD, color: '#64748b', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-
-                                            {player.email || '?'}
+                                        {/* Contact */}
+                                        <td style={{ padding: '13px 16px', borderBottom: `1px solid ${C.bg}`, color: C.gray, fontSize: '12px', maxWidth: '160px' }}>
+                                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{player.email || '—'}</div>
+                                            {player.phone && <div style={{ fontSize: '11px', color: C.grayLt, marginTop: '2px' }}>{player.phone}</div>}
                                         </td>
 
                                         {/* Tier */}
-                                        <td style={TD}>
-                                            <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', background: tier.bg, color: tier.text }}>
+                                        <td style={{ padding: '13px 16px', borderBottom: `1px solid ${C.bg}` }}>
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', background: tier.bg, color: tier.text, border: `1px solid ${tier.border}` }}>
+                                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: tier.dot, flexShrink: 0 }} />
                                                 {tier.label}
                                             </span>
                                         </td>
 
                                         {/* Balance */}
-                                        <td style={{ ...TD, fontWeight: '700', color: '#10b981', fontSize: '14px' }}>
+                                        <td style={{ padding: '13px 16px', borderBottom: `1px solid ${C.bg}`, fontWeight: '800', fontSize: '14px', color: '#10b981' }}>
                                             ${parseFloat(player.balance).toFixed(2)}
                                         </td>
 
-                                        {/* Cashout Limit */}
-                                        <td style={TD}>
-                                            <span style={{
-                                                display: 'inline-block', padding: '3px 9px', borderRadius: '6px',
-                                                fontSize: '12px', fontWeight: '700',
-                                                background: '#f0fdf4', color: '#166534', border: '1px solid #86efac',
-                                            }}>
-                                                {cashoutDisplay}
+                                        {/* Cashout limit */}
+                                        <td style={{ padding: '13px 16px', borderBottom: `1px solid ${C.bg}` }}>
+                                            <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac' }}>
+                                                {cashout}
                                             </span>
                                         </td>
 
                                         {/* Socials */}
-                                        <td style={TD}>
-                                            <SocialsBadges player={player} />
+                                        <td style={{ padding: '13px 16px', borderBottom: `1px solid ${C.bg}` }}>
+                                            <SocialsBadges socials={player.socials} />
                                         </td>
 
                                         {/* Status */}
-                                        <td style={TD}>
-                                            <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', background: status.bg, color: status.text }}>
+                                        <td style={{ padding: '13px 16px', borderBottom: `1px solid ${C.bg}` }}>
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', background: status.bg, color: status.text, border: `1px solid ${status.border}` }}>
+                                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: status.dot, flexShrink: 0 }} />
                                                 {status.label}
                                             </span>
                                         </td>
 
-                                        {/* Last Login */}
-                                        {/* <td style={{ ...TD, color: '#64748b' }}>{lastLogin}</td> */}
-
                                         {/* Actions */}
-                                        <td style={{ ...TD, textAlign: 'center' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                                                {/* View */}
-                                                <button
-                                                    title="View Dashboard"
-                                                    onClick={() => handleView(player)}
-                                                    onMouseEnter={e => e.currentTarget.style.background = C.skyLt}
-                                                    onMouseLeave={e => e.currentTarget.style.background = '#f0f9ff'}
-                                                    style={{ ...iconBtn('#f0f9ff', C.sky) }}
-                                                >
-                                                    <Eye style={{ width: '13px', height: '13px' }} />
-                                                </button>
-
-                                                {/* Edit */}
-                                                <button
-                                                    title="Edit Player"
-                                                    onClick={() => setEditPlayer(player)}
-                                                    onMouseEnter={e => e.currentTarget.style.background = '#fefce8'}
-                                                    onMouseLeave={e => e.currentTarget.style.background = '#fffbeb'}
-                                                    style={{ ...iconBtn('#fffbeb', C.amber) }}
-                                                >
-                                                    <Pencil style={{ width: '13px', height: '13px' }} />
-                                                </button>
-
-                                                {/* Delete */}
-                                                <button
-                                                    title="Delete Player"
-                                                    onClick={() => setDeletePlayer(player)}
-                                                    onMouseEnter={e => e.currentTarget.style.background = C.redLt}
-                                                    onMouseLeave={e => e.currentTarget.style.background = '#fff1f2'}
-                                                    style={{ ...iconBtn('#fff1f2', C.red) }}
-                                                >
-                                                    <Trash2 style={{ width: '13px', height: '13px' }} />
-                                                </button>
+                                        <td style={{ padding: '13px 16px', borderBottom: `1px solid ${C.bg}`, textAlign: 'center' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                                                {[
+                                                    { Icon: Eye,    color: C.sky,   bg: C.skyLt,  title: 'View',   fn: () => handleView(player) },
+                                                    { Icon: Pencil, color: C.amber, bg: '#fffbeb', title: 'Edit',   fn: () => setEditPlayer(player) },
+                                                    { Icon: Trash2, color: C.red,   bg: C.redLt,  title: 'Delete', fn: () => setDeletePlayer(player) },
+                                                ].map(({ Icon, color, bg, title, fn }) => (
+                                                    <button key={title} title={title} onClick={fn}
+                                                        onMouseEnter={e => { e.currentTarget.style.background = color; e.currentTarget.style.color = '#fff'; }}
+                                                        onMouseLeave={e => { e.currentTarget.style.background = bg; e.currentTarget.style.color = color; }}
+                                                        style={{ width: '30px', height: '30px', borderRadius: '7px', border: `1px solid ${color}30`, background: bg, color, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s', flexShrink: 0 }}>
+                                                        <Icon size={13} />
+                                                    </button>
+                                                ))}
                                             </div>
                                         </td>
                                     </tr>
@@ -465,50 +375,37 @@ export default function Players() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* ── Pagination footer ── */}
+                {pagination.total > 0 && (
+                    <div style={{ padding: '14px 20px', borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', background: C.bg }}>
+                        <span style={{ fontSize: '12px', color: C.grayLt }}>
+                            {(pagination.page - 1) * pagination.limit + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of <strong style={{ color: C.slate }}>{pagination.total}</strong> players
+                        </span>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+                                style={{ width: '30px', height: '30px', borderRadius: '7px', border: `1px solid ${C.border}`, background: C.white, color: currentPage === 1 ? C.border : C.sky, cursor: currentPage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <ChevronLeft size={14} />
+                            </button>
+                            {Array.from({ length: Math.min(pagination.pages, 8) }, (_, i) => (
+                                <button key={i + 1} onClick={() => setCurrentPage(i + 1)}
+                                    style={{ width: '30px', height: '30px', borderRadius: '7px', border: `1px solid ${currentPage === i + 1 ? C.sky : C.border}`, background: currentPage === i + 1 ? C.sky : C.white, color: currentPage === i + 1 ? '#fff' : C.gray, fontWeight: '600', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s', flexShrink: 0, fontFamily: 'inherit' }}>
+                                    {i + 1}
+                                </button>
+                            ))}
+                            {pagination.pages > 8 && <span style={{ color: C.border, padding: '0 4px' }}>…</span>}
+                            <button onClick={() => setCurrentPage(p => Math.min(pagination.pages, p + 1))} disabled={currentPage === pagination.pages}
+                                style={{ width: '30px', height: '30px', borderRadius: '7px', border: `1px solid ${C.border}`, background: C.white, color: currentPage === pagination.pages ? C.border : C.sky, cursor: currentPage === pagination.pages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <ChevronRight size={14} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {/* ── Pagination ── */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-                <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>
-                    Page {pagination.page} / {pagination.pages}
-                    {pagination.total > 0 && ` · ${(pagination.page - 1) * pagination.limit + 1}–${Math.min(pagination.page * pagination.limit, pagination.total)} of ${pagination.total} players`}
-                </p>
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
-                        style={{ padding: '6px 13px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '7px', color: currentPage === 1 ? '#cbd5e1' : C.sky, fontWeight: '600', fontSize: '12px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}>
-                        ← Prev
-                    </button>
-                    {Array.from({ length: pageCount }, (_, i) => (
-                        <button key={i + 1} onClick={() => setCurrentPage(i + 1)}
-                            style={{ padding: '6px 10px', background: currentPage === i + 1 ? C.sky : '#fff', color: currentPage === i + 1 ? '#fff' : '#64748b', border: `1px solid ${currentPage === i + 1 ? C.sky : '#e2e8f0'}`, borderRadius: '7px', fontWeight: '600', fontSize: '12px', cursor: 'pointer', minWidth: '32px' }}>
-                            {i + 1}
-                        </button>
-                    ))}
-                    {pagination.pages > 10 && <span style={{ color: '#cbd5e1', fontSize: '13px' }}>…</span>}
-                    <button onClick={() => setCurrentPage(p => Math.min(pagination.pages, p + 1))} disabled={currentPage === pagination.pages}
-                        style={{ padding: '6px 13px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '7px', color: currentPage === pagination.pages ? '#cbd5e1' : C.sky, fontWeight: '600', fontSize: '12px', cursor: currentPage === pagination.pages ? 'not-allowed' : 'pointer' }}>
-                        Next →
-                    </button>
-                </div>
-            </div>
-
-            {/* ── Edit Modal ── */}
-            {editPlayer && (
-                <EditPlayer
-                    player={editPlayer}
-                    onClose={() => setEditPlayer(null)}
-                    onSaved={() => { setEditPlayer(null); loadPlayers(); }}
-                />
-            )}
-
-            {/* ── Delete Modal ── */}
-            {deletePlayer && (
-                <DeleteModal
-                    player={deletePlayer}
-                    onClose={() => setDeletePlayer(null)}
-                    onDeleted={() => { setDeletePlayer(null); loadPlayers(); }}
-                />
-            )}
+            {editPlayer && <EditPlayer player={editPlayer} onClose={() => setEditPlayer(null)} onSaved={() => { setEditPlayer(null); loadPlayers(); }} />}
+            {deletePlayer && <DeleteModal player={deletePlayer} onClose={() => setDeletePlayer(null)} onDeleted={() => { setDeletePlayer(null); loadPlayers(); }} />}
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 }
