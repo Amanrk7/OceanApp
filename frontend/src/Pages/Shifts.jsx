@@ -1109,95 +1109,29 @@ export const ShiftsPage = () => {
   const [taskType, setTaskType] = useState('ALL');
   const [taskStatus, setTaskStatus] = useState('ALL');
 
-  // useEffect(() => {
-  //   if (!usr?.role) return;
-  //   (async () => {
-  //     try {
-  //       const token = localStorage.getItem('authToken');
-  //       const [activeRes, historyRes, tasksRes] = await Promise.all([
-  //         api.shifts.getActiveShift(usr.role),
-  //         api.reports.getMyShifts({ role: usr.role, limit: 30 }),
-  //         token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
-  //       ]);
-  //       if (activeRes?.data) {
-  //         const sh = activeRes.data;
-  //         activeShiftIdRef.current = sh.id;
-  //         setActiveShift(sh);
-  //         setShiftActive(true);
-  //         const checkinRes = await fj(`/shifts/${sh.id}/checkin`).catch(() => null);
-  //         if (checkinRes?.data?.balanceNote) {
-  //           try { setStartSnapshot(JSON.parse(checkinRes.data.balanceNote)); } catch (_) { }
-  //         }
-  //       }
-  //       setPastShifts(historyRes?.data ?? []);
-  //       setTasks((tasksRes?.data ?? []).filter(t => t.status !== 'COMPLETED'));
-  //     } catch (e) { console.error('Shift restore error:', e); }
-  //   })();
-  // }, [usr?.role]);
-
-//   useEffect(() => {
-//   if (!usr?.role) return;
-
-//   const isAdmin = usr.role === 'ADMIN' || usr.role === 'SUPER_ADMIN';
-//   const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
-
-//   (async () => {
-//     try {
-//       const token = localStorage.getItem('authToken');
-
-//       const [activeRes, historyRes, tasksRes] = await Promise.all([
-//         isAdmin
-//           ? Promise.resolve({ data: null })               // admins have no personal shift
-//           : api.shifts.getActiveShift(usr.role),
-
-//         isAdmin
-//           ? Promise.all(TEAM_ROLES.map(r => api.reports.getMyShifts({ role: r, limit: 30 })))
-//               .then(results => ({
-//                 data: results
-//                   .flatMap(r => r?.data ?? [])
-//                   .sort((a, b) => new Date(b.startTime) - new Date(a.startTime)),
-//               }))
-//           : api.reports.getMyShifts({ role: usr.role, limit: 30 }),
-
-//         token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
-//       ]);
-
-//       if (activeRes?.data) {
-//         const sh = activeRes.data;
-//         activeShiftIdRef.current = sh.id;
-//         setActiveShift(sh);
-//         setShiftActive(true);
-//         const checkinRes = await fj(`/shifts/${sh.id}/checkin`).catch(() => null);
-//         if (checkinRes?.data?.balanceNote) {
-//           try { setStartSnapshot(JSON.parse(checkinRes.data.balanceNote)); } catch (_) {}
-//         }
-//       }
-
-//       setPastShifts(historyRes?.data ?? []);
-//       setTasks((tasksRes?.data ?? []).filter(t => t.status !== 'COMPLETED'));
-//     } catch (e) {
-//       console.error('Shift restore error:', e);
-//     }
-//   })();
-// }, [usr?.role]);
-
   useEffect(() => {
   if (!usr?.role) return;
+
   (async () => {
     try {
       const token = localStorage.getItem('authToken');
       const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
 
       const [activeRes, historyRes, tasksRes] = await Promise.all([
-        isAdmin ? Promise.resolve({ data: null }) : api.shifts.getActiveShift(usr.role),
+        // ✅ Check admin's own active shift too (removed the skip)
+        api.shifts.getActiveShift(usr.role),
+
         isAdmin
-          ? Promise.all(TEAM_ROLES.map(r => api.reports.getMyShifts({ role: r, limit: 30 })))
-              .then(results => ({
+          ? Promise.all(
+              // ✅ Include admin's own role alongside team roles
+              [...TEAM_ROLES, usr.role].map(r => api.reports.getMyShifts({ role: r, limit: 30 }))
+            ).then(results => ({
                 data: results
                   .flatMap(r => r?.data ?? [])
                   .sort((a, b) => new Date(b.startTime) - new Date(a.startTime)),
               }))
           : api.reports.getMyShifts({ role: usr.role, limit: 30 }),
+
         token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
       ]);
 
@@ -1214,7 +1148,6 @@ export const ShiftsPage = () => {
 
       setPastShifts(historyRes?.data ?? []);
       setTasks((tasksRes?.data ?? []).filter(t => t.status !== 'COMPLETED'));
-    
     } catch (e) { console.error('Shift restore error:', e); }
   })();
 }, [usr?.role]);
@@ -1540,25 +1473,26 @@ export const ShiftsPage = () => {
                           ) : '—'}
                         </td>
                         <td style={{ ...T.TD, textAlign: 'center' }}>
-                          {shift.checkin?.rating ? (
-                            < span style={{ display: 'inline-flex', gap: '1px' }}>
-                              {[1, 2, 3, 4, 5].map(n => (
-                                < span key={n} style={{ color: n <= Math.round(shift.checkin.rating.overallRating) ? '#f59e0b' : '#e2e8f0', fontSize: '14px' }}>★</span>
-                              ))}
-                            </span>
-                          ) : (
-                            usr?.role === 'ADMIN' || usr?.role === 'SUPER_ADMIN' ? (
-                              <button
-                                onClick={() => setRatingModal({ shift, memberName: shift.memberName || shift.teamRole })}
-                                style={{ padding: '4px 10px', background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
-                              >
-                                ⭐ Rate
-                              </button>
-                            ) : (
-                              <span style={{ fontSize: '11px', color: '#94a3b8' }}>Not rated</span>
-                            )
-                          )}
-                        </td>
+  {/* ✅ was shift.checkin?.rating — rating lives at top level from enrichShift */}
+  {shift.rating ? (
+    <span style={{ display: 'inline-flex', gap: '1px' }}>
+      {[1, 2, 3, 4, 5].map(n => (
+        <span key={n} style={{ color: n <= Math.round(shift.rating.overallRating) ? '#f59e0b' : '#e2e8f0', fontSize: '14px' }}>★</span>
+      ))}
+    </span>
+  ) : (
+    usr?.role === 'ADMIN' || usr?.role === 'SUPER_ADMIN' ? (
+      <button
+        onClick={() => setRatingModal({ shift, memberName: shift.memberName || shift.teamRole })}
+        style={{ padding: '4px 10px', background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
+      >
+        ⭐ Rate
+      </button>
+    ) : (
+      <span style={{ fontSize: '11px', color: '#94a3b8' }}>Not rated</span>
+    )
+  )}
+</td>
                         <td style={{ ...T.TD, textAlign: 'center' }}>
                           {balanced === null
                             ? <span style={{ color: '#94a3b8', fontSize: '12px' }}>N/A</span>
@@ -1589,14 +1523,18 @@ export const ShiftsPage = () => {
                   const totDur = completedShifts.reduce((s, sh) => s + (sh.duration ?? 0), 0);
                   return (
                     <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
-                      <td style={{ ...T.TD, fontWeight: '700', color: '#374151' }} colSpan={3}>
+                      {/* <td style={{ ...T.TD, fontWeight: '700', color: '#374151' }} colSpan={3}>
                         Totals ({completedShifts.length} shifts · {totDur} min)
-                      </td>
+                      </td> */}
+                      <td style={{ ...T.TD, fontWeight: '700', color: '#374151' }} colSpan={isAdmin ? 4 : 3}>
+  Totals ({completedShifts.length} shifts · {totDur} min)
+</td>
                       <td style={{ ...T.TD, textAlign: 'right', fontWeight: '800', color: '#16a34a' }}>${totDep.toFixed(2)}</td>
                       <td style={{ ...T.TD, textAlign: 'right', fontWeight: '800', color: '#dc2626' }}>${totCO.toFixed(2)}</td>
                       <td style={{ ...T.TD, textAlign: 'right', fontWeight: '800', color: totProf >= 0 ? '#16a34a' : '#dc2626' }}>{totProf >= 0 ? '+' : ''}${Math.abs(totProf).toFixed(2)}</td>
                       <td style={{ ...T.TD, textAlign: 'right', fontWeight: '800', color: '#c2410c' }}>${totBon.toFixed(2)}</td>
                       <td colSpan={4} style={T.TD}></td>
+                      
                     </tr>
                   );
                 })()}
