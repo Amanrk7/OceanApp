@@ -1091,6 +1091,7 @@ export const ShiftsPage = () => {
   const activeShiftIdRef = useRef(null);
   const { shiftActive, setShiftActive } = useContext(ShiftStatusContext);
   const { usr } = useContext(CurrentUserContext);
+  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(usr?.role);
 
   const [ratingModal, setRatingModal] = useState(null); // { shift, memberName }
   const [pastShifts, setPastShifts] = useState([]);
@@ -1182,18 +1183,13 @@ export const ShiftsPage = () => {
 
   useEffect(() => {
   if (!usr?.role) return;
-  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(usr.role);
-
   (async () => {
     try {
       const token = localStorage.getItem('authToken');
       const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
 
       const [activeRes, historyRes, tasksRes] = await Promise.all([
-        // Admins have no active shift of their own
         isAdmin ? Promise.resolve({ data: null }) : api.shifts.getActiveShift(usr.role),
-
-        // Admins: fetch all team roles and merge; members: fetch own role only
         isAdmin
           ? Promise.all(TEAM_ROLES.map(r => api.reports.getMyShifts({ role: r, limit: 30 })))
               .then(results => ({
@@ -1202,7 +1198,6 @@ export const ShiftsPage = () => {
                   .sort((a, b) => new Date(b.startTime) - new Date(a.startTime)),
               }))
           : api.reports.getMyShifts({ role: usr.role, limit: 30 }),
-
         token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
       ]);
 
@@ -1219,9 +1214,8 @@ export const ShiftsPage = () => {
 
       setPastShifts(historyRes?.data ?? []);
       setTasks((tasksRes?.data ?? []).filter(t => t.status !== 'COMPLETED'));
-    } catch (e) {
-      console.error('Shift restore error:', e);
-    }
+    
+    } catch (e) { console.error('Shift restore error:', e); }
   })();
 }, [usr?.role]);
 
