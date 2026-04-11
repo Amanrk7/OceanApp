@@ -300,10 +300,14 @@ export default function BonusPage() {
         if (!selectedGameId) { setError("Please select a game."); return; }
         if (!amt || amt <= 0) { setError("Enter a valid bonus amount."); return; }
         if (bonusType === "other" && !customLabel.trim()) { setError("Enter a label for the custom bonus."); return; }
-        if (bonusType === "referral" && !hasReferrer) {
-            setError("This player was not referred by anyone — referral bonus cannot be granted.");
-            return;
-        }
+        // if (bonusType === "referral" && !hasReferrer) {
+        //     setError("This player was not referred by anyone — referral bonus cannot be granted.");
+        //     return;
+        // }
+        if (bonusType === "referral" && eligibleBonuses.length === 0) {
+    setError("No eligible referral bonus records found for this player.");
+    return;
+}
         if (!stockOk) {
             setError(`Insufficient game stock. ${selectedGame?.name} has ${selectedGame?.pointStock?.toFixed(0)} pts, need ${amt.toFixed(0)} pts.`);
             return;
