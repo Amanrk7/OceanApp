@@ -271,7 +271,9 @@ export default function BonusPage() {
     const stockOk = selectedGame ? stockNeeded <= selectedGame.pointStock : false;
 
     const customLabelOk = bonusType === "streak" || bonusType === "referral" || customLabel.trim().length > 0;
-    const referralOk = bonusType !== "referral" || referralEligible;
+    // const referralOk = bonusType !== "referral" || referralEligible;
+    const referralOk = bonusType !== "referral" || eligibleBonuses.length > 0;
+
 
     // For referral: recipient name shown in UI
     const referralRecipientName = bonusType === "referral"
@@ -826,10 +828,9 @@ export default function BonusPage() {
                         <div style={{ padding: "14px 18px", background: stockOk && referralOk ? "#f0fdf4" : "#fee2e2", border: `1px solid ${stockOk && referralOk ? "#86efac" : "#fca5a5"}`, borderRadius: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <div>
                                 <div style={{ fontWeight: "700", fontSize: "13px", color: stockOk && referralOk ? "#166534" : "#991b1b" }}>
-                                    {!referralOk
-                                        ? "⚠ Cannot grant — player has no referrer"
-                                        : stockOk ? "✓ Ready to grant" : "⚠ Cannot grant — insufficient game stock"
-                                    }
+                                
+                                    !referralOk
+  ? "⚠ Cannot grant — no eligible referral bonus records found"
                                 </div>
                                 <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
                                     {bonusType === "streak" ? "Streak Bonus" :
