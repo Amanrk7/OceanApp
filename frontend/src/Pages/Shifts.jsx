@@ -1134,21 +1134,66 @@ export const ShiftsPage = () => {
   //   })();
   // }, [usr?.role]);
 
+//   useEffect(() => {
+//   if (!usr?.role) return;
+
+//   const isAdmin = usr.role === 'ADMIN' || usr.role === 'SUPER_ADMIN';
+//   const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
+
+//   (async () => {
+//     try {
+//       const token = localStorage.getItem('authToken');
+
+//       const [activeRes, historyRes, tasksRes] = await Promise.all([
+//         isAdmin
+//           ? Promise.resolve({ data: null })               // admins have no personal shift
+//           : api.shifts.getActiveShift(usr.role),
+
+//         isAdmin
+//           ? Promise.all(TEAM_ROLES.map(r => api.reports.getMyShifts({ role: r, limit: 30 })))
+//               .then(results => ({
+//                 data: results
+//                   .flatMap(r => r?.data ?? [])
+//                   .sort((a, b) => new Date(b.startTime) - new Date(a.startTime)),
+//               }))
+//           : api.reports.getMyShifts({ role: usr.role, limit: 30 }),
+
+//         token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
+//       ]);
+
+//       if (activeRes?.data) {
+//         const sh = activeRes.data;
+//         activeShiftIdRef.current = sh.id;
+//         setActiveShift(sh);
+//         setShiftActive(true);
+//         const checkinRes = await fj(`/shifts/${sh.id}/checkin`).catch(() => null);
+//         if (checkinRes?.data?.balanceNote) {
+//           try { setStartSnapshot(JSON.parse(checkinRes.data.balanceNote)); } catch (_) {}
+//         }
+//       }
+
+//       setPastShifts(historyRes?.data ?? []);
+//       setTasks((tasksRes?.data ?? []).filter(t => t.status !== 'COMPLETED'));
+//     } catch (e) {
+//       console.error('Shift restore error:', e);
+//     }
+//   })();
+// }, [usr?.role]);
+
   useEffect(() => {
   if (!usr?.role) return;
-
-  const isAdmin = usr.role === 'ADMIN' || usr.role === 'SUPER_ADMIN';
-  const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
+  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(usr.role);
 
   (async () => {
     try {
       const token = localStorage.getItem('authToken');
+      const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
 
       const [activeRes, historyRes, tasksRes] = await Promise.all([
-        isAdmin
-          ? Promise.resolve({ data: null })               // admins have no personal shift
-          : api.shifts.getActiveShift(usr.role),
+        // Admins have no active shift of their own
+        isAdmin ? Promise.resolve({ data: null }) : api.shifts.getActiveShift(usr.role),
 
+        // Admins: fetch all team roles and merge; members: fetch own role only
         isAdmin
           ? Promise.all(TEAM_ROLES.map(r => api.reports.getMyShifts({ role: r, limit: 30 })))
               .then(results => ({
@@ -1425,6 +1470,7 @@ export const ShiftsPage = () => {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
                   <tr>
+                    {isAdmin && <th style={T.TH}>Member</th>}
                     <th style={T.TH}>Date</th>
                     <th style={T.TH}>Start → End</th>
                     <th style={T.TH}>Duration</th>
@@ -1460,6 +1506,14 @@ export const ShiftsPage = () => {
                         onMouseEnter={e => e.currentTarget.style.background = '#fafbfc'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
+                        {['ADMIN','SUPER_ADMIN'].includes(usr?.role) && (
+  <td style={T.TD}>
+    <span style={{ fontSize: '11px', fontWeight: '700', color: '#475569',
+      background: '#f1f5f9', padding: '2px 8px', borderRadius: '6px' }}>
+      {shift.teamRole}
+    </span>
+  </td>
+)}
                         <td style={{ ...T.TD, fontWeight: '600' }}>{fmtDate(shift.startTime)}</td>
                         <td style={{ ...T.TD, fontSize: '12px', color: '#475569' }}>
                           {fmtTime(shift.startTime)} → {fmtTime(shift.endTime)}
