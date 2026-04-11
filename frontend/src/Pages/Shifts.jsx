@@ -980,6 +980,7 @@ export const ShiftsPage = () => {
   const { shiftActive, setShiftActive } = useContext(ShiftStatusContext);
   const { usr } = useContext(CurrentUserContext);
 
+  const [ratingModal, setRatingModal] = useState(null); // { shift, memberName }
   const [pastShifts, setPastShifts] = useState([]);
   const [activeShift, setActiveShift] = useState(null);
   const [startSnapshot, setStartSnapshot] = useState(null);
