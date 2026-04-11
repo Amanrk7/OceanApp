@@ -7,6 +7,7 @@ import {
     Snowflake, Clock, AlertTriangle, Plus, Unlock,
 } from "lucide-react";
 import { api } from "../api";
+import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
 
 
@@ -668,24 +669,24 @@ function PlayerRow({ player, depositGames, gamesLoading, onRedeem, onFreezeActio
                 </div>
             </td> */}
             {/* Last deposit date */}
-<td style={{ padding: "11px 12px", whiteSpace: "nowrap" }}>
-    {lastPlayed ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                <Calendar style={{ width: "11px", height: "11px", color: "#94a3b8", flexShrink: 0 }} />
-                <span style={{ fontSize: "12px", color: "#0f172a", fontWeight: "600" }}>
-                    {fmtCT(lastPlayed)?.split(",")[0]}  {/* "Apr 9" */}
-                </span>
-            </div>
-            <span style={{ fontSize: "10px", color: "#94a3b8", paddingLeft: "15px" }}>
-                {fmtCT(lastPlayed)?.split(",")[1]?.trim()}  {/* "7:10 AM" */}
-            </span>
-        </div>
-    ) : (
-        <span style={{ fontSize: "12px", color: "#cbd5e1" }}>—</span>
-    )}
-</td>
-            
+            <td style={{ padding: "11px 12px", whiteSpace: "nowrap" }}>
+                {lastPlayed ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                            <Calendar style={{ width: "11px", height: "11px", color: "#94a3b8", flexShrink: 0 }} />
+                            <span style={{ fontSize: "12px", color: "#0f172a", fontWeight: "600" }}>
+                                {fmtCT(lastPlayed)?.split(",")[0]}  {/* "Apr 9" */}
+                            </span>
+                        </div>
+                        <span style={{ fontSize: "10px", color: "#94a3b8", paddingLeft: "15px" }}>
+                            {fmtCT(lastPlayed)?.split(",")[1]?.trim()}  {/* "7:10 AM" */}
+                        </span>
+                    </div>
+                ) : (
+                    <span style={{ fontSize: "12px", color: "#cbd5e1" }}>—</span>
+                )}
+            </td>
+
 
             {/* Games (with stock info) */}
             <td style={{ padding: "11px 12px", minWidth: "150px", maxWidth: "200px" }}>
@@ -765,6 +766,8 @@ function PlayerRow({ player, depositGames, gamesLoading, onRedeem, onFreezeActio
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PlaytimePage() {
+    const { shiftActive } = useContext(ShiftStatusContext);
+
     const [players, setPlayers] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
@@ -987,6 +990,30 @@ export default function PlaytimePage() {
             setFreezeLoading(false);
         }
     };
+
+    if (!shiftActive) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
+                    <button onClick={() => navigate('/shifts')} style={{ padding: '9px 18px', background: 'rgb(14, 165, 233)', color: '#fff' }}>Start Shift</button>
+                </nav>
+                <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <IAlert />
+                    <div>
+                        <p style={{ fontWeight: '700', color: '#78350f', margin: '0 0 2px', fontSize: '14px' }}>Shift Required</p>
+                        <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift to record a transaction.</p>
+                    </div>
+                </div>
+                <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '60px 28px', textAlign: 'center' }}>
+                    <div style={{ width: '60px', height: '60px', background: C.amberLt, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${C.amberBdr}` }}>
+                        <ILock />
+                    </div>
+                    <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '800', color: '#78350f' }}>Form Locked</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: C.amber }}>Go to Shifts and start your shift first.</p>
+                </div>
+            </div>
+        );
+    }
 
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
