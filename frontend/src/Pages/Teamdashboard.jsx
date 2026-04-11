@@ -818,21 +818,46 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
   const completionPct   = tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0;
 
   // ── Shift guard ────────────────────────────────────────────
+  // if (!shiftActive) {
+  //   return (
+  //     <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+  //       <button onClick={() => navigate('/shifts')} style={{ alignSelf: "flex-start", padding: "9px 18px", background: "linear-gradient(135deg, #2563eb, #1d4ed8)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px #2563eb40" }}>▶ Start Shift</button>
+  //       <div style={{ padding: "14px 18px", background: "#fffbeb", borderLeft: "4px solid #d97706", borderRadius: "10px", fontSize: "13px", color: "#78350f", fontWeight: "600" }}>
+  //         ⚠️ You must have an active shift to view your tasks.
+  //       </div>
+  //       <div style={{ background: "linear-gradient(135deg, #0f172a, #1e3a5f)", borderRadius: "16px", padding: "48px 24px", textAlign: "center" }}>
+  //         <Lock style={{ width: "32px", height: "32px", color: "#f59e0b", margin: "0 auto 12px", display: "block" }} />
+  //         <p style={{ margin: "0 0 4px", fontSize: "15px", fontWeight: "800", color: "#fff" }}>Dashboard Locked</p>
+  //         <p style={{ margin: 0, fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>Start your shift first to unlock your tasks.</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
   if (!shiftActive) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-        <button onClick={() => navigate('/shifts')} style={{ alignSelf: "flex-start", padding: "9px 18px", background: "linear-gradient(135deg, #2563eb, #1d4ed8)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px #2563eb40" }}>▶ Start Shift</button>
-        <div style={{ padding: "14px 18px", background: "#fffbeb", borderLeft: "4px solid #d97706", borderRadius: "10px", fontSize: "13px", color: "#78350f", fontWeight: "600" }}>
-          ⚠️ You must have an active shift to view your tasks.
-        </div>
-        <div style={{ background: "linear-gradient(135deg, #0f172a, #1e3a5f)", borderRadius: "16px", padding: "48px 24px", textAlign: "center" }}>
-          <Lock style={{ width: "32px", height: "32px", color: "#f59e0b", margin: "0 auto 12px", display: "block" }} />
-          <p style={{ margin: "0 0 4px", fontSize: "15px", fontWeight: "800", color: "#fff" }}>Dashboard Locked</p>
-          <p style={{ margin: 0, fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>Start your shift first to unlock your tasks.</p>
-        </div>
-      </div>
-    );
-  }
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
+                    <button onClick={() => navigate('/shifts')} style={{ padding: '9px 18px', background: 'rgb(14, 165, 233)', color: '#fff' }}>
+                        Start Shift
+                    </button>
+                </nav>
+                <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <IAlert />
+                    <div>
+                        <p style={{ fontWeight: '700', color: '#78350f', margin: '0 0 2px', fontSize: '14px' }}>Shift Required</p>
+                        <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift to grant bonus to the players.</p>
+                    </div>
+                </div>
+                <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '60px 28px', textAlign: 'center' }}>
+                    <div style={{ width: '60px', height: '60px', background: C.amberLt, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${C.amberBdr}` }}>
+                        <ILock />
+                    </div>
+                    <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '800', color: '#78350f' }}>Form Locked</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: C.amber }}>Go to Shifts and start your shift first.</p>
+                </div>
+            </div>
+        );
+    }
 
   const memberName = viewingMember?.name || resolvedUser?.name || "Member";
   const memberRole = viewingMember?.role || resolvedUser?.role || "";
