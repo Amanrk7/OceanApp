@@ -66,29 +66,31 @@ export default function MilestoneGrantModal({ milestone, player, todayDeposits, 
   }, []);
 
   const handleGrant = async () => {
-    if (!milestoneReached) {
-      return setError(`Cannot grant — player is $${shortfall} short of the $${milestone.milestone} milestone.`);
-    }
+    if (!milestoneReached) return setError(`Cannot grant — player is $${shortfall} short of the $${milestone.milestone} milestone.`);
     if (!selectedGameId) return setError('Please select a game.');
     setError('');
     setLoading(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/api/milestone-bonuses/${milestone.id}/claim`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ gameId: selectedGameId, notes: notes.trim() || undefined }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to grant bonus');
-      setSuccess(data.message || `$${milestone.bonusAmount.toFixed(2)} milestone bonus granted!`);
-      setTimeout(() => onGranted(), 1300);
+        const token = localStorage.getItem('authToken');  // ← ADD auth token
+        const res = await fetch(`${BACKEND_URL}/api/milestone-bonuses/${milestone.id}/claim`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),  // ← ADD
+            },
+            credentials: 'include',
+            body: JSON.stringify({ gameId: selectedGameId, notes: notes.trim() || undefined }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to grant bonus');
+        setSuccess(data.message || `$${milestone.bonusAmount.toFixed(2)} milestone bonus granted!`);
+        setTimeout(() => onGranted(), 1300);
     } catch (err) {
-      setError(err.message);
+        setError(err.message);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   const selectedGame = games.find(g => g.id === selectedGameId);
   const canGrant = milestoneReached && !!selectedGameId && !success && !loading;
