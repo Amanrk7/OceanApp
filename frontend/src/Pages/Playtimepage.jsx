@@ -785,7 +785,7 @@ function PlayerRow({ player, depositGames, gamesLoading, onRedeem, onFreezeActio
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PlaytimePage() {
     const { shiftActive } = useContext(ShiftStatusContext);
-
+    const navigate = useNavigate();
     const [players, setPlayers] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
