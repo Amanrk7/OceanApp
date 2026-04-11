@@ -390,7 +390,15 @@ function PlayerActivityStats({ player }) {
     const start7d = startOf(7);
     const start30d = startOf(30);
 
-    const parseTxDate = (tx) => new Date(tx.date || tx.createdAt || tx.timestamp);
+    // const parseTxDate = (tx) => new Date(tx.date || tx.createdAt || tx.timestamp);
+    const parseTxDate = (tx) => {
+    if (tx.date) {
+        const d = new Date(tx.date);
+        d.setHours(12, 0, 0, 0);  // fix UTC midnight → local timezone shift
+        return d;
+    }
+    return new Date(tx.createdAt || tx.timestamp || 0);
+};
 
     const sum = (type, since) =>
         txns
@@ -866,11 +874,13 @@ export default function PlayerDashboard() {
     const amtToNext = weeklyTarget ? Math.max(0, weeklyTarget - weeklyDeposits) : 0;
     const status = STATUS_MAP[player.status] || STATUS_MAP.ACTIVE;
 
-    const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
-    const todayTransactions = (player.transactionHistory || []).filter(tx => {
-        const txDate = new Date(tx.date || tx.createdAt || tx.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
-        return txDate === today;
-    });
+    // const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    // const todayTransactions = (player.transactionHistory || []).filter(tx => {
+    //     const txDate = new Date(tx.date || tx.createdAt || tx.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    //     return txDate === today;
+    // });
+    const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const todayTransactions = (player.transactionHistory || []).filter(tx => tx.date === today);
     const todayDeposits = todayTransactions.filter(tx => tx.type === 'deposit').reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
     const todayCashouts = todayTransactions.filter(tx => tx.type === 'cashout').reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
 
