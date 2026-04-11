@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { PlayerFollowupCard, BonusFollowupCard } from './FollowupTaskCards';
+import AdminTeamShiftsSection from '../components/AdminTeamShiftsSection.jsx';
 
 // ─── helpers ──────────────────────────────────────────────────
 const API = import.meta.env.VITE_API_URL ?? "";
@@ -40,21 +41,21 @@ function fmtDue(iso) {
 }
 
 const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', flexShrink: 0 }}>
-        {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
-    </svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', flexShrink: 0 }}>
+    {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
+  </svg>
 );
 const IAlert = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} />;
 const ILock = () => <Ico d={['M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z', 'M7 11V7a5 5 0 0110 0v4']} />;
 
 const C = {
-    sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
-    green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
-    red: '#dc2626', redLt: '#fff1f2', redBdr: '#fecdd3',
-    amber: '#d97706', amberLt: '#fffbeb', amberBdr: '#fcd34d',
-    violet: '#7c3aed', violetLt: '#f5f3ff', violetBdr: '#ddd6fe',
-    slate: '#0f172a', gray: '#64748b', grayLt: '#94a3b8',
-    border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
+  sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
+  green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
+  red: '#dc2626', redLt: '#fff1f2', redBdr: '#fecdd3',
+  amber: '#d97706', amberLt: '#fffbeb', amberBdr: '#fcd34d',
+  violet: '#7c3aed', violetLt: '#f5f3ff', violetBdr: '#ddd6fe',
+  slate: '#0f172a', gray: '#64748b', grayLt: '#94a3b8',
+  border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
 };
 // ─── style tokens ─────────────────────────────────────────────
 const INPUT_BASE = {
@@ -73,38 +74,38 @@ const LABEL_STYLE = {
 const PRIORITY_COLOR = { LOW: "#22c55e", MEDIUM: "#f59e0b", HIGH: "#f97316", URGENT: "#dc2626" };
 
 const TYPE_META = {
-  STANDARD:        { label: "Standard",       icon: List,          color: "#6366f1", lightBg: "#eef2ff", border: "#c7d2fe" },
-  DAILY_CHECKLIST: { label: "Daily Checklist", icon: CheckCircle,   color: "#0ea5e9", lightBg: "#f0f9ff", border: "#bae6fd" },
-  PLAYER_ADDITION: { label: "Player Addition", icon: Users,         color: "#8b5cf6", lightBg: "#f5f3ff", border: "#ddd6fe" },
-  REVENUE_TARGET:  { label: "Revenue Target",  icon: TrendingUp,    color: "#22c55e", lightBg: "#f0fdf4", border: "#86efac" },
-  PLAYER_FOLLOWUP: { label: "Player Followup", icon: Users,         color: "#f97316", lightBg: "#fff7ed", border: "#fed7aa" },
-  BONUS_FOLLOWUP:  { label: "Bonus Followup",  icon: Gift,          color: "#10b981", lightBg: "#ecfdf5", border: "#6ee7b7" },
-  MISSING_INFO:    { label: "Missing Info",    icon: ClipboardList, color: "#ec4899", lightBg: "#fdf2f8", border: "#f9a8d4" },
+  STANDARD: { label: "Standard", icon: List, color: "#6366f1", lightBg: "#eef2ff", border: "#c7d2fe" },
+  DAILY_CHECKLIST: { label: "Daily Checklist", icon: CheckCircle, color: "#0ea5e9", lightBg: "#f0f9ff", border: "#bae6fd" },
+  PLAYER_ADDITION: { label: "Player Addition", icon: Users, color: "#8b5cf6", lightBg: "#f5f3ff", border: "#ddd6fe" },
+  REVENUE_TARGET: { label: "Revenue Target", icon: TrendingUp, color: "#22c55e", lightBg: "#f0fdf4", border: "#86efac" },
+  PLAYER_FOLLOWUP: { label: "Player Followup", icon: Users, color: "#f97316", lightBg: "#fff7ed", border: "#fed7aa" },
+  BONUS_FOLLOWUP: { label: "Bonus Followup", icon: Gift, color: "#10b981", lightBg: "#ecfdf5", border: "#6ee7b7" },
+  MISSING_INFO: { label: "Missing Info", icon: ClipboardList, color: "#ec4899", lightBg: "#fdf2f8", border: "#f9a8d4" },
 };
 
-const STAT_TYPES = ["STANDARD","DAILY_CHECKLIST","PLAYER_ADDITION","REVENUE_TARGET","PLAYER_FOLLOWUP","BONUS_FOLLOWUP"];
+const STAT_TYPES = ["STANDARD", "DAILY_CHECKLIST", "PLAYER_ADDITION", "REVENUE_TARGET", "PLAYER_FOLLOWUP", "BONUS_FOLLOWUP"];
 
 const MISSING_FIELD_META = {
-  email:           { icon: Mail,      label: "Email",           placeholder: "player@email.com",   type: "email",  color: "#3b82f6" },
-  phone:           { icon: Phone,     label: "Phone",           placeholder: "+1 234 567 8900",    type: "tel",    color: "#8b5cf6" },
-  snapchat:        { icon: Camera,    label: "Snapchat",        placeholder: "@snapchat",          type: "text",   color: "#eab308" },
-  instagram:       { icon: Instagram, label: "Instagram",       placeholder: "@instagram",         type: "text",   color: "#ec4899" },
-  telegram:        { icon: Send,      label: "Telegram",        placeholder: "@telegram",          type: "text",   color: "#0ea5e9" },
-  assigned_member: { icon: User,      label: "Assigned Member", placeholder: "Select member…",     type: "select", color: "#ef4444" },
+  email: { icon: Mail, label: "Email", placeholder: "player@email.com", type: "email", color: "#3b82f6" },
+  phone: { icon: Phone, label: "Phone", placeholder: "+1 234 567 8900", type: "tel", color: "#8b5cf6" },
+  snapchat: { icon: Camera, label: "Snapchat", placeholder: "@snapchat", type: "text", color: "#eab308" },
+  instagram: { icon: Instagram, label: "Instagram", placeholder: "@instagram", type: "text", color: "#ec4899" },
+  telegram: { icon: Send, label: "Telegram", placeholder: "@telegram", type: "text", color: "#0ea5e9" },
+  assigned_member: { icon: User, label: "Assigned Member", placeholder: "Select member…", type: "select", color: "#ef4444" },
 };
 
 // ─── Rating categories ────────────────────────────────────────
 const RATING_CATEGORIES = [
-  { key: "communicationWithPlayer",   label: "Communication with Player",        icon: "💬" },
-  { key: "loadReloadSmoothness",      label: "Load/Reload Smoothness",           icon: "⚡" },
-  { key: "liveReportingToPlayers",    label: "Live Reporting to Players",        icon: "📡" },
-  { key: "playtimeBonus",             label: "Playtime Bonus",                   icon: "🎮" },
-  { key: "referralBonus",             label: "Referral Bonus (old & new)",       icon: "👥" },
-  { key: "matchAndRandomBonus",       label: "Match & Random Bonus",             icon: "🎯" },
-  { key: "playerEngagementOverall",   label: "Player Engagement Overall",        icon: "🔥" },
-  { key: "reachingOutInShifts",       label: "Reaching Out in Shifts",           icon: "📲" },
-  { key: "reachingOutFromOwnList",    label: "Reaching Out from Own List",       icon: "📋" },
-  { key: "cashoutTiming",             label: "Cashout Timing",                   icon: "⏱️" },
+  { key: "communicationWithPlayer", label: "Communication with Player", icon: "💬" },
+  { key: "loadReloadSmoothness", label: "Load/Reload Smoothness", icon: "⚡" },
+  { key: "liveReportingToPlayers", label: "Live Reporting to Players", icon: "📡" },
+  { key: "playtimeBonus", label: "Playtime Bonus", icon: "🎮" },
+  { key: "referralBonus", label: "Referral Bonus (old & new)", icon: "👥" },
+  { key: "matchAndRandomBonus", label: "Match & Random Bonus", icon: "🎯" },
+  { key: "playerEngagementOverall", label: "Player Engagement Overall", icon: "🔥" },
+  { key: "reachingOutInShifts", label: "Reaching Out in Shifts", icon: "📲" },
+  { key: "reachingOutFromOwnList", label: "Reaching Out from Own List", icon: "📋" },
+  { key: "cashoutTiming", label: "Cashout Timing", icon: "⏱️" },
 ];
 
 // ══════════════════════════════════════════════════════════════
@@ -352,18 +353,18 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
   const myId = extractUserId(currentUser);
   const playerMeta = useMemo(() => { try { return JSON.parse(task.notes || "{}"); } catch { return {}; } }, [task.notes]);
   const missingFields = useMemo(() => (task.checklistItems || []).filter(i => !i.done).map(i => i.fieldKey || i.label?.toLowerCase().replace(/ /g, "_")), [task.checklistItems]);
-  const doneFields    = useMemo(() => (task.checklistItems || []).filter(i =>  i.done).map(i => i.fieldKey || i.label?.toLowerCase().replace(/ /g, "_")), [task.checklistItems]);
+  const doneFields = useMemo(() => (task.checklistItems || []).filter(i => i.done).map(i => i.fieldKey || i.label?.toLowerCase().replace(/ /g, "_")), [task.checklistItems]);
   const totalFields = (task.checklistItems || []).length;
-  const doneCount   = doneFields.length;
+  const doneCount = doneFields.length;
   const pct = totalFields > 0 ? Math.round((doneCount / totalFields) * 100) : 0;
-  const isClaimedByMe    = !!task.assignedToId && myId !== null && parseInt(task.assignedToId, 10) === myId;
+  const isClaimedByMe = !!task.assignedToId && myId !== null && parseInt(task.assignedToId, 10) === myId;
   const isClaimedByOther = !!task.assignedToId && !isClaimedByMe;
   const isCompleted = task.status === "COMPLETED";
   const m = TYPE_META.MISSING_INFO;
 
   useEffect(() => {
     if (missingFields.includes("assigned_member") && isClaimedByMe) {
-      fetch(`${API}/team-members`, { credentials: "include", headers: getAuthHeaders() }).then(r => r.json()).then(d => setTeamMembers(d.data || [])).catch(() => {});
+      fetch(`${API}/team-members`, { credentials: "include", headers: getAuthHeaders() }).then(r => r.json()).then(d => setTeamMembers(d.data || [])).catch(() => { });
     }
   }, [isClaimedByMe, missingFields]);
 
@@ -410,10 +411,10 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
               <div style={{ width: "80px" }}><ProgressBar pct={pct} color={m.color} thin /></div>
               <span style={{ fontSize: "11px", fontWeight: "600", color: isCompleted ? "#16a34a" : "#64748b" }}>{doneCount}/{totalFields}</span>
             </div>
-            {isCompleted    ? <span style={{ fontSize: "11px", fontWeight: "600", color: "#16a34a", display: "flex", alignItems: "center", gap: "3px" }}><CheckCircle style={{ width: "10px", height: "10px" }} />Done</span>
-            : isClaimedByMe ? <span style={{ fontSize: "11px", fontWeight: "600", color: "#ea580c", display: "flex", alignItems: "center", gap: "3px" }}><Lock style={{ width: "9px", height: "9px" }} />Claimed by you</span>
-            : isClaimedByOther ? <span style={{ fontSize: "11px", color: "#94a3b8", display: "flex", alignItems: "center", gap: "3px" }}><Lock style={{ width: "9px", height: "9px" }} />{task.assignedTo?.name}</span>
-            : <span style={{ fontSize: "11px", fontWeight: "600", color: m.color, display: "flex", alignItems: "center", gap: "3px" }}><Unlock style={{ width: "9px", height: "9px" }} />Open</span>}
+            {isCompleted ? <span style={{ fontSize: "11px", fontWeight: "600", color: "#16a34a", display: "flex", alignItems: "center", gap: "3px" }}><CheckCircle style={{ width: "10px", height: "10px" }} />Done</span>
+              : isClaimedByMe ? <span style={{ fontSize: "11px", fontWeight: "600", color: "#ea580c", display: "flex", alignItems: "center", gap: "3px" }}><Lock style={{ width: "9px", height: "9px" }} />Claimed by you</span>
+                : isClaimedByOther ? <span style={{ fontSize: "11px", color: "#94a3b8", display: "flex", alignItems: "center", gap: "3px" }}><Lock style={{ width: "9px", height: "9px" }} />{task.assignedTo?.name}</span>
+                  : <span style={{ fontSize: "11px", fontWeight: "600", color: m.color, display: "flex", alignItems: "center", gap: "3px" }}><Unlock style={{ width: "9px", height: "9px" }} />Open</span>}
           </div>
         </div>
         {!isClaimedByOther && !isCompleted && (
@@ -721,6 +722,44 @@ function StandardTaskCard({ task, onStatusChange, onChecklistToggle }) {
   );
 }
 
+function TaskSection({ title, tasks, color, bg, defaultOpen = true, renderTask }) {
+  const [open, setOpen] = useState(defaultOpen);
+  if (tasks.length === 0) return null;
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          background: bg, border: `1px solid ${color}25`,
+          borderRadius: open ? '8px 8px 0 0' : '8px',
+          padding: '8px 12px', cursor: 'pointer', fontFamily: 'inherit',
+          width: '100%', textAlign: 'left',
+        }}
+      >
+        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: color, flexShrink: 0 }} />
+        <span style={{ fontSize: '11px', fontWeight: '700', color, flex: 1 }}>{title}</span>
+        <span style={{
+          fontSize: '11px', fontWeight: '700', padding: '1px 8px', borderRadius: '999px',
+          background: color + '20', color,
+        }}>{tasks.length}</span>
+        {open
+          ? <ChevronUp style={{ width: '12px', height: '12px', color }} />
+          : <ChevronDown style={{ width: '12px', height: '12px', color }} />}
+      </button>
+      {open && (
+        <div style={{
+          border: `1px solid ${color}20`, borderTop: 'none',
+          borderRadius: '0 0 8px 8px', padding: '6px',
+          display: 'flex', flexDirection: 'column', gap: '5px',
+          marginBottom: '6px',
+        }}>
+          {tasks.map(task => renderTask(task))}
+        </div>
+      )}
+    </div>
+  );
+}
 // ══════════════════════════════════════════════════════════════
 // ── MAIN EXPORT: TeamDashboard ─────────────────────────────
 // ══════════════════════════════════════════════════════════════
@@ -729,8 +768,8 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState("");
-  const [typeFilter,   setTypeFilter]   = useState("ALL");
+  const [error, setError] = useState("");
+  const [typeFilter, setTypeFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [resolvedUser, setResolvedUser] = useState(null);
@@ -750,7 +789,7 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
     if (id !== null) setResolvedUser({ ...currentUser, id });
     else {
       fetch(`${API}/user`, { credentials: "include", headers: getAuthHeaders() })
-        .then(r => r.json()).then(data => { const u = data?.data ?? data?.user ?? data; if (u?.id) setResolvedUser(u); }).catch(() => {});
+        .then(r => r.json()).then(data => { const u = data?.data ?? data?.user ?? data; if (u?.id) setResolvedUser(u); }).catch(() => { });
     }
   }, [currentUser]);
 
@@ -761,10 +800,10 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
   useEffect(() => {
     if (!targetUserId) return;
     fetch(`${API}/members/${targetUserId}/ratings`, { credentials: "include", headers: getAuthHeaders() })
-      .then(r => r.ok ? r.json() : null).then(d => { if (d?.data) setRatings(d.data); }).catch(() => {});
+      .then(r => r.ok ? r.json() : null).then(d => { if (d?.data) setRatings(d.data); }).catch(() => { });
     if (isAdmin) {
       fetch(`${API}/members/all-ratings`, { credentials: "include", headers: getAuthHeaders() })
-        .then(r => r.ok ? r.json() : null).then(d => { if (d?.data) setTeamRatings(d.data); }).catch(() => {});
+        .then(r => r.ok ? r.json() : null).then(d => { if (d?.data) setTeamRatings(d.data); }).catch(() => { });
     }
   }, [targetUserId, isAdmin]);
 
@@ -794,23 +833,23 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
           setTasks(prev => { const ex = prev.find(t => t.id === data.id); if (data.taskType === "MISSING_INFO" && data.assignedToId && myId !== null && parseInt(data.assignedToId, 10) !== myId && !data.assignToAll) return prev.filter(t => t.id !== data.id); if (ex) return prev.map(t => t.id === data.id ? data : t); if (myId && parseInt(data.assignedToId, 10) === myId) return [data, ...prev]; return prev; });
         }
         if (type === "task_deleted") setTasks(prev => prev.filter(t => t.id !== data.id));
-      } catch (_) {}
+      } catch (_) { }
     };
     return () => es.close();
   }, [loadTasks, myId]);
 
   const handleChecklistToggle = useCallback(async (taskId, itemId, done) => {
     setTasks(prev => prev.map(t => t.id !== taskId ? t : { ...t, checklistItems: (t.checklistItems || []).map(i => i.id === itemId ? { ...i, done } : i) }));
-    try { const res = await fetch(`${API}/tasks/${taskId}/checklist`, { method: "PATCH", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ itemId, done }) }); const d = await res.json(); if (res.ok && d.data) setTasks(prev => prev.map(t => t.id === taskId ? d.data : t)); } catch (_) {}
+    try { const res = await fetch(`${API}/tasks/${taskId}/checklist`, { method: "PATCH", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ itemId, done }) }); const d = await res.json(); if (res.ok && d.data) setTasks(prev => prev.map(t => t.id === taskId ? d.data : t)); } catch (_) { }
   }, []);
   const handleStatusChange = useCallback(async (taskId, status) => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
-    try { const res = await fetch(`${API}/tasks/${taskId}`, { method: "PATCH", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ status }) }); const d = await res.json(); if (res.ok && d.data) setTasks(prev => prev.map(t => t.id === taskId ? d.data : t)); } catch (_) {}
+    try { const res = await fetch(`${API}/tasks/${taskId}`, { method: "PATCH", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ status }) }); const d = await res.json(); if (res.ok && d.data) setTasks(prev => prev.map(t => t.id === taskId ? d.data : t)); } catch (_) { }
   }, []);
   const handleProgressLog = useCallback(async (taskId, value) => {
-    try { const res = await fetch(`${API}/tasks/${taskId}/progress`, { method: "POST", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ value, action: "MEMBER_LOG" }) }); const d = await res.json(); if (res.ok && d.data) setTasks(prev => prev.map(t => t.id === taskId ? d.data : t)); } catch (_) {}
+    try { const res = await fetch(`${API}/tasks/${taskId}/progress`, { method: "POST", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ value, action: "MEMBER_LOG" }) }); const d = await res.json(); if (res.ok && d.data) setTasks(prev => prev.map(t => t.id === taskId ? d.data : t)); } catch (_) { }
   }, []);
-  const handleClaimTask     = useCallback((u) => setTasks(prev => prev.map(t => t.id === u.id ? u : t)), []);
+  const handleClaimTask = useCallback((u) => setTasks(prev => prev.map(t => t.id === u.id ? u : t)), []);
   const handleInfoSubmitted = useCallback((u) => setTasks(prev => prev.map(t => t.id === u.id ? u : t)), []);
 
   const byType = useMemo(() => {
@@ -821,18 +860,18 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
 
   const filtered = useMemo(() => tasks.filter(t => {
     if (typeFilter !== "ALL" && t.taskType !== typeFilter) return false;
-    if (statusFilter === "PENDING"     && t.status !== "PENDING")     return false;
+    if (statusFilter === "PENDING" && t.status !== "PENDING") return false;
     if (statusFilter === "IN_PROGRESS" && t.status !== "IN_PROGRESS") return false;
-    if (statusFilter === "COMPLETED"   && t.status !== "COMPLETED")   return false;
+    if (statusFilter === "COMPLETED" && t.status !== "COMPLETED") return false;
     if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   }), [tasks, typeFilter, statusFilter, search]);
 
-  const totalDone       = tasks.filter(t => t.status === "COMPLETED").length;
+  const totalDone = tasks.filter(t => t.status === "COMPLETED").length;
   const totalInProgress = tasks.filter(t => t.status === "IN_PROGRESS").length;
-  const totalPending    = tasks.filter(t => t.status === "PENDING").length;
-  const totalOverdue    = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length;
-  const completionPct   = tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0;
+  const totalPending = tasks.filter(t => t.status === "PENDING").length;
+  const totalOverdue = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length;
+  const completionPct = tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0;
 
   // ── Shift guard ────────────────────────────────────────────
   // if (!shiftActive) {
@@ -851,30 +890,30 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
   //   );
   // }
   if (!shiftActive) {
-        return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
-                    <button onClick={() => navigate('/shifts')} style={{ padding: '9px 18px', background: 'rgb(14, 165, 233)', color: '#fff' }}>
-                        Start Shift
-                    </button>
-                </nav>
-                <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                    <IAlert />
-                    <div>
-                        <p style={{ fontWeight: '700', color: '#78350f', margin: '0 0 2px', fontSize: '14px' }}>Shift Required</p>
-                        <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift to grant bonus to the players.</p>
-                    </div>
-                </div>
-                <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '60px 28px', textAlign: 'center' }}>
-                    <div style={{ width: '60px', height: '60px', background: C.amberLt, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${C.amberBdr}` }}>
-                        <ILock />
-                    </div>
-                    <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '800', color: '#78350f' }}>Form Locked</p>
-                    <p style={{ margin: 0, fontSize: '13px', color: C.amber }}>Go to Shifts and start your shift first.</p>
-                </div>
-            </div>
-        );
-    }
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
+          <button onClick={() => navigate('/shifts')} style={{ padding: '9px 18px', background: 'rgb(14, 165, 233)', color: '#fff' }}>
+            Start Shift
+          </button>
+        </nav>
+        <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+          <IAlert />
+          <div>
+            <p style={{ fontWeight: '700', color: '#78350f', margin: '0 0 2px', fontSize: '14px' }}>Shift Required</p>
+            <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift to grant bonus to the players.</p>
+          </div>
+        </div>
+        <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '60px 28px', textAlign: 'center' }}>
+          <div style={{ width: '60px', height: '60px', background: C.amberLt, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${C.amberBdr}` }}>
+            <ILock />
+          </div>
+          <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '800', color: '#78350f' }}>Form Locked</p>
+          <p style={{ margin: 0, fontSize: '13px', color: C.amber }}>Go to Shifts and start your shift first.</p>
+        </div>
+      </div>
+    );
+  }
 
   const memberName = viewingMember?.name || resolvedUser?.name || "Member";
   const memberRole = viewingMember?.role || resolvedUser?.role || "";
@@ -977,7 +1016,7 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
             <button key={s.key} onClick={() => setStatusFilter(s.key)} style={{
               padding: "5px 10px", borderRadius: "6px", border: "none", fontSize: "11px",
               fontWeight: "700", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
-              background: statusFilter === s.key ? "#0f172a" : "transparent",
+              background: statusFilter === s.key ? "#0ea5e9" : "transparent",
               color: statusFilter === s.key ? "#fff" : "#64748b",
               transition: "all .12s",
             }}>{s.label}</button>
@@ -1017,28 +1056,47 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
           </div>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
-          {/* Overdue section header */}
-          {filtered.some(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED") && (
-            <div style={{ padding: "6px 10px", background: "#fef2f2", border: "1px solid #fecdd3", borderRadius: "7px", fontSize: "11px", fontWeight: "700", color: "#dc2626", display: "flex", alignItems: "center", gap: "5px" }}>
-              <AlertCircle style={{ width: "11px", height: "11px" }} />
-              {filtered.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length} overdue task(s) — action required
-            </div>
-          )}
-          {filtered.map(task => {
-            switch (task.taskType) {
-              case "MISSING_INFO":    return <MissingInfoTaskCard key={task.id} task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onInfoSubmitted={handleInfoSubmitted} />;
-              case "PLAYER_FOLLOWUP": return <PlayerFollowupCard  key={task.id} task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onUpdated={handleInfoSubmitted} />;
-              case "BONUS_FOLLOWUP":  return <BonusFollowupCard   key={task.id} task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onUpdated={handleInfoSubmitted} />;
-              case "DAILY_CHECKLIST": return <DailyChecklistCard  key={task.id} task={task} onChecklistToggle={handleChecklistToggle} currentUserId={myId} />;
-              case "PLAYER_ADDITION": return <PlayerAdditionCard  key={task.id} task={task} currentUserId={myId} onProgressLog={handleProgressLog} />;
-              case "REVENUE_TARGET":  return <RevenueTargetCard   key={task.id} task={task} currentUserId={myId} onProgressLog={handleProgressLog} />;
-              default:                return <StandardTaskCard    key={task.id} task={task} onStatusChange={handleStatusChange} onChecklistToggle={handleChecklistToggle} currentUserId={myId} />;
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          {(() => {
+            const renderTask = (task) => {
+              switch (task.taskType) {
+                case "MISSING_INFO": return <MissingInfoTaskCard key={task.id} task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onInfoSubmitted={handleInfoSubmitted} />;
+                case "PLAYER_FOLLOWUP": return <PlayerFollowupCard key={task.id} task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onUpdated={handleInfoSubmitted} />;
+                case "BONUS_FOLLOWUP": return <BonusFollowupCard key={task.id} task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onUpdated={handleInfoSubmitted} />;
+                case "DAILY_CHECKLIST": return <DailyChecklistCard key={task.id} task={task} onChecklistToggle={handleChecklistToggle} currentUserId={myId} />;
+                case "PLAYER_ADDITION": return <PlayerAdditionCard key={task.id} task={task} currentUserId={myId} onProgressLog={handleProgressLog} />;
+                case "REVENUE_TARGET": return <RevenueTargetCard key={task.id} task={task} currentUserId={myId} onProgressLog={handleProgressLog} />;
+                default: return <StandardTaskCard key={task.id} task={task} onStatusChange={handleStatusChange} onChecklistToggle={handleChecklistToggle} currentUserId={myId} />;
+              }
+            };
+
+            // If filtering by specific type or status, show flat list
+            if (typeFilter !== "ALL" || statusFilter !== "ALL" || search) {
+              return filtered.length === 0 ? null : filtered.map(task => renderTask(task));
             }
-          })}
+
+            // Default: grouped by status
+            const overdue = filtered.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED");
+            const active = filtered.filter(t => t.status === "IN_PROGRESS" && !(t.dueDate && new Date(t.dueDate) < new Date()));
+            const pending = filtered.filter(t => t.status === "PENDING");
+            const done = filtered.filter(t => t.status === "COMPLETED");
+
+            return (
+              <>
+                <TaskSection title="Overdue — action required" tasks={overdue} color="#dc2626" bg="#fff5f5" defaultOpen={true} renderTask={renderTask} />
+                <TaskSection title="In Progress" tasks={active} color="#0ea5e9" bg="#f0f9ff" defaultOpen={true} renderTask={renderTask} />
+                <TaskSection title="Pending" tasks={pending} color="#64748b" bg="#f8fafc" defaultOpen={true} renderTask={renderTask} />
+                <TaskSection title="Completed" tasks={done} color="#22c55e" bg="#f0fdf4" defaultOpen={false} renderTask={renderTask} />
+              </>
+            );
+          })()}
         </div>
+
       )}
 
+      {(usr?.role === 'ADMIN' || usr?.role === 'SUPER_ADMIN') && (
+  <AdminTeamShiftsSection />
+)}
       <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
     </div>
   );
