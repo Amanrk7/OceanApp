@@ -1108,31 +1108,77 @@ export const ShiftsPage = () => {
   const [taskType, setTaskType] = useState('ALL');
   const [taskStatus, setTaskStatus] = useState('ALL');
 
+  // useEffect(() => {
+  //   if (!usr?.role) return;
+  //   (async () => {
+  //     try {
+  //       const token = localStorage.getItem('authToken');
+  //       const [activeRes, historyRes, tasksRes] = await Promise.all([
+  //         api.shifts.getActiveShift(usr.role),
+  //         api.reports.getMyShifts({ role: usr.role, limit: 30 }),
+  //         token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
+  //       ]);
+  //       if (activeRes?.data) {
+  //         const sh = activeRes.data;
+  //         activeShiftIdRef.current = sh.id;
+  //         setActiveShift(sh);
+  //         setShiftActive(true);
+  //         const checkinRes = await fj(`/shifts/${sh.id}/checkin`).catch(() => null);
+  //         if (checkinRes?.data?.balanceNote) {
+  //           try { setStartSnapshot(JSON.parse(checkinRes.data.balanceNote)); } catch (_) { }
+  //         }
+  //       }
+  //       setPastShifts(historyRes?.data ?? []);
+  //       setTasks((tasksRes?.data ?? []).filter(t => t.status !== 'COMPLETED'));
+  //     } catch (e) { console.error('Shift restore error:', e); }
+  //   })();
+  // }, [usr?.role]);
+
   useEffect(() => {
-    if (!usr?.role) return;
-    (async () => {
-      try {
-        const token = localStorage.getItem('authToken');
-        const [activeRes, historyRes, tasksRes] = await Promise.all([
-          api.shifts.getActiveShift(usr.role),
-          api.reports.getMyShifts({ role: usr.role, limit: 30 }),
-          token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
-        ]);
-        if (activeRes?.data) {
-          const sh = activeRes.data;
-          activeShiftIdRef.current = sh.id;
-          setActiveShift(sh);
-          setShiftActive(true);
-          const checkinRes = await fj(`/shifts/${sh.id}/checkin`).catch(() => null);
-          if (checkinRes?.data?.balanceNote) {
-            try { setStartSnapshot(JSON.parse(checkinRes.data.balanceNote)); } catch (_) { }
-          }
+  if (!usr?.role) return;
+
+  const isAdmin = usr.role === 'ADMIN' || usr.role === 'SUPER_ADMIN';
+  const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
+
+  (async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+
+      const [activeRes, historyRes, tasksRes] = await Promise.all([
+        isAdmin
+          ? Promise.resolve({ data: null })               // admins have no personal shift
+          : api.shifts.getActiveShift(usr.role),
+
+        isAdmin
+          ? Promise.all(TEAM_ROLES.map(r => api.reports.getMyShifts({ role: r, limit: 30 })))
+              .then(results => ({
+                data: results
+                  .flatMap(r => r?.data ?? [])
+                  .sort((a, b) => new Date(b.startTime) - new Date(a.startTime)),
+              }))
+          : api.reports.getMyShifts({ role: usr.role, limit: 30 }),
+
+        token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
+      ]);
+
+      if (activeRes?.data) {
+        const sh = activeRes.data;
+        activeShiftIdRef.current = sh.id;
+        setActiveShift(sh);
+        setShiftActive(true);
+        const checkinRes = await fj(`/shifts/${sh.id}/checkin`).catch(() => null);
+        if (checkinRes?.data?.balanceNote) {
+          try { setStartSnapshot(JSON.parse(checkinRes.data.balanceNote)); } catch (_) {}
         }
-        setPastShifts(historyRes?.data ?? []);
-        setTasks((tasksRes?.data ?? []).filter(t => t.status !== 'COMPLETED'));
-      } catch (e) { console.error('Shift restore error:', e); }
-    })();
-  }, [usr?.role]);
+      }
+
+      setPastShifts(historyRes?.data ?? []);
+      setTasks((tasksRes?.data ?? []).filter(t => t.status !== 'COMPLETED'));
+    } catch (e) {
+      console.error('Shift restore error:', e);
+    }
+  })();
+}, [usr?.role]);
 
   useEffect(() => { if (success) { const t = setTimeout(() => setSuccess(''), 4000); return () => clearTimeout(t); } }, [success]);
   useEffect(() => { if (error) { const t = setTimeout(() => setError(''), 5000); return () => clearTimeout(t); } }, [error]);
