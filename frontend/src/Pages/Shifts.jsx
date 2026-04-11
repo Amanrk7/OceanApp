@@ -969,8 +969,120 @@ const TASK_TYPE_META = {
   BONUS_FOLLOWUP: { label: 'Bonus Followup', color: '#10b981', lightBg: '#ecfdf5', border: '#6ee7b7' },
   MISSING_INFO: { label: 'Missing Info', color: '#ec4899', lightBg: '#fdf2f8', border: '#f9a8d4' },
 };
-
+const TASK_GROUPS = [
+  { key: 'URGENT', label: 'Urgent', color: '#dc2626', bg: '#fee2e2', filter: t => t.priority === 'HIGH' || t.priority === 'URGENT' },
+  { key: 'IN_PROGRESS', label: 'In Progress', color: '#0ea5e9', bg: '#f0f9ff', filter: t => t.status === 'IN_PROGRESS' },
+  { key: 'PENDING', label: 'Pending', color: '#64748b', bg: '#f1f5f9', filter: t => t.status === 'PENDING' },
+];
 const PRIORITY_COLOR = { LOW: '#22c55e', MEDIUM: '#f59e0b', HIGH: '#f97316', URGENT: '#dc2626' };
+function TaskGroupList({ tasks, taskSearch, taskType, taskStatus }) {
+  // grouped state: which groups are open
+  const [openGroups, setOpenGroups] = useState({ URGENT: true, IN_PROGRESS: true, PENDING: false });
+  const toggle = key => setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const filtered = tasks.filter(t => {
+    if (taskType !== 'ALL' && t.taskType !== taskType) return false;
+    if (taskStatus !== 'ALL' && t.status !== taskStatus) return false;
+    if (taskSearch && !t.title.toLowerCase().includes(taskSearch.toLowerCase())) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    return (
+      <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+        {taskSearch ? `No tasks matching "${taskSearch}"` : 'No tasks in this filter'}
+      </div>
+    );
+  }
+
+  // If a specific status filter is set, show flat list
+  if (taskStatus !== 'ALL') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {filtered.map(t => <TaskRow key={t.id} task={t} />)}
+      </div>
+    );
+  }
+
+  // Show grouped
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {TASK_GROUPS.map(group => {
+        const groupTasks = filtered.filter(group.filter);
+        if (groupTasks.length === 0) return null;
+        const isOpen = openGroups[group.key];
+        return (
+          <div key={group.key} style={{ border: `1px solid ${group.bg === '#f1f5f9' ? '#e2e8f0' : group.color + '30'}`, borderRadius: '10px', overflow: 'hidden' }}>
+            <div
+              onClick={() => toggle(group.key)}
+              style={{ padding: '10px 14px', background: group.bg, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }}
+            >
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: group.color, flexShrink: 0 }} />
+              <span style={{ fontSize: '12px', fontWeight: '700', color: group.color, flex: 1 }}>{group.label}</span>
+              <span style={{ fontSize: '11px', fontWeight: '700', background: group.color + '20', color: group.color, padding: '1px 8px', borderRadius: '999px' }}>{groupTasks.length}</span>
+              {isOpen ? <ChevronUp size={13} color={group.color} /> : <ChevronDown size={13} color={group.color} />}
+            </div>
+            {isOpen && (
+              <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {groupTasks.map(t => <TaskRow key={t.id} task={t} />)}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TaskRow({ task }) {
+  const meta = TASK_TYPE_META[task.taskType] || TASK_TYPE_META.STANDARD;
+  const pct = task.targetValue > 0 ? Math.min(100, Math.round(((task.currentValue ?? 0) / task.targetValue) * 100)) : null;
+  const cl = task.checklistItems || [];
+  const doneItems = cl.filter(i => i.done).length;
+  const priorityColor = PRIORITY_COLOR[task.priority] || '#cbd5e1';
+  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
+
+  return (
+    <div style={{
+      padding: '10px 12px', background: '#fff', borderRadius: '8px',
+      border: `1px solid ${isOverdue ? '#fecdd3' : meta.border}`,
+      borderLeft: `3px solid ${isOverdue ? '#dc2626' : meta.color}`,
+      display: 'flex', alignItems: 'center', gap: '10px',
+    }}>
+      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: priorityColor, flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+          <p style={{ margin: 0, fontSize: '12px', fontWeight: '600', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '260px' }}>{task.title}</p>
+          <span style={{ padding: '1px 6px', borderRadius: '999px', fontSize: '10px', fontWeight: '700', background: meta.lightBg, color: meta.color, border: `1px solid ${meta.border}`, whiteSpace: 'nowrap', flexShrink: 0 }}>{meta.label}</span>
+          {isOverdue && <span style={{ fontSize: '10px', fontWeight: '700', color: '#dc2626', background: '#fee2e2', padding: '1px 6px', borderRadius: '4px' }}>Overdue</span>}
+        </div>
+        {pct !== null && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+            <div style={{ width: '80px', height: '3px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', background: pct >= 100 ? '#22c55e' : meta.color, width: `${pct}%` }} />
+            </div>
+            <span style={{ fontSize: '10px', color: '#64748b' }}>{task.currentValue ?? 0}/{task.targetValue}</span>
+          </div>
+        )}
+        {cl.length > 0 && pct === null && (
+          <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#94a3b8' }}>{doneItems}/{cl.length} items</p>
+        )}
+      </div>
+      {task.dueDate && (
+        <span style={{ fontSize: '10px', color: isOverdue ? '#dc2626' : '#94a3b8', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        </span>
+      )}
+      <span style={{
+        padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', flexShrink: 0, whiteSpace: 'nowrap',
+        background: task.status === 'IN_PROGRESS' ? '#dbeafe' : '#f1f5f9',
+        color: task.status === 'IN_PROGRESS' ? '#1d4ed8' : '#475569',
+      }}>
+        {task.status.replace('_', ' ')}
+      </span>
+    </div>
+  );
+}
 
 // ═══════════════════════════════════════════════════════════════
 // MAIN ShiftsPage
@@ -1238,55 +1350,14 @@ export const ShiftsPage = () => {
             </div>
 
             {/* Task list */}
-            <div style={{ padding: '12px 24px', display: 'flex', flexDirection: 'column', gap: '7px' }}>
-              {filteredTasks.length === 0 ? (
-                <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
-                  {taskSearch ? `No tasks matching "${taskSearch}"` : 'No tasks in this filter'}
-                </div>
-              ) : filteredTasks.map(t => {
-                const meta = TASK_TYPE_META[t.taskType] || TASK_TYPE_META.STANDARD;
-                const pct = t.targetValue > 0 ? Math.min(100, Math.round(((t.currentValue ?? 0) / t.targetValue) * 100)) : null;
-                const cl = t.checklistItems || [];
-                const doneItems = cl.filter(i => i.done).length;
-                const priorityColor = PRIORITY_COLOR[t.priority] || '#cbd5e1';
-                return (
-                  <div key={t.id} style={{ padding: '12px 16px', background: '#f8fafc', borderRadius: '9px', border: `1px solid ${meta.border}`, borderLeft: `3px solid ${meta.color}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px', flexWrap: 'wrap' }}>
-                        {/* Priority dot */}
-                        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: priorityColor, flexShrink: 0, display: 'inline-block' }} />
-                        <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
-                        {/* Type badge */}
-                        <span style={{ padding: '1px 7px', borderRadius: '999px', fontSize: '10px', fontWeight: '700', background: meta.lightBg, color: meta.color, border: `1px solid ${meta.border}`, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                          {meta.label}
-                        </span>
-                      </div>
-                      <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>
-                        {t.priority}
-                        {t.dueDate && <span style={{ marginLeft: '8px', color: new Date(t.dueDate) < new Date() ? '#dc2626' : '#94a3b8' }}>
-                          · Due {new Date(t.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </span>}
-                      </p>
-                      {pct !== null && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '5px' }}>
-                          <div style={{ flex: 1, height: '3px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden', maxWidth: '120px' }}>
-                            <div style={{ height: '100%', background: pct >= 100 ? '#22c55e' : meta.color, borderRadius: '2px', width: `${pct}%` }} />
-                          </div>
-                          <span style={{ fontSize: '10px', fontWeight: '700', color: '#64748b' }}>{t.currentValue ?? 0}/{t.targetValue}</span>
-                        </div>
-                      )}
-                      {cl.length > 0 && pct === null && (
-                        <div style={{ marginTop: '4px', fontSize: '11px', color: '#64748b' }}>{doneItems}/{cl.length} checklist items</div>
-                      )}
-                    </div>
-                    <Badge
-                      label={t.status.replace('_', ' ')}
-                      color={t.status === 'IN_PROGRESS' ? '#1d4ed8' : t.status === 'COMPLETED' ? '#166534' : '#475569'}
-                      bg={t.status === 'IN_PROGRESS' ? '#dbeafe' : t.status === 'COMPLETED' ? '#dcfce7' : '#f1f5f9'}
-                    />
-                  </div>
-                );
-              })}
+
+            <div style={{ padding: '10px 16px 16px' }}>
+              <TaskGroupList
+                tasks={tasks}
+                taskSearch={taskSearch}
+                taskType={taskType}
+                taskStatus={taskStatus}
+              />
             </div>
           </div>
         )}
