@@ -600,10 +600,14 @@ export default function BonusPage() {
 
                                 let typeDisabled = false;
                                 let disabledNote = null;
-                                if (bt.id === "referral" && player && !hasReferrer) {
-                                    typeDisabled = true;
-                                    disabledNote = "No referrer";
-                                }
+                                // if (bt.id === "referral" && player && !hasReferrer) {
+                                //     typeDisabled = true;
+                                //     disabledNote = "No referrer";
+                                // }
+            if (bt.id === "referral" && player && !eligLoading && eligibleBonuses.length === 0) {
+    typeDisabled = true;
+    disabledNote = "No eligible records";
+}
 
                                 return (
                                     <button
@@ -832,9 +836,10 @@ export default function BonusPage() {
                         <div style={{ padding: "14px 18px", background: stockOk && referralOk ? "#f0fdf4" : "#fee2e2", border: `1px solid ${stockOk && referralOk ? "#86efac" : "#fca5a5"}`, borderRadius: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <div>
                                 <div style={{ fontWeight: "700", fontSize: "13px", color: stockOk && referralOk ? "#166534" : "#991b1b" }}>
-                                
-                                    !referralOk
-  ? "⚠ Cannot grant — no eligible referral bonus records found"
+                                    {!referralOk
+        ? "⚠ Cannot grant — no eligible referral bonus records found"
+        : !stockOk ? "⚠ Cannot grant — insufficient game stock"
+        : "✓ Ready to grant"}
                                 </div>
                                 <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
                                     {bonusType === "streak" ? "Streak Bonus" :
