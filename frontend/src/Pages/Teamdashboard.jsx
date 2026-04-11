@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { PlayerFollowupCard, BonusFollowupCard } from './FollowupTaskCards';
-import AdminTeamShiftsSection from '../components/AdminTeamShiftsSection.jsx';
+import AdminTeamShiftsSection from './AdminTeamShiftsSection.jsx';
 
 // ─── helpers ──────────────────────────────────────────────────
 const API = import.meta.env.VITE_API_URL ?? "";
