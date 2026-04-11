@@ -8,6 +8,7 @@ import {
 import { fmtTXTime } from '../utils/txTime';
 import EditPlayer from './Editplayer';
 import PendingBonusesCard from './PendingBonusesCard';
+import MilestoneGrantModal from './MilestoneGrantModal';
 
 
 const C = {
@@ -114,27 +115,34 @@ function TxPaymentProgress({ paid, total }) {
     );
 }
 
-function DailyMilestoneBar({ todayDeposits, pendingBonuses }) {
+/**
+ * REPLACE the entire DailyMilestoneBar function in PlayerDashboard.jsx with this version.
+ * 
+ * CHANGES:
+ *  - Accepts new prop:  onGrantClick(milestoneObj)
+ *  - Pending cards are now clickable buttons — click opens MilestoneGrantModal
+ *  - "unlocked" (reached but no DB record yet) cards show a subtle pulse to indicate
+ *    the bonus engine may still be processing
+ */
+
+function DailyMilestoneBar({ todayDeposits, pendingBonuses, onGrantClick }) {
     const MILESTONE_STEP = 50;
     const BONUS_PER_MILESTONE = 5;
 
     const milestonesReached = Math.floor(todayDeposits / MILESTONE_STEP);
     const progressIntoNext = todayDeposits % MILESTONE_STEP;
-    const pct = milestonesReached > 0 || progressIntoNext > 0
-        ? ((progressIntoNext / MILESTONE_STEP) * 100)
-        : 0;
     const toNext = parseFloat((MILESTONE_STEP - progressIntoNext).toFixed(2));
 
-    // Which milestone values are pending-unclaimed from PendingBonusesCard data
-    const pendingMilestoneValues = (pendingBonuses || []).map(m => m.milestone);
-    const claimedMilestoneValues = Array.from({ length: milestonesReached }, (_, i) => (i + 1) * MILESTONE_STEP)
-        .filter(v => !pendingMilestoneValues.includes(v));
+    // Build a lookup: milestoneValue → full pending object (has .id for claiming)
+    const pendingByValue = {};
+    (pendingBonuses || []).forEach(m => { pendingByValue[m.milestone] = m; });
 
-    // Show up to (milestonesReached + 1) slots, min 3 max 6
+    const claimedMilestoneValues = Array.from({ length: milestonesReached }, (_, i) => (i + 1) * MILESTONE_STEP)
+        .filter(v => !pendingByValue[v]);
+
     const slotsToShow = Math.max(3, Math.min(6, milestonesReached + 2));
     const slots = Array.from({ length: slotsToShow }, (_, i) => (i + 1) * MILESTONE_STEP);
 
-    // Bar fill: fill past each completed segment fully, then partial for current
     const totalBarWidth = slotsToShow * MILESTONE_STEP;
     const fillPct = Math.min((todayDeposits / totalBarWidth) * 100, 100);
 
@@ -157,8 +165,14 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses }) {
         );
     }
 
+    const pendingCount = Object.keys(pendingByValue).length;
+
     return (
-        <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${milestonesReached > 0 ? '#86efac' : C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '18px 24px' }}>
+        <div style={{
+            background: C.white, borderRadius: '14px',
+            border: `1px solid ${milestonesReached > 0 ? '#86efac' : C.border}`,
+            boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '18px 24px',
+        }}>
 
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${milestonesReached > 0 ? '#d1fae5' : C.border}` }}>
@@ -172,9 +186,13 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses }) {
                             {milestonesReached} reached
                         </span>
                     )}
-                    {pendingMilestoneValues.length > 0 && (
-                        <span style={{ padding: '1px 7px', background: '#fffbeb', color: '#d97706', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>
-                            {pendingMilestoneValues.length} pending grant
+                    {pendingCount > 0 && (
+                        <span style={{
+                            padding: '1px 7px', background: '#fffbeb', color: '#d97706',
+                            borderRadius: '10px', fontSize: '11px', fontWeight: '700',
+                            animation: 'pulse 2s infinite',
+                        }}>
+                            {pendingCount} pending grant
                         </span>
                     )}
                 </div>
@@ -199,7 +217,7 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses }) {
                 )}
             </div>
 
-            {/* Progress bar with dividers */}
+            {/* Progress bar */}
             <div style={{ position: 'relative', height: '14px', background: '#e2e8f0', borderRadius: '99px', overflow: 'hidden', marginBottom: '6px' }}>
                 <div style={{
                     position: 'absolute', left: 0, top: 0, height: '100%',
@@ -207,8 +225,7 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses }) {
                     background: milestonesReached > 0
                         ? 'linear-gradient(90deg, #16a34a, #22c55e)'
                         : 'linear-gradient(90deg, #0ea5e9, #7c3aed)',
-                    borderRadius: '99px',
-                    transition: 'width .5s ease',
+                    borderRadius: '99px', transition: 'width .5s ease',
                 }} />
                 {dividers.map((d, i) => (
                     <div key={i} style={{
@@ -229,14 +246,16 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses }) {
                 ))}
             </div>
 
-            {/* Milestone slot cards */}
+            {/* ── Milestone cards (clickable when pending) ── */}
             <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(140px, 1fr))`, gap: '10px' }}>
                 {slots.map(v => {
                     const reached = todayDeposits >= v;
-                    const isPending = pendingMilestoneValues.includes(v);
+                    const pendingObj = pendingByValue[v];  // full object with .id
+                    const isPending = !!pendingObj;
                     const isClaimed = claimedMilestoneValues.includes(v);
 
                     let bg, border, textColor, badgeBg, badgeColor, badgeLabel, statusNote;
+
                     if (!reached) {
                         bg = C.bg; border = C.border; textColor = C.grayLt;
                         badgeBg = C.bg; badgeColor = C.grayLt;
@@ -245,33 +264,113 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses }) {
                     } else if (isPending) {
                         bg = '#fffbeb'; border = '#fde68a'; textColor = '#92400e';
                         badgeBg = '#fff'; badgeColor = '#d97706';
-                        badgeLabel = 'pending grant';
-                        statusNote = 'ready to grant on Bonus page';
+                        badgeLabel = 'click to grant';
+                        statusNote = `+$${BONUS_PER_MILESTONE.toFixed(2)} ready`;
                     } else if (isClaimed) {
                         bg = '#f0fdf4'; border = '#86efac'; textColor = '#166534';
                         badgeBg = '#fff'; badgeColor = '#16a34a';
-                        badgeLabel = 'granted';
+                        badgeLabel = 'granted ✓';
                         statusNote = 'bonus was granted';
                     } else {
-                        // reached but no record yet (bonus engine runs async)
+                        // reached but no DB record yet (bonus engine async)
                         bg = '#fffbeb'; border = '#fde68a'; textColor = '#92400e';
                         badgeBg = '#fff'; badgeColor = '#d97706';
-                        badgeLabel = 'unlocked';
+                        badgeLabel = 'processing…';
                         statusNote = 'go to Bonus page to grant';
                     }
 
+                    const isClickable = isPending && !!onGrantClick;
+
                     return (
-                        <div key={v} style={{ padding: '12px 14px', background: bg, border: `1px solid ${border}`, borderRadius: '10px', opacity: reached ? 1 : 0.55, transition: 'opacity .2s' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <div
+                            key={v}
+                            onClick={() => isClickable && onGrantClick(pendingObj)}
+                            title={isClickable ? `Click to grant $${BONUS_PER_MILESTONE} bonus` : undefined}
+                            style={{
+                                padding: '12px 14px',
+                                background: bg,
+                                border: `1px solid ${border}`,
+                                borderRadius: '10px',
+                                opacity: reached ? 1 : 0.55,
+                                transition: 'all .15s ease',
+                                cursor: isClickable ? 'pointer' : 'default',
+                                // Pulse ring on pending cards
+                                boxShadow: isPending
+                                    ? '0 0 0 2px #fde68a, 0 4px 12px rgba(217,119,6,.15)'
+                                    : 'none',
+                                transform: 'scale(1)',
+                                position: 'relative',
+                            }}
+                            onMouseEnter={e => {
+                                if (isClickable) {
+                                    e.currentTarget.style.transform = 'scale(1.03)';
+                                    e.currentTarget.style.boxShadow = '0 0 0 2px #f59e0b, 0 8px 20px rgba(217,119,6,.25)';
+                                    e.currentTarget.style.border = '1px solid #f59e0b';
+                                }
+                            }}
+                            onMouseLeave={e => {
+                                if (isClickable) {
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.boxShadow = '0 0 0 2px #fde68a, 0 4px 12px rgba(217,119,6,.15)';
+                                    e.currentTarget.style.border = `1px solid ${border}`;
+                                }
+                            }}
+                        >
+                            {/* Click hint arrow for pending */}
+                            {isClickable && (
+                                <div style={{
+                                    position: 'absolute', top: '8px', right: '8px',
+                                    fontSize: '10px', color: '#d97706', fontWeight: '700',
+                                }}>
+                                    →
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', paddingRight: isClickable ? '14px' : 0 }}>
                                 <span style={{ fontSize: '11px', fontWeight: '700', color: textColor }}>${v} milestone</span>
-                                <span style={{ fontSize: '9px', padding: '1px 5px', background: badgeBg, borderRadius: '20px', color: badgeColor, fontWeight: '700' }}>{badgeLabel}</span>
+                                <span style={{
+                                    fontSize: '9px', padding: '1px 5px', background: badgeBg,
+                                    borderRadius: '20px', color: badgeColor, fontWeight: '700',
+                                }}>
+                                    {badgeLabel}
+                                </span>
                             </div>
-                            <div style={{ fontSize: '18px', fontWeight: '800', color: textColor }}>+${BONUS_PER_MILESTONE.toFixed(2)}</div>
-                            <div style={{ fontSize: '10px', color: textColor, marginTop: '3px', opacity: 0.8 }}>{statusNote}</div>
+
+                            <div style={{ fontSize: '18px', fontWeight: '800', color: textColor }}>
+                                +${BONUS_PER_MILESTONE.toFixed(2)}
+                            </div>
+
+                            <div style={{ fontSize: '10px', color: textColor, marginTop: '3px', opacity: 0.8 }}>
+                                {statusNote}
+                            </div>
+
+                            {/* Grant button strip for pending */}
+                            {isClickable && (
+                                <div style={{
+                                    marginTop: '8px', paddingTop: '8px',
+                                    borderTop: '1px solid #fde68a',
+                                    display: 'flex', alignItems: 'center', gap: '4px',
+                                    fontSize: '11px', fontWeight: '700', color: '#d97706',
+                                }}>
+                                    🏆 Grant now
+                                </div>
+                            )}
                         </div>
                     );
                 })}
             </div>
+
+            {/* Help tip when there are pending grants */}
+            {pendingCount > 0 && (
+                <div style={{
+                    marginTop: '12px', padding: '10px 14px',
+                    background: '#fffbeb', border: '1px solid #fde68a',
+                    borderRadius: '8px', fontSize: '12px', color: '#92400e',
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                }}>
+                    💡 <span>Click any <strong>"click to grant"</strong> card above to instantly grant the $5 milestone bonus — select a game and confirm.</span>
+                </div>
+            )}
         </div>
     );
 }
@@ -287,8 +386,8 @@ function PlayerActivityStats({ player }) {
         d.setHours(0, 0, 0, 0);
         return d;
     };
-    const start1d  = startOf(0);   // today only
-    const start7d  = startOf(7);
+    const start1d = startOf(0);   // today only
+    const start7d = startOf(7);
     const start30d = startOf(30);
 
     const parseTxDate = (tx) => new Date(tx.date || tx.createdAt || tx.timestamp);
@@ -304,7 +403,7 @@ function PlayerActivityStats({ player }) {
     const isBonusTx = (tx) => {
         const t = (tx.type || '').toLowerCase();
         return t.includes('bonus') || t === 'referral bonus' || t === 'streak bonus' ||
-               t === 'match bonus' || t === 'special bonus';
+            t === 'match bonus' || t === 'special bonus';
     };
 
     const bonusSum = (since) =>
@@ -315,22 +414,22 @@ function PlayerActivityStats({ player }) {
     const bonusCount = (since) =>
         txns.filter(tx => isBonusTx(tx) && parseTxDate(tx) >= since).length;
 
-    const dep1d   = sum('deposit', start1d);
-    const dep7d   = sum('deposit', start7d);
-    const dep30d  = sum('deposit', start30d);
+    const dep1d = sum('deposit', start1d);
+    const dep7d = sum('deposit', start7d);
+    const dep30d = sum('deposit', start30d);
 
-    const cash1d  = sum('cashout', start1d);
-    const cash7d  = sum('cashout', start7d);
+    const cash1d = sum('cashout', start1d);
+    const cash7d = sum('cashout', start7d);
     const cash30d = sum('cashout', start30d);
 
-    const bon1d   = bonusSum(start1d);
-    const bon7d   = bonusSum(start7d);
-    const bon30d  = bonusSum(start30d);
+    const bon1d = bonusSum(start1d);
+    const bon7d = bonusSum(start7d);
+    const bon30d = bonusSum(start30d);
     const bonTotal = parseFloat(player.bonusTracker?.totalBonusEarned || 0);
 
-    const depCount30  = count('deposit', start30d);
+    const depCount30 = count('deposit', start30d);
     const cashCount30 = count('cashout', start30d);
-    const bonCount30  = bonusCount(start30d);
+    const bonCount30 = bonusCount(start30d);
 
     const fmt = (n) => `$${parseFloat(n).toFixed(2)}`;
     const net = (dep, cash) => {
@@ -339,16 +438,16 @@ function PlayerActivityStats({ player }) {
     };
 
     const PERIODS = [
-        { label: '1 day',    hColor: '#059669', bgAlpha: 'rgba(16,185,129,.04)',  dep: dep1d,   cash: cash1d,  bon: bon1d,   total: false },
-        { label: '7 days',   hColor: '#0284c7', bgAlpha: 'rgba(14,165,233,.04)',  dep: dep7d,   cash: cash7d,  bon: bon7d,   total: false },
-        { label: '30 days',  hColor: '#7c3aed', bgAlpha: 'rgba(139,92,246,.04)', dep: dep30d,  cash: cash30d, bon: bon30d,  total: false },
-        { label: 'All-time', hColor: '#d97706', bgAlpha: 'rgba(249,115,22,.05)', dep: dep30d,  cash: cash30d, bon: bonTotal, total: true },
+        { label: '1 day', hColor: '#059669', bgAlpha: 'rgba(16,185,129,.04)', dep: dep1d, cash: cash1d, bon: bon1d, total: false },
+        { label: '7 days', hColor: '#0284c7', bgAlpha: 'rgba(14,165,233,.04)', dep: dep7d, cash: cash7d, bon: bon7d, total: false },
+        { label: '30 days', hColor: '#7c3aed', bgAlpha: 'rgba(139,92,246,.04)', dep: dep30d, cash: cash30d, bon: bon30d, total: false },
+        { label: 'All-time', hColor: '#d97706', bgAlpha: 'rgba(249,115,22,.05)', dep: dep30d, cash: cash30d, bon: bonTotal, total: true },
     ];
 
     const ROWS = [
-        { key: 'dep',  label: 'Deposits',      dot: '#10b981', getVal: (p) => p.dep,  color: '#10b981' },
-        { key: 'cash', label: 'Cashouts',       dot: '#ef4444', getVal: (p) => p.cash, color: '#ef4444' },
-        { key: 'bon',  label: 'Bonuses earned', dot: '#8b5cf6', getVal: (p) => p.bon,  color: '#8b5cf6' },
+        { key: 'dep', label: 'Deposits', dot: '#10b981', getVal: (p) => p.dep, color: '#10b981' },
+        { key: 'cash', label: 'Cashouts', dot: '#ef4444', getVal: (p) => p.cash, color: '#ef4444' },
+        { key: 'bon', label: 'Bonuses earned', dot: '#8b5cf6', getVal: (p) => p.bon, color: '#8b5cf6' },
     ];
 
     const thStyle = {
@@ -658,6 +757,7 @@ export default function PlayerDashboard() {
     const { playerId } = useParams();
     const navigate = useNavigate();
 
+    const [grantingMilestone, setGrantingMilestone] = useState(null);
     const [eligibleBonuses, setEligibleBonuses] = useState([]);
     const [pendingMilestones, setPendingMilestones] = useState([]);
     const [eligLoading, setEligLoading] = useState(false);
@@ -678,9 +778,9 @@ export default function PlayerDashboard() {
             const res = await api.players.getPlayer(parseInt(playerId));
             setPlayer(res.data);
             try {
-    const pb = await api.players.getPendingBonuses(parseInt(playerId));
-    setPendingMilestones(pb?.data?.milestones || []);
-} catch { setPendingMilestones([]); }
+                const pb = await api.players.getPendingBonuses(parseInt(playerId));
+                setPendingMilestones(pb?.data?.milestones || []);
+            } catch { setPendingMilestones([]); }
             loadEligible(parseInt(playerId));
             setLastUpdated(new Date());
         } catch (err) {
@@ -892,13 +992,14 @@ export default function PlayerDashboard() {
             <StreakFreezeCard player={player} />
 
             {/* ── NEW: Activity stats ── */}
-<PlayerActivityStats player={player} />
+            <PlayerActivityStats player={player} />
 
-<DailyMilestoneBar
-    todayDeposits={todayDeposits}
-    pendingBonuses={pendingMilestones}
-/>
-            
+            <DailyMilestoneBar
+                todayDeposits={todayDeposits}
+                pendingBonuses={pendingMilestones}
+                onGrantClick={(m) => setGrantingMilestone(m)}
+            />
+
             {/* ── PENDING MILESTONE + REFERRAL WEEKLY BONUSES ── */}
             <PendingBonusesCard
                 playerId={player.id}
@@ -1493,6 +1594,20 @@ export default function PlayerDashboard() {
             {showDelete && (
                 <DeleteModal player={player} onClose={() => setShowDelete(false)}
                     onDeleted={() => { setShowDelete(false); navigate('/?page=players'); }} />
+            )}
+
+            {grantingMilestone && (
+                <MilestoneGrantModal
+                    milestone={grantingMilestone}
+                    player={player}
+                    onClose={() => setGrantingMilestone(null)}
+                    onGranted={() => {
+                        setGrantingMilestone(null);
+                        loadPlayer(false);           // refresh dashboard data
+                        setSavedFlash(true);
+                        setTimeout(() => setSavedFlash(false), 2500);
+                    }}
+                />
             )}
 
             <style>{`
