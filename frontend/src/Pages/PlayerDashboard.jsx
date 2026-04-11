@@ -777,10 +777,28 @@ export default function PlayerDashboard() {
             setError('');
             const res = await api.players.getPlayer(parseInt(playerId));
             setPlayer(res.data);
+            // try {
+            //     const pb = await api.players.getPendingBonuses(parseInt(playerId));
+            //     setPendingMilestones(pb?.data?.milestones || []);
+            // } catch { setPendingMilestones([]); }
             try {
-                const pb = await api.players.getPendingBonuses(parseInt(playerId));
-                setPendingMilestones(pb?.data?.milestones || []);
-            } catch { setPendingMilestones([]); }
+  // Pull the backend base URL the same way MilestoneGrantModal does
+  const BACKEND = (
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    'https://oceanappbackend.onrender.com'
+  ).replace(/\/api\/?$/, '');
+ 
+  const pbRes = await fetch(
+    `${BACKEND}/api/players/${parseInt(playerId)}/pending-bonuses`,
+    { credentials: 'include' }
+  );
+  const pb = await pbRes.json();
+  setPendingMilestones(pb?.data?.milestones || []);
+} catch {
+  setPendingMilestones([]);
+}
             loadEligible(parseInt(playerId));
             setLastUpdated(new Date());
         } catch (err) {
@@ -1597,18 +1615,19 @@ export default function PlayerDashboard() {
             )}
 
             {grantingMilestone && (
-                <MilestoneGrantModal
-                    milestone={grantingMilestone}
-                    player={player}
-                    onClose={() => setGrantingMilestone(null)}
-                    onGranted={() => {
-                        setGrantingMilestone(null);
-                        loadPlayer(false);           // refresh dashboard data
-                        setSavedFlash(true);
-                        setTimeout(() => setSavedFlash(false), 2500);
-                    }}
-                />
-            )}
+    <MilestoneGrantModal
+        milestone={grantingMilestone}
+        player={player}
+        todayDeposits={todayDeposits}          // ← required for milestone-reached check
+        onClose={() => setGrantingMilestone(null)}
+        onGranted={() => {
+            setGrantingMilestone(null);
+            loadPlayer(false);
+            setSavedFlash(true);
+            setTimeout(() => setSavedFlash(false), 2500);
+        }}
+    />
+)}
 
             <style>{`
                 @keyframes spin    { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
