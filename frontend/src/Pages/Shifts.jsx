@@ -18,6 +18,7 @@ import {
 import { ShiftStatusContext } from '../Context/membershiftStatus.jsx';
 import { CurrentUserContext } from '../Context/currentUser.jsx';
 import { api } from '../api';
+import ShiftRatingModal from './ShiftRatingModal.jsx';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const fj = async (path, opts = {}) => {
@@ -109,7 +110,7 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
   }, []);
 
   const totalWallet = r2(wallets.reduce((s, w) => s + (parseFloat(walletInputs[w.id]) || 0), 0));
-  const totalGames  = Math.round(games.reduce((s, g) => s + (parseFloat(gameInputs[g.id]) || 0), 0));
+  const totalGames = Math.round(games.reduce((s, g) => s + (parseFloat(gameInputs[g.id]) || 0), 0));
 
   const walletDiscrepancies = wallets.filter(w => {
     const entered = parseFloat(walletInputs[w.id]);
@@ -434,40 +435,40 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
 
   const hasStartSnapshot = startSnapshot != null;
   const startWallets = startSnapshot?.walletSnapshot ?? [];
-  const startGames   = startSnapshot?.gameSnapshot ?? [];
-  const startTotalW  = r2(startSnapshot?.totalWallet ?? 0);
-  const startTotalG  = Math.round(startSnapshot?.totalGames ?? 0);
+  const startGames = startSnapshot?.gameSnapshot ?? [];
+  const startTotalW = r2(startSnapshot?.totalWallet ?? 0);
+  const startTotalG = Math.round(startSnapshot?.totalGames ?? 0);
 
   const endTotalW = r2(endWallets.reduce((s, w) => s + (w.balance ?? 0), 0));
   const endTotalG = Math.round(endGames.reduce((s, g) => s + (g.pointStock ?? 0), 0));
 
   const walletChange = hasStartSnapshot ? r2(endTotalW - startTotalW) : 0;
-  const gameChange   = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
+  const gameChange = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
 
   const BONUS_TYPES = ['Match Bonus', 'Special Bonus', 'Streak Bonus', 'Referral Bonus', 'Bonus'];
   const deposits = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.amount ?? 0), 0));
   const cashouts = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.amount ?? 0), 0));
-  const bonuses  = r2(shiftTxns.filter(t => BONUS_TYPES.includes(t.type)).reduce((s, t) => s + (t.amount ?? 0), 0));
+  const bonuses = r2(shiftTxns.filter(t => BONUS_TYPES.includes(t.type)).reduce((s, t) => s + (t.amount ?? 0), 0));
   // ✅ Net profit = Deposits - Cashouts (business metric, no fees deducted from profit)
   const netProfit = r2(deposits - cashouts);
 
   const depositFees = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.fee ?? 0), 0));
   const cashoutFees = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.fee ?? 0), 0));
-  const totalFees   = r2(depositFees + cashoutFees);
-  const hasFees     = totalFees > 0.001;
+  const totalFees = r2(depositFees + cashoutFees);
+  const hasFees = totalFees > 0.001;
 
   // ✅ Expected wallet change = (deposits - depositFees) - (cashouts + cashoutFees)
   const expectedWalletChange = r2((deposits - depositFees) - (cashouts + cashoutFees));
   // ✅ Expected game change = -(deposits + bonuses - cashouts) — fees don't affect game stock
-  const expectedGameChange   = Math.round(-(deposits + bonuses - cashouts));
+  const expectedGameChange = Math.round(-(deposits + bonuses - cashouts));
 
   // ✅ Separate $ and pts discrepancies — never mix them
   const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
-  const gameDisc   = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
+  const gameDisc = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
 
   // ✅ balanced checks wallet and game separately
   const walletBalanced = Math.abs(walletDisc) < 0.02;
-  const gameBalanced   = Math.abs(gameDisc) < 2;
+  const gameBalanced = Math.abs(gameDisc) < 2;
   const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced);
 
   const walletRows = endWallets.map(w => {
@@ -494,7 +495,7 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
       await onSubmit({
         endSnapshot: {
           walletSnapshot: endWallets.map(w => ({ id: w.id, name: w.name, method: w.method, balance: r2(w.balance ?? 0) })),
-          gameSnapshot:  endGames.map(g => ({ id: g.id, name: g.name, pointStock: Math.round(g.pointStock ?? 0) })),
+          gameSnapshot: endGames.map(g => ({ id: g.id, name: g.name, pointStock: Math.round(g.pointStock ?? 0) })),
           totalWallet: endTotalW, totalGames: endTotalG,
           walletChange, gameChange, netProfit,
           deposits, cashouts, bonuses,
@@ -747,7 +748,7 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                 </span>
               </label>
               <div style={{ display: 'flex', gap: '8px' }}>
-                {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
                   <button key={n} onClick={() => setFbField('effort', n)} style={{
                     width: '40px', height: '40px', borderRadius: '8px', border: '2px solid',
                     cursor: 'pointer', fontWeight: '700', fontSize: '13px', transition: 'all .15s',
@@ -771,11 +772,11 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
               <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '12px', color: '#92400e' }}>
                 ⚠️ All fields are <b>required</b> (min 6 chars each) before you can end your shift.
                 {[
-                  ['effortReason','Effort reason'], ['shiftWorkDescription','Shift work description'],
-                  ['workSummary','Work summary'], ['issuesEncountered','Issues encountered'],
-                  ['improvements','Improvements'], ['recommendationsLastShift','Recs to last shift'],
-                  ['recommendationsOverall','Overall recs'],
-                ].filter(([k]) => fb[k].trim().length <= 5).map(([,label]) => (
+                  ['effortReason', 'Effort reason'], ['shiftWorkDescription', 'Shift work description'],
+                  ['workSummary', 'Work summary'], ['issuesEncountered', 'Issues encountered'],
+                  ['improvements', 'Improvements'], ['recommendationsLastShift', 'Recs to last shift'],
+                  ['recommendationsOverall', 'Overall recs'],
+                ].filter(([k]) => fb[k].trim().length <= 5).map(([, label]) => (
                   <span key={label} style={{ display: 'inline-block', marginRight: '8px', marginTop: '4px', padding: '2px 8px', background: '#fef3c7', borderRadius: '6px', fontSize: '11px' }}>· {label}</span>
                 ))}
               </div>
@@ -824,32 +825,32 @@ function printShiftPDF(shift) {
   const fmtMoney = v => `$${Math.abs(r2(v ?? 0)).toFixed(2)}`;
 
   let startSnapshot = null, endSnapshot = null, effortReason = null, improvements = null;
-  if (shift.checkin?.balanceNote) { try { startSnapshot = JSON.parse(shift.checkin.balanceNote); } catch (_) {} }
+  if (shift.checkin?.balanceNote) { try { startSnapshot = JSON.parse(shift.checkin.balanceNote); } catch (_) { } }
   if (shift.checkin?.additionalNotes) {
     try {
       const p = JSON.parse(shift.checkin.additionalNotes);
-      endSnapshot   = p.endSnapshot ?? null;
-      effortReason  = p.effortReason ?? null;
-      improvements  = p.improvements ?? null;
-    } catch (_) {}
+      endSnapshot = p.endSnapshot ?? null;
+      effortReason = p.effortReason ?? null;
+      improvements = p.improvements ?? null;
+    } catch (_) { }
   }
 
   const es = endSnapshot;
   const deposits = r2(es?.deposits ?? 0);
   const cashouts = r2(es?.cashouts ?? 0);
-  const bonuses  = r2(es?.bonuses ?? 0);
+  const bonuses = r2(es?.bonuses ?? 0);
   const netProfit = r2(deposits - cashouts);
   const walletChange = r2(es?.walletChange ?? 0);
-  const gameChange   = Math.round(es?.gameChange ?? 0);
-  const depositFees  = r2(es?.depositFees ?? 0);
-  const cashoutFees  = r2(es?.cashoutFees ?? 0);
+  const gameChange = Math.round(es?.gameChange ?? 0);
+  const depositFees = r2(es?.depositFees ?? 0);
+  const cashoutFees = r2(es?.cashoutFees ?? 0);
   const expectedWallet = r2((deposits - depositFees) - (cashouts + cashoutFees));
-  const expectedGame   = Math.round(-(deposits + bonuses - cashouts));
-  const walletDisc  = r2((es?.walletDiscrepancy) ?? r2(walletChange - expectedWallet));
-  const gameDisc    = Math.round((es?.gameDiscrepancy) ?? (gameChange - expectedGame));
-  const walletOk    = Math.abs(walletDisc) < 0.02;
-  const gameOk      = Math.abs(gameDisc) < 2;
-  const allOk       = walletOk && gameOk;
+  const expectedGame = Math.round(-(deposits + bonuses - cashouts));
+  const walletDisc = r2((es?.walletDiscrepancy) ?? r2(walletChange - expectedWallet));
+  const gameDisc = Math.round((es?.gameDiscrepancy) ?? (gameChange - expectedGame));
+  const walletOk = Math.abs(walletDisc) < 0.02;
+  const gameOk = Math.abs(gameDisc) < 2;
+  const allOk = walletOk && gameOk;
 
   const startWalletRows = (startSnapshot?.walletSnapshot ?? []).map(w => {
     const ew = (endSnapshot?.walletSnapshot ?? []).find(e => e.id === w.id);
@@ -892,7 +893,7 @@ button{padding:9px 18px;background:#0f172a;color:#fff;border:none;border-radius:
 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
 <div>
   <h1>Shift Report — ${fmtDate(shift.startTime)}</h1>
-  <p class="meta">${fmtTime(shift.startTime)} – ${fmtTime(shift.endTime)} · ${shift.duration ?? '—'} min · Generated ${new Date().toLocaleString('en-US',{timeZone:'America/Chicago'})}</p>
+  <p class="meta">${fmtTime(shift.startTime)} – ${fmtTime(shift.endTime)} · ${shift.duration ?? '—'} min · Generated ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })}</p>
 </div>
 <button onclick="window.print()">Print / Save PDF</button>
 </div>
@@ -960,13 +961,13 @@ ${effortReason || improvements || shift.checkin?.workSummary ? `<h2>Member Feedb
 // TASK TYPE META (mirroring MemberTasksSection)
 // ═══════════════════════════════════════════════════════════════
 const TASK_TYPE_META = {
-  STANDARD:        { label: 'Standard',       color: '#6366f1', lightBg: '#eef2ff', border: '#c7d2fe' },
+  STANDARD: { label: 'Standard', color: '#6366f1', lightBg: '#eef2ff', border: '#c7d2fe' },
   DAILY_CHECKLIST: { label: 'Daily Checklist', color: '#0ea5e9', lightBg: '#f0f9ff', border: '#bae6fd' },
   PLAYER_ADDITION: { label: 'Player Addition', color: '#8b5cf6', lightBg: '#f5f3ff', border: '#ddd6fe' },
-  REVENUE_TARGET:  { label: 'Revenue Target',  color: '#22c55e', lightBg: '#f0fdf4', border: '#86efac' },
+  REVENUE_TARGET: { label: 'Revenue Target', color: '#22c55e', lightBg: '#f0fdf4', border: '#86efac' },
   PLAYER_FOLLOWUP: { label: 'Player Followup', color: '#f97316', lightBg: '#fff7ed', border: '#fed7aa' },
-  BONUS_FOLLOWUP:  { label: 'Bonus Followup',  color: '#10b981', lightBg: '#ecfdf5', border: '#6ee7b7' },
-  MISSING_INFO:    { label: 'Missing Info',    color: '#ec4899', lightBg: '#fdf2f8', border: '#f9a8d4' },
+  BONUS_FOLLOWUP: { label: 'Bonus Followup', color: '#10b981', lightBg: '#ecfdf5', border: '#6ee7b7' },
+  MISSING_INFO: { label: 'Missing Info', color: '#ec4899', lightBg: '#fdf2f8', border: '#f9a8d4' },
 };
 
 const PRIORITY_COLOR = { LOW: '#22c55e', MEDIUM: '#f59e0b', HIGH: '#f97316', URGENT: '#dc2626' };
@@ -979,20 +980,20 @@ export const ShiftsPage = () => {
   const { shiftActive, setShiftActive } = useContext(ShiftStatusContext);
   const { usr } = useContext(CurrentUserContext);
 
-  const [pastShifts, setPastShifts]   = useState([]);
+  const [pastShifts, setPastShifts] = useState([]);
   const [activeShift, setActiveShift] = useState(null);
   const [startSnapshot, setStartSnapshot] = useState(null);
-  const [tasks, setTasks]             = useState([]);
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState('');
-  const [success, setSuccess]         = useState('');
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [showCheckin, setShowCheckin] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
 
   // ── Task filters ──────────────────────────────────────────────
-  const [taskSearch,  setTaskSearch]  = useState('');
-  const [taskType,    setTaskType]    = useState('ALL');
-  const [taskStatus,  setTaskStatus]  = useState('ALL');
+  const [taskSearch, setTaskSearch] = useState('');
+  const [taskType, setTaskType] = useState('ALL');
+  const [taskStatus, setTaskStatus] = useState('ALL');
 
   useEffect(() => {
     if (!usr?.role) return;
@@ -1011,7 +1012,7 @@ export const ShiftsPage = () => {
           setShiftActive(true);
           const checkinRes = await fj(`/shifts/${sh.id}/checkin`).catch(() => null);
           if (checkinRes?.data?.balanceNote) {
-            try { setStartSnapshot(JSON.parse(checkinRes.data.balanceNote)); } catch (_) {}
+            try { setStartSnapshot(JSON.parse(checkinRes.data.balanceNote)); } catch (_) { }
           }
         }
         setPastShifts(historyRes?.data ?? []);
@@ -1021,7 +1022,7 @@ export const ShiftsPage = () => {
   }, [usr?.role]);
 
   useEffect(() => { if (success) { const t = setTimeout(() => setSuccess(''), 4000); return () => clearTimeout(t); } }, [success]);
-  useEffect(() => { if (error)   { const t = setTimeout(() => setError(''), 5000);   return () => clearTimeout(t); } }, [error]);
+  useEffect(() => { if (error) { const t = setTimeout(() => setError(''), 5000); return () => clearTimeout(t); } }, [error]);
 
   const handleCheckinConfirm = async (snapshot) => {
     try {
@@ -1089,9 +1090,9 @@ export const ShiftsPage = () => {
     return true;
   }), [tasks, taskType, taskStatus, taskSearch]);
 
-  const completedTasks   = tasks.filter(t => t.status === 'COMPLETED').length;
-  const inProgressTasks  = tasks.filter(t => t.status === 'IN_PROGRESS').length;
-  const pendingTasks     = tasks.filter(t => t.status === 'PENDING').length;
+  const completedTasks = tasks.filter(t => t.status === 'COMPLETED').length;
+  const inProgressTasks = tasks.filter(t => t.status === 'IN_PROGRESS').length;
+  const pendingTasks = tasks.filter(t => t.status === 'PENDING').length;
 
   // ── Past shifts ───────────────────────────────────────────────
   const completedShifts = pastShifts.filter(s => !s.isActive);
@@ -1101,6 +1102,19 @@ export const ShiftsPage = () => {
       {showCheckin && <CheckinModal onConfirm={handleCheckinConfirm} onCancel={() => setShowCheckin(false)} />}
       {showCheckout && activeShift && (
         <CheckoutModal shift={activeShift} startSnapshot={startSnapshot} onSubmit={handleCheckoutSubmit} onCancel={() => setShowCheckout(false)} />
+      )}
+      {ratingModal && (
+        < ShiftRatingModal
+          shift={ratingModal.shift}
+          memberName={ratingModal.memberName}
+          onClose={() => setRatingModal(null)}
+          onSaved={(rating) => {
+            // optionally update local shift data
+            setPastShifts(prev => prev.map(s => s.id === ratingModal.shift.id ? { ...s, rating } : s));
+            setRatingModal(null);
+
+          }}
+        />
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -1202,7 +1216,7 @@ export const ShiftsPage = () => {
 
               {/* Status tabs */}
               <div style={{ display: 'flex', gap: '3px', background: '#f1f5f9', borderRadius: '8px', padding: '3px' }}>
-                {[['ALL','All'],['PENDING','Pending'],['IN_PROGRESS','Active']].map(([key, label]) => (
+                {[['ALL', 'All'], ['PENDING', 'Pending'], ['IN_PROGRESS', 'Active']].map(([key, label]) => (
                   <button key={key} onClick={() => setTaskStatus(key)} style={{
                     padding: '4px 10px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: '700',
                     cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
@@ -1302,6 +1316,7 @@ export const ShiftsPage = () => {
                     <th style={{ ...T.TH, textAlign: 'right' }}>Bonuses</th>
                     <th style={{ ...T.TH, textAlign: 'center' }}>Txns</th>
                     <th style={{ ...T.TH, textAlign: 'center' }}>Effort</th>
+                    <th style={T.TH}>Rating</th>
                     <th style={{ ...T.TH, textAlign: 'center' }}>Balanced</th>
                     <th style={{ ...T.TH, textAlign: 'center' }}>PDF</th>
                   </tr>
@@ -1313,11 +1328,11 @@ export const ShiftsPage = () => {
                     if (shift.checkin?.additionalNotes) {
                       try {
                         const p = JSON.parse(shift.checkin.additionalNotes);
-                        endSnap  = p.endSnapshot ?? null;
+                        endSnap = p.endSnapshot ?? null;
                         const wd = r2(endSnap?.walletDiscrepancy ?? 0);
                         const gd = Math.round(endSnap?.gameDiscrepancy ?? 0);
                         balanced = endSnap ? (Math.abs(wd) < 0.02 && Math.abs(gd) < 2) : null;
-                      } catch (_) {}
+                      } catch (_) { }
                     }
                     const s = shift.stats || {};
                     const netProfit = r2((s.totalDeposits ?? 0) - (s.totalCashouts ?? 0));
@@ -1359,6 +1374,26 @@ export const ShiftsPage = () => {
                           ) : '—'}
                         </td>
                         <td style={{ ...T.TD, textAlign: 'center' }}>
+                          {shift.checkin?.rating ? (
+                            < span style={{ display: 'inline-flex', gap: '1px' }}>
+                              {[1, 2, 3, 4, 5].map(n => (
+                                < span key={n} style={{ color: n <= Math.round(shift.checkin.rating.overallRating) ? '#f59e0b' : '#e2e8f0', fontSize: '14px' }}>★</span>
+                              ))}
+                            </span>
+                          ) : (
+                            usr?.role === 'ADMIN' || usr?.role === 'SUPER_ADMIN' ? (
+                              <button
+                                onClick={() => setRatingModal({ shift, memberName: shift.memberName || shift.teamRole })}
+                                style={{ padding: '4px 10px', background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
+                              >
+                                ⭐ Rate
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: '11px', color: '#94a3b8' }}>Not rated</span>
+                            )
+                          )}
+                        </td>
+                        <td style={{ ...T.TD, textAlign: 'center' }}>
                           {balanced === null
                             ? <span style={{ color: '#94a3b8', fontSize: '12px' }}>N/A</span>
                             : balanced
@@ -1381,11 +1416,11 @@ export const ShiftsPage = () => {
 
                 {/* Summary footer row */}
                 {completedShifts.length > 1 && (() => {
-                  const totDep  = r2(completedShifts.reduce((s, sh) => s + (sh.stats?.totalDeposits ?? 0), 0));
-                  const totCO   = r2(completedShifts.reduce((s, sh) => s + (sh.stats?.totalCashouts ?? 0), 0));
-                  const totBon  = r2(completedShifts.reduce((s, sh) => s + (sh.stats?.totalBonuses ?? 0), 0));
+                  const totDep = r2(completedShifts.reduce((s, sh) => s + (sh.stats?.totalDeposits ?? 0), 0));
+                  const totCO = r2(completedShifts.reduce((s, sh) => s + (sh.stats?.totalCashouts ?? 0), 0));
+                  const totBon = r2(completedShifts.reduce((s, sh) => s + (sh.stats?.totalBonuses ?? 0), 0));
                   const totProf = r2(totDep - totCO);
-                  const totDur  = completedShifts.reduce((s, sh) => s + (sh.duration ?? 0), 0);
+                  const totDur = completedShifts.reduce((s, sh) => s + (sh.duration ?? 0), 0);
                   return (
                     <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
                       <td style={{ ...T.TD, fontWeight: '700', color: '#374151' }} colSpan={3}>
@@ -1410,8 +1445,8 @@ export const ShiftsPage = () => {
               <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Completed shift reports appear here</p>
             </div>
           )}
-        </div>
-      </div>
+        </div >
+      </div >
 
       <style>{`@keyframes spin { from{transform:rotate(0deg)}to{transform:rotate(360deg)} }`}</style>
     </>
