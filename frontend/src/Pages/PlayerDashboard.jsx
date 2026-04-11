@@ -115,15 +115,23 @@ function TxPaymentProgress({ paid, total }) {
     );
 }
 
-/**
- * REPLACE the entire DailyMilestoneBar function in PlayerDashboard.jsx with this version.
- * 
- * CHANGES:
- *  - Accepts new prop:  onGrantClick(milestoneObj)
- *  - Pending cards are now clickable buttons — click opens MilestoneGrantModal
- *  - "unlocked" (reached but no DB record yet) cards show a subtle pulse to indicate
- *    the bonus engine may still be processing
- */
+// ── Helper to fetch pending milestones (reused in loadPlayer + onGranted) ────
+const BACKEND_BASE = (
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    'https://oceanappbackend.onrender.com'
+).replace(/\/api\/?$/, '');
+
+async function fetchPendingMilestones(playerId) {
+    const token = localStorage.getItem('authToken');
+    const res = await fetch(`${BACKEND_BASE}/api/players/${playerId}/pending-bonuses`, {
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    const pb = await res.json();
+    return pb?.data?.milestones || [];
+}
 
 function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory = [], onGrantClick }) {
     const MILESTONE_STEP = 50;
@@ -212,7 +220,6 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory =
                     const reached = todayDeposits >= v;
                     const pendingObj = pendingByValue[v];
                     const isPending = !!pendingObj;
-                    // ← FIXED: only green if real transaction exists
                     const isClaimed = grantedMilestoneValues.has(v);
                     const isClickable = isPending && !!onGrantClick;
 
@@ -264,7 +271,6 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory =
     );
 }
 
-// ── Add this component near the other sub-components ─────────────────────────
 function PlayerActivityStats({ player }) {
     const txns = player.transactionHistory || [];
 
@@ -275,23 +281,21 @@ function PlayerActivityStats({ player }) {
         d.setHours(0, 0, 0, 0);
         return d;
     };
-    const start1d = startOf(0);   // today only
+    const start1d = startOf(0);
     const start7d = startOf(7);
     const start30d = startOf(30);
 
-    // const parseTxDate = (tx) => new Date(tx.date || tx.createdAt || tx.timestamp);
     const parseTxDate = (tx) => {
         if (tx.date) {
             const d = new Date(tx.date);
-            d.setHours(12, 0, 0, 0);  // fix UTC midnight → local timezone shift
+            d.setHours(12, 0, 0, 0);
             return d;
         }
         return new Date(tx.createdAt || tx.timestamp || 0);
     };
 
     const sum = (type, since) =>
-        txns
-            .filter(tx => tx.type === type && parseTxDate(tx) >= since)
+        txns.filter(tx => tx.type === type && parseTxDate(tx) >= since)
             .reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
 
     const count = (type, since) =>
@@ -304,8 +308,7 @@ function PlayerActivityStats({ player }) {
     };
 
     const bonusSum = (since) =>
-        txns
-            .filter(tx => isBonusTx(tx) && parseTxDate(tx) >= since)
+        txns.filter(tx => isBonusTx(tx) && parseTxDate(tx) >= since)
             .reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
 
     const bonusCount = (since) =>
@@ -314,16 +317,13 @@ function PlayerActivityStats({ player }) {
     const dep1d = sum('deposit', start1d);
     const dep7d = sum('deposit', start7d);
     const dep30d = sum('deposit', start30d);
-
     const cash1d = sum('cashout', start1d);
     const cash7d = sum('cashout', start7d);
     const cash30d = sum('cashout', start30d);
-
     const bon1d = bonusSum(start1d);
     const bon7d = bonusSum(start7d);
     const bon30d = bonusSum(start30d);
     const bonTotal = parseFloat(player.bonusTracker?.totalBonusEarned || 0);
-
     const depCount30 = count('deposit', start30d);
     const cashCount30 = count('cashout', start30d);
     const bonCount30 = bonusCount(start30d);
@@ -347,20 +347,11 @@ function PlayerActivityStats({ player }) {
         { key: 'bon', label: 'Bonuses earned', dot: '#8b5cf6', getVal: (p) => p.bon, color: '#8b5cf6' },
     ];
 
-    const thStyle = {
-        fontSize: '11px', fontWeight: '700', textTransform: 'uppercase',
-        letterSpacing: '0.5px', color: C.gray, padding: '0 10px 10px',
-        textAlign: 'right', whiteSpace: 'nowrap',
-    };
-    const tdBase = {
-        padding: '9px 10px', borderTop: `1px solid ${C.border}`,
-        textAlign: 'right', fontSize: '13px', fontWeight: '700',
-    };
+    const thStyle = { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: C.gray, padding: '0 10px 10px', textAlign: 'right', whiteSpace: 'nowrap' };
+    const tdBase = { padding: '9px 10px', borderTop: `1px solid ${C.border}`, textAlign: 'right', fontSize: '13px', fontWeight: '700' };
 
     return (
         <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '18px 22px' }}>
-
-            {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${C.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Activity Summary</p>
@@ -371,17 +362,13 @@ function PlayerActivityStats({ player }) {
                     LIVE
                 </span>
             </div>
-
-            {/* Table */}
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '480px' }}>
                     <thead>
                         <tr>
                             <th style={{ ...thStyle, textAlign: 'left', paddingLeft: 0, color: 'transparent' }}>—</th>
                             {PERIODS.map(p => (
-                                <th key={p.label} style={{ ...thStyle, color: p.hColor, background: p.bgAlpha }}>
-                                    {p.label}
-                                </th>
+                                <th key={p.label} style={{ ...thStyle, color: p.hColor, background: p.bgAlpha }}>{p.label}</th>
                             ))}
                         </tr>
                     </thead>
@@ -397,19 +384,13 @@ function PlayerActivityStats({ player }) {
                                     return (
                                         <td key={p.label} style={{ ...tdBase, color: row.color, background: p.bgAlpha }}>
                                             {fmt(row.getVal(p))}
-                                            {isTotal && (
-                                                <span style={{ fontSize: '9px', color: C.grayLt, fontWeight: '400', marginLeft: '3px' }}>30d</span>
-                                            )}
-                                            {p.total && row.key === 'bon' && (
-                                                <span style={{ fontSize: '9px', color: '#16a34a', fontWeight: '700', marginLeft: '3px' }}>★</span>
-                                            )}
+                                            {isTotal && <span style={{ fontSize: '9px', color: C.grayLt, fontWeight: '400', marginLeft: '3px' }}>30d</span>}
+                                            {p.total && row.key === 'bon' && <span style={{ fontSize: '9px', color: '#16a34a', fontWeight: '700', marginLeft: '3px' }}>★</span>}
                                         </td>
                                     );
                                 })}
                             </tr>
                         ))}
-
-                        {/* Net row */}
                         <tr>
                             <td style={{ ...tdBase, textAlign: 'left', paddingLeft: 0, display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', fontSize: '12px', color: C.grayLt }}>
                                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: C.border, flexShrink: 0 }} />
@@ -417,31 +398,17 @@ function PlayerActivityStats({ player }) {
                             </td>
                             {PERIODS.map(p => {
                                 const { label, color } = net(p.dep, p.cash);
-                                return (
-                                    <td key={p.label} style={{ ...tdBase, color, fontSize: '12px', background: p.bgAlpha }}>
-                                        {label}
-                                    </td>
-                                );
+                                return <td key={p.label} style={{ ...tdBase, color, fontSize: '12px', background: p.bgAlpha }}>{label}</td>;
                             })}
                         </tr>
                     </tbody>
                 </table>
             </div>
-
-            {/* Summary chips */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px', paddingTop: '12px', borderTop: `1px solid ${C.border}`, alignItems: 'center' }}>
-                <span style={{ padding: '4px 10px', background: '#f0fdf4', color: '#059669', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>
-                    {depCount30} deposit{depCount30 !== 1 ? 's' : ''} (30d)
-                </span>
-                <span style={{ padding: '4px 10px', background: '#fff1f2', color: '#dc2626', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>
-                    {cashCount30} cashout{cashCount30 !== 1 ? 's' : ''} (30d)
-                </span>
-                <span style={{ padding: '4px 10px', background: '#faf5ff', color: '#7c3aed', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>
-                    {bonCount30} bonus{bonCount30 !== 1 ? 'es' : ''} (30d)
-                </span>
-                <span style={{ fontSize: '11px', color: C.grayLt, marginLeft: 'auto' }}>
-                    ★ All-time from bonus tracker &nbsp;·&nbsp; deposits/cashouts limited to 30d history
-                </span>
+                <span style={{ padding: '4px 10px', background: '#f0fdf4', color: '#059669', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{depCount30} deposit{depCount30 !== 1 ? 's' : ''} (30d)</span>
+                <span style={{ padding: '4px 10px', background: '#fff1f2', color: '#dc2626', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{cashCount30} cashout{cashCount30 !== 1 ? 's' : ''} (30d)</span>
+                <span style={{ padding: '4px 10px', background: '#faf5ff', color: '#7c3aed', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{bonCount30} bonus{bonCount30 !== 1 ? 'es' : ''} (30d)</span>
+                <span style={{ fontSize: '11px', color: C.grayLt, marginLeft: 'auto' }}>★ All-time from bonus tracker &nbsp;·&nbsp; deposits/cashouts limited to 30d history</span>
             </div>
         </div>
     );
@@ -481,11 +448,7 @@ function StreakFreezeCard({ player }) {
                             </span>
                         )}
                     </div>
-                    {lastPlayed && (
-                        <p style={{ margin: '6px 0 0', fontSize: '12px', color: C.grayLt }}>
-                            Last deposit: <strong style={{ color: C.slate }}>{lastPlayed}</strong>
-                        </p>
-                    )}
+                    {lastPlayed && <p style={{ margin: '6px 0 0', fontSize: '12px', color: C.grayLt }}>Last deposit: <strong style={{ color: C.slate }}>{lastPlayed}</strong></p>}
                 </div>
                 <div style={{ flex: 1, minWidth: '220px' }}>
                     {isFrozen ? (
@@ -624,7 +587,6 @@ function PeopleChip({ person, emoji = '👤', onClick }) {
     );
 }
 
-
 const TIER_CONFIG = {
     BRONZE: { label: 'Bronze', emoji: '🥉', color: '#b45309', bg: '#fef3c7', weeklyTarget: 500, cashoutLimit: 250, nextTier: 'SILVER' },
     SILVER: { label: 'Silver', emoji: '🥈', color: '#3730a3', bg: '#e0e7ff', weeklyTarget: 1000, cashoutLimit: 500, nextTier: 'GOLD' },
@@ -634,12 +596,7 @@ const TIER_CONFIG = {
 function SavedFlash({ show }) {
     if (!show) return null;
     return (
-        <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: '5px',
-            padding: '4px 12px', background: '#f0fdf4', border: '1px solid #86efac',
-            borderRadius: '20px', fontSize: '12px', fontWeight: '700', color: '#166534',
-            animation: 'fadeIn .2s ease',
-        }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '20px', fontSize: '12px', fontWeight: '700', color: '#166534', animation: 'fadeIn .2s ease' }}>
             ✓ Saved
         </span>
     );
@@ -674,25 +631,10 @@ export default function PlayerDashboard() {
             setError('');
             const res = await api.players.getPlayer(parseInt(playerId));
             setPlayer(res.data);
-            // try {
-            //     const pb = await api.players.getPendingBonuses(parseInt(playerId));
-            //     setPendingMilestones(pb?.data?.milestones || []);
-            // } catch { setPendingMilestones([]); }
+            // ── Fetch pending milestones with auth token ──────────────────
             try {
-                // Pull the backend base URL the same way MilestoneGrantModal does
-                const BACKEND = (
-                    import.meta.env.VITE_API_URL ||
-                    import.meta.env.VITE_BACKEND_URL ||
-                    import.meta.env.VITE_API_BASE_URL ||
-                    'https://oceanappbackend.onrender.com'
-                ).replace(/\/api\/?$/, '');
-
-                const pbRes = await fetch(
-                    `${BACKEND}/api/players/${parseInt(playerId)}/pending-bonuses`,
-                    { credentials: 'include' }
-                );
-                const pb = await pbRes.json();
-                setPendingMilestones(pb?.data?.milestones || []);
+                const milestones = await fetchPendingMilestones(parseInt(playerId));
+                setPendingMilestones(milestones);
             } catch {
                 setPendingMilestones([]);
             }
@@ -763,35 +705,13 @@ export default function PlayerDashboard() {
     const amtToNext = weeklyTarget ? Math.max(0, weeklyTarget - weeklyDeposits) : 0;
     const status = STATUS_MAP[player.status] || STATUS_MAP.ACTIVE;
 
-    // const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
-    // const todayTransactions = (player.transactionHistory || []).filter(tx => {
-    //     const txDate = new Date(tx.date || tx.createdAt || tx.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
-    //     return txDate === today;
-    // });
-    //     const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    // const todayTransactions = (player.transactionHistory || []).filter(tx => tx.date === today);
-    // NEW - compare against last N hours instead of exact date string
-    // const now = new Date();
-    // const startOfToday = new Date(now);
-    // startOfToday.setHours(0, 0, 0, 0);
-
-    // const todayTransactions = (player.transactionHistory || []).filter(tx => {
-    //     if (!tx.date) return false;
-    //     // Parse the date string with noon anchor (same trick used in parseTxDate)
-    //     const d = new Date(tx.date);
-    //     d.setHours(12, 0, 0, 0);
-    //     return d >= startOfToday;
-    // });
-    // Both sides now agree: "today" = current date in Texas time
+    // Texas time — both backend fmtTXDate and frontend "today" use same timezone
     const texasTodayStr = new Date().toLocaleDateString('en-US', {
         timeZone: 'America/Chicago',
         month: 'short', day: 'numeric', year: 'numeric'
     });
 
-    const todayTransactions = (player.transactionHistory || []).filter(tx =>
-        tx.date === texasTodayStr
-    );
-
+    const todayTransactions = (player.transactionHistory || []).filter(tx => tx.date === texasTodayStr);
     const todayDeposits = todayTransactions.filter(tx => tx.type === 'deposit').reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
     const todayCashouts = todayTransactions.filter(tx => tx.type === 'cashout').reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
 
@@ -821,16 +741,9 @@ export default function PlayerDashboard() {
         : player.tier === 'GOLD' ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #0ea5e9, #7c3aed)';
 
     const TX_HEADERS = [
-        { label: 'Date', style: {} },
-        { label: 'ID', style: {} },
-        { label: 'Type', style: {} },
-        { label: 'Amount', style: {} },
-        { label: 'Fee', style: {} },
-        { label: 'Received / Paid', style: {} },
-        { label: 'Game', style: {} },
-        { label: 'Wallet', style: {} },
-        { label: 'Before → After', style: {} },
-        { label: 'Status', style: {} },
+        { label: 'Date', style: {} }, { label: 'ID', style: {} }, { label: 'Type', style: {} },
+        { label: 'Amount', style: {} }, { label: 'Fee', style: {} }, { label: 'Received / Paid', style: {} },
+        { label: 'Game', style: {} }, { label: 'Wallet', style: {} }, { label: 'Before → After', style: {} }, { label: 'Status', style: {} },
     ];
 
     const paymentFields = [
@@ -842,7 +755,7 @@ export default function PlayerDashboard() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1650px', margin: '0 auto', width: '100%' }}>
 
-            {/* ── BREADCRUMB ──────────────────────────────────────────────── */}
+            {/* ── BREADCRUMB ── */}
             <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', width: 'fit-content', flexWrap: 'wrap' }}>
                 {[
                     { label: 'Dashboard', onClick: () => navigate('/') },
@@ -865,7 +778,7 @@ export default function PlayerDashboard() {
                 </span>
             </nav>
 
-            {/* ── PLAYER HEADER CARD ──────────────────────────────────────── */}
+            {/* ── PLAYER HEADER CARD ── */}
             <div style={{ ...card({ padding: '24px 28px' }), display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', gap: '18px', alignItems: 'center', flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
                     <Avatar name={player.name} size={64} fontSize={22} />
@@ -881,12 +794,10 @@ export default function PlayerDashboard() {
                             </span>
                             {sourceTags.map((src, i) => <span key={i} style={pill('#f1f5f9', C.gray)}>📍 {src}</span>)}
                         </div>
-
                         {player.referredBy && (
                             <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <span style={{ fontSize: '12px', color: C.grayLt }}>Referred by:</span>
-                                <span
-                                    onClick={() => navigate(`/playerDashboard/${player.referredBy.id}`)}
+                                <span onClick={() => navigate(`/playerDashboard/${player.referredBy.id}`)}
                                     style={{ ...pill('#f0fdf4', '#16a34a'), fontSize: '12px', cursor: 'pointer' }}
                                     onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
                                     onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
@@ -896,8 +807,6 @@ export default function PlayerDashboard() {
                         )}
                     </div>
                 </div>
-
-                {/* ── Action buttons ── */}
                 <div style={{ display: 'flex', gap: '10px', flexShrink: 0, flexWrap: 'wrap', alignSelf: 'flex-start', alignItems: 'center' }}>
                     <SavedFlash show={savedFlash} />
                     <button onClick={() => navigate(`/?page=addTransactions&playerId=${player.id}`)}
@@ -915,7 +824,7 @@ export default function PlayerDashboard() {
                 </div>
             </div>
 
-            {/* ── STAT ROW ────────────────────────────────────────────────── */}
+            {/* ── STAT ROW ── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px' }}>
                 <StatCard label="Balance" value={`$${parseFloat(player.balance || 0).toFixed(2)}`} color="#10b981" />
                 <StatCard label="Cashout Limit" value={`$${parseFloat(player.cashoutLimit || 250).toFixed(0)}`} color={C.amber} />
@@ -930,10 +839,8 @@ export default function PlayerDashboard() {
 
             <StreakFreezeCard player={player} />
 
-            {/* ── NEW: Activity stats ── */}
             <PlayerActivityStats player={player} />
 
-            {/* // Replace the DailyMilestoneBar call: */}
             <DailyMilestoneBar
                 todayDeposits={todayDeposits}
                 pendingBonuses={pendingMilestones}
@@ -941,49 +848,31 @@ export default function PlayerDashboard() {
                 onGrantClick={(m) => setGrantingMilestone(m)}
             />
 
-            {/* ── PENDING MILESTONE + REFERRAL WEEKLY BONUSES ── */}
             <PendingBonusesCard
                 playerId={player.id}
                 onRefresh={() => loadPlayer(false)}
             />
 
-            {/* ── ELIGIBLE REFERRAL BONUSES ────────────────────────────────────────────── */}
+            {/* ── ELIGIBLE REFERRAL BONUSES ── */}
             {(player.referredBy || eligLoading || eligibleBonuses.length > 0) && (
-                <div style={{
-                    ...card({ padding: '20px 24px' }),
-                    border: eligibleBonuses.length > 0 ? '1.5px solid #86efac' : `1px solid ${C.border}`,
-                }}>
-                    {/* Header */}
+                <div style={{ ...card({ padding: '20px 24px' }), border: eligibleBonuses.length > 0 ? '1.5px solid #86efac' : `1px solid ${C.border}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${eligibleBonuses.length > 0 ? '#d1fae5' : C.border}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: eligibleBonuses.length > 0 ? '#16a34a' : C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                                🎯 Referral Bonuses
-                            </p>
-                            {eligibleBonuses.length > 0 && (
-                                <span style={{ padding: '1px 8px', background: '#dcfce7', color: '#16a34a', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>
-                                    {eligibleBonuses.length} pending
-                                </span>
-                            )}
-                            {!eligLoading && eligibleBonuses.length === 0 && player.referredBy && (
-                                <span style={{ padding: '1px 8px', background: '#f1f5f9', color: C.gray, borderRadius: '10px', fontSize: '11px', fontWeight: '600' }}>
-                                    none pending
-                                </span>
-                            )}
+                            <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: eligibleBonuses.length > 0 ? '#16a34a' : C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>🎯 Referral Bonuses</p>
+                            {eligibleBonuses.length > 0 && <span style={{ padding: '1px 8px', background: '#dcfce7', color: '#16a34a', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>{eligibleBonuses.length} pending</span>}
+                            {!eligLoading && eligibleBonuses.length === 0 && player.referredBy && <span style={{ padding: '1px 8px', background: '#f1f5f9', color: C.gray, borderRadius: '10px', fontSize: '11px', fontWeight: '600' }}>none pending</span>}
                         </div>
-                        <button
-                            onClick={() => navigate(`/?page=addBonus`)}
+                        <button onClick={() => navigate(`/?page=addBonus`)}
                             style={{ padding: '6px 14px', background: eligibleBonuses.length > 0 ? '#f0fdf4' : C.bg, border: `1px solid ${eligibleBonuses.length > 0 ? '#86efac' : C.border}`, borderRadius: '8px', color: eligibleBonuses.length > 0 ? '#16a34a' : C.gray, fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
                             {eligibleBonuses.length > 0 ? 'Grant on Bonus page →' : 'Bonus page →'}
                         </button>
                     </div>
 
-                    {/* Referrer info strip */}
                     {player.referredBy && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', padding: '8px 12px', background: '#f8fafc', borderRadius: '8px', border: `1px solid ${C.border}` }}>
                             <span style={{ fontSize: '13px' }}>👤</span>
                             <span style={{ fontSize: '12px', color: C.gray }}>Referred by</span>
-                            <span
-                                onClick={() => navigate(`/playerDashboard/${player.referredBy.id}`)}
+                            <span onClick={() => navigate(`/playerDashboard/${player.referredBy.id}`)}
                                 style={{ fontWeight: '700', fontSize: '12px', color: C.sky, cursor: 'pointer', textDecoration: 'underline' }}>
                                 {player.referredBy.name || `ID ${player.referredBy.id}`}
                             </span>
@@ -991,7 +880,6 @@ export default function PlayerDashboard() {
                         </div>
                     )}
 
-                    {/* Loading */}
                     {eligLoading && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 0', color: C.grayLt, fontSize: '13px' }}>
                             <div style={{ width: '14px', height: '14px', border: `2px solid ${C.border}`, borderTopColor: C.sky, borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
@@ -999,19 +887,15 @@ export default function PlayerDashboard() {
                         </div>
                     )}
 
-                    {/* Empty state */}
                     {!eligLoading && eligibleBonuses.length === 0 && (
                         <div style={{ padding: '14px 16px', background: '#f8fafc', borderRadius: '10px', border: `1px solid ${C.border}`, textAlign: 'center' }}>
                             <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: '600', color: C.gray }}>No pending referral bonuses</p>
                             <p style={{ margin: 0, fontSize: '12px', color: C.grayLt, lineHeight: '1.5' }}>
-                                {player.referredBy
-                                    ? 'When a deposit with referral eligibility is recorded, bonuses will appear here to be granted from the Bonus page.'
-                                    : 'This player was not referred by anyone.'}
+                                {player.referredBy ? 'When a deposit with referral eligibility is recorded, bonuses will appear here.' : 'This player was not referred by anyone.'}
                             </p>
                         </div>
                     )}
 
-                    {/* Eligible records */}
                     {!eligLoading && eligibleBonuses.length > 0 && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {eligibleBonuses.map(rb => {
@@ -1023,39 +907,31 @@ export default function PlayerDashboard() {
                                 return (
                                     <div key={rb.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px', flexWrap: 'wrap', gap: '10px' }}>
                                         <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontWeight: '700', fontSize: '13px', color: '#166534' }}>
-                                                {isBside ? '🙋 Player bonus (B)' : '👤 Referrer bonus (A)'} — {label}
-                                            </div>
+                                            <div style={{ fontWeight: '700', fontSize: '13px', color: '#166534' }}>{isBside ? '🙋 Player bonus (B)' : '👤 Referrer bonus (A)'} — {label}</div>
                                             <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '4px' }}>{sub}</div>
                                             <div style={{ marginTop: '6px' }}>
-                                                <button
-                                                    onClick={() => navigate(`/?page=addBonus`)}
+                                                <button onClick={() => navigate(`/?page=addBonus`)}
                                                     style={{ padding: '4px 12px', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '6px', color: '#166634', fontWeight: '700', fontSize: '11px', cursor: 'pointer' }}>
                                                     Grant from Bonus page →
                                                 </button>
                                             </div>
                                         </div>
                                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                                            <div style={{ fontSize: '22px', fontWeight: '900', color: '#16a34a' }}>
-                                                +${rb.bonusAmount.toFixed(2)}
-                                            </div>
-                                            <div style={{ fontSize: '10px', color: '#4ade80', marginTop: '2px' }}>
-                                                {isBside ? 'for this player' : 'for this player (as referrer)'}
-                                            </div>
+                                            <div style={{ fontSize: '22px', fontWeight: '900', color: '#16a34a' }}>+${rb.bonusAmount.toFixed(2)}</div>
+                                            <div style={{ fontSize: '10px', color: '#4ade80', marginTop: '2px' }}>{isBside ? 'for this player' : 'for this player (as referrer)'}</div>
                                         </div>
                                     </div>
                                 );
                             })}
-
                             <div style={{ padding: '10px 14px', background: '#bbf7d030', border: '1px solid #d1fae5', borderRadius: '8px', fontSize: '12px', color: '#166634', lineHeight: '1.6' }}>
-                                💡 Go to the <strong>Bonus page</strong>, search for this player, and use the Referral Bonus section to grant each record. A-side and B-side are granted separately — each deducts game stock once.
+                                💡 Go to the <strong>Bonus page</strong>, search for this player, and use the Referral Bonus section to grant each record. A-side and B-side are granted separately.
                             </div>
                         </div>
                     )}
                 </div>
             )}
 
-            {/* ── BONUS BREAKDOWN ──────────────────────────────────────────── */}
+            {/* ── BONUS BREAKDOWN ── */}
             <div style={card({ padding: '20px 22px' })}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${C.border}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1120,7 +996,7 @@ export default function PlayerDashboard() {
                 })()}
             </div>
 
-            {/* ── TIER PROGRESS ────────────────────────────────────────────── */}
+            {/* ── TIER PROGRESS ── */}
             <div style={card({ padding: '18px 24px' })}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
                     <div>
@@ -1170,7 +1046,7 @@ export default function PlayerDashboard() {
                 </div>
             </div>
 
-            {/* ── REFERRALS & FRIENDS ───────────────────────────────────────── */}
+            {/* ── REFERRALS & FRIENDS ── */}
             {((player.referralsList?.length > 0) || (player.friendsList?.length > 0)) && (
                 <div style={card({ padding: '20px 22px' })}>
                     {player.referralsList?.length > 0 && (
@@ -1178,16 +1054,13 @@ export default function PlayerDashboard() {
                             <SectionHeader title="Referrals" count={player.referralsList.length} />
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                 {player.referralsList.map(r => (
-                                    <PeopleChip key={r.id} person={r} emoji="🎯"
-                                        onClick={() => navigate(`/playerDashboard/${r.id}`)} />
+                                    <PeopleChip key={r.id} person={r} emoji="🎯" onClick={() => navigate(`/playerDashboard/${r.id}`)} />
                                 ))}
                             </div>
                         </div>
                     )}
                     {player.friendsList?.length > 0 && (() => {
-                        const uniqueFriends = player.friendsList.filter(
-                            (f, i, arr) => arr.findIndex(x => x.id === f.id) === i
-                        );
+                        const uniqueFriends = player.friendsList.filter((f, i, arr) => arr.findIndex(x => x.id === f.id) === i);
                         return (
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${C.border}` }}>
@@ -1201,10 +1074,7 @@ export default function PlayerDashboard() {
                                     </button>
                                 </div>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                    {uniqueFriends.map(f => (
-                                        <PeopleChip key={f.id} person={f} emoji="🤝"
-                                            onClick={() => navigate(`/playerDashboard/${f.id}`)} />
-                                    ))}
+                                    {uniqueFriends.map(f => <PeopleChip key={f.id} person={f} emoji="🤝" onClick={() => navigate(`/playerDashboard/${f.id}`)} />)}
                                 </div>
                             </div>
                         );
@@ -1212,7 +1082,7 @@ export default function PlayerDashboard() {
                 </div>
             )}
 
-            {/* ── GRANTED BONUSES ──────────────────────────────────────────── */}
+            {/* ── GRANTED BONUSES ── */}
             <div style={card({ padding: '20px 22px' })}>
                 <SectionHeader title="Granted Bonuses" count={grantedBonuses.length} />
                 {grantedBonuses.length === 0
@@ -1239,7 +1109,7 @@ export default function PlayerDashboard() {
                 }
             </div>
 
-            {/* ── DEPOSIT / CASHOUT CHART ──────────────────────────────────── */}
+            {/* ── DEPOSIT / CASHOUT CHART ── */}
             <div style={card({ padding: '20px 24px' })}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
                     <p style={{ margin: 0, fontWeight: '800', fontSize: '14px', color: C.slate }}>Deposits vs Cashouts</p>
@@ -1273,23 +1143,16 @@ export default function PlayerDashboard() {
                         </AreaChart>
                     </ResponsiveContainer>
                 ) : (
-                    <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.grayLt, fontSize: '13px' }}>
-                        No transaction data in this range
-                    </div>
+                    <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.grayLt, fontSize: '13px' }}>No transaction data in this range</div>
                 )}
             </div>
 
-            {/* ── SOCIAL & PAYMENT INFO ─────────────────────────────────────── */}
+            {/* ── SOCIAL & PAYMENT INFO ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-
-                {/* Social handles */}
                 <div style={card({ padding: '18px 22px' })}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${C.border}` }}>
                         <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Social Media</p>
-                        <button onClick={() => setShowEdit(true)}
-                            style={{ padding: '6px 14px', background: C.skyLt, border: `1px solid #bae6fd`, borderRadius: '8px', color: C.skyDk, fontWeight: '700', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                            ✏️ Edit Socials
-                        </button>
+                        <button onClick={() => setShowEdit(true)} style={{ padding: '6px 14px', background: C.skyLt, border: `1px solid #bae6fd`, borderRadius: '8px', color: C.skyDk, fontWeight: '700', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>✏️ Edit Socials</button>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {[
@@ -1317,14 +1180,10 @@ export default function PlayerDashboard() {
                     </div>
                 </div>
 
-                {/* Payment handles */}
                 <div style={card({ padding: '18px 22px' })}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${C.border}` }}>
                         <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Payment Handles</p>
-                        <button onClick={() => setShowEdit(true)}
-                            style={{ padding: '6px 14px', background: C.violetLt, border: `1px solid ${C.violetBdr}`, borderRadius: '8px', color: C.violet, fontWeight: '700', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                            ✏️ Edit Handles
-                        </button>
+                        <button onClick={() => setShowEdit(true)} style={{ padding: '6px 14px', background: C.violetLt, border: `1px solid ${C.violetBdr}`, borderRadius: '8px', color: C.violet, fontWeight: '700', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>✏️ Edit Handles</button>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {paymentFields.map(({ key, label, emoji, prefix, urlFn }) => {
@@ -1333,11 +1192,7 @@ export default function PlayerDashboard() {
                             const url = urlFn ? urlFn(val) : null;
                             const display = `${prefix}${val}`;
                             return (
-                                <div key={key} style={{
-                                    padding: '10px 14px', background: C.violetLt,
-                                    border: `1px solid ${C.violetBdr}`, borderRadius: '10px',
-                                    fontSize: '12px', color: C.slate, display: 'flex', alignItems: 'center', gap: '8px',
-                                }}>
+                                <div key={key} style={{ padding: '10px 14px', background: C.violetLt, border: `1px solid ${C.violetBdr}`, borderRadius: '10px', fontSize: '12px', color: C.slate, display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '15px' }}>{emoji}</span>
                                     <div>
                                         <div style={{ fontSize: '10px', fontWeight: '700', color: C.violet, textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>{label}</div>
@@ -1358,7 +1213,7 @@ export default function PlayerDashboard() {
                 </div>
             </div>
 
-            {/* ── TRANSACTION HISTORY TABLE ─────────────────────────────────── */}
+            {/* ── TRANSACTION HISTORY TABLE ── */}
             <div style={card({ padding: '18px 22px' })}>
                 <SectionHeader title="Recent Transactions (Last 30 Days)" count={(player.transactionHistory || []).length} />
                 <div style={{ overflowX: 'auto', borderRadius: '10px', border: `1px solid ${C.border}` }}>
@@ -1366,51 +1221,30 @@ export default function PlayerDashboard() {
                         <thead style={{ position: 'sticky', top: 0, zIndex: 5 }}>
                             <tr>
                                 {TX_HEADERS.map(h => (
-                                    <th key={h.label} style={{
-                                        textAlign: 'left', padding: '10px 14px',
-                                        fontWeight: '700', fontSize: '11px',
-                                        textTransform: 'uppercase', letterSpacing: '0.4px',
-                                        borderBottom: `1px solid ${C.border}`,
-                                        whiteSpace: 'nowrap',
-                                        background: h.style.background || C.bg,
-                                        color: h.style.color || C.grayLt,
-                                    }}>{h.label}</th>
+                                    <th key={h.label} style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.4px', borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap', background: h.style.background || C.bg, color: h.style.color || C.grayLt }}>{h.label}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
                             {(player.transactionHistory || []).length === 0
-                                ? (
-                                    <tr>
-                                        <td colSpan={TX_HEADERS.length} style={{ padding: '28px', textAlign: 'center', color: C.grayLt }}>
-                                            No transactions in last 30 days
-                                        </td>
-                                    </tr>
-                                )
+                                ? <tr><td colSpan={TX_HEADERS.length} style={{ padding: '28px', textAlign: 'center', color: C.grayLt }}>No transactions in last 30 days</td></tr>
                                 : (player.transactionHistory || []).slice(0, 40).map(tx => {
                                     const typeKey = (tx.type || '').toLowerCase();
                                     const isCustomBonus = !TX_TYPE_MAP[typeKey] && typeKey !== 'deposit' && typeKey !== 'cashout';
-                                    const t = TX_TYPE_MAP[typeKey] || {
-                                        label: tx.type,
-                                        color: isCustomBonus ? '#7c3aed' : C.gray,
-                                        bg: isCustomBonus ? '#f5f3ff' : C.bg,
-                                    };
+                                    const t = TX_TYPE_MAP[typeKey] || { label: tx.type, color: isCustomBonus ? '#7c3aed' : C.gray, bg: isCustomBonus ? '#f5f3ff' : C.bg };
                                     const isDeposit = tx.type === 'deposit';
                                     const isCashout = tx.type === 'cashout';
                                     const isPending = tx.status === 'PENDING';
                                     const isCompleted = tx.status === 'COMPLETED';
-
                                     const depositAmt = parseFloat(tx.amount || 0);
                                     const feeVal = parseFloat(tx.fee || 0);
                                     const paidAmt = parseFloat(tx.paidAmount || 0);
                                     const receivedAmt = isDeposit ? depositAmt - feeVal : null;
-
                                     const isPartial = isCashout && isPending && paidAmt > 0 && paidAmt < depositAmt;
                                     const isCancelled = tx.status === 'CANCELLED';
                                     const statusBg = isCancelled ? '#f1f5f9' : isPartial ? '#fef3c7' : isCompleted ? '#dcfce7' : isPending ? '#fef3c7' : '#fee2e2';
                                     const statusColor = isCancelled ? '#64748b' : isPartial ? '#92400e' : isCompleted ? '#166534' : isPending ? '#92400e' : '#991b1b';
                                     const statusLabel = isCancelled ? 'CANCELLED' : isPartial ? 'PARTIAL' : tx.status;
-
                                     const stockBefore = tx.gameStockBefore;
                                     const stockAfter = tx.gameStockAfter;
                                     const effectiveAfter = isCashout && stockBefore != null ? stockBefore + paidAmt : stockAfter;
@@ -1419,64 +1253,38 @@ export default function PlayerDashboard() {
 
                                     return (
                                         <tr key={tx.id}
-                                            style={{ borderBottom: `1px solid ${C.border}`, background: isCashout && isPending ? '#fffdf5' : 'transparent', opacity: tx.status === 'CANCELLED' ? 0.55 : 1, }}
+                                            style={{ borderBottom: `1px solid ${C.border}`, background: isCashout && isPending ? '#fffdf5' : 'transparent', opacity: tx.status === 'CANCELLED' ? 0.55 : 1 }}
                                             onMouseEnter={e => e.currentTarget.style.background = isCashout && isPending ? '#fffbeb' : C.bg}
                                             onMouseLeave={e => e.currentTarget.style.background = isCashout && isPending ? '#fffdf5' : 'transparent'}>
-
                                             <td style={{ padding: '11px 14px', color: C.grayLt, fontSize: '12px', whiteSpace: 'nowrap' }}>{tx.date}</td>
-
                                             <td style={{ padding: '11px 14px', fontWeight: '700', color: C.sky, fontSize: '12px', whiteSpace: 'nowrap' }}>
                                                 {txId}
-                                                {isCashout && isPending && (
-                                                    <div style={{ marginTop: '3px' }}>
-                                                        <span style={{ fontSize: '9px', padding: '1px 5px', background: '#fef3c7', color: '#92400e', borderRadius: '4px', fontWeight: '700' }}>⏳ AWAITING</span>
-                                                    </div>
-                                                )}
+                                                {isCashout && isPending && <div style={{ marginTop: '3px' }}><span style={{ fontSize: '9px', padding: '1px 5px', background: '#fef3c7', color: '#92400e', borderRadius: '4px', fontWeight: '700' }}>⏳ AWAITING</span></div>}
                                             </td>
-
                                             <td style={{ padding: '11px 14px' }}>
                                                 <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', background: t.bg, color: t.color, whiteSpace: 'nowrap' }}>{t.label}</span>
                                             </td>
-
-                                            <td style={{ padding: '11px 14px', fontWeight: '800', fontSize: '14px', color: isCashout ? C.red : '#10b981', whiteSpace: 'nowrap' }}>
-                                                {isCashout ? '−' : '+'}${depositAmt.toFixed(2)}
-                                            </td>
-
+                                            <td style={{ padding: '11px 14px', fontWeight: '800', fontSize: '14px', color: isCashout ? C.red : '#10b981', whiteSpace: 'nowrap' }}>{isCashout ? '−' : '+'}${depositAmt.toFixed(2)}</td>
                                             <td style={{ padding: '11px 14px', background: isDeposit ? '#fafeff' : 'transparent', whiteSpace: 'nowrap' }}>
-                                                {feeVal > 0
-                                                    ? <span style={{ fontWeight: '700', fontSize: '12px', color: '#f59e0b' }}>−${feeVal.toFixed(2)}</span>
-                                                    : <span style={{ color: C.border, fontSize: '12px' }}>—</span>
-                                                }
+                                                {feeVal > 0 ? <span style={{ fontWeight: '700', fontSize: '12px', color: '#f59e0b' }}>−${feeVal.toFixed(2)}</span> : <span style={{ color: C.border, fontSize: '12px' }}>—</span>}
                                             </td>
-
                                             <td style={{ padding: '11px 14px', background: (isDeposit || isCashout) ? '#fafeff' : 'transparent' }}>
                                                 {isDeposit
                                                     ? <span style={{ fontWeight: '700', fontSize: '13px', color: C.sky }}>${(receivedAmt ?? depositAmt).toFixed(2)}</span>
-                                                    : isCashout
-                                                        ? <TxPaymentProgress paid={paidAmt} total={depositAmt} />
-                                                        : <span style={{ color: C.border, fontSize: '12px' }}>—</span>
-                                                }
+                                                    : isCashout ? <TxPaymentProgress paid={paidAmt} total={depositAmt} />
+                                                        : <span style={{ color: C.border, fontSize: '12px' }}>—</span>}
                                             </td>
-
                                             <td style={{ padding: '11px 14px', fontSize: '12px', color: C.gray, whiteSpace: 'nowrap' }}>
-                                                {tx.gameName
-                                                    ? <span style={{ padding: '2px 7px', background: '#f1f5f9', borderRadius: '5px', fontWeight: '500' }}>{tx.gameName.match(/^[^-]+/)?.[0]?.trim() || tx.gameName}</span>
-                                                    : <span style={{ color: C.border }}>—</span>
-                                                }
+                                                {tx.gameName ? <span style={{ padding: '2px 7px', background: '#f1f5f9', borderRadius: '5px', fontWeight: '500' }}>{tx.gameName.match(/^[^-]+/)?.[0]?.trim() || tx.gameName}</span> : <span style={{ color: C.border }}>—</span>}
                                             </td>
-
                                             <td style={{ padding: '11px 14px', minWidth: '110px' }}>
                                                 {tx.walletMethod
                                                     ? <div>
-                                                        <div style={{ fontSize: '12px', fontWeight: '600' }}>
-                                                            <span style={{ padding: '2px 7px', background: '#f0f9ff', borderRadius: '5px', color: C.sky }}>💳 {tx.walletMethod}</span>
-                                                        </div>
+                                                        <div style={{ fontSize: '12px', fontWeight: '600' }}><span style={{ padding: '2px 7px', background: '#f0f9ff', borderRadius: '5px', color: C.sky }}>💳 {tx.walletMethod}</span></div>
                                                         {tx.walletName && <div style={{ fontSize: '11px', color: C.grayLt, marginTop: '2px' }}>{tx.walletName}</div>}
                                                     </div>
-                                                    : <span style={{ color: C.border, fontSize: '12px' }}>—</span>
-                                                }
+                                                    : <span style={{ color: C.border, fontSize: '12px' }}>—</span>}
                                             </td>
-
                                             <td style={{ padding: '11px 14px', fontSize: '12px', whiteSpace: 'nowrap' }}>
                                                 {stockBefore != null && effectiveAfter != null ? (() => {
                                                     const isUp = parseFloat(effectiveAfter) >= parseFloat(stockBefore);
@@ -1499,11 +1307,8 @@ export default function PlayerDashboard() {
                                                     );
                                                 })() : <span style={{ color: C.border }}>—</span>}
                                             </td>
-
                                             <td style={{ padding: '11px 14px' }}>
-                                                <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', background: statusBg, color: statusColor, whiteSpace: 'nowrap' }}>
-                                                    {statusLabel}
-                                                </span>
+                                                <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', background: statusBg, color: statusColor, whiteSpace: 'nowrap' }}>{statusLabel}</span>
                                             </td>
                                         </tr>
                                     );
@@ -1514,7 +1319,7 @@ export default function PlayerDashboard() {
                 </div>
             </div>
 
-            {/* ── META ROW ─────────────────────────────────────────────────── */}
+            {/* ── META ROW ── */}
             <div style={card({ padding: '14px 22px' })}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '12px', color: C.grayLt }}>
                     <span>🆔 ID: <strong style={{ color: C.slate }}>#{player.id}</strong></span>
@@ -1523,14 +1328,8 @@ export default function PlayerDashboard() {
                 </div>
             </div>
 
-            {/* ── MODALS ───────────────────────────────────────────────────── */}
-            {showEdit && (
-                <EditPlayer
-                    player={player}
-                    onClose={() => setShowEdit(false)}
-                    onSaved={handleSaved}
-                />
-            )}
+            {/* ── MODALS ── */}
+            {showEdit && <EditPlayer player={player} onClose={() => setShowEdit(false)} onSaved={handleSaved} />}
 
             {showDelete && (
                 <DeleteModal player={player} onClose={() => setShowDelete(false)}
@@ -1545,17 +1344,11 @@ export default function PlayerDashboard() {
                     onClose={() => setGrantingMilestone(null)}
                     onGranted={async () => {
                         setGrantingMilestone(null);
-                        await loadPlayer(false);   // ← refreshes transactionHistory + bonuses
+                        await loadPlayer(false);
                         // Re-fetch pending milestones so card flips to "granted ✓"
                         try {
-                            const BACKEND = (import.meta.env.VITE_API_URL || 'https://oceanappbackend.onrender.com').replace(/\/api\/?$/, '');
-                            const token = localStorage.getItem('authToken');
-                            const pbRes = await fetch(`${BACKEND}/api/players/${parseInt(playerId)}/pending-bonuses`, {
-                                credentials: 'include',
-                                headers: token ? { Authorization: `Bearer ${token}` } : {},
-                            });
-                            const pb = await pbRes.json();
-                            setPendingMilestones(pb?.data?.milestones || []);
+                            const milestones = await fetchPendingMilestones(parseInt(playerId));
+                            setPendingMilestones(milestones);
                         } catch { setPendingMilestones([]); }
                         setSavedFlash(true);
                         setTimeout(() => setSavedFlash(false), 2500);
