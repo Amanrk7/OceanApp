@@ -1094,9 +1094,9 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
 
       )}
 
-      {(usr?.role === 'ADMIN' || usr?.role === 'SUPER_ADMIN') && (
-  <AdminTeamShiftsSection />
-)}
+      {(currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
+        <AdminTeamShiftsSection />
+      )}
       <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
     </div>
   );
