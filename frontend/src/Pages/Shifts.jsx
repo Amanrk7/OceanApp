@@ -440,7 +440,8 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   const startTotalG = Math.round(startSnapshot?.totalGames ?? 0);
 
   const endTotalW = r2(endWallets.reduce((s, w) => s + (w.balance ?? 0), 0));
-  const endTotalG = Math.round(endGames.reduce((s, g) => s + (g.pointStock ?? 0), 0));
+  // const endTotalG = Math.round(endGames.reduce((s, g) => s + (g.pointStock ?? 0), 0));
+  const endTotalG = endGames.reduce((s, g) => s + Math.round(g.pointStock ?? 0), 0);
 
   const walletChange = hasStartSnapshot ? r2(endTotalW - startTotalW) : 0;
   const gameChange = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
@@ -458,19 +459,49 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   const hasFees = totalFees > 0.001;
 
   // ✅ Expected wallet change = (deposits - depositFees) - (cashouts + cashoutFees)
-  const expectedWalletChange = r2((deposits - depositFees) - (cashouts + cashoutFees));
+  // const expectedWalletChange = r2((deposits - depositFees) - (cashouts + cashoutFees));
   // ✅ Expected game change = -(deposits + bonuses - cashouts) — fees don't affect game stock
-  const expectedGameChange = Math.round(-(deposits + bonuses - cashouts));
+  // const expectedGameChange = Math.round(-(deposits + bonuses - cashouts));
 
   // ✅ Separate $ and pts discrepancies — never mix them
-  const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
-  const gameDisc = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
+  // const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
+  // const gameDisc = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
 
   // ✅ balanced checks wallet and game separately
-  const walletBalanced = Math.abs(walletDisc) < 0.02;
-  const gameBalanced = Math.abs(gameDisc) < 2;
-  const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced);
+  // const walletBalanced = Math.abs(walletDisc) < 0.02;
+  // const gameBalanced = Math.abs(gameDisc) < 2;
+  // const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced);
 
+// ── Replace the existing discrepancy calculations ──────────────────────────
+
+// Expected wallet change (fees-adjusted): unchanged
+const expectedWalletChange = r2((deposits - depositFees) - (cashouts + cashoutFees));
+
+// ✅ User's formula: walletChange + fees = -gameChange - bonuses
+// => expectedGameChange derived from wallet side (no circular dependency):
+// -gameChange = walletChange + fees + bonuses
+// gameChange  = -(walletChange_expected + fees + bonuses)
+//             = -((deposits - depositFees - cashouts - cashoutFees) + totalFees + bonuses)
+//             = -(deposits - cashouts + bonuses)   ← fees cancel out
+const expectedGameChange = Math.round(-(deposits - cashouts + bonuses));
+// Note: this is identical to the prior formula mathematically,
+// but now expressed from user's cross-check perspective
+
+// Separate discrepancies
+const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
+const gameDisc   = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
+
+// ✅ Combined cross-check (user's formula):
+// walletChange + fees + gameChange + bonuses should = 0
+const crossDisc = hasStartSnapshot
+  ? r2(walletChange + totalFees + gameChange + bonuses)
+  : 0;
+
+const walletBalanced = Math.abs(walletDisc) < 0.02;
+const gameBalanced   = Math.abs(gameDisc) < 1;      // tighter: 0pt tolerance after rounding fix
+const crossBalanced  = Math.abs(crossDisc) < 0.02;  // cross-formula check
+const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced && crossBalanced);
+  
   const walletRows = endWallets.map(w => {
     const s = startWallets.find(sw => sw.id === w.id);
     return { ...w, startBal: r2(s?.balance ?? 0), endBal: r2(w.balance ?? 0) };
@@ -725,11 +756,21 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                   <p style={{ margin: '0 0 4px', fontWeight: '700', color: balanced ? '#166534' : '#991b1b', fontSize: '14px' }}>
                     {balanced ? '✓ Fully Balanced' : `⚠️ Discrepancy Detected${!walletBalanced ? ` — Cash $${Math.abs(walletDisc).toFixed(2)}` : ''}${!gameBalanced ? ` — Points ${Math.abs(gameDisc)} pts` : ''}`}
                   </p>
-                  <p style={{ margin: 0, fontSize: '12px', color: balanced ? '#16a34a' : '#dc2626', lineHeight: 1.5 }}>
+                  {/* <p style={{ margin: 0, fontSize: '12px', color: balanced ? '#16a34a' : '#dc2626', lineHeight: 1.5 }}>
                     {balanced
                       ? `Net profit $${netProfit.toFixed(2)} (D−C) · Wallet Δ ${sign$(walletChange)}${fmt$(walletChange)}${hasFees ? ` after $${totalFees.toFixed(2)} fees` : ''} · Game Δ ${gameChange} pts`
                       : `${!walletBalanced ? `Wallet: ${sign$(walletDisc)}${fmt$(walletDisc)} vs expected $${expectedWalletChange.toFixed(2)}` : ''}${!walletBalanced && !gameBalanced ? ' | ' : ''}${!gameBalanced ? `Game: ${gameDisc >= 0 ? '+' : ''}${gameDisc} pts vs expected ${expectedGameChange} pts` : ''}`}
-                  </p>
+                  </p> */}
+                  <p style={{ margin: 0, fontSize: '12px', color: balanced ? '#16a34a' : '#dc2626', lineHeight: 1.5 }}>
+  {balanced
+    ? `Net profit $${netProfit.toFixed(2)} · Wallet Δ ${sign$(walletChange)}${fmt$(walletChange)}${hasFees ? ` +$${totalFees.toFixed(2)} fees` : ''} = Points deducted ${Math.abs(gameChange)} pts${bonuses > 0 ? ` + $${bonuses.toFixed(2)} bonuses` : ''}`
+    : [
+        !walletBalanced ? `Wallet: ${sign$(walletDisc)}${fmt$(walletDisc)} vs expected` : '',
+        !gameBalanced   ? `Game: ${gameDisc >= 0 ? '+' : ''}${gameDisc} pts vs expected` : '',
+        !crossBalanced  ? `Cross-check: W+fees+G+bonus = ${crossDisc.toFixed(2)} (should be 0)` : '',
+      ].filter(Boolean).join(' | ')
+  }
+</p>
                 </div>
               </div>
             )}
