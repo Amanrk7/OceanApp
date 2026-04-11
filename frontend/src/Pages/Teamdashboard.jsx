@@ -1,12 +1,13 @@
-// components/MemberTasksSection.jsx
+// components/MemberTasksSection.jsx — Enhanced Dashboard
 import { useState, useEffect, useRef, useCallback, useMemo, useContext } from "react";
 import { useNavigate } from 'react-router-dom';
 import {
   CheckCircle, Circle, Clock, AlertCircle, RefreshCw,
   TrendingUp, Users, List, ChevronDown, ChevronUp,
-  Calendar, Plus, X, Check,
+  Calendar, Plus, X, Check, Star, Award, Zap, Flame,
   UserCheck, Phone, Mail, Camera, Instagram, Send, User,
-  ClipboardList, Lock, Unlock, Undo2, Gift, Search
+  ClipboardList, Lock, Unlock, Undo2, Gift, Search,
+  BarChart2, Shield, Activity, Target
 } from "lucide-react";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { PlayerFollowupCard, BonusFollowupCard } from './FollowupTaskCards';
@@ -54,15 +55,14 @@ const LABEL_STYLE = {
 };
 const PRIORITY_COLOR = { LOW: "#22c55e", MEDIUM: "#f59e0b", HIGH: "#f97316", URGENT: "#dc2626" };
 
-// ─── type catalogue ───────────────────────────────────────────
 const TYPE_META = {
-  STANDARD:        { label: "Standard Task",    icon: List,          color: "#6366f1", lightBg: "#eef2ff", border: "#c7d2fe" },
-  DAILY_CHECKLIST: { label: "Daily Checklist",  icon: CheckCircle,   color: "#0ea5e9", lightBg: "#f0f9ff", border: "#bae6fd" },
-  PLAYER_ADDITION: { label: "Player Addition",  icon: Users,         color: "#8b5cf6", lightBg: "#f5f3ff", border: "#ddd6fe" },
-  REVENUE_TARGET:  { label: "Revenue Target",   icon: TrendingUp,    color: "#22c55e", lightBg: "#f0fdf4", border: "#86efac" },
-  PLAYER_FOLLOWUP: { label: "Player Followup",  icon: Users,         color: "#f97316", lightBg: "#fff7ed", border: "#fed7aa" },
-  BONUS_FOLLOWUP:  { label: "Bonus Followup",   icon: Gift,          color: "#10b981", lightBg: "#ecfdf5", border: "#6ee7b7" },
-  MISSING_INFO:    { label: "Missing Info",     icon: ClipboardList, color: "#ec4899", lightBg: "#fdf2f8", border: "#f9a8d4" },
+  STANDARD:        { label: "Standard",       icon: List,          color: "#6366f1", lightBg: "#eef2ff", border: "#c7d2fe" },
+  DAILY_CHECKLIST: { label: "Daily Checklist", icon: CheckCircle,   color: "#0ea5e9", lightBg: "#f0f9ff", border: "#bae6fd" },
+  PLAYER_ADDITION: { label: "Player Addition", icon: Users,         color: "#8b5cf6", lightBg: "#f5f3ff", border: "#ddd6fe" },
+  REVENUE_TARGET:  { label: "Revenue Target",  icon: TrendingUp,    color: "#22c55e", lightBg: "#f0fdf4", border: "#86efac" },
+  PLAYER_FOLLOWUP: { label: "Player Followup", icon: Users,         color: "#f97316", lightBg: "#fff7ed", border: "#fed7aa" },
+  BONUS_FOLLOWUP:  { label: "Bonus Followup",  icon: Gift,          color: "#10b981", lightBg: "#ecfdf5", border: "#6ee7b7" },
+  MISSING_INFO:    { label: "Missing Info",    icon: ClipboardList, color: "#ec4899", lightBg: "#fdf2f8", border: "#f9a8d4" },
 };
 
 const STAT_TYPES = ["STANDARD","DAILY_CHECKLIST","PLAYER_ADDITION","REVENUE_TARGET","PLAYER_FOLLOWUP","BONUS_FOLLOWUP"];
@@ -76,7 +76,232 @@ const MISSING_FIELD_META = {
   assigned_member: { icon: User,      label: "Assigned Member", placeholder: "Select member…",     type: "select", color: "#ef4444" },
 };
 
-// ─── small reusable ────────────────────────────────────────────
+// ─── Rating categories ────────────────────────────────────────
+const RATING_CATEGORIES = [
+  { key: "communicationWithPlayer",   label: "Communication with Player",        icon: "💬" },
+  { key: "loadReloadSmoothness",      label: "Load/Reload Smoothness",           icon: "⚡" },
+  { key: "liveReportingToPlayers",    label: "Live Reporting to Players",        icon: "📡" },
+  { key: "playtimeBonus",             label: "Playtime Bonus",                   icon: "🎮" },
+  { key: "referralBonus",             label: "Referral Bonus (old & new)",       icon: "👥" },
+  { key: "matchAndRandomBonus",       label: "Match & Random Bonus",             icon: "🎯" },
+  { key: "playerEngagementOverall",   label: "Player Engagement Overall",        icon: "🔥" },
+  { key: "reachingOutInShifts",       label: "Reaching Out in Shifts",           icon: "📲" },
+  { key: "reachingOutFromOwnList",    label: "Reaching Out from Own List",       icon: "📋" },
+  { key: "cashoutTiming",             label: "Cashout Timing",                   icon: "⏱️" },
+];
+
+// ══════════════════════════════════════════════════════════════
+// ── NEW: Visual Components ─────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+
+function PerformanceRing({ pct, size = 100 }) {
+  const r = 40;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - Math.min(100, Math.max(0, pct)) / 100);
+  const color = pct >= 75 ? '#4ade80' : pct >= 45 ? '#fbbf24' : '#f87171';
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" style={{ overflow: 'visible' }}>
+      <circle cx="50" cy="50" r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="8" />
+      <circle cx="50" cy="50" r={r} fill="none" stroke={color}
+        strokeWidth="8" strokeDasharray={circ} strokeDashoffset={offset}
+        strokeLinecap="round" transform="rotate(-90 50 50)"
+        style={{ transition: "stroke-dashoffset 0.8s cubic-bezier(.4,0,.2,1)", filter: `drop-shadow(0 0 6px ${color}80)` }}
+      />
+      <text x="50" y="45" textAnchor="middle" fontSize="22" fontWeight="800" fill="#fff">{pct}</text>
+      <text x="50" y="60" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.55)" fontWeight="500">% DONE</text>
+    </svg>
+  );
+}
+
+function StarDisplay({ value, max = 5, size = 13 }) {
+  const full = Math.floor(value);
+  const half = value - full >= 0.4;
+  return (
+    <span style={{ display: 'inline-flex', gap: '1px', alignItems: 'center' }}>
+      {Array.from({ length: max }, (_, i) => (
+        <span key={i} style={{
+          fontSize: `${size}px`, lineHeight: 1,
+          color: i < full ? '#f59e0b' : (i === full && half) ? '#fbbf24' : '#d1d5db',
+          filter: i < full ? 'drop-shadow(0 0 2px #f59e0b80)' : 'none',
+        }}>★</span>
+      ))}
+    </span>
+  );
+}
+
+function RatingBar({ label, value, max = 5, color = "#f59e0b" }) {
+  const pct = (value / max) * 100;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+      <span style={{ color: '#64748b', flex: '0 0 140px', fontWeight: '500', fontSize: '10.5px' }}>{label}</span>
+      <div style={{ flex: 1, height: '5px', background: '#f1f5f9', borderRadius: '999px', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${color}, ${color}cc)`, borderRadius: '999px', transition: 'width 0.5s ease' }} />
+      </div>
+      <span style={{ fontWeight: '700', color: '#0f172a', minWidth: '20px', textAlign: 'right' }}>{value.toFixed(1)}</span>
+    </div>
+  );
+}
+
+function QuickStat({ label, value, icon: Icon, color, sub, glow }) {
+  return (
+    <div style={{
+      background: '#fff', borderRadius: '14px', padding: '14px 16px',
+      border: `1.5px solid ${color}25`,
+      boxShadow: glow ? `0 4px 20px ${color}20` : '0 1px 4px rgba(15,23,42,.06)',
+      flex: '1 1 80px', minWidth: '70px', position: 'relative', overflow: 'hidden',
+    }}>
+      <div style={{ position: 'absolute', top: -8, right: -8, width: 50, height: 50, borderRadius: '50%', background: `${color}10` }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+        <span style={{ fontSize: '26px', fontWeight: '900', color, lineHeight: 1, letterSpacing: '-1px' }}>{value}</span>
+        <div style={{ width: '28px', height: '28px', borderRadius: '9px', background: `${color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Icon style={{ width: '13px', height: '13px', color }} />
+        </div>
+      </div>
+      <div style={{ fontSize: '11px', fontWeight: '700', color: '#1e293b', lineHeight: 1.2 }}>{label}</div>
+      {sub && <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>{sub}</div>}
+    </div>
+  );
+}
+
+// ── Rating Display Panel ────────────────────────────────────────
+function RatingPanel({ ratings, isAdmin }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!ratings) return null;
+  const { lastShift, monthly, total, categoryAverages } = ratings;
+  const overall = lastShift?.overallRating ?? 0;
+  const starColor = overall >= 4 ? '#22c55e' : overall >= 3 ? '#f59e0b' : '#ef4444';
+  const starBg = overall >= 4 ? '#f0fdf4' : overall >= 3 ? '#fffbeb' : '#fef2f2';
+  const starBorder = overall >= 4 ? '#86efac' : overall >= 3 ? '#fde68a' : '#fca5a5';
+
+  return (
+    <div style={{ ...CARD_STYLE, overflow: 'hidden', borderLeft: `3px solid ${starColor}` }}>
+      <div style={{ padding: '14px 18px', display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ width: '42px', height: '42px', borderRadius: '11px', background: starBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>⭐</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '3px' }}>
+            {isAdmin ? 'Admin Performance Rating' : 'Your Performance Rating'}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <StarDisplay value={overall} size={15} />
+            <span style={{ fontSize: '13px', fontWeight: '800', color: starColor }}>{overall.toFixed(1)}/5</span>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>Last Shift</span>
+          </div>
+          {lastShift?.recommendations && (
+            <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#64748b', fontStyle: 'italic', lineHeight: 1.4 }}>"{lastShift.recommendations}"</p>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '10px', flexShrink: 0, flexWrap: 'wrap' }}>
+          <div style={{ textAlign: 'center', padding: '8px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{monthly?.avgRating?.toFixed(1) ?? '—'}</div>
+            <div style={{ fontSize: '9px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px', marginTop: '1px' }}>This Month</div>
+          </div>
+          <div style={{ textAlign: 'center', padding: '8px 12px', background: '#fffbeb', borderRadius: '10px', border: '1px solid #fde68a' }}>
+            <div style={{ fontSize: '16px', fontWeight: '800', color: '#d97706' }}>⭐ {total?.totalStars ?? 0}</div>
+            <div style={{ fontSize: '9px', fontWeight: '700', color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.4px', marginTop: '1px' }}>Total Stars</div>
+          </div>
+        </div>
+        <button onClick={() => setExpanded(v => !v)} style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', padding: '6px', color: '#94a3b8', display: 'flex', flexShrink: 0 }}>
+          {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        </button>
+      </div>
+      {expanded && categoryAverages && (
+        <div style={{ padding: '0 18px 16px', display: 'flex', flexDirection: 'column', gap: '7px', borderTop: '1px solid #f1f5f9', paddingTop: '14px' }}>
+          <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Category Breakdown (Last Shift)</div>
+          {RATING_CATEGORIES.map(cat => (
+            <div key={cat.key} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '13px', flex: '0 0 18px' }}>{cat.icon}</span>
+              <span style={{ fontSize: '11px', color: '#475569', flex: '0 0 160px', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.label}</span>
+              <div style={{ flex: 1, height: '5px', background: '#f1f5f9', borderRadius: '999px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: `linear-gradient(90deg, #f59e0b, #fb923c)`, borderRadius: '999px', width: `${((lastShift[cat.key] ?? 0) / 5) * 100}%`, transition: 'width 0.5s' }} />
+              </div>
+              <StarDisplay value={lastShift[cat.key] ?? 0} size={11} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Admin All-Member Ratings Overview ─────────────────────────
+function AdminRatingOverview({ teamRatings }) {
+  if (!teamRatings?.length) return null;
+  return (
+    <div style={{ ...CARD_STYLE, overflow: 'hidden' }}>
+      <div style={{ padding: '14px 18px 10px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #f1f5f9' }}>
+        <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: 'linear-gradient(135deg, #f59e0b, #f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px' }}>⭐</div>
+        <div>
+          <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>Team Performance Ratings</div>
+          <div style={{ fontSize: '11px', color: '#64748b' }}>All members · latest shift ratings</div>
+        </div>
+      </div>
+      <div style={{ padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {teamRatings.map(member => {
+          const sc = member.avgRating ?? 0;
+          const col = sc >= 4 ? '#22c55e' : sc >= 3 ? '#f59e0b' : '#ef4444';
+          return (
+            <div key={member.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#fafafa', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: `linear-gradient(135deg, ${col}20, ${col}10)`, border: `1.5px solid ${col}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '800', color: col, flexShrink: 0 }}>
+                {member.name?.[0]?.toUpperCase()}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a' }}>{member.name}</div>
+                <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '1px' }}>{member.role} · {member.shiftCount ?? 0} shifts rated</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                <StarDisplay value={sc} size={12} />
+                <span style={{ fontSize: '11px', fontWeight: '800', color: col }}>{sc.toFixed(1)}/5</span>
+              </div>
+              <div style={{ textAlign: 'center', padding: '6px 10px', background: '#fffbeb', borderRadius: '8px', flexShrink: 0 }}>
+                <div style={{ fontSize: '14px', fontWeight: '800', color: '#d97706' }}>⭐{member.totalStars ?? 0}</div>
+                <div style={{ fontSize: '9px', color: '#92400e', fontWeight: '600' }}>TOTAL</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Category Progress Bars (task type breakdown) ──────────────
+function TaskTypeBreakdown({ byType, onSelect, selected }) {
+  const types = Object.keys(byType).filter(k => byType[k].length > 0);
+  if (!types.length) return null;
+  const max = Math.max(...types.map(k => byType[k].length));
+  return (
+    <div style={{ ...CARD_STYLE, padding: '14px 18px' }}>
+      <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>Task Breakdown</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+        {types.map(k => {
+          const m = TYPE_META[k] || TYPE_META.STANDARD;
+          const Icon = m.icon;
+          const tasks = byType[k];
+          const done = tasks.filter(t => t.status === 'COMPLETED').length;
+          const pct = tasks.length > 0 ? Math.round((done / tasks.length) * 100) : 0;
+          const isActive = selected === k;
+          return (
+            <button key={k} onClick={() => onSelect(isActive ? 'ALL' : k)} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: isActive ? `${m.lightBg}` : 'transparent', border: `1.5px solid ${isActive ? m.color : 'transparent'}`, borderRadius: '8px', padding: '7px 9px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'all .12s' }}>
+              <div style={{ width: '26px', height: '26px', borderRadius: '7px', background: m.lightBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Icon style={{ width: '12px', height: '12px', color: m.color }} />
+              </div>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: '#0f172a', flex: '0 0 120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.label}</span>
+              <div style={{ flex: 1, height: '4px', background: '#f1f5f9', borderRadius: '999px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#22c55e' : m.color, borderRadius: '999px', transition: 'width .4s' }} />
+              </div>
+              <span style={{ fontSize: '10px', fontWeight: '700', color: pct === 100 ? '#22c55e' : '#64748b', minWidth: '40px', textAlign: 'right' }}>{done}/{tasks.length}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── Existing Task Card Components (preserved) ─────────────────
+// ══════════════════════════════════════════════════════════════
+
 function ProgressBar({ pct, color, thin }) {
   return (
     <div style={{ height: thin ? "4px" : "6px", background: "#e2e8f0", borderRadius: "999px", overflow: "hidden" }}>
@@ -97,9 +322,6 @@ function TypeBadge({ taskType }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MISSING INFO CARD
-// ═══════════════════════════════════════════════════════════════
 function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
   const [expanded, setExpanded] = useState(true);
   const [claiming, setClaiming] = useState(false);
@@ -251,7 +473,6 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
   );
 }
 
-// ─── Daily Checklist Card ──────────────────────────────────────
 function DailyChecklistCard({ task, onChecklistToggle }) {
   const [expanded, setExpanded] = useState(true); const [toggling, setToggling] = useState(null);
   const cl = task.checklistItems || []; const done = cl.filter(i => i.done).length;
@@ -302,7 +523,6 @@ function DailyChecklistCard({ task, onChecklistToggle }) {
   );
 }
 
-// ─── Player Addition Card ──────────────────────────────────────
 function PlayerAdditionCard({ task, currentUserId, onProgressLog }) {
   const [logVal, setLogVal] = useState(""); const [logging, setLogging] = useState(false);
   const [logSuccess, setLogSuccess] = useState(false); const [expanded, setExpanded] = useState(true);
@@ -381,7 +601,6 @@ function PlayerAdditionCard({ task, currentUserId, onProgressLog }) {
   );
 }
 
-// ─── Revenue Target Card ───────────────────────────────────────
 function RevenueTargetCard({ task, currentUserId, onProgressLog }) {
   const [logVal, setLogVal] = useState(""); const [logging, setLogging] = useState(false);
   const [logSuccess, setLogSuccess] = useState(false); const [expanded, setExpanded] = useState(true);
@@ -441,7 +660,6 @@ function RevenueTargetCard({ task, currentUserId, onProgressLog }) {
   );
 }
 
-// ─── Standard Task Card ────────────────────────────────────────
 function StandardTaskCard({ task, onStatusChange, onChecklistToggle }) {
   const [expanded, setExpanded] = useState(false); const [toggling, setToggling] = useState(null);
   const isCompleted = task.status === "COMPLETED"; const cl = task.checklistItems || [];
@@ -486,43 +704,10 @@ function StandardTaskCard({ task, onStatusChange, onChecklistToggle }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// STAT CARD — matches the screenshot layout
-// ═══════════════════════════════════════════════════════════════
-function StatCard({ typeKey, tasks, selected, onClick }) {
-  const m = TYPE_META[typeKey];
-  const Icon = m.icon;
-  const total     = tasks.length;
-  const completed = tasks.filter(t => t.status === "COMPLETED").length;
-  const pending   = total - completed;
-
-  return (
-    <button onClick={onClick} style={{
-      flex: "1 1 130px", minWidth: "110px", maxWidth: "190px",
-      padding: "14px 14px 12px",
-      background: selected ? m.lightBg : "#fff",
-      border: `1.5px solid ${selected ? m.color : "#e2e8f0"}`,
-      borderRadius: "12px", cursor: "pointer", textAlign: "left",
-      boxShadow: selected ? `0 0 0 3px ${m.color}20` : "0 1px 3px rgba(15,23,42,.05)",
-      transition: "all .15s", fontFamily: "inherit", position: "relative", overflow: "hidden",
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
-        <span style={{ fontSize: "24px", fontWeight: "800", color: pending > 0 ? m.color : "#22c55e", lineHeight: 1 }}>{pending}</span>
-        <div style={{ width: "28px", height: "28px", borderRadius: "8px", background: m.lightBg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon style={{ width: "14px", height: "14px", color: m.color }} />
-        </div>
-      </div>
-      <div style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a", marginBottom: "2px", lineHeight: "1.2" }}>{m.label}</div>
-      <div style={{ fontSize: "11px", color: "#94a3b8" }}>{completed} completed</div>
-      {selected && <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "3px", background: m.color }} />}
-    </button>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════
-// MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════
-export default function TeamDashboard({ currentUser }) {
+// ══════════════════════════════════════════════════════════════
+// ── MAIN EXPORT: TeamDashboard ─────────────────────────────
+// ══════════════════════════════════════════════════════════════
+export default function TeamDashboard({ currentUser, isAdmin = false, viewingMember = null }) {
   const { shiftActive } = useContext(ShiftStatusContext);
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
@@ -532,11 +717,20 @@ export default function TeamDashboard({ currentUser }) {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [resolvedUser, setResolvedUser] = useState(null);
+  const [ratings, setRatings] = useState(null);
+  const [teamRatings, setTeamRatings] = useState([]);
   const sseRef = useRef(null);
+
+  // Shift time display
+  const [shiftDuration, setShiftDuration] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setShiftDuration(d => d + 1), 60000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     const id = extractUserId(currentUser);
-    if (id !== null) { setResolvedUser({ ...currentUser, id }); }
+    if (id !== null) setResolvedUser({ ...currentUser, id });
     else {
       fetch(`${API}/user`, { credentials: "include", headers: getAuthHeaders() })
         .then(r => r.json()).then(data => { const u = data?.data ?? data?.user ?? data; if (u?.id) setResolvedUser(u); }).catch(() => {});
@@ -544,6 +738,18 @@ export default function TeamDashboard({ currentUser }) {
   }, [currentUser]);
 
   const myId = resolvedUser ? extractUserId(resolvedUser) : null;
+  const targetUserId = viewingMember?.id || myId;
+
+  // Fetch ratings
+  useEffect(() => {
+    if (!targetUserId) return;
+    fetch(`${API}/members/${targetUserId}/ratings`, { credentials: "include", headers: getAuthHeaders() })
+      .then(r => r.ok ? r.json() : null).then(d => { if (d?.data) setRatings(d.data); }).catch(() => {});
+    if (isAdmin) {
+      fetch(`${API}/members/all-ratings`, { credentials: "include", headers: getAuthHeaders() })
+        .then(r => r.ok ? r.json() : null).then(d => { if (d?.data) setTeamRatings(d.data); }).catch(() => {});
+    }
+  }, [targetUserId, isAdmin]);
 
   const loadTasks = useCallback(async () => {
     setLoading(true);
@@ -573,7 +779,6 @@ export default function TeamDashboard({ currentUser }) {
         if (type === "task_deleted") setTasks(prev => prev.filter(t => t.id !== data.id));
       } catch (_) {}
     };
-    es.onerror = () => {};
     return () => es.close();
   }, [loadTasks, myId]);
 
@@ -591,14 +796,12 @@ export default function TeamDashboard({ currentUser }) {
   const handleClaimTask     = useCallback((u) => setTasks(prev => prev.map(t => t.id === u.id ? u : t)), []);
   const handleInfoSubmitted = useCallback((u) => setTasks(prev => prev.map(t => t.id === u.id ? u : t)), []);
 
-  // ── per-type buckets for stat cards ───────────────────────────
   const byType = useMemo(() => {
     const map = {};
     [...STAT_TYPES, "MISSING_INFO"].forEach(k => { map[k] = tasks.filter(t => t.taskType === k); });
     return map;
   }, [tasks]);
 
-  // ── filtered list ──────────────────────────────────────────────
   const filtered = useMemo(() => tasks.filter(t => {
     if (typeFilter !== "ALL" && t.taskType !== typeFilter) return false;
     if (statusFilter === "PENDING"     && t.status !== "PENDING")     return false;
@@ -611,59 +814,110 @@ export default function TeamDashboard({ currentUser }) {
   const totalDone       = tasks.filter(t => t.status === "COMPLETED").length;
   const totalInProgress = tasks.filter(t => t.status === "IN_PROGRESS").length;
   const totalPending    = tasks.filter(t => t.status === "PENDING").length;
-  const visibleStatTypes = STAT_TYPES.filter(k => (byType[k]?.length ?? 0) > 0);
+  const totalOverdue    = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length;
+  const completionPct   = tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0;
 
-  // ── shift guard ────────────────────────────────────────────────
+  // ── Shift guard ────────────────────────────────────────────
   if (!shiftActive) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-        <button onClick={() => navigate('/shifts')} style={{ alignSelf: "flex-start", padding: "9px 18px", background: "#0ea5e9", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer", fontFamily: "inherit" }}>Start Shift</button>
-        <div style={{ padding: "12px 16px", background: "#fffbeb", borderLeft: "4px solid #d97706", borderRadius: "8px", fontSize: "13px", color: "#78350f", fontWeight: "600" }}>
+        <button onClick={() => navigate('/shifts')} style={{ alignSelf: "flex-start", padding: "9px 18px", background: "linear-gradient(135deg, #2563eb, #1d4ed8)", color: "#fff", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px #2563eb40" }}>▶ Start Shift</button>
+        <div style={{ padding: "14px 18px", background: "#fffbeb", borderLeft: "4px solid #d97706", borderRadius: "10px", fontSize: "13px", color: "#78350f", fontWeight: "600" }}>
           ⚠️ You must have an active shift to view your tasks.
         </div>
-        <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", padding: "48px 24px", textAlign: "center" }}>
-          <Lock style={{ width: "28px", height: "28px", color: "#d97706", margin: "0 auto 10px", display: "block" }} />
-          <p style={{ margin: "0 0 4px", fontSize: "14px", fontWeight: "800", color: "#78350f" }}>Dashboard Locked</p>
-          <p style={{ margin: 0, fontSize: "12px", color: "#d97706" }}>Start your shift first.</p>
+        <div style={{ background: "linear-gradient(135deg, #0f172a, #1e3a5f)", borderRadius: "16px", padding: "48px 24px", textAlign: "center" }}>
+          <Lock style={{ width: "32px", height: "32px", color: "#f59e0b", margin: "0 auto 12px", display: "block" }} />
+          <p style={{ margin: "0 0 4px", fontSize: "15px", fontWeight: "800", color: "#fff" }}>Dashboard Locked</p>
+          <p style={{ margin: 0, fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>Start your shift first to unlock your tasks.</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+  const memberName = viewingMember?.name || resolvedUser?.name || "Member";
+  const memberRole = viewingMember?.role || resolvedUser?.role || "";
 
-      {/* ── HEADER ── */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
-        <div>
-          <h2 style={{ fontSize: "18px", fontWeight: "800", margin: "0 0 3px", color: "#0f172a" }}>My Tasks</h2>
-          <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>
-            {tasks.length} tasks ·{" "}
-            <span style={{ color: "#22c55e", fontWeight: "700" }}>{totalDone} done</span>{" · "}
-            <span style={{ color: "#f97316", fontWeight: "700" }}>{totalInProgress} in progress</span>{" · "}
-            <span style={{ color: "#64748b", fontWeight: "700" }}>{totalPending} pending</span>
-          </p>
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+
+      {/* ─── HERO HEADER ──────────────────────────────────────── */}
+      <div style={{
+        background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #1e293b 100%)",
+        borderRadius: "16px", padding: "20px 22px", color: "#fff",
+        position: "relative", overflow: "hidden",
+        boxShadow: "0 8px 32px rgba(15,23,42,0.28)",
+      }}>
+        {/* Background decorative circles */}
+        <div style={{ position: "absolute", top: -30, right: -30, width: 160, height: 160, borderRadius: "50%", background: "rgba(59,130,246,0.07)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -20, left: 60, width: 100, height: 100, borderRadius: "50%", background: "rgba(99,102,241,0.08)", pointerEvents: "none" }} />
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {isAdmin && viewingMember ? (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                  <div style={{ padding: "3px 10px", background: "rgba(59,130,246,0.25)", borderRadius: "999px", fontSize: "10px", fontWeight: "700", color: "#93c5fd", textTransform: "uppercase", letterSpacing: "0.5px", border: "1px solid rgba(59,130,246,0.3)" }}>
+                    👁 Admin View · {memberRole}
+                  </div>
+                </div>
+                <h2 style={{ margin: "0 0 4px", fontSize: "20px", fontWeight: "900", color: "#fff", letterSpacing: "-0.3px" }}>{memberName}</h2>
+                <p style={{ margin: 0, fontSize: "12px", color: "rgba(255,255,255,0.5)" }}>Monitoring performance and tasks</p>
+              </>
+            ) : (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px #4ade80" }} />
+                  <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)", fontWeight: "600", letterSpacing: "0.3px" }}>SHIFT ACTIVE</span>
+                </div>
+                <h2 style={{ margin: "0 0 2px", fontSize: "20px", fontWeight: "900", color: "#fff", letterSpacing: "-0.3px" }}>
+                  {isAdmin ? "Team Command Center" : "My Tasks"}
+                </h2>
+                <p style={{ margin: 0, fontSize: "12px", color: "rgba(255,255,255,0.45)" }}>
+                  {tasks.length} total tasks · tracking your shift
+                </p>
+              </>
+            )}
+
+            {/* Quick stats row */}
+            <div style={{ display: "flex", gap: "6px", marginTop: "14px", flexWrap: "wrap" }}>
+              {[
+                { label: "Done", val: totalDone, color: "#4ade80" },
+                { label: "Active", val: totalInProgress, color: "#60a5fa" },
+                { label: "Pending", val: totalPending, color: "#94a3b8" },
+                ...(totalOverdue > 0 ? [{ label: "Overdue", val: totalOverdue, color: "#f87171" }] : []),
+              ].map(s => (
+                <div key={s.label} style={{ padding: "5px 11px", background: "rgba(255,255,255,0.07)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  <span style={{ fontSize: "14px", fontWeight: "800", color: s.color }}>{s.val}</span>
+                  <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.45)", marginLeft: "4px", fontWeight: "500" }}>{s.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Performance Ring */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+            <PerformanceRing pct={completionPct} size={95} />
+            <button onClick={loadTasks} style={{ display: "flex", alignItems: "center", gap: "4px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "7px", color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: "600", padding: "4px 9px", cursor: "pointer", fontFamily: "inherit" }}>
+              <RefreshCw style={{ width: "9px", height: "9px" }} />Refresh
+            </button>
+          </div>
         </div>
-        <button onClick={loadTasks} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", color: "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit" }}>
-          <RefreshCw style={{ width: "12px", height: "12px" }} />Refresh
-        </button>
       </div>
 
-      {/* ── STAT CARDS ── */}
-      {visibleStatTypes.length > 0 && (
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-          {visibleStatTypes.map(k => (
-            <StatCard key={k} typeKey={k} tasks={byType[k] || []} selected={typeFilter === k} onClick={() => setTypeFilter(p => p === k ? "ALL" : k)} />
-          ))}
-        </div>
-      )}
+      {/* ─── ADMIN TEAM RATINGS OVERVIEW ─────────────────────── */}
+      {isAdmin && teamRatings.length > 0 && <AdminRatingOverview teamRatings={teamRatings} />}
 
-      {/* ── SEARCH + FILTER BAR ── */}
-      <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", padding: "10px 12px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "10px" }}>
-        {/* search */}
+      {/* ─── MEMBER RATING PANEL ──────────────────────────────── */}
+      {ratings && <RatingPanel ratings={ratings} isAdmin={isAdmin} />}
+
+      {/* ─── TASK TYPE BREAKDOWN ──────────────────────────────── */}
+      <TaskTypeBreakdown byType={byType} onSelect={setTypeFilter} selected={typeFilter} />
+
+      {/* ─── SEARCH + FILTER BAR ──────────────────────────────── */}
+      <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", padding: "10px 12px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", boxShadow: "0 1px 3px rgba(15,23,42,.04)" }}>
         <div style={{ position: "relative", flex: "1 1 180px", minWidth: "150px" }}>
           <Search style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", width: "13px", height: "13px", color: "#94a3b8", pointerEvents: "none" }} />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search tasks by title…"
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search tasks…"
             style={{ ...INPUT_BASE, paddingLeft: "30px", paddingTop: "7px", paddingBottom: "7px" }} />
           {search && (
             <button onClick={() => setSearch("")} style={{ position: "absolute", right: "8px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0, color: "#94a3b8", display: "flex" }}>
@@ -671,29 +925,25 @@ export default function TeamDashboard({ currentUser }) {
             </button>
           )}
         </div>
-
-        {/* status tabs */}
         <div style={{ display: "flex", gap: "3px", background: "#f1f5f9", borderRadius: "8px", padding: "3px" }}>
           {[
-            { key: "ALL",         label: "ALL" },
-            { key: "PENDING",     label: "PENDING" },
-            { key: "IN_PROGRESS", label: "IN PROGRESS" },
-            { key: "COMPLETED",   label: "COMPLETED" },
+            { key: "ALL", label: "All" },
+            { key: "PENDING", label: "Pending" },
+            { key: "IN_PROGRESS", label: "Active" },
+            { key: "COMPLETED", label: "Done" },
           ].map(s => (
             <button key={s.key} onClick={() => setStatusFilter(s.key)} style={{
-              padding: "5px 11px", borderRadius: "6px", border: "none", fontSize: "11px",
+              padding: "5px 10px", borderRadius: "6px", border: "none", fontSize: "11px",
               fontWeight: "700", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
-              background: statusFilter === s.key ? "#0ea5e9" : "transparent",
+              background: statusFilter === s.key ? "#0f172a" : "transparent",
               color: statusFilter === s.key ? "#fff" : "#64748b",
               transition: "all .12s",
             }}>{s.label}</button>
           ))}
         </div>
-
-        {/* type dropdown */}
         <div style={{ position: "relative" }}>
           <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-            style={{ ...INPUT_BASE, width: "auto", minWidth: "130px", paddingRight: "26px", paddingLeft: "10px", paddingTop: "7px", paddingBottom: "7px", appearance: "none", cursor: "pointer", fontSize: "12px", fontWeight: "600" }}>
+            style={{ ...INPUT_BASE, width: "auto", minWidth: "120px", paddingRight: "26px", paddingLeft: "10px", paddingTop: "7px", paddingBottom: "7px", appearance: "none", cursor: "pointer", fontSize: "12px", fontWeight: "600" }}>
             <option value="ALL">All Types</option>
             {Object.keys(TYPE_META).map(k => <option key={k} value={k}>{TYPE_META[k].label}</option>)}
           </select>
@@ -701,26 +951,38 @@ export default function TeamDashboard({ currentUser }) {
         </div>
       </div>
 
-      {/* ── ERROR ── */}
+      {/* ─── ERROR ────────────────────────────────────────────── */}
       {error && (
         <div style={{ padding: "9px 12px", background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "8px", color: "#991b1b", fontSize: "12px", display: "flex", gap: "7px", alignItems: "center" }}>
           <AlertCircle style={{ width: "12px", height: "12px", flexShrink: 0 }} />{error}
         </div>
       )}
 
-      {/* ── TASK LIST ── */}
+      {/* ─── TASK LIST ────────────────────────────────────────── */}
       {loading ? (
         <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>
           <RefreshCw style={{ width: "18px", height: "18px", margin: "0 auto 8px", display: "block", opacity: 0.4, animation: "spin 1s linear infinite" }} />
           Loading tasks…
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{ padding: "40px 20px", textAlign: "center", color: "#94a3b8", fontSize: "13px", background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
-          <CheckCircle style={{ width: "22px", height: "22px", margin: "0 auto 8px", display: "block", opacity: 0.25 }} />
-          {search ? `No tasks matching "${search}"` : statusFilter === "COMPLETED" ? "No completed tasks yet" : "No tasks found"}
+        <div style={{ padding: "48px 20px", textAlign: "center", color: "#94a3b8", fontSize: "13px", background: "#fff", borderRadius: "14px", border: "1px solid #e2e8f0" }}>
+          <div style={{ fontSize: "32px", marginBottom: "10px" }}>{search ? "🔍" : totalDone === tasks.length && tasks.length > 0 ? "🎉" : "📋"}</div>
+          <div style={{ fontSize: "14px", fontWeight: "700", color: "#475569", marginBottom: "4px" }}>
+            {search ? `No tasks matching "${search}"` : totalDone === tasks.length && tasks.length > 0 ? "All tasks complete!" : "No tasks found"}
+          </div>
+          <div style={{ fontSize: "12px", color: "#94a3b8" }}>
+            {totalDone === tasks.length && tasks.length > 0 ? "Great work this shift 🚀" : "Tasks assigned by admin will appear here"}
+          </div>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+          {/* Overdue section header */}
+          {filtered.some(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED") && (
+            <div style={{ padding: "6px 10px", background: "#fef2f2", border: "1px solid #fecdd3", borderRadius: "7px", fontSize: "11px", fontWeight: "700", color: "#dc2626", display: "flex", alignItems: "center", gap: "5px" }}>
+              <AlertCircle style={{ width: "11px", height: "11px" }} />
+              {filtered.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length} overdue task(s) — action required
+            </div>
+          )}
           {filtered.map(task => {
             switch (task.taskType) {
               case "MISSING_INFO":    return <MissingInfoTaskCard key={task.id} task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onInfoSubmitted={handleInfoSubmitted} />;
