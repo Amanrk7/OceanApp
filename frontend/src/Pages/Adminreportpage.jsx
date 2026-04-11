@@ -276,27 +276,121 @@ function GamePointAudit({ startSnapshot, endSnapshot }) {
 }
 
 // ── Shift Activity Log ────────────────────────────────────────
-function ShiftActivityLog({ transactions }) {
+// function ShiftActivityLog({ transactions }) {
+//     if (!transactions?.length) return (
+//         <div style={{ ...CARD, padding: "28px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>
+//             No activity recorded for this shift
+//         </div>
+//     );
+
+//     return (
+//         <div style={{ ...CARD, overflow: "hidden" }}>
+//             <div style={{ padding: "12px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "8px" }}>
+//                 <List style={{ width: "14px", height: "14px", color: "#64748b" }} />
+//                 <span style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.4px" }}>
+//                     Shift Activity Log ({transactions.length})
+//                 </span>
+//             </div>
+//             <div style={{ overflowX: "auto" }}>
+//                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
+//                     <thead>
+//                         <tr>
+//                             {["Time", "Source", "Type", "Details", "Amount / Points"].map(h => (
+//                                 <th key={h} style={{ ...TH, textAlign: h === "Amount / Points" ? "right" : "left" }}>{h}</th>
+//                             ))}
+//                         </tr>
+//                     </thead>
+//                     <tbody>
+//                         {transactions.map(t => {
+//                             const isDeposit = t.type === "DEPOSIT";
+//                             const isCashout = t.type === "WITHDRAWAL";
+//                             const isBonus = t.type === "BONUS";
+//                             const amtColor = isDeposit ? "#16a34a" : isCashout ? "#dc2626" : isBonus ? "#c2410c" : "#475569";
+//                             const amtPrefix = isDeposit ? "+" : isCashout ? "−" : isBonus ? "−" : "";
+//                             const pts = t.gameStockAfter != null && t.gameStockBefore != null
+//                                 ? (t.gameStockAfter - t.gameStockBefore)
+//                                 : null;
+
+//                             return (
+//                                 <tr key={t.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
+//                                     <td style={{ ...TD, fontSize: "12px", color: "#64748b", whiteSpace: "nowrap" }}>
+//                                         {fmtTime(t.createdAt)}
+//                                     </td>
+//                                     <td style={{ ...TD, fontSize: "12px" }}>
+//                                         {t.user?.name || t.playerName
+//                                             ? <div>
+//                                                 <div style={{ fontWeight: "600", color: "#0f172a" }}>{t.user?.name || t.playerName}</div>
+//                                                 {t.user?.email && <div style={{ fontSize: "11px", color: "#94a3b8" }}>{t.user.email}</div>}
+//                                             </div>
+//                                             : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>System Event</span>}
+//                                     </td>
+//                                     <td style={TD}>
+//                                         <DisplayTypeBadge type={t.displayType || t.type} />
+//                                         {t.bonusType && (
+//                                             <div style={{ marginTop: "3px" }}>
+//                                                 <span style={{ fontSize: "10px", color: "#7c3aed", background: "#f5f3ff", padding: "1px 6px", borderRadius: "4px", fontWeight: "700" }}>
+//                                                     {t.bonusType.toUpperCase()}
+//                                                 </span>
+//                                             </div>
+//                                         )}
+//                                     </td>
+//                                     <td style={{ ...TD, fontSize: "12px" }}>
+//                                         <div>
+//                                             {t.gameName && <span style={{ fontWeight: "600" }}>{t.gameName}</span>}
+//                                             {t.walletMethod && (
+//                                                 <div style={{ color: "#64748b", marginTop: "1px" }}>
+//                                                     {t.walletMethod}{t.walletName ? ` · ${t.walletName}` : ""}
+//                                                 </div>
+//                                             )}
+//                                             {!t.gameName && !t.walletMethod && <span style={{ color: "#94a3b8" }}>—</span>}
+//                                         </div>
+//                                     </td>
+//                                     <td style={{ ...TD, textAlign: "right" }}>
+//                                         <div style={{ fontWeight: "800", fontSize: "14px", color: amtColor }}>
+//                                             {amtPrefix}{fmtMoney(t.amount)}
+//                                         </div>
+//                                         {pts !== null && (
+//                                             <div style={{ fontSize: "11px", fontWeight: "600", color: pts < 0 ? "#7c3aed" : "#16a34a", marginTop: "2px" }}>
+//                                                 {pts >= 0 ? "+" : ""}{pts.toFixed(0)} pts
+//                                             </div>
+//                                         )}
+//                                         {t.fee > 0 && (
+//                                             <div style={{ fontSize: "10px", color: "#f59e0b", marginTop: "2px" }}>
+//                                                 fee −{fmtMoney(t.fee)}
+//                                             </div>
+//                                         )}
+//                                     </td>
+//                                 </tr>
+//                             );
+//                         })}
+//                     </tbody>
+//                 </table>
+//             </div>
+//         </div>
+//     );
+// }
+
+// ── Full Shift Transactions Table (replaces ShiftActivityLog) ──
+function ShiftTransactionsTable({ transactions }) {
     if (!transactions?.length) return (
         <div style={{ ...CARD, padding: "28px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>
-            No activity recorded for this shift
+            No transactions recorded for this shift
         </div>
     );
-
     return (
         <div style={{ ...CARD, overflow: "hidden" }}>
             <div style={{ padding: "12px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "8px" }}>
                 <List style={{ width: "14px", height: "14px", color: "#64748b" }} />
                 <span style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.4px" }}>
-                    Shift Activity Log ({transactions.length})
+                    Shift Transactions ({transactions.length})
                 </span>
             </div>
             <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
                         <tr>
-                            {["Time", "Source", "Type", "Details", "Amount / Points"].map(h => (
-                                <th key={h} style={{ ...TH, textAlign: h === "Amount / Points" ? "right" : "left" }}>{h}</th>
+                            {["Time", "Player", "Type", "Bonus Type", "Game / Wallet", "Pts Before → After", "Amount", "Fee", "Balance After", "Status"].map(h => (
+                                <th key={h} style={{ ...TH, textAlign: h === "Amount" || h === "Fee" || h === "Balance After" ? "right" : "left" }}>{h}</th>
                             ))}
                         </tr>
                     </thead>
@@ -305,65 +399,91 @@ function ShiftActivityLog({ transactions }) {
                             const isDeposit = t.type === "DEPOSIT";
                             const isCashout = t.type === "WITHDRAWAL";
                             const isBonus = t.type === "BONUS";
+                            const isPending = t.status === "PENDING";
                             const amtColor = isDeposit ? "#16a34a" : isCashout ? "#dc2626" : isBonus ? "#c2410c" : "#475569";
-                            const amtPrefix = isDeposit ? "+" : isCashout ? "−" : isBonus ? "−" : "";
                             const pts = t.gameStockAfter != null && t.gameStockBefore != null
-                                ? (t.gameStockAfter - t.gameStockBefore)
-                                : null;
+                                ? Math.round(t.gameStockAfter - t.gameStockBefore) : null;
 
                             return (
-                                <tr key={t.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
-                                    <td style={{ ...TD, fontSize: "12px", color: "#64748b", whiteSpace: "nowrap" }}>
+                                <tr key={t.id}
+                                    onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"}
+                                    onMouseLeave={e => e.currentTarget.style.background = ""}
+                                    style={{ opacity: isPending ? 0.75 : 1 }}
+                                >
+                                    <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap" }}>
                                         {fmtTime(t.createdAt)}
                                     </td>
-                                    <td style={{ ...TD, fontSize: "12px" }}>
-                                        {t.user?.name || t.playerName
-                                            ? <div>
-                                                <div style={{ fontWeight: "600", color: "#0f172a" }}>{t.user?.name || t.playerName}</div>
-                                                {t.user?.email && <div style={{ fontSize: "11px", color: "#94a3b8" }}>{t.user.email}</div>}
-                                            </div>
-                                            : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>System Event</span>}
+                                    <td style={TD}>
+                                        <div style={{ fontWeight: "600", fontSize: "12px" }}>
+                                            {t.user?.name || t.playerName || `#${t.userId}`}
+                                        </div>
+                                        {t.user?.email && <div style={{ fontSize: "10px", color: "#94a3b8" }}>{t.user.email}</div>}
                                     </td>
                                     <td style={TD}>
                                         <DisplayTypeBadge type={t.displayType || t.type} />
-                                        {t.bonusType && (
-                                            <div style={{ marginTop: "3px" }}>
-                                                <span style={{ fontSize: "10px", color: "#7c3aed", background: "#f5f3ff", padding: "1px 6px", borderRadius: "4px", fontWeight: "700" }}>
-                                                    {t.bonusType.toUpperCase()}
-                                                </span>
+                                    </td>
+                                    <td style={TD}>
+                                        {t.bonusType
+                                            ? <span style={{ padding: "2px 7px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", background: "#f5f3ff", color: "#7c3aed" }}>
+                                                {t.bonusType.toUpperCase()}
+                                              </span>
+                                            : <span style={{ color: "#cbd5e1" }}>—</span>}
+                                    </td>
+                                    <td style={{ ...TD, fontSize: "11px" }}>
+                                        {t.gameName && <div style={{ fontWeight: "600", color: "#0f172a" }}>{t.gameName}</div>}
+                                        {t.walletMethod && (
+                                            <div style={{ color: "#64748b" }}>
+                                                {t.walletMethod}{t.walletName ? ` · ${t.walletName}` : ""}
                                             </div>
                                         )}
+                                        {!t.gameName && !t.walletMethod && <span style={{ color: "#cbd5e1" }}>—</span>}
                                     </td>
-                                    <td style={{ ...TD, fontSize: "12px" }}>
-                                        <div>
-                                            {t.gameName && <span style={{ fontWeight: "600" }}>{t.gameName}</span>}
-                                            {t.walletMethod && (
-                                                <div style={{ color: "#64748b", marginTop: "1px" }}>
-                                                    {t.walletMethod}{t.walletName ? ` · ${t.walletName}` : ""}
-                                                </div>
-                                            )}
-                                            {!t.gameName && !t.walletMethod && <span style={{ color: "#94a3b8" }}>—</span>}
-                                        </div>
+                                    <td style={{ ...TD, fontSize: "11px" }}>
+                                        {pts !== null
+                                            ? <span style={{ color: "#64748b" }}>
+                                                {t.gameStockBefore?.toFixed(0)} → <b style={{ color: pts < 0 ? "#7c3aed" : "#16a34a" }}>{t.gameStockAfter?.toFixed(0)}</b>
+                                              </span>
+                                            : <span style={{ color: "#cbd5e1" }}>—</span>}
+                                    </td>
+                                    <td style={{ ...TD, textAlign: "right", fontWeight: "800", fontSize: "13px", color: amtColor }}>
+                                        {fmtMoney(t.amount)}
                                     </td>
                                     <td style={{ ...TD, textAlign: "right" }}>
-                                        <div style={{ fontWeight: "800", fontSize: "14px", color: amtColor }}>
-                                            {amtPrefix}{fmtMoney(t.amount)}
-                                        </div>
-                                        {pts !== null && (
-                                            <div style={{ fontSize: "11px", fontWeight: "600", color: pts < 0 ? "#7c3aed" : "#16a34a", marginTop: "2px" }}>
-                                                {pts >= 0 ? "+" : ""}{pts.toFixed(0)} pts
-                                            </div>
-                                        )}
-                                        {t.fee > 0 && (
-                                            <div style={{ fontSize: "10px", color: "#f59e0b", marginTop: "2px" }}>
-                                                fee −{fmtMoney(t.fee)}
-                                            </div>
-                                        )}
+                                        {t.fee > 0
+                                            ? <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "11px" }}>−{fmtMoney(t.fee)}</span>
+                                            : <span style={{ color: "#cbd5e1" }}>—</span>}
+                                    </td>
+                                    <td style={{ ...TD, textAlign: "right", fontSize: "12px", color: "#64748b" }}>
+                                        {t.balanceAfter != null ? fmtMoney(t.balanceAfter) : "—"}
+                                    </td>
+                                    <td style={TD}>
+                                        <Badge
+                                            label={isPending ? "PENDING" : "DONE"}
+                                            bg={isPending ? "#fef3c7" : "#dcfce7"}
+                                            color={isPending ? "#b45309" : "#166534"}
+                                        />
                                     </td>
                                 </tr>
                             );
                         })}
                     </tbody>
+                    <tfoot>
+                        <tr style={{ background: "#f8fafc" }}>
+                            <td colSpan={6} style={{ ...TD, fontWeight: "700", fontSize: "12px", color: "#475569" }}>Totals</td>
+                            <td style={{ ...TD, textAlign: "right", fontWeight: "800", fontSize: "13px" }}>
+                                <div style={{ color: "#16a34a" }}>
+                                    +{fmtMoney(transactions.filter(t => t.type === "DEPOSIT").reduce((s, t) => s + (t.amount ?? 0), 0))}
+                                </div>
+                                <div style={{ color: "#dc2626", fontSize: "11px" }}>
+                                    −{fmtMoney(transactions.filter(t => t.type === "WITHDRAWAL").reduce((s, t) => s + (t.amount ?? 0), 0))}
+                                </div>
+                                <div style={{ color: "#c2410c", fontSize: "11px" }}>
+                                    −{fmtMoney(transactions.filter(t => t.type === "BONUS").reduce((s, t) => s + (t.amount ?? 0), 0))} bonus
+                                </div>
+                            </td>
+                            <td colSpan={3} style={TD} />
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -735,7 +855,9 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
                     )}
 
                     {/* Activity Log */}
-                    <ShiftActivityLog transactions={transactions} />
+                    {/* <ShiftActivityLog transactions={transactions} /> */}
+                    <ShiftTransactionsTable transactions={transactions} />
+
 
                     {/* Audit Verification */}
                     {hasReconciliation && <AuditVerification endSnapshot={endSnapshot} transactions={transactions} />}
@@ -1095,39 +1217,119 @@ function buildShiftAuditHtml(team, shift) {
     }
 
     // ── Activity Log ───────────────────────────────────────────
-    const txns = shift.transactions || [];
-    const activityRows = txns.map(t => {
-        const isD = t.type === "DEPOSIT";
-        const isCO = t.type === "WITHDRAWAL";
-        const isB = t.type === "BONUS";
-        const amtColor = isD ? "#16a34a" : isCO ? "#dc2626" : isB ? "#c2410c" : "#475569";
-        const amtSign = isD ? "+" : isCO ? "−" : isB ? "−" : "";
-        const typeLabel = t.displayType || (isD ? "DEPOSIT" : isCO ? "CASHOUT" : isB ? "BONUS" : t.type);
-        const typeBg = isD ? "#dcfce7" : isCO ? "#fee2e2" : isB ? "#fff7ed" : "#f1f5f9";
-        const typeClr = isD ? "#166534" : isCO ? "#991b1b" : isB ? "#c2410c" : "#475569";
-        const pts = t.gameStockAfter != null && t.gameStockBefore != null
-            ? Math.round(t.gameStockAfter - t.gameStockBefore) : null;
-        const srcName = t.user?.name || t.playerName || "—";
-        const detail = [t.gameName || t.game?.name, t.walletMethod, t.walletName].filter(Boolean).join(" · ") || "—";
-        return `<tr>
-          <td class="gray" style="white-space:nowrap">${fmtTime(t.createdAt)}</td>
-          <td><b>${srcName}</b></td>
-          <td><span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:${typeBg};color:${typeClr}">${typeLabel}</span></td>
-          <td class="gray" style="font-size:11px">${detail}</td>
-          <td class="ta-r b" style="color:${amtColor}">${amtSign}${fmtMoney(t.amount)}${t.fee > 0 ? `<br><span style="font-size:9px;color:#f59e0b">fee −${fmtMoney(t.fee)}</span>` : ""}${pts !== null ? `<br><span style="font-size:9px;color:#7c3aed">${pts >= 0 ? "+" : ""}${pts} pts</span>` : ""}</td>
-        </tr>`;
-    }).join("");
+    // const txns = shift.transactions || [];
+    // const activityRows = txns.map(t => {
+    //     const isD = t.type === "DEPOSIT";
+    //     const isCO = t.type === "WITHDRAWAL";
+    //     const isB = t.type === "BONUS";
+    //     const amtColor = isD ? "#16a34a" : isCO ? "#dc2626" : isB ? "#c2410c" : "#475569";
+    //     const amtSign = isD ? "+" : isCO ? "−" : isB ? "−" : "";
+    //     const typeLabel = t.displayType || (isD ? "DEPOSIT" : isCO ? "CASHOUT" : isB ? "BONUS" : t.type);
+    //     const typeBg = isD ? "#dcfce7" : isCO ? "#fee2e2" : isB ? "#fff7ed" : "#f1f5f9";
+    //     const typeClr = isD ? "#166534" : isCO ? "#991b1b" : isB ? "#c2410c" : "#475569";
+    //     const pts = t.gameStockAfter != null && t.gameStockBefore != null
+    //         ? Math.round(t.gameStockAfter - t.gameStockBefore) : null;
+    //     const srcName = t.user?.name || t.playerName || "—";
+    //     const detail = [t.gameName || t.game?.name, t.walletMethod, t.walletName].filter(Boolean).join(" · ") || "—";
+    //     return `<tr>
+    //       <td class="gray" style="white-space:nowrap">${fmtTime(t.createdAt)}</td>
+    //       <td><b>${srcName}</b></td>
+    //       <td><span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:${typeBg};color:${typeClr}">${typeLabel}</span></td>
+    //       <td class="gray" style="font-size:11px">${detail}</td>
+    //       <td class="ta-r b" style="color:${amtColor}">${amtSign}${fmtMoney(t.amount)}${t.fee > 0 ? `<br><span style="font-size:9px;color:#f59e0b">fee −${fmtMoney(t.fee)}</span>` : ""}${pts !== null ? `<br><span style="font-size:9px;color:#7c3aed">${pts >= 0 ? "+" : ""}${pts} pts</span>` : ""}</td>
+    //     </tr>`;
+    // }).join("");
 
-    const activityHtml = `
-    <div class="audit-section">
-      <div class="audit-header gray-hdr">📋 Shift Activity Log (${txns.length})</div>
-      ${txns.length === 0
-            ? `<p style="padding:16px;text-align:center;color:#94a3b8;font-style:italic">No transactions recorded</p>`
-            : `<table>
-          <thead><tr><th>Time</th><th>Source</th><th>Type</th><th>Details</th><th class="ta-r">Amount / Points</th></tr></thead>
-          <tbody>${activityRows}</tbody>
+    // const activityHtml = `
+    // <div class="audit-section">
+    //   <div class="audit-header gray-hdr">📋 Shift Activity Log (${txns.length})</div>
+    //   ${txns.length === 0
+    //         ? `<p style="padding:16px;text-align:center;color:#94a3b8;font-style:italic">No transactions recorded</p>`
+    //         : `<table>
+    //       <thead><tr><th>Time</th><th>Source</th><th>Type</th><th>Details</th><th class="ta-r">Amount / Points</th></tr></thead>
+    //       <tbody>${activityRows}</tbody>
+    //     </table>`}
+    // </div>`;
+
+    // ── Full Transactions Table (PDF) ─────────────────────────────
+const txns = shift.transactions || [];
+
+const txRows = txns.map(t => {
+    const isD  = t.type === "DEPOSIT";
+    const isCO = t.type === "WITHDRAWAL";
+    const isB  = t.type === "BONUS";
+    const isPending = t.status === "PENDING";
+    const amtColor  = isD ? "#16a34a" : isCO ? "#dc2626" : isB ? "#c2410c" : "#475569";
+    const amtSign   = isD ? "+" : isCO ? "−" : isB ? "−" : "";
+    const typeLabel = t.displayType || (isD ? "DEPOSIT" : isCO ? "CASHOUT" : isB ? "BONUS" : t.type);
+    const typeBg    = isD ? "#dcfce7" : isCO ? "#fee2e2" : isB ? "#fff7ed" : "#f1f5f9";
+    const typeClr   = isD ? "#166534" : isCO ? "#991b1b" : isB ? "#c2410c" : "#475569";
+
+    const pts = t.gameStockAfter != null && t.gameStockBefore != null
+        ? Math.round(t.gameStockAfter - t.gameStockBefore) : null;
+
+    const detail = [
+        t.gameName || t.game?.name,
+        t.walletMethod,
+        t.walletName,
+    ].filter(Boolean).join(" · ") || "—";
+
+    const ptsBefore = t.gameStockBefore != null ? t.gameStockBefore.toFixed(0) : null;
+    const ptsAfter  = t.gameStockAfter  != null ? t.gameStockAfter.toFixed(0)  : null;
+    const ptsStr    = ptsBefore != null
+        ? `${ptsBefore} → <b style="color:${pts < 0 ? "#7c3aed" : "#16a34a"}">${ptsAfter}</b>`
+        : "—";
+
+    const statusBg  = isPending ? "#fef3c7" : "#dcfce7";
+    const statusClr = isPending ? "#b45309" : "#166534";
+    const statusLbl = isPending ? "PENDING" : "DONE";
+
+    return `<tr>
+        <td class="gray" style="white-space:nowrap;font-size:11px">${fmtTime(t.createdAt)}</td>
+        <td><b style="font-size:12px">${t.user?.name || t.playerName || `#${t.userId}`}</b>${t.user?.email ? `<br><span style="font-size:10px;color:#94a3b8">${t.user.email}</span>` : ""}</td>
+        <td><span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:${typeBg};color:${typeClr}">${typeLabel}</span></td>
+        <td style="font-size:11px">${t.bonusType ? `<span style="padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700;background:#f5f3ff;color:#7c3aed">${t.bonusType.toUpperCase()}</span>` : '<span style="color:#cbd5e1">—</span>'}</td>
+        <td class="gray" style="font-size:11px">${detail}</td>
+        <td style="font-size:11px">${ptsStr}</td>
+        <td class="ta-r b" style="color:${amtColor};font-size:13px">${amtSign}${fmtMoney(t.amount)}</td>
+        <td class="ta-r" style="font-size:11px">${t.fee > 0 ? `<span style="color:#f59e0b;font-weight:700">−${fmtMoney(t.fee)}</span>` : '<span style="color:#cbd5e1">—</span>'}</td>
+        <td class="ta-r gray" style="font-size:11px">${t.balanceAfter != null ? fmtMoney(t.balanceAfter) : "—"}</td>
+        <td><span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;background:${statusBg};color:${statusClr}">${statusLbl}</span></td>
+    </tr>`;
+}).join("");
+
+// Totals footer row
+const totalDep  = txns.filter(t => t.type === "DEPOSIT"   ).reduce((s, t) => s + (t.amount ?? 0), 0);
+const totalCO   = txns.filter(t => t.type === "WITHDRAWAL").reduce((s, t) => s + (t.amount ?? 0), 0);
+const totalBonus= txns.filter(t => t.type === "BONUS"     ).reduce((s, t) => s + (t.amount ?? 0), 0);
+
+const totalsRow = `<tr class="total-row">
+    <td colspan="6" style="font-size:11px;font-weight:700;color:#475569">Totals (${txns.length} transaction${txns.length !== 1 ? "s" : ""})</td>
+    <td class="ta-r" style="font-size:12px">
+        <span style="color:#16a34a;font-weight:800">+${fmtMoney(totalDep)}</span><br>
+        <span style="color:#dc2626;font-weight:700;font-size:10px">−${fmtMoney(totalCO)}</span><br>
+        <span style="color:#c2410c;font-weight:700;font-size:10px">−${fmtMoney(totalBonus)} bonus</span>
+    </td>
+    <td colspan="3"></td>
+</tr>`;
+
+const activityHtml = `
+<div class="audit-section">
+    <div class="audit-header gray-hdr">Shift Transactions (${txns.length})</div>
+    ${txns.length === 0
+        ? `<p style="padding:16px;text-align:center;color:#94a3b8;font-style:italic">No transactions recorded</p>`
+        : `<table>
+            <thead><tr>
+                <th>Time</th><th>Player</th><th>Type</th><th>Bonus Type</th>
+                <th>Game / Wallet</th><th>Pts Before→After</th>
+                <th class="ta-r">Amount</th><th class="ta-r">Fee</th>
+                <th class="ta-r">Balance After</th><th>Status</th>
+            </tr></thead>
+            <tbody>${txRows}</tbody>
+            <tfoot>${totalsRow}</tfoot>
         </table>`}
-    </div>`;
+</div>`;
+    
 
     // ── Audit Verification ─────────────────────────────────────
     let auditVerHtml = "";
