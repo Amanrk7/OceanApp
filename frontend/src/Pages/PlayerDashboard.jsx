@@ -125,31 +125,41 @@ function TxPaymentProgress({ paid, total }) {
  *    the bonus engine may still be processing
  */
 
-function DailyMilestoneBar({ todayDeposits, pendingBonuses, onGrantClick }) {
+function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory = [], onGrantClick }) {
     const MILESTONE_STEP = 50;
     const BONUS_PER_MILESTONE = 5;
+
+    const texasToday = new Date().toLocaleDateString('en-US', {
+        timeZone: 'America/Chicago',
+        month: 'short', day: 'numeric', year: 'numeric'
+    });
+
+    // True only if a real Milestone Bonus transaction exists today
+    const grantedMilestoneValues = new Set(
+        transactionHistory
+            .filter(tx => {
+                const t = (tx.type || '').toLowerCase();
+                return t.includes('milestone') && tx.date === texasToday;
+            })
+            .map(tx => {
+                const m = (tx.description || '').match(/\$(\d+)\s+daily deposit milestone/i);
+                return m ? parseInt(m[1]) : null;
+            })
+            .filter(Boolean)
+    );
 
     const milestonesReached = Math.floor(todayDeposits / MILESTONE_STEP);
     const progressIntoNext = todayDeposits % MILESTONE_STEP;
     const toNext = parseFloat((MILESTONE_STEP - progressIntoNext).toFixed(2));
 
-    // Build a lookup: milestoneValue → full pending object (has .id for claiming)
     const pendingByValue = {};
     (pendingBonuses || []).forEach(m => { pendingByValue[m.milestone] = m; });
 
-    const claimedMilestoneValues = Array.from({ length: milestonesReached }, (_, i) => (i + 1) * MILESTONE_STEP)
-        .filter(v => !pendingByValue[v]);
-
     const slotsToShow = Math.max(3, Math.min(6, milestonesReached + 2));
     const slots = Array.from({ length: slotsToShow }, (_, i) => (i + 1) * MILESTONE_STEP);
-
     const totalBarWidth = slotsToShow * MILESTONE_STEP;
     const fillPct = Math.min((todayDeposits / totalBarWidth) * 100, 100);
-
-    const dividers = slots.slice(0, -1).map(v => ({
-        left: `${(v / totalBarWidth) * 100}%`,
-        reached: todayDeposits >= v,
-    }));
+    const dividers = slots.slice(0, -1).map(v => ({ left: `${(v / totalBarWidth) * 100}%` }));
 
     if (todayDeposits === 0 && (pendingBonuses || []).length === 0) {
         return (
@@ -168,94 +178,45 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, onGrantClick }) {
     const pendingCount = Object.keys(pendingByValue).length;
 
     return (
-        <div style={{
-            background: C.white, borderRadius: '14px',
-            border: `1px solid ${milestonesReached > 0 ? '#86efac' : C.border}`,
-            boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '18px 24px',
-        }}>
-
-            {/* Header */}
+        <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${milestonesReached > 0 ? '#86efac' : C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '18px 24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${milestonesReached > 0 ? '#d1fae5' : C.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: milestonesReached > 0 ? '#16a34a' : C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                        Daily Deposit Milestones
-                    </p>
+                    <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: milestonesReached > 0 ? '#16a34a' : C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Daily Deposit Milestones</p>
                     <span style={{ padding: '1px 7px', background: '#fffbeb', color: '#d97706', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>$50 each</span>
-                    {milestonesReached > 0 && (
-                        <span style={{ padding: '1px 7px', background: '#dcfce7', color: '#16a34a', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>
-                            {milestonesReached} reached
-                        </span>
-                    )}
-                    {pendingCount > 0 && (
-                        <span style={{
-                            padding: '1px 7px', background: '#fffbeb', color: '#d97706',
-                            borderRadius: '10px', fontSize: '11px', fontWeight: '700',
-                            animation: 'pulse 2s infinite',
-                        }}>
-                            {pendingCount} pending grant
-                        </span>
-                    )}
+                    {milestonesReached > 0 && <span style={{ padding: '1px 7px', background: '#dcfce7', color: '#16a34a', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>{milestonesReached} reached</span>}
+                    {pendingCount > 0 && <span style={{ padding: '1px 7px', background: '#fffbeb', color: '#d97706', borderRadius: '10px', fontSize: '11px', fontWeight: '700', animation: 'pulse 2s infinite' }}>{pendingCount} pending grant</span>}
                 </div>
                 <span style={{ fontSize: '11px', color: C.grayLt }}>resets at midnight</span>
             </div>
 
-            {/* Amount + next milestone */}
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '28px', fontWeight: '800', color: milestonesReached > 0 ? '#16a34a' : C.slate, lineHeight: 1 }}>
-                    ${todayDeposits.toFixed(2)}
-                </span>
+                <span style={{ fontSize: '28px', fontWeight: '800', color: milestonesReached > 0 ? '#16a34a' : C.slate, lineHeight: 1 }}>${todayDeposits.toFixed(2)}</span>
                 <span style={{ fontSize: '13px', color: C.gray }}>deposited today</span>
-                {milestonesReached < slotsToShow && (
-                    <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: '700', color: '#d97706' }}>
-                        ${toNext.toFixed(2)} to next milestone
-                    </span>
-                )}
-                {milestonesReached >= slotsToShow && (
-                    <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: '700', color: '#16a34a' }}>
-                        All visible milestones reached 🎉
-                    </span>
-                )}
+                {milestonesReached < slotsToShow
+                    ? <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: '700', color: '#d97706' }}>${toNext.toFixed(2)} to next milestone</span>
+                    : <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: '700', color: '#16a34a' }}>All visible milestones reached 🎉</span>}
             </div>
 
-            {/* Progress bar */}
             <div style={{ position: 'relative', height: '14px', background: '#e2e8f0', borderRadius: '99px', overflow: 'hidden', marginBottom: '6px' }}>
-                <div style={{
-                    position: 'absolute', left: 0, top: 0, height: '100%',
-                    width: `${fillPct}%`,
-                    background: milestonesReached > 0
-                        ? 'linear-gradient(90deg, #16a34a, #22c55e)'
-                        : 'linear-gradient(90deg, #0ea5e9, #7c3aed)',
-                    borderRadius: '99px', transition: 'width .5s ease',
-                }} />
-                {dividers.map((d, i) => (
-                    <div key={i} style={{
-                        position: 'absolute', left: d.left, top: 0,
-                        width: '2px', height: '100%',
-                        background: '#fff', opacity: 0.7,
-                    }} />
-                ))}
+                <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${fillPct}%`, background: milestonesReached > 0 ? 'linear-gradient(90deg,#16a34a,#22c55e)' : 'linear-gradient(90deg,#0ea5e9,#7c3aed)', borderRadius: '99px', transition: 'width .5s ease' }} />
+                {dividers.map((d, i) => <div key={i} style={{ position: 'absolute', left: d.left, top: 0, width: '2px', height: '100%', background: '#fff', opacity: 0.7 }} />)}
             </div>
 
-            {/* Tick labels */}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: C.grayLt, marginBottom: '14px', paddingLeft: '2px', paddingRight: '2px' }}>
                 <span>$0</span>
-                {slots.map(v => (
-                    <span key={v} style={{ fontWeight: todayDeposits >= v ? '700' : '400', color: todayDeposits >= v ? '#16a34a' : C.grayLt }}>
-                        ${v} {todayDeposits >= v ? '✓' : ''}
-                    </span>
-                ))}
+                {slots.map(v => <span key={v} style={{ fontWeight: todayDeposits >= v ? '700' : '400', color: todayDeposits >= v ? '#16a34a' : C.grayLt }}>${v} {todayDeposits >= v ? '✓' : ''}</span>)}
             </div>
 
-            {/* ── Milestone cards (clickable when pending) ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(140px, 1fr))`, gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
                 {slots.map(v => {
                     const reached = todayDeposits >= v;
-                    const pendingObj = pendingByValue[v];  // full object with .id
+                    const pendingObj = pendingByValue[v];
                     const isPending = !!pendingObj;
-                    const isClaimed = claimedMilestoneValues.includes(v);
+                    // ← FIXED: only green if real transaction exists
+                    const isClaimed = grantedMilestoneValues.has(v);
+                    const isClickable = isPending && !!onGrantClick;
 
                     let bg, border, textColor, badgeBg, badgeColor, badgeLabel, statusNote;
-
                     if (!reached) {
                         bg = C.bg; border = C.border; textColor = C.grayLt;
                         badgeBg = C.bg; badgeColor = C.grayLt;
@@ -264,111 +225,39 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, onGrantClick }) {
                     } else if (isPending) {
                         bg = '#fffbeb'; border = '#fde68a'; textColor = '#92400e';
                         badgeBg = '#fff'; badgeColor = '#d97706';
-                        badgeLabel = 'click to grant';
-                        statusNote = `+$${BONUS_PER_MILESTONE.toFixed(2)} ready`;
+                        badgeLabel = 'click to grant'; statusNote = `+$${BONUS_PER_MILESTONE.toFixed(2)} ready`;
                     } else if (isClaimed) {
                         bg = '#f0fdf4'; border = '#86efac'; textColor = '#166534';
                         badgeBg = '#fff'; badgeColor = '#16a34a';
-                        badgeLabel = 'granted ✓';
-                        statusNote = 'bonus was granted';
+                        badgeLabel = 'granted ✓'; statusNote = 'bonus was granted';
                     } else {
-                        // reached but no DB record yet (bonus engine async)
                         bg = '#fffbeb'; border = '#fde68a'; textColor = '#92400e';
                         badgeBg = '#fff'; badgeColor = '#d97706';
-                        badgeLabel = 'processing…';
-                        statusNote = 'go to Bonus page to grant';
+                        badgeLabel = 'processing…'; statusNote = 'bonus engine processing';
                     }
 
-                    const isClickable = isPending && !!onGrantClick;
-
                     return (
-                        <div
-                            key={v}
-                            onClick={() => isClickable && onGrantClick(pendingObj)}
+                        <div key={v} onClick={() => isClickable && onGrantClick(pendingObj)}
                             title={isClickable ? `Click to grant $${BONUS_PER_MILESTONE} bonus` : undefined}
-                            style={{
-                                padding: '12px 14px',
-                                background: bg,
-                                border: `1px solid ${border}`,
-                                borderRadius: '10px',
-                                opacity: reached ? 1 : 0.55,
-                                transition: 'all .15s ease',
-                                cursor: isClickable ? 'pointer' : 'default',
-                                // Pulse ring on pending cards
-                                boxShadow: isPending
-                                    ? '0 0 0 2px #fde68a, 0 4px 12px rgba(217,119,6,.15)'
-                                    : 'none',
-                                transform: 'scale(1)',
-                                position: 'relative',
-                            }}
-                            onMouseEnter={e => {
-                                if (isClickable) {
-                                    e.currentTarget.style.transform = 'scale(1.03)';
-                                    e.currentTarget.style.boxShadow = '0 0 0 2px #f59e0b, 0 8px 20px rgba(217,119,6,.25)';
-                                    e.currentTarget.style.border = '1px solid #f59e0b';
-                                }
-                            }}
-                            onMouseLeave={e => {
-                                if (isClickable) {
-                                    e.currentTarget.style.transform = 'scale(1)';
-                                    e.currentTarget.style.boxShadow = '0 0 0 2px #fde68a, 0 4px 12px rgba(217,119,6,.15)';
-                                    e.currentTarget.style.border = `1px solid ${border}`;
-                                }
-                            }}
-                        >
-                            {/* Click hint arrow for pending */}
-                            {isClickable && (
-                                <div style={{
-                                    position: 'absolute', top: '8px', right: '8px',
-                                    fontSize: '10px', color: '#d97706', fontWeight: '700',
-                                }}>
-                                    →
-                                </div>
-                            )}
-
+                            style={{ padding: '12px 14px', background: bg, border: `1px solid ${border}`, borderRadius: '10px', opacity: reached ? 1 : 0.55, transition: 'all .15s ease', cursor: isClickable ? 'pointer' : 'default', boxShadow: isPending ? '0 0 0 2px #fde68a, 0 4px 12px rgba(217,119,6,.15)' : 'none', position: 'relative' }}
+                            onMouseEnter={e => { if (isClickable) { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 0 0 2px #f59e0b, 0 8px 20px rgba(217,119,6,.25)'; } }}
+                            onMouseLeave={e => { if (isClickable) { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 0 2px #fde68a, 0 4px 12px rgba(217,119,6,.15)'; } }}>
+                            {isClickable && <div style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '10px', color: '#d97706', fontWeight: '700' }}>→</div>}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', paddingRight: isClickable ? '14px' : 0 }}>
                                 <span style={{ fontSize: '11px', fontWeight: '700', color: textColor }}>${v} milestone</span>
-                                <span style={{
-                                    fontSize: '9px', padding: '1px 5px', background: badgeBg,
-                                    borderRadius: '20px', color: badgeColor, fontWeight: '700',
-                                }}>
-                                    {badgeLabel}
-                                </span>
+                                <span style={{ fontSize: '9px', padding: '1px 5px', background: badgeBg, borderRadius: '20px', color: badgeColor, fontWeight: '700' }}>{badgeLabel}</span>
                             </div>
-
-                            <div style={{ fontSize: '18px', fontWeight: '800', color: textColor }}>
-                                +${BONUS_PER_MILESTONE.toFixed(2)}
-                            </div>
-
-                            <div style={{ fontSize: '10px', color: textColor, marginTop: '3px', opacity: 0.8 }}>
-                                {statusNote}
-                            </div>
-
-                            {/* Grant button strip for pending */}
-                            {isClickable && (
-                                <div style={{
-                                    marginTop: '8px', paddingTop: '8px',
-                                    borderTop: '1px solid #fde68a',
-                                    display: 'flex', alignItems: 'center', gap: '4px',
-                                    fontSize: '11px', fontWeight: '700', color: '#d97706',
-                                }}>
-                                    🏆 Grant now
-                                </div>
-                            )}
+                            <div style={{ fontSize: '18px', fontWeight: '800', color: textColor }}>+${BONUS_PER_MILESTONE.toFixed(2)}</div>
+                            <div style={{ fontSize: '10px', color: textColor, marginTop: '3px', opacity: 0.8 }}>{statusNote}</div>
+                            {isClickable && <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #fde68a', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: '700', color: '#d97706' }}>🏆 Grant now</div>}
                         </div>
                     );
                 })}
             </div>
 
-            {/* Help tip when there are pending grants */}
             {pendingCount > 0 && (
-                <div style={{
-                    marginTop: '12px', padding: '10px 14px',
-                    background: '#fffbeb', border: '1px solid #fde68a',
-                    borderRadius: '8px', fontSize: '12px', color: '#92400e',
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                }}>
-                    💡 <span>Click any <strong>"click to grant"</strong> card above to instantly grant the $5 milestone bonus — select a game and confirm.</span>
+                <div style={{ marginTop: '12px', padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '12px', color: '#92400e', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    💡 <span>Click any <strong>"click to grant"</strong> card to instantly grant the $5 milestone bonus.</span>
                 </div>
             )}
         </div>
@@ -1044,11 +933,13 @@ const todayTransactions = (player.transactionHistory || []).filter(tx =>
             {/* ── NEW: Activity stats ── */}
             <PlayerActivityStats player={player} />
 
-            <DailyMilestoneBar
-                todayDeposits={todayDeposits}
-                pendingBonuses={pendingMilestones}
-                onGrantClick={(m) => setGrantingMilestone(m)}
-            />
+           // Replace the DailyMilestoneBar call:
+<DailyMilestoneBar
+    todayDeposits={todayDeposits}
+    pendingBonuses={pendingMilestones}
+    transactionHistory={player.transactionHistory || []}
+    onGrantClick={(m) => setGrantingMilestone(m)}
+/>
 
             {/* ── PENDING MILESTONE + REFERRAL WEEKLY BONUSES ── */}
             <PendingBonusesCard
@@ -1650,11 +1541,22 @@ const todayTransactions = (player.transactionHistory || []).filter(tx =>
     <MilestoneGrantModal
         milestone={grantingMilestone}
         player={player}
-        todayDeposits={todayDeposits}          // ← required for milestone-reached check
+        todayDeposits={todayDeposits}
         onClose={() => setGrantingMilestone(null)}
-        onGranted={() => {
+        onGranted={async () => {
             setGrantingMilestone(null);
-            loadPlayer(false);
+            await loadPlayer(false);   // ← refreshes transactionHistory + bonuses
+            // Re-fetch pending milestones so card flips to "granted ✓"
+            try {
+                const BACKEND = (import.meta.env.VITE_API_URL || 'https://oceanappbackend.onrender.com').replace(/\/api\/?$/, '');
+                const token = localStorage.getItem('authToken');
+                const pbRes = await fetch(`${BACKEND}/api/players/${parseInt(playerId)}/pending-bonuses`, {
+                    credentials: 'include',
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                });
+                const pb = await pbRes.json();
+                setPendingMilestones(pb?.data?.milestones || []);
+            } catch { setPendingMilestones([]); }
             setSavedFlash(true);
             setTimeout(() => setSavedFlash(false), 2500);
         }}
