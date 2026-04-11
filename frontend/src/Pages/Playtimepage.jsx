@@ -7,9 +7,28 @@ import {
     Snowflake, Clock, AlertTriangle, Plus, Unlock,
 } from "lucide-react";
 import { api } from "../api";
+import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
 
 
+// ─── Inline SVG icons ─────────────────────────────────────────────────────────
+const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', flexShrink: 0 }}>
+        {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
+    </svg>
+);
+const IAlert = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} />;
+const ILock = () => <Ico d={['M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z', 'M7 11V7a5 5 0 0110 0v4']} />;
+
+const C = {
+    sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
+    green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
+    red: '#dc2626', redLt: '#fff1f2', redBdr: '#fecdd3',
+    amber: '#d97706', amberLt: '#fffbeb', amberBdr: '#fcd34d',
+    violet: '#7c3aed', violetLt: '#f5f3ff', violetBdr: '#ddd6fe',
+    slate: '#0f172a', gray: '#64748b', grayLt: '#94a3b8',
+    border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
+};
 // ─── Streak Tiers ─────────────────────────────────────────────────────────────
 const STREAK_TIERS = [
     { days: 2, bonus: 2, label: "Starter", color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1", ring: "#94a3b8" },
@@ -765,6 +784,8 @@ function PlayerRow({ player, depositGames, gamesLoading, onRedeem, onFreezeActio
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PlaytimePage() {
+    const { shiftActive } = useContext(ShiftStatusContext);
+
     const [players, setPlayers] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
@@ -987,6 +1008,30 @@ export default function PlaytimePage() {
             setFreezeLoading(false);
         }
     };
+
+    if (!shiftActive) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
+                    <button onClick={() => navigate('/shifts')} style={{ padding: '9px 18px', background: 'rgb(14, 165, 233)', color: '#fff' }}>Start Shift</button>
+                </nav>
+                <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <IAlert />
+                    <div>
+                        <p style={{ fontWeight: '700', color: '#78350f', margin: '0 0 2px', fontSize: '14px' }}>Shift Required</p>
+                        <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift to record a transaction.</p>
+                    </div>
+                </div>
+                <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '60px 28px', textAlign: 'center' }}>
+                    <div style={{ width: '60px', height: '60px', background: C.amberLt, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${C.amberBdr}` }}>
+                        <ILock />
+                    </div>
+                    <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '800', color: '#78350f' }}>Form Locked</p>
+                    <p style={{ margin: 0, fontSize: '13px', color: C.amber }}>Go to Shifts and start your shift first.</p>
+                </div>
+            </div>
+        );
+    }
 
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
