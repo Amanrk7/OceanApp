@@ -879,8 +879,20 @@ export default function PlayerDashboard() {
     //     const txDate = new Date(tx.date || tx.createdAt || tx.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
     //     return txDate === today;
     // });
-    const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-const todayTransactions = (player.transactionHistory || []).filter(tx => tx.date === today);
+//     const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+// const todayTransactions = (player.transactionHistory || []).filter(tx => tx.date === today);
+    // NEW - compare against last N hours instead of exact date string
+const now = new Date();
+const startOfToday = new Date(now);
+startOfToday.setHours(0, 0, 0, 0);
+
+const todayTransactions = (player.transactionHistory || []).filter(tx => {
+    if (!tx.date) return false;
+    // Parse the date string with noon anchor (same trick used in parseTxDate)
+    const d = new Date(tx.date);
+    d.setHours(12, 0, 0, 0);
+    return d >= startOfToday;
+});
     const todayDeposits = todayTransactions.filter(tx => tx.type === 'deposit').reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
     const todayCashouts = todayTransactions.filter(tx => tx.type === 'cashout').reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
 
