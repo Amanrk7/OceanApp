@@ -281,13 +281,13 @@ function PlayerActivityStats({ player }) {
 
     // const parseTxDate = (tx) => new Date(tx.date || tx.createdAt || tx.timestamp);
     const parseTxDate = (tx) => {
-    if (tx.date) {
-        const d = new Date(tx.date);
-        d.setHours(12, 0, 0, 0);  // fix UTC midnight → local timezone shift
-        return d;
-    }
-    return new Date(tx.createdAt || tx.timestamp || 0);
-};
+        if (tx.date) {
+            const d = new Date(tx.date);
+            d.setHours(12, 0, 0, 0);  // fix UTC midnight → local timezone shift
+            return d;
+        }
+        return new Date(tx.createdAt || tx.timestamp || 0);
+    };
 
     const sum = (type, since) =>
         txns
@@ -679,23 +679,23 @@ export default function PlayerDashboard() {
             //     setPendingMilestones(pb?.data?.milestones || []);
             // } catch { setPendingMilestones([]); }
             try {
-  // Pull the backend base URL the same way MilestoneGrantModal does
-  const BACKEND = (
-    import.meta.env.VITE_API_URL ||
-    import.meta.env.VITE_BACKEND_URL ||
-    import.meta.env.VITE_API_BASE_URL ||
-    'https://oceanappbackend.onrender.com'
-  ).replace(/\/api\/?$/, '');
- 
-  const pbRes = await fetch(
-    `${BACKEND}/api/players/${parseInt(playerId)}/pending-bonuses`,
-    { credentials: 'include' }
-  );
-  const pb = await pbRes.json();
-  setPendingMilestones(pb?.data?.milestones || []);
-} catch {
-  setPendingMilestones([]);
-}
+                // Pull the backend base URL the same way MilestoneGrantModal does
+                const BACKEND = (
+                    import.meta.env.VITE_API_URL ||
+                    import.meta.env.VITE_BACKEND_URL ||
+                    import.meta.env.VITE_API_BASE_URL ||
+                    'https://oceanappbackend.onrender.com'
+                ).replace(/\/api\/?$/, '');
+
+                const pbRes = await fetch(
+                    `${BACKEND}/api/players/${parseInt(playerId)}/pending-bonuses`,
+                    { credentials: 'include' }
+                );
+                const pb = await pbRes.json();
+                setPendingMilestones(pb?.data?.milestones || []);
+            } catch {
+                setPendingMilestones([]);
+            }
             loadEligible(parseInt(playerId));
             setLastUpdated(new Date());
         } catch (err) {
@@ -768,29 +768,29 @@ export default function PlayerDashboard() {
     //     const txDate = new Date(tx.date || tx.createdAt || tx.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
     //     return txDate === today;
     // });
-//     const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-// const todayTransactions = (player.transactionHistory || []).filter(tx => tx.date === today);
+    //     const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    // const todayTransactions = (player.transactionHistory || []).filter(tx => tx.date === today);
     // NEW - compare against last N hours instead of exact date string
-// const now = new Date();
-// const startOfToday = new Date(now);
-// startOfToday.setHours(0, 0, 0, 0);
+    // const now = new Date();
+    // const startOfToday = new Date(now);
+    // startOfToday.setHours(0, 0, 0, 0);
 
-// const todayTransactions = (player.transactionHistory || []).filter(tx => {
-//     if (!tx.date) return false;
-//     // Parse the date string with noon anchor (same trick used in parseTxDate)
-//     const d = new Date(tx.date);
-//     d.setHours(12, 0, 0, 0);
-//     return d >= startOfToday;
-// });
+    // const todayTransactions = (player.transactionHistory || []).filter(tx => {
+    //     if (!tx.date) return false;
+    //     // Parse the date string with noon anchor (same trick used in parseTxDate)
+    //     const d = new Date(tx.date);
+    //     d.setHours(12, 0, 0, 0);
+    //     return d >= startOfToday;
+    // });
     // Both sides now agree: "today" = current date in Texas time
-const texasTodayStr = new Date().toLocaleDateString('en-US', {
-  timeZone: 'America/Chicago',
-  month: 'short', day: 'numeric', year: 'numeric'
-});
+    const texasTodayStr = new Date().toLocaleDateString('en-US', {
+        timeZone: 'America/Chicago',
+        month: 'short', day: 'numeric', year: 'numeric'
+    });
 
-const todayTransactions = (player.transactionHistory || []).filter(tx => 
-  tx.date === texasTodayStr
-);
+    const todayTransactions = (player.transactionHistory || []).filter(tx =>
+        tx.date === texasTodayStr
+    );
 
     const todayDeposits = todayTransactions.filter(tx => tx.type === 'deposit').reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
     const todayCashouts = todayTransactions.filter(tx => tx.type === 'cashout').reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
@@ -933,13 +933,13 @@ const todayTransactions = (player.transactionHistory || []).filter(tx =>
             {/* ── NEW: Activity stats ── */}
             <PlayerActivityStats player={player} />
 
-           // Replace the DailyMilestoneBar call:
-<DailyMilestoneBar
-    todayDeposits={todayDeposits}
-    pendingBonuses={pendingMilestones}
-    transactionHistory={player.transactionHistory || []}
-    onGrantClick={(m) => setGrantingMilestone(m)}
-/>
+            {/* // Replace the DailyMilestoneBar call: */}
+            <DailyMilestoneBar
+                todayDeposits={todayDeposits}
+                pendingBonuses={pendingMilestones}
+                transactionHistory={player.transactionHistory || []}
+                onGrantClick={(m) => setGrantingMilestone(m)}
+            />
 
             {/* ── PENDING MILESTONE + REFERRAL WEEKLY BONUSES ── */}
             <PendingBonusesCard
@@ -1538,30 +1538,30 @@ const todayTransactions = (player.transactionHistory || []).filter(tx =>
             )}
 
             {grantingMilestone && (
-    <MilestoneGrantModal
-        milestone={grantingMilestone}
-        player={player}
-        todayDeposits={todayDeposits}
-        onClose={() => setGrantingMilestone(null)}
-        onGranted={async () => {
-            setGrantingMilestone(null);
-            await loadPlayer(false);   // ← refreshes transactionHistory + bonuses
-            // Re-fetch pending milestones so card flips to "granted ✓"
-            try {
-                const BACKEND = (import.meta.env.VITE_API_URL || 'https://oceanappbackend.onrender.com').replace(/\/api\/?$/, '');
-                const token = localStorage.getItem('authToken');
-                const pbRes = await fetch(`${BACKEND}/api/players/${parseInt(playerId)}/pending-bonuses`, {
-                    credentials: 'include',
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
-                });
-                const pb = await pbRes.json();
-                setPendingMilestones(pb?.data?.milestones || []);
-            } catch { setPendingMilestones([]); }
-            setSavedFlash(true);
-            setTimeout(() => setSavedFlash(false), 2500);
-        }}
-    />
-)}
+                <MilestoneGrantModal
+                    milestone={grantingMilestone}
+                    player={player}
+                    todayDeposits={todayDeposits}
+                    onClose={() => setGrantingMilestone(null)}
+                    onGranted={async () => {
+                        setGrantingMilestone(null);
+                        await loadPlayer(false);   // ← refreshes transactionHistory + bonuses
+                        // Re-fetch pending milestones so card flips to "granted ✓"
+                        try {
+                            const BACKEND = (import.meta.env.VITE_API_URL || 'https://oceanappbackend.onrender.com').replace(/\/api\/?$/, '');
+                            const token = localStorage.getItem('authToken');
+                            const pbRes = await fetch(`${BACKEND}/api/players/${parseInt(playerId)}/pending-bonuses`, {
+                                credentials: 'include',
+                                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                            });
+                            const pb = await pbRes.json();
+                            setPendingMilestones(pb?.data?.milestones || []);
+                        } catch { setPendingMilestones([]); }
+                        setSavedFlash(true);
+                        setTimeout(() => setSavedFlash(false), 2500);
+                    }}
+                />
+            )}
 
             <style>{`
                 @keyframes spin    { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
