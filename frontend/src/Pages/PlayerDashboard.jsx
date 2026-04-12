@@ -275,15 +275,33 @@ function PlayerActivityStats({ player }) {
     const txns = player.transactionHistory || [];
 
     const now = new Date();
-    const startOf = (daysAgo) => {
-        const d = new Date(now);
+    // const startOf = (daysAgo) => {
+    //     const d = new Date(now);
+    //     d.setDate(d.getDate() - daysAgo);
+    //     d.setHours(0, 0, 0, 0);
+    //     return d;
+    // };
+    // const start1d = startOf(0);
+    // const start7d = startOf(7);
+    // const start30d = startOf(30);
+
+    const getTexasDayCutoff = (daysAgo) => {
+        const d = new Date();
         d.setDate(d.getDate() - daysAgo);
-        d.setHours(0, 0, 0, 0);
-        return d;
+        // Get the date string in Texas time
+        const texasStr = d.toLocaleDateString('en-US', {
+            timeZone: 'America/Chicago',
+            month: 'short', day: 'numeric', year: 'numeric'
+        });
+        // Parse back in local time and set to midnight — now aligned with parseTxDate
+        const parsed = new Date(texasStr);
+        parsed.setHours(0, 0, 0, 0);
+        return parsed;
     };
-    const start1d = startOf(0);
-    const start7d = startOf(7);
-    const start30d = startOf(30);
+
+    const start1d  = getTexasDayCutoff(0);   // Texas today at local midnight
+    const start7d  = getTexasDayCutoff(7);
+    const start30d = getTexasDayCutoff(30);
 
     const parseTxDate = (tx) => {
         if (tx.date) {
