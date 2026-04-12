@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { useNavigate } from 'react-router-dom';
 import {
     CheckCircle, AlertCircle, Search, X, RefreshCw, ChevronDown,
-    ArrowDownLeft, ArrowUpRight, Zap, Gift, Star, Wallet, Clock, Users,
+    ArrowDownLeft, ArrowUpRight, Zap, Gift, Star, Wallet, Clock, Users, Lock
 } from "lucide-react";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
