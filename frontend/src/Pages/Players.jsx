@@ -405,7 +405,14 @@ export default function Players() {
 
             {editPlayer && <EditPlayer player={editPlayer} onClose={() => setEditPlayer(null)} onSaved={() => { setEditPlayer(null); loadPlayers(); }} />}
             {deletePlayer && <DeleteModal player={deletePlayer} onClose={() => setDeletePlayer(null)} onDeleted={() => { setDeletePlayer(null); loadPlayers(); }} />}
-            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+            {/* <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style> */}
+            <style>{`
+                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                ::-webkit-scrollbar { width: 5px; height: 5px; }
+                ::-webkit-scrollbar-track { background: #f8fafc; }
+                ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+                ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+            `}</style>
         </div>
     );
 }
