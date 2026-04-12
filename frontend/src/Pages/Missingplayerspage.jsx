@@ -101,8 +101,8 @@ function getTaskPlayerId(task) {
 
 // ─── Avatar ────────────────────────────────────────────────────
 const AVATAR_COLORS = [
-  ['#dc2626', '#fff'], ['#ea580c', '#fff'], ['#ca8a04', '#fff'], ['#16a34a', '#fff'],
-  ['#0891b2', '#fff'], ['#2563eb', '#fff'], ['#7c3aed', '#fff'], ['#db2777', '#fff'],
+  ['#6366f1','#eef2ff'], ['#0ea5e9','#f0f9ff'], ['#10b981','#f0fdf4'],
+        ['#f59e0b','#fffbeb'], ['#8b5cf6','#f5f3ff'], ['#ec4899','#fdf2f8'],
 ];
 function Avatar({ name, size = 40 }) {
   const idx = (name || '?').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_COLORS.length;
