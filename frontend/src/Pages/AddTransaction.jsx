@@ -809,7 +809,7 @@ function AddTransactionsPage() {
                 ) : ledger.length === 0 ? (
                     <div style={{ padding: "48px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No transactions yet</div>
                 ) : (
-                    <div style={{ width: "100%", overflowX: "auto", overflowY: "auto", maxHeight: "560px", scrollbarWidth: "thin" }}>
+                    <div style={{ width: "100%", overflowX: "auto", overflowY: "auto", maxHeight: "560px" }}>
                         <table style={{ width: "100%", minWidth: "900px", borderCollapse: "collapse", fontSize: "13px" }}>
                             <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
                                 <tr style={{ background: "#f8fafc" }}>
