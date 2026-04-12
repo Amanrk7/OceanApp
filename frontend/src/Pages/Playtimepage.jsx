@@ -106,21 +106,36 @@ const freezeApi = {
 };
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
+// function Avatar({ name, size = 36 }) {
+//     const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f43f5e", "#f97316", "#0ea5e9", "#10b981", "#14b8a6", "#a855f7", "#06b6d4"];
+//     const idx = name ? (name.charCodeAt(0) + (name.charCodeAt(1) || 0)) % COLORS.length : 0;
+//     const initials = name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "??";
+//     return (
+//         <div style={{
+//             width: size, height: size, borderRadius: "50%", background: COLORS[idx],
+//             display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+//             fontSize: size * 0.36, fontWeight: "800", color: "#fff", letterSpacing: "-0.5px",
+//         }}>
+//             {initials}
+//         </div>
+//     );
+// }
 function Avatar({ name, size = 36 }) {
-    const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f43f5e", "#f97316", "#0ea5e9", "#10b981", "#14b8a6", "#a855f7", "#06b6d4"];
-    const idx = name ? (name.charCodeAt(0) + (name.charCodeAt(1) || 0)) % COLORS.length : 0;
-    const initials = name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "??";
+    const initials = (name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    const colors = [
+        ['#6366f1', '#eef2ff'], ['#0ea5e9', '#f0f9ff'], ['#10b981', '#f0fdf4'],
+        ['#f59e0b', '#fffbeb'], ['#8b5cf6', '#f5f3ff'], ['#ec4899', '#fdf2f8'],
+    ];
+    const [fg, bg] = colors[(name || '').charCodeAt(0) % colors.length];
     return (
         <div style={{
-            width: size, height: size, borderRadius: "50%", background: COLORS[idx],
-            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            fontSize: size * 0.36, fontWeight: "800", color: "#fff", letterSpacing: "-0.5px",
-        }}>
-            {initials}
-        </div>
+            width: size, height: size, borderRadius: '50%', background: bg,
+            color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: '700', fontSize: size * 0.35, flexShrink: 0,
+            border: `1.5px solid ${fg}30`,
+        }}>{initials}</div>
     );
 }
-
 // ─── Streak Pill ──────────────────────────────────────────────────────────────
 function StreakPill({ streak }) {
     const tier = getEarnedTier(streak);
