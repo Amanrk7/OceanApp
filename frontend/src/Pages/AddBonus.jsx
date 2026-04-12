@@ -926,7 +926,7 @@ export default function BonusPage() {
                         <p style={{ color: "#94a3b8", fontSize: "13px", margin: 0 }}>No bonuses granted yet</p>
                     </div>
                 ) : (
-                    <div style={{ overflowX: "auto", maxHeight: "500px", overflowY: "auto", scrollbarWidth: "thin" }}>
+                    <div style={{ overflowX: "auto", maxHeight: "500px", overflowY: "auto" }}>
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
                             <thead>
                                 <tr style={{ background: "#f8fafc", position: "sticky", top: 0, zIndex: 1 }}>
