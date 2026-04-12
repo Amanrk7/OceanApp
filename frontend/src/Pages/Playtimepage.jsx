@@ -39,7 +39,19 @@ const STREAK_TIERS = [
     { days: 15, bonus: 28, label: "Blazing", color: "#ef4444", bg: "#fef2f2", border: "#fca5a5", ring: "#f87171" },
     { days: 30, bonus: 38, label: "LEGEND", color: "#10b981", bg: "#f0fdf4", border: "#86efac", ring: "#34d399", special: true },
 ];
-
+function Card({ children, style = {}, accent }) {
+    return (
+        <div style={{
+            background: "var(--color-background-primary)",
+            borderRadius: "var(--border-radius-lg)",
+            border: "0.5px solid var(--color-border-tertiary)",
+            ...(accent ? { borderLeft: `3px solid ${accent}` } : {}),
+            ...style,
+        }}>
+            {children}
+        </div>
+    );
+}
 function getEarnedTier(streak) {
     if (!streak || streak < 2) return null;
     let best = null;
@@ -1026,24 +1038,21 @@ export default function PlaytimePage() {
 
     if (!shiftActive) {
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
-                    <button onClick={() => navigate('/shifts')} style={{ padding: '9px 18px', background: 'rgb(14, 165, 233)', color: '#fff' }}>Start Shift</button>
-                </nav>
-                <div style={{ padding: '14px 18px', background: C.amberLt, borderLeft: `4px solid ${C.amber}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                    <IAlert />
-                    <div>
-                        <p style={{ fontWeight: '700', color: '#78350f', margin: '0 0 2px', fontSize: '14px' }}>Shift Required</p>
-                        <p style={{ color: '#92400e', margin: 0, fontSize: '12px', lineHeight: '1.5' }}>You must have an active shift to record a transaction.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <button onClick={() => navigate('/shifts')} style={{ alignSelf: "flex-start", padding: "9px 18px", background: "var(--color-background-info)", color: "var(--color-text-info)", border: "0.5px solid var(--color-border-info)", borderRadius: "var(--border-radius-md)", fontWeight: "500", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
+                    Start Shift
+                </button>
+                <Card style={{ padding: "14px 16px", borderLeft: "3px solid var(--color-border-warning)", background: "var(--color-background-warning)" }}>
+                    <p style={{ fontWeight: "500", color: "var(--color-text-warning)", margin: "0 0 2px", fontSize: "13px" }}>Shift required</p>
+                    <p style={{ color: "var(--color-text-warning)", margin: 0, fontSize: "12px" }}>You must have an active shift to grant bonuses and view tasks.</p>
+                </Card>
+                <Card style={{ padding: "60px 24px", textAlign: "center" }}>
+                    <div style={{ width: "48px", height: "48px", background: "var(--color-background-secondary)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                        <Lock style={{ width: "20px", height: "20px", color: "var(--color-text-tertiary)" }} />
                     </div>
-                </div>
-                <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '60px 28px', textAlign: 'center' }}>
-                    <div style={{ width: '60px', height: '60px', background: C.amberLt, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${C.amberBdr}` }}>
-                        <ILock />
-                    </div>
-                    <p style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '800', color: '#78350f' }}>Form Locked</p>
-                    <p style={{ margin: 0, fontSize: '13px', color: C.amber }}>Go to Shifts and start your shift first.</p>
-                </div>
+                    <p style={{ margin: "0 0 4px", fontSize: "14px", fontWeight: "500", color: "var(--color-text-primary)" }}>Dashboard locked</p>
+                    <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-tertiary)" }}>Go to Shifts and start your shift first.</p>
+                </Card>
             </div>
         );
     }
