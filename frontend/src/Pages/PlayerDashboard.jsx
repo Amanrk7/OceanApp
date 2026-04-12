@@ -366,7 +366,7 @@ function PlayerActivityStats({ player }) {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '480px' }}>
                     <thead>
                         <tr>
-                            <th style={{ ...thStyle, textAlign: 'left', paddingLeft: 0, color: 'transparent' }}>—</th>
+                            <th style={{ ...thStyle, textAlign: 'left', paddingLeft: 0, color: 'transparent' }}>Type</th>
                             {PERIODS.map(p => (
                                 <th key={p.label} style={{ ...thStyle, color: p.hColor, background: 'transparent' }}>{p.label}</th>
                             ))}
@@ -376,7 +376,7 @@ function PlayerActivityStats({ player }) {
                         {ROWS.map(row => (
                             <tr key={row.key}>
                                 <td style={{ ...tdBase, textAlign: 'left', paddingLeft: 0, display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', fontSize: '12px', color: C.gray }}>
-                                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'transparent', flexShrink: 0 }} />
+                                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: row.dot, flexShrink: 0 }} />
                                     {row.label}
                                 </td>
                                 {PERIODS.map(p => {
