@@ -347,7 +347,7 @@ function PlayerActivityStats({ player }) {
         { key: 'bon', label: 'Bonuses earned', dot: '#8b5cf6', getVal: (p) => p.bon, color: '#8b5cf6' },
     ];
 
-    const thStyle = { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: C.gray, padding: '0 10px 10px', textAlign: 'right', whiteSpace: 'nowrap' };
+    const thStyle = { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: C.gray, textAlign: 'right', whiteSpace: 'nowrap' };
     const tdBase = { padding: '9px 10px', borderTop: `1px solid ${C.border}`, textAlign: 'right', fontSize: '13px', fontWeight: '700' };
 
     return (
@@ -366,7 +366,7 @@ function PlayerActivityStats({ player }) {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '480px' }}>
                     <thead>
                         <tr>
-                            <th style={{ ...thStyle, textAlign: 'left', paddingLeft: 0, color: 'transparent' }}>Type</th>
+                            <th style={{ ...thStyle, textAlign: 'left'}}>Type</th>
                             {PERIODS.map(p => (
                                 <th key={p.label} style={{ ...thStyle, color: p.hColor, background: 'transparent' }}>{p.label}</th>
                             ))}
