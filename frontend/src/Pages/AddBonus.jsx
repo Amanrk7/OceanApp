@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useContext } from "react";
-import { CheckCircle, AlertCircle, Search, X, Gift, RefreshCw, Flame, Tag, Users } from "lucide-react";
+import { CheckCircle, AlertCircle, Search, X, Gift, RefreshCw, Flame, Tag, Users, Lock } from "lucide-react";
 import { api } from "../api";
 import { fmtTX } from "../utils/txTime";
 import { useNavigate } from 'react-router-dom';
