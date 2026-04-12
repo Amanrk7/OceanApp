@@ -4,7 +4,7 @@ import {
     CheckCircle, AlertCircle, RefreshCw, Search, X, Zap,
     ChevronDown, Flame, Trophy, ChevronLeft, ChevronRight,
     Calendar, Gamepad2, TrendingUp, Users, RotateCcw, Star,
-    Snowflake, Clock, AlertTriangle, Plus, Unlock,
+    Snowflake, Clock, AlertTriangle, Plus, Unlock, Lock,  // ← add Lock
 } from "lucide-react";
 import { api } from "../api";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
