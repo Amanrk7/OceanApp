@@ -531,7 +531,7 @@ export const ExpensesPage = () => {
                 </div>
 
                 {/* Table */}
-                <div style={{ overflowX: 'auto', overflowY: 'scroll', height: '340px', scrollbarWidth: 'thin' }}>
+                <div style={{ overflowX: 'auto', overflowY: 'scroll', height: '340px'}}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                         <thead>
                             <tr style={{ background: '#f8fafc', position: 'sticky', top: 0, zIndex: 1 }}>
@@ -775,6 +775,12 @@ export const ExpensesPage = () => {
                     <ModalActions onCancel={() => setShowPaymentModal(false)} submitLabel="Record Payment" accent="#16a34a" loading={submitting} />
                 </form>
             </Modal>
+
+            <style>{`
+                @keyframes spin    { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
+                @keyframes pulse   { 0%, 100% { opacity: 1; }           50% { opacity: 0.4; } }
+                @keyframes fadeIn  { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
+            `}</style>
         </div>
     );
 };
