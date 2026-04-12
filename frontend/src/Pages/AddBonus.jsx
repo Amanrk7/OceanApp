@@ -305,9 +305,9 @@ export default function BonusPage() {
         //     return;
         // }
         if (bonusType === "referral" && eligibleBonuses.length === 0) {
-    setError("No eligible referral bonus records found for this player.");
-    return;
-}
+            setError("No eligible referral bonus records found for this player.");
+            return;
+        }
         if (!stockOk) {
             setError(`Insufficient game stock. ${selectedGame?.name} has ${selectedGame?.pointStock?.toFixed(0)} pts, need ${amt.toFixed(0)} pts.`);
             return;
@@ -604,10 +604,10 @@ export default function BonusPage() {
                                 //     typeDisabled = true;
                                 //     disabledNote = "No referrer";
                                 // }
-            if (bt.id === "referral" && player && !eligLoading && eligibleBonuses.length === 0) {
-    typeDisabled = true;
-    disabledNote = "No eligible records";
-}
+                                if (bt.id === "referral" && player && !eligLoading && eligibleBonuses.length === 0) {
+                                    typeDisabled = true;
+                                    disabledNote = "No eligible records";
+                                }
 
                                 return (
                                     <button
@@ -837,9 +837,9 @@ export default function BonusPage() {
                             <div>
                                 <div style={{ fontWeight: "700", fontSize: "13px", color: stockOk && referralOk ? "#166534" : "#991b1b" }}>
                                     {!referralOk
-        ? "⚠ Cannot grant — no eligible referral bonus records found"
-        : !stockOk ? "⚠ Cannot grant — insufficient game stock"
-        : "✓ Ready to grant"}
+                                        ? "⚠ Cannot grant — no eligible referral bonus records found"
+                                        : !stockOk ? "⚠ Cannot grant — insufficient game stock"
+                                            : "✓ Ready to grant"}
                                 </div>
                                 <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
                                     {bonusType === "streak" ? "Streak Bonus" :
@@ -999,7 +999,6 @@ export default function BonusPage() {
                 )}
             </div>
 
-            {/* <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style> */}
             <style>{`
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                 ::-webkit-scrollbar { width: 5px; height: 5px; }
