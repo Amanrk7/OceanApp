@@ -368,7 +368,7 @@ function PlayerActivityStats({ player }) {
                         <tr>
                             <th style={{ ...thStyle, textAlign: 'left', paddingLeft: 0, color: 'transparent' }}>—</th>
                             {PERIODS.map(p => (
-                                <th key={p.label} style={{ ...thStyle, color: p.hColor, background: p.bgAlpha }}>{p.label}</th>
+                                <th key={p.label} style={{ ...thStyle, color: p.hColor, background: transparent }}>{p.label}</th>
                             ))}
                         </tr>
                     </thead>
@@ -376,13 +376,13 @@ function PlayerActivityStats({ player }) {
                         {ROWS.map(row => (
                             <tr key={row.key}>
                                 <td style={{ ...tdBase, textAlign: 'left', paddingLeft: 0, display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', fontSize: '12px', color: C.gray }}>
-                                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: row.dot, flexShrink: 0 }} />
+                                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: transparent, flexShrink: 0 }} />
                                     {row.label}
                                 </td>
                                 {PERIODS.map(p => {
                                     const isTotal = p.total && row.key !== 'bon';
                                     return (
-                                        <td key={p.label} style={{ ...tdBase, color: row.color, background: p.bgAlpha }}>
+                                        <td key={p.label} style={{ ...tdBase, color: row.color, background: transparent }}>
                                             {fmt(row.getVal(p))}
                                             {isTotal && <span style={{ fontSize: '9px', color: C.grayLt, fontWeight: '400', marginLeft: '3px' }}>30d</span>}
                                             {p.total && row.key === 'bon' && <span style={{ fontSize: '9px', color: '#16a34a', fontWeight: '700', marginLeft: '3px' }}>★</span>}
@@ -393,12 +393,12 @@ function PlayerActivityStats({ player }) {
                         ))}
                         <tr>
                             <td style={{ ...tdBase, textAlign: 'left', paddingLeft: 0, display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', fontSize: '12px', color: C.grayLt }}>
-                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: C.border, flexShrink: 0 }} />
+                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: transparent, flexShrink: 0 }} />
                                 Net (dep − cash)
                             </td>
                             {PERIODS.map(p => {
                                 const { label, color } = net(p.dep, p.cash);
-                                return <td key={p.label} style={{ ...tdBase, color, fontSize: '12px', background: p.bgAlpha }}>{label}</td>;
+                                return <td key={p.label} style={{ ...tdBase, color, fontSize: '12px', background: transparent }}>{label}</td>;
                             })}
                         </tr>
                     </tbody>
