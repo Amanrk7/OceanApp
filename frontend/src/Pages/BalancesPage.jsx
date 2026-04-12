@@ -166,7 +166,7 @@ export const BalancesPage = () => {
                     {games.length === 0 ? (
                         <p style={{ textAlign: 'center', padding: '32px', color: '#94a3b8', fontSize: '13px' }}>No games found</p>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '420px', overflowY: 'auto', scrollbarWidth: 'thin' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '420px', overflowY: 'auto' }}>
                             {games.map((game) => {
                                 const stockColor = game.status === 'DEFICIT' ? '#dc2626' : game.status === 'LOW_STOCK' ? '#d97706' : '#16a34a';
                                 return (
