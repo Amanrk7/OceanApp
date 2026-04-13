@@ -47,6 +47,7 @@ import AdminReportPage from "./Pages/Adminreportpage.jsx";
 import MissingPlayersPage from "./Pages/Missingplayerspage.jsx";
 import Playtimepage from "./Pages/Playtimepage.jsx";
 import PendingTransactionsBanner from "./Components/Pendingtransactionsbanner.jsx";
+import ProfitTakeoutsPage from "./Pages/ProfitTakeoutsPage.jsx";
 
 const SIDEBAR_W = 62;
 
@@ -381,6 +382,7 @@ const NAV_ITEMS = [
   { id: "transactions", label: "All Transactions", icon: Invoice02Icon },
   { id: "balances", label: "Live Balances", icon: BalanceScaleIcon, dividerAfter: true },
   { id: "expenses", label: "Expenses", icon: Invoice03Icon, adminsOnly: true },
+  { id: 'profitTakeouts', label: 'Profit Takeouts', icon: DollarCircleIcon, adminsOnly: true },
   { id: "addTasks", label: "Add Tasks", icon: TaskEdit01Icon, adminsOnly: true },
   { id: "addTransactions", label: "Add Transaction", icon: AddMoneyCircleIcon, adminsOnly: false },
   { id: "addBonus", label: "Add Bonus", icon: GiftIcon, adminsOnly: false },
@@ -573,7 +575,7 @@ function AdminDashboard({ user }) {
     catch { setErrorMsg("Logout failed"); }
     finally { setLoading(false); }
   };
-  
+
   const handleNavigate = (pageId, extra = {}) => {
     if (pageId !== 'players') setAddPlayer(false);
     setPage(pageId);
@@ -588,7 +590,7 @@ function AdminDashboard({ user }) {
     dashboard: 'Dashboard', memberDashboard: 'Member Dashboard', players: 'Players',
     dailyCheckups: 'Daily Checkups',
     playTime: 'Play Time', games: 'Games', attendance: 'Attendance', issues: 'Issues',
-    transactions: 'All Transactions', balances: 'Live Balances', expenses: 'Expenses',
+    transactions: 'All Transactions', balances: 'Live Balances', expenses: 'Expenses', profitTakeouts: 'Profit Takeouts',
     addTransactions: 'Add Transaction', addBonus: 'Add Bonus', reports: 'Reports',
     manageWallets: 'Manage Wallets', shifts: 'Shifts', addTasks: 'Add Tasks',
     adminReports: 'Admin Reports',
@@ -606,6 +608,7 @@ function AdminDashboard({ user }) {
       case "issues": return <Issues />;
       case "transactions": return <Transactions />;
       case "expenses": return <ExpensesPage />;
+      case 'profitTakeouts': return <ProfitTakeoutsPage />;
       case "balances": return <BalancesPage />;
       case "manageWallets": return <ManageWalletsPage />;
       case "shifts": return <ShiftsPage />;
