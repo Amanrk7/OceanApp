@@ -695,7 +695,7 @@ export const referralBonusAPI = {
   getLedger: () => fetchAPI('/referral-bonuses'),
 };
 
-export const profitTakeoutsAPI: {
+export const profitTakeoutsAPI = {
       getAll:  (page = 1) => fetchAPI(`/profit-takeouts?page=${page}&limit=100`),
       create:  (body)     => fetchAPI('/profit-takeouts', { method: 'POST', body: JSON.stringify(body) }),
       update:  (id, body) => fetchAPI(`/profit-takeouts/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
