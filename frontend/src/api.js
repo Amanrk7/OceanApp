@@ -695,6 +695,12 @@ export const referralBonusAPI = {
   getLedger: () => fetchAPI('/referral-bonuses'),
 };
 
+export const profitTakeoutsAPI: {
+      getAll:  (page = 1) => fetchAPI(`/profit-takeouts?page=${page}&limit=100`),
+      create:  (body)     => fetchAPI('/profit-takeouts', { method: 'POST', body: JSON.stringify(body) }),
+      update:  (id, body) => fetchAPI(`/profit-takeouts/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+      remove:  (id)       => fetchAPI(`/profit-takeouts/${id}`, { method: 'DELETE' }),
+};
 // ═══════════════════════════════════════════════════════════════
 // CONSOLIDATED API EXPORT
 // ═══════════════════════════════════════════════════════════════
@@ -715,6 +721,7 @@ export const api = {
   tasks: tasksAPI,
   reports: reportsAPI,
   referralBonuses: referralBonusAPI,
+  profitTakeouts: profitTakeoutsAPI,
   clearCache: () => cache.clearAll(),
   getCacheStatus: () => ({ items: Object.keys(cache.data).length, keys: Object.keys(cache.data) })
 };
