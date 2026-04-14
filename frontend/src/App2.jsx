@@ -819,14 +819,14 @@ export default function App() {
                             <Router>
                                 <Routes>
                                     <Route path="/"
-                                        element={user ? <AdminDashboard user={user} /> : <LoginPage />}
+                                        element={!user ? <AdminDashboard user={user} /> : <LoginPage />}
                                     />
                                     <Route path="/PlayerDashboard/:playerId"
                                         element={user ? <PlayerDashboardWithSidebar user={user} /> : <LoginPage />}
                                     />
 
                                     <Route path="/shifts"
-                                        element={!user ? <ShiftsWithSidebar user={user} /> : <LoginPage />}
+                                        element={user ? <ShiftsWithSidebar user={user} /> : <LoginPage />}
                                     />
 
 
