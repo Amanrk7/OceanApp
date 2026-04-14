@@ -545,7 +545,7 @@ export default function ProfitTakeoutsPage() {
                                                 <span style={{ fontWeight: '600' }}>{r.takenBy}</span>
                                             </div>
                                         </td>
-                                        <td style={{ ...TD, textAlign: 'right', fontWeight: '800', fontSize: '15px', color: '#dc2626' }}>
+                                        <td style={{ ...TD, fontWeight: '800', fontSize: '15px', color: '#dc2626' }}>
                                             {fmtMoney(r.amount)}
                                         </td>
                                         <td style={TD}><MethodBadge method={r.method} /></td>
