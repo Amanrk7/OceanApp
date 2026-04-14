@@ -196,10 +196,22 @@ function TakeoutForm({ initial, wallets, onSubmit, onCancel, loading, error }) {
     };
 
     const flatWallets = wallets.flatMap(g =>
-        g.subAccounts.map(s => ({
+        g.subAccounts.filter(s => s.isLive !== false).map(s => ({
             id: s.id, label: `${g.method} — ${s.name} ($${Number(s.balance || 0).toFixed(2)})`,
         }))
     );
+
+    // const loadWallets = useCallback(async () => {
+    //     try {
+    //         const r = await api.wallets.getGroupedWallets(true);
+    //         const flat = (r?.data || []).flatMap(g =>
+    //             g.subAccounts
+    //                 .filter(s => s.isLive !== false)
+    //                 .map(s => ({ ...s, label: `${g.method} — ${s.name}  (${fmt(s.balance)})`, methodName: g.method, methodId: g.id }))
+    //         );
+    //         setWallets(flat);
+    //     } catch (e) { console.error(e); }
+    // }, []);
 
     return (
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
