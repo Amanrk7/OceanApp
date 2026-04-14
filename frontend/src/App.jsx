@@ -710,7 +710,36 @@ function PlayerDashboardWithSidebar({ user }) {
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// Add New Player page WITH SIDEBAR
+// ══════════════════════════════════════════════════════════════════════════
+function AddNewPlayerWithSidebar({ user }) {
+  const { setUsr } = useContext(CurrentUserContext);
+  setUsr(user);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  // console.log("user is the: ", user);
+  const handleLogout = async () => {
+    try { setLoading(true); await api.auth.logout(); window.location.reload(); }
+    catch { } finally { setLoading(false); }
+  };
 
+  return (
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--color-bg)", width: "100vw" }}>
+      <Sidebar
+        user={user}
+        activePage="players"
+        onNavigate={(id) => navigate(`/?page=${id}`)}
+        onLogout={handleLogout}
+      />
+      <main className="ob-main">
+        <div className="ob-container">
+          <AddNewPlayer />
+        </div>
+      </main>
+    </div>
+  );
+}
 // ══════════════════════════════════════════════════════════════════════════
 function ShiftsWithSidebar({ user }) {
   const { setUsr } = useContext(CurrentUserContext);
@@ -847,7 +876,7 @@ export default function App() {
                   />
 
                   <Route path="/addNewPlayer"
-                    element={user ? <AddNewPlayer /> : <LoginPage />}
+                    element={user ? <AddNewPlayerWithSidebar user={user} /> : <LoginPage />}
                   />
 
                 </Routes>
