@@ -374,8 +374,8 @@ const CSS = `
 `;
 
 const NAV_ITEMS = [
-  { id: "store2", label: "Store 2", icon: ArrowDataTransferDiagonalIcon },
   { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: false },
+  { id: "store2", label: "Store 2", icon: ArrowDataTransferDiagonalIcon },
   { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon, adminsOnly: false },
   { id: "players", label: "Players", icon: UserGroup03Icon },
   { id: "dailyCheckups", label: "Daily Checkups", icon: FolderOpenIcon },
@@ -599,7 +599,7 @@ function AdminDashboard({ user }) {
 
 
   const navLabels = {
-    store2: 'Store 2', dashboard: 'Dashboard', memberDashboard: 'Member Dashboard', players: 'Players',
+    dashboard: 'Dashboard', store2: 'Store 2',memberDashboard: 'Member Dashboard', players: 'Players',
     dailyCheckups: 'Daily Checkups',
     playTime: 'Play Time', games: 'Games', attendance: 'Attendance', issues: 'Issues',
     transactions: 'All Transactions', balances: 'Live Balances', expenses: 'Expenses', profitTakeouts: 'Profit Takeouts',
@@ -610,8 +610,8 @@ function AdminDashboard({ user }) {
 
   const renderPage = () => {
     switch (page) {
-      case "store2": return <Store2 />;
       case "dashboard": return <AnalyticsDashboard />;
+      case "store2": return <Store2 />;
       case "memberDashboard": return <TeamDashboard user={user} />;
       case "players": return <Players />;
       case "dailyCheckups": return <MissingPlayersPage currentUser={user} />;
