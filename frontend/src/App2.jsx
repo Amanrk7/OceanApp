@@ -374,7 +374,7 @@ const CSS = `
 `;
 
 const NAV_ITEMS = [
-    { id: "dashboard", label: "Dashboard [Store 2]", icon: Home01Icon, adminsOnly: false },
+    { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: false },
     { id: "store1", label: "Store 1", icon: ArrowDataTransferDiagonalIcon },
     { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon, adminsOnly: false },
     { id: "players", label: "Players", icon: UserGroup03Icon },
@@ -598,7 +598,7 @@ function AdminDashboard({ user }) {
 
 
     const navLabels = {
-        dashboard: 'Dashboard', store1: 'Store 1', memberDashboard: 'Member Dashboard', players: 'Players',
+        dashboard: 'Dashboard [Store 2]', store1: 'Store 1', memberDashboard: 'Member Dashboard', players: 'Players',
         dailyCheckups: 'Daily Checkups',
         playTime: 'Play Time', games: 'Games', attendance: 'Attendance', issues: 'Issues',
         transactions: 'All Transactions', balances: 'Live Balances', expenses: 'Expenses', profitTakeouts: 'Profit Takeouts',
