@@ -826,7 +826,7 @@ export default function App() {
                                     />
 
                                     <Route path="/shifts"
-                                        element={user ? <ShiftsWithSidebar user={user} /> : <LoginPage />}
+                                        element={!user ? <ShiftsWithSidebar user={user} /> : <LoginPage />}
                                     />
 
 
