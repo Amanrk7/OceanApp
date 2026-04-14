@@ -271,17 +271,18 @@ const CSS = `
   .ob-drawer-logo { display: flex; align-items: center; gap: 10px; padding: 0 16px 18px; flex-shrink: 0; }
   .ob-drawer-logo .ob-drawer-title { font-weight: 800; font-size: 15px; color: #f8fafc; letter-spacing: -.3px; }
 
-  .ob-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; width: 100%; padding: 0 8px; }
+  .ob-nav { display: flex; flex-direction: column; gap: clamp(0px, 0.3vh, 2px); flex: 1; width: 100%; padding: 0 8px; min-height: 0; overflow: hidden; }
   .ob-nav-item { position: relative; width: 100%; }
 
   .ob-navlink {
     display: flex; align-items: center; justify-content: center;
-    width: 100%; padding: 10px; border-radius: 8px;
+    width: 100%; padding: clamp(4px, 0.9vh, 10px); border-radius: 8px;
     font-weight: 500; font-size: 14px; color: #64748b;
     cursor: pointer; transition: all .15s;
     border: none; background: none; font-family: inherit;
     white-space: nowrap; flex-shrink: 0; line-height: 1;
   }
+
   .ob-navlink:hover { background: rgba(14,165,233,.1); color: #0ea5e9; }
   .ob-navlink.active { background: var(--color-hover-tab); color: #fff; font-weight: 600; }
   .ob-navlink:disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
