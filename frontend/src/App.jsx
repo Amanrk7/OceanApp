@@ -216,7 +216,7 @@ const CSS = `
   .ob-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; border-radius: 10px; padding: 10px 14px; font-size: 14px; margin-bottom: 14px; }
 
   .ob-sidebar {
-    position: fixed; left: 0; top: 0; bottom: 0;
+    position: fixed; left: 0; top: 0; bottom: 0; overflow-x: hidden; overflow-y: auto;
     width: var(--sidebar-w); min-width: var(--sidebar-w); max-width: var(--sidebar-w);
     background: var(--color-sidebar);
     border-right: 1px solid #1e293b;
@@ -224,6 +224,7 @@ const CSS = `
     display: flex; flex-direction: column; align-items: center;
     z-index: 100;
     transition: background .25s;
+    
   }
 
   .ob-sidebar-drawer {
@@ -473,7 +474,15 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
           {user?.name?.[0]?.toUpperCase() || 'A'}
         </div>
       </div>
+
+      <style>{`
+                ::-webkit-scrollbar { width: 5px; height: 5px; }
+                ::-webkit-scrollbar-track { background: #f8fafc; }
+                ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+                ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+            `}</style>
     </aside>
+
   );
 
   const MobileNav = (
@@ -542,6 +551,14 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
             </div>
           </div>
         </div>
+
+        <style>{`
+                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                ::-webkit-scrollbar { width: 5px; height: 5px; }
+                ::-webkit-scrollbar-track { background: #f8fafc; }
+                ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+                ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+            `}</style>
       </div>
     </>
   );
@@ -599,7 +616,7 @@ function AdminDashboard({ user }) {
 
 
   const navLabels = {
-    dashboard: 'Dashboard [Store 1]', store2: 'Store 2',memberDashboard: 'Member Dashboard', players: 'Players',
+    dashboard: 'Dashboard [Store 1]', store2: 'Store 2', memberDashboard: 'Member Dashboard', players: 'Players',
     dailyCheckups: 'Daily Checkups',
     playTime: 'Play Time', games: 'Games', attendance: 'Attendance', issues: 'Issues',
     transactions: 'All Transactions', balances: 'Live Balances', expenses: 'Expenses', profitTakeouts: 'Profit Takeouts',
