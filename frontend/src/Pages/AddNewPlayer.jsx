@@ -27,6 +27,19 @@ const IWallet = () => <Ico d={['M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002
 const ILink = () => <Ico d={['M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71', 'M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71']} />;
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
+function Card({ children, style = {}, accent }) {
+    return (
+        <div style={{
+            background: "var(--color-background-primary)",
+            borderRadius: "var(--border-radius-lg)",
+            border: "0.5px solid var(--color-border-tertiary)",
+            ...(accent ? { borderLeft: `3px solid ${accent}` } : {}),
+            ...style,
+        }}>
+            {children}
+        </div>
+    );
+}
 const C = {
     sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
     green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
