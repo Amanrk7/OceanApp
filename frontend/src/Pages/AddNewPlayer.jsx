@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, X } from 'lucide-react'
+import { Search, X, Lock } from 'lucide-react'
 import { AddPlayerContext } from "../Context/addPlayer";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { api } from "../api";
