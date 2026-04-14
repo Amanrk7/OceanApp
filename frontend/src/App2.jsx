@@ -598,7 +598,7 @@ function AdminDashboard({ user }) {
 
 
     const navLabels = {
-        dashboard: 'Dashboard [Store 2]', store1: 'Store 1', memberDashboard: 'Member Dashboard', players: 'Players',
+        dashboard: 'Dashboard', store1: 'Store 1', memberDashboard: 'Member Dashboard', players: 'Players',
         dailyCheckups: 'Daily Checkups',
         playTime: 'Play Time', games: 'Games', attendance: 'Attendance', issues: 'Issues',
         transactions: 'All Transactions', balances: 'Live Balances', expenses: 'Expenses', profitTakeouts: 'Profit Takeouts',
