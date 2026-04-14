@@ -51,6 +51,7 @@ import MissingPlayersPage from "./Pages/Missingplayerspage.jsx";
 import Playtimepage from "./Pages/Playtimepage.jsx";
 import PendingTransactionsBanner from "./Components/Pendingtransactionsbanner.jsx";
 import ProfitTakeoutsPage from "./Pages/ProfitTakeoutsPage.jsx";
+import AddNewPlayer from "./Pages/AddNewPlayer.jsx";
 
 const SIDEBAR_W = 62;
 
@@ -664,11 +665,11 @@ function AdminDashboard({ user }) {
           />
           <div className="ob-header" style={{ alignItems: "center", justifyContent: "flex-start", gap: "4px" }}>
             <h1>{navLabels[page] || 'Dashboard'}</h1>
-            {addPlayer && (
+            {/* {addPlayer && (
               <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-text)" }}>
                 &gt; Add New Player
               </span>
-            )}
+            )} */}
           </div>
           {errorMsg && <div className="ob-error">{errorMsg}</div>}
           {renderPage()}
@@ -845,6 +846,9 @@ export default function App() {
                     element={user ? <ShiftsWithSidebar user={user} /> : <LoginPage />}
                   />
 
+                  <Route path="/addNewPlayer"
+                    element={user ? <AddNewPlayer /> : <LoginPage />}
+                  />
 
                 </Routes>
               </Router>
