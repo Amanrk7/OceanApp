@@ -374,7 +374,7 @@ const CSS = `
 `;
 
 const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: false },
+  { id: "dashboard", label: "Dashboard [Store 1]", icon: Home01Icon, adminsOnly: false },
   { id: "store2", label: "Store 2", icon: ArrowDataTransferDiagonalIcon },
   { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon, adminsOnly: false },
   { id: "players", label: "Players", icon: UserGroup03Icon },
