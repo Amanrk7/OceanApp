@@ -216,7 +216,7 @@ const CSS = `
   .ob-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; border-radius: 10px; padding: 10px 14px; font-size: 14px; margin-bottom: 14px; }
 
   .ob-sidebar {
-    position: fixed; left: 0; top: 0; bottom: 0; overflow-x: hidden; overflow-y: auto;
+    position: fixed; left: 0; top: 0; bottom: 0;
     width: var(--sidebar-w); min-width: var(--sidebar-w); max-width: var(--sidebar-w);
     background: var(--color-sidebar);
     border-right: 1px solid #1e293b;
@@ -224,8 +224,7 @@ const CSS = `
     display: flex; flex-direction: column; align-items: center;
     z-index: 100;
     transition: background .25s;
-    
-  }
+}
 
   .ob-sidebar-drawer {
     position: fixed; left: 0; top: 0; bottom: 0;
