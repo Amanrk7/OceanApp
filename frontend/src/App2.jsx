@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback, useContext } from "react";
 import { App2Context, App2Provider } from "./Context/store2Switch.jsx";
 
 export default function App2() {
