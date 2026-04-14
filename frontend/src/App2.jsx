@@ -224,7 +224,7 @@ const CSS = `
     display: flex; flex-direction: column; align-items: center;
     z-index: 100;
     transition: background .25s;
-  }
+}
 
   .ob-sidebar-drawer {
     position: fixed; left: 0; top: 0; bottom: 0;
