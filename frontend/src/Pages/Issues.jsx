@@ -13,7 +13,7 @@ const CARD = {
 };
 const LABEL = {
   display: 'block', fontSize: '11px', fontWeight: '700', color: '#64748b',
-  textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px',
+letterSpacing: '0.5px', marginBottom: '6px',
 };
 const INPUT = {
   width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0',
