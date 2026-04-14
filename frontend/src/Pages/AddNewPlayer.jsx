@@ -222,36 +222,30 @@ function PlayerPicker({ label, hint, value, onChange, multi = true }) {
 
 // ─── Breadcrumb ───────────────────────────────────────────────────────────────
 function Breadcrumb({ onPlayersClick, onDashboardClick }) {
-    const crumbs = [
-        { label: 'Dashboard', onClick: onDashboardClick },
-        { label: 'Players', onClick: onPlayersClick },
-        { label: 'Add New Player', onClick: null },
-    ];
+
     return (
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', background: 'none' }}>
-            {crumbs.map((item, i) => (
-                <span key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {item.onClick ? (
-                        <button
-                            type="button"
-                            onClick={item.onClick}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '13px', padding: '2px 6px', borderRadius: '6px' }}
+
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', width: 'fit-content', flexWrap: 'wrap' }}>
+            {[
+                { label: 'Dashboard', onClick: () => navigate('/') },
+                { label: 'Players', onClick: () => navigate('/?page=players') },
+                { label: player.name, onClick: null },
+            ].map((item, i, arr) => (
+                <React.Fragment key={i}>
+                    {item.onClick
+                        ? <button onClick={item.onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.sky, fontWeight: '600', fontSize: '13px', padding: '2px 6px', borderRadius: '6px' }}
                             onMouseEnter={e => e.currentTarget.style.background = C.skyLt}
-                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                        >
-                            {item.label}
-                        </button>
-                    ) : (
-                        <span style={{ fontWeight: '700', fontSize: '13px', padding: '2px 6px' }}>{item.label}</span>
-                    )}
-                    {i < crumbs.length - 1 && (
-                        <span style={{ color: C.grayLt, fontSize: '16px', userSelect: 'none' }}>›</span>
-                    )}
-                </span>
+                            onMouseLeave={e => e.currentTarget.style.background = 'none'}>{item.label}</button>
+                        : <span style={{ fontWeight: '700', fontSize: '13px', padding: '2px 6px' }}>{item.label}</span>
+                    }
+                    {i < arr.length - 1 && <span style={{ color: C.grayLt, fontSize: '16px', userSelect: 'none' }}>›</span>}
+                </React.Fragment>
             ))}
+
         </nav>
     );
 }
+
 
 // ─── Shared UI helpers ────────────────────────────────────────────────────────
 function Field({ label, required, hint, children }) {
