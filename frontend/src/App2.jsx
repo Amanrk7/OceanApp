@@ -1,6 +1,6 @@
 import { App2Context, App2Provider } from "./Context/store2Switch.jsx";
 
-export const App2 = () => {
+export default function App2() {
     const { setIsStore2 } = useContext(App2Context);
     const set = () => {
         setIsStore2(prev => !prev);
