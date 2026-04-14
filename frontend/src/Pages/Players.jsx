@@ -22,34 +22,34 @@ const C = {
 const TIER = {
     BRONZE: { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa', dot: '#f97316', label: 'Bronze' },
     SILVER: { bg: '#eef2ff', text: '#3730a3', border: '#c7d2fe', dot: '#6366f1', label: 'Silver' },
-    GOLD:   { bg: '#fefce8', text: '#854d0e', border: '#fde68a', dot: '#eab308', label: 'Gold'   },
+    GOLD: { bg: '#fefce8', text: '#854d0e', border: '#fde68a', dot: '#eab308', label: 'Gold' },
 };
 const STATUS = {
-    ACTIVE:          { bg: '#f0fdf4', text: '#15803d', border: '#86efac', dot: '#22c55e', label: 'Active'     },
-    CRITICAL:        { bg: '#fefce8', text: '#854d0e', border: '#fde68a', dot: '#eab308', label: 'Critical'   },
+    ACTIVE: { bg: '#f0fdf4', text: '#15803d', border: '#86efac', dot: '#22c55e', label: 'Active' },
+    CRITICAL: { bg: '#fefce8', text: '#854d0e', border: '#fde68a', dot: '#eab308', label: 'Critical' },
     HIGHLY_CRITICAL: { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa', dot: '#f97316', label: 'High Crit.' },
-    INACTIVE:        { bg: '#fef2f2', text: '#991b1b', border: '#fecaca', dot: '#ef4444', label: 'Inactive'   },
-    SUSPENDED:       { bg: '#fef2f2', text: '#991b1b', border: '#fecaca', dot: '#ef4444', label: 'Suspended'  },
-    BANNED:          { bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe', dot: '#8b5cf6', label: 'Banned'     },
+    INACTIVE: { bg: '#fef2f2', text: '#991b1b', border: '#fecaca', dot: '#ef4444', label: 'Inactive' },
+    SUSPENDED: { bg: '#fef2f2', text: '#991b1b', border: '#fecaca', dot: '#ef4444', label: 'Suspended' },
+    BANNED: { bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe', dot: '#8b5cf6', label: 'Banned' },
 };
 
 const SOCIALS = [
-    { key: 'email',     icon: SiGmail,         bg: '#4285f4', label: 'Email'     },
-    { key: 'facebook',  icon: FaFacebookF,      bg: '#1877f2', label: 'Facebook'  },
-    { key: 'telegram',  icon: FaTelegramPlane,  bg: '#26a5e4', label: 'Telegram'  },
-    { key: 'instagram', icon: FaInstagram,      bg: '#e1306c', label: 'Instagram' },
-    { key: 'x',         icon: SiX,              bg: '#000000', label: 'X'         },
-    { key: 'snapchat',  icon: FaSnapchatGhost,  bg: '#f7d300', label: 'Snapchat'  },
+    { key: 'email', icon: SiGmail, bg: '#4285f4', label: 'Email' },
+    { key: 'facebook', icon: FaFacebookF, bg: '#1877f2', label: 'Facebook' },
+    { key: 'telegram', icon: FaTelegramPlane, bg: '#26a5e4', label: 'Telegram' },
+    { key: 'instagram', icon: FaInstagram, bg: '#e1306c', label: 'Instagram' },
+    { key: 'x', icon: SiX, bg: '#000000', label: 'X' },
+    { key: 'snapchat', icon: FaSnapchatGhost, bg: '#f7d300', label: 'Snapchat' },
 ];
 
-const getTier   = t => TIER[t]   || TIER.BRONZE;
+const getTier = t => TIER[t] || TIER.BRONZE;
 const getStatus = s => STATUS[s] || STATUS.ACTIVE;
 
 function Avatar({ name, size = 36 }) {
     const initials = (name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     const colors = [
-        ['#6366f1','#eef2ff'], ['#0ea5e9','#f0f9ff'], ['#10b981','#f0fdf4'],
-        ['#f59e0b','#fffbeb'], ['#8b5cf6','#f5f3ff'], ['#ec4899','#fdf2f8'],
+        ['#6366f1', '#eef2ff'], ['#0ea5e9', '#f0f9ff'], ['#10b981', '#f0fdf4'],
+        ['#f59e0b', '#fffbeb'], ['#8b5cf6', '#f5f3ff'], ['#ec4899', '#fdf2f8'],
     ];
     const [fg, bg] = colors[(name || '').charCodeAt(0) % colors.length];
     return (
@@ -181,7 +181,7 @@ export default function Players() {
 
     useEffect(() => { loadPlayers(); }, [loadPlayers]);
 
-    if (addPlayer) return <AddNewPlayer onIssueCreated={loadPlayers} />;
+    if (addPlayer) navigate(`/addNewPlayer`);
 
     const players = data?.data || [];
     const pagination = data?.pagination || { page: 1, limit: 10, total: 0, pages: 1 };
@@ -190,11 +190,11 @@ export default function Players() {
     const handleSearch = (e) => { setSearchTerm(e.target.value); setCurrentPage(1); };
 
     const TABS = [
-        { id: 'all',            label: 'All' },
-        { id: 'ACTIVE',         label: 'Active' },
-        { id: 'CRITICAL',       label: 'Critical' },
-        { id: 'HIGHLY_CRITICAL',label: 'High Critical' },
-        { id: 'INACTIVE',       label: 'Inactive' },
+        { id: 'all', label: 'All' },
+        { id: 'ACTIVE', label: 'Active' },
+        { id: 'CRITICAL', label: 'Critical' },
+        { id: 'HIGHLY_CRITICAL', label: 'High Critical' },
+        { id: 'INACTIVE', label: 'Inactive' },
     ];
 
     const statusCounts = TABS.slice(1).reduce((acc, t) => {
@@ -207,10 +207,10 @@ export default function Players() {
 
             {/* ── Top stat cards ── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-                <StatCard icon={Users}         label="Total players"   value={pagination.total || 0}             color="#0284c7" bg="#f0f9ff" border="#bae6fd" />
-                <StatCard icon={TrendingUp}    label="Active"          value={statusCounts.ACTIVE ?? 0}          color="#15803d" bg="#f0fdf4" border="#86efac" />
-                <StatCard icon={AlertTriangle} label="Critical"        value={(statusCounts.CRITICAL ?? 0) + (statusCounts.HIGHLY_CRITICAL ?? 0)} color="#b45309" bg="#fffbeb" border="#fde68a" />
-                <StatCard icon={UserX}         label="Inactive"        value={statusCounts.INACTIVE ?? 0}        color="#991b1b" bg="#fef2f2" border="#fecaca" />
+                <StatCard icon={Users} label="Total players" value={pagination.total || 0} color="#0284c7" bg="#f0f9ff" border="#bae6fd" />
+                <StatCard icon={TrendingUp} label="Active" value={statusCounts.ACTIVE ?? 0} color="#15803d" bg="#f0fdf4" border="#86efac" />
+                <StatCard icon={AlertTriangle} label="Critical" value={(statusCounts.CRITICAL ?? 0) + (statusCounts.HIGHLY_CRITICAL ?? 0)} color="#b45309" bg="#fffbeb" border="#fde68a" />
+                <StatCard icon={UserX} label="Inactive" value={statusCounts.INACTIVE ?? 0} color="#991b1b" bg="#fef2f2" border="#fecaca" />
             </div>
 
             {/* ── Controls bar ── */}
@@ -287,7 +287,7 @@ export default function Players() {
                                     </td>
                                 </tr>
                             ) : players.map((player, idx) => {
-                                const tier   = getTier(player.tier);
+                                const tier = getTier(player.tier);
                                 const status = getStatus(player.status);
                                 const cashout = player.cashoutLimit ? `$${parseFloat(player.cashoutLimit).toFixed(0)}` : '$250';
                                 const isEven = idx % 2 === 0;
@@ -356,9 +356,9 @@ export default function Players() {
                                         <td style={{ padding: '13px 16px', borderBottom: `1px solid ${C.bg}`, textAlign: 'center' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
                                                 {[
-                                                    { Icon: Eye,    color: C.sky,   bg: C.skyLt,  title: 'View',   fn: () => handleView(player) },
-                                                    { Icon: Pencil, color: C.amber, bg: '#fffbeb', title: 'Edit',   fn: () => setEditPlayer(player) },
-                                                    { Icon: Trash2, color: C.red,   bg: C.redLt,  title: 'Delete', fn: () => setDeletePlayer(player) },
+                                                    { Icon: Eye, color: C.sky, bg: C.skyLt, title: 'View', fn: () => handleView(player) },
+                                                    { Icon: Pencil, color: C.amber, bg: '#fffbeb', title: 'Edit', fn: () => setEditPlayer(player) },
+                                                    { Icon: Trash2, color: C.red, bg: C.redLt, title: 'Delete', fn: () => setDeletePlayer(player) },
                                                 ].map(({ Icon, color, bg, title, fn }) => (
                                                     <button key={title} title={title} onClick={fn}
                                                         onMouseEnter={e => { e.currentTarget.style.background = color; e.currentTarget.style.color = '#fff'; }}
