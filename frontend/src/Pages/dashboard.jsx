@@ -36,7 +36,7 @@ TabSelector.displayName = 'TabSelector';
 
 // Daily Profit Chart
 const DailyProfitChart = React.memo(({ data }) => (
-    <div className="ob-card" style={{ minHeight: '100%' }}>
+    <div className="ob-card" style={{ minHeight: '100%', minHeight: 300 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
                 <h3 style={{ fontSize: '13px', fontWeight: '600', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.5px', margin: 0 }}>Daily Profit (Last 7 Days)</h3>
