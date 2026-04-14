@@ -36,8 +36,8 @@ import { Logout01Icon } from '@hugeicons/core-free-icons';
 import { TaskEdit01Icon } from '@hugeicons/core-free-icons';
 import { CheckListIcon } from '@hugeicons/core-free-icons';
 import { Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
-import { FolderOpenIcon } from '@hugeicons/core-free-icons'; 
-import { DollarCircleIcon } from '@hugeicons/core-free-icons';
+import { FolderOpenIcon } from '@hugeicons/core-free-icons';
+import { ArrowDataTransferDiagonalIcon } from '@hugeicons/core-free-icons';
 import PlayerDashboard from "./Pages/PlayerDashboard.jsx";
 import { AddPlayerContext } from "./Context/addPlayer.jsx";
 import { CurrentUserContext } from "./Context/currentUser.jsx";
@@ -372,6 +372,7 @@ const CSS = `
 `;
 
 const NAV_ITEMS = [
+  { id: "store2", label: "Store 2", icon: ArrowDataTransferDiagonalIcon, adminsOnly: false },
   { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: false },
   { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon, adminsOnly: false },
   { id: "players", label: "Players", icon: UserGroup03Icon },
@@ -588,7 +589,7 @@ function AdminDashboard({ user }) {
 
 
   const navLabels = {
-    dashboard: 'Dashboard', memberDashboard: 'Member Dashboard', players: 'Players',
+    store2: 'Store 2', dashboard: 'Dashboard', memberDashboard: 'Member Dashboard', players: 'Players',
     dailyCheckups: 'Daily Checkups',
     playTime: 'Play Time', games: 'Games', attendance: 'Attendance', issues: 'Issues',
     transactions: 'All Transactions', balances: 'Live Balances', expenses: 'Expenses', profitTakeouts: 'Profit Takeouts',
@@ -599,6 +600,7 @@ function AdminDashboard({ user }) {
 
   const renderPage = () => {
     switch (page) {
+      case "store2": return <Store2 />;
       case "dashboard": return <AnalyticsDashboard />;
       case "memberDashboard": return <TeamDashboard user={user} />;
       case "players": return <Players />;
