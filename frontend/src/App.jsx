@@ -6,6 +6,7 @@ import { PlayerDashboardPlayerNameProvider } from "./Context/playerDashboardPlay
 import { ShiftStatusProvider } from "./Context/membershiftStatus.jsx";
 import { CurrentUserProvider } from "./Context/currentUser.jsx";
 import { ThemeProvider, useTheme } from "./Context/Themecontext.jsx";
+import { App2Context, App2Provider } from "./Context/store2Switch.jsx";
 import AnalyticsDashboard from "./Pages/dashboard";
 import Players from "./Pages/Players";
 import Attendance from "./Pages/Attendance";
@@ -373,7 +374,7 @@ const CSS = `
 `;
 
 const NAV_ITEMS = [
-  { id: "store2", label: "Store 2", icon: ArrowDataTransferDiagonalIcon, adminsOnly: false },
+  { id: "store2", label: "Store 2", icon: ArrowDataTransferDiagonalIcon },
   { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: false },
   { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon, adminsOnly: false },
   { id: "players", label: "Players", icon: UserGroup03Icon },
@@ -400,6 +401,8 @@ const ALLOWED_ADMINS = ["admin", "SUPER_ADMIN"];
 // SIDEBAR
 // ══════════════════════════════════════════════════════════════════════════
 export function Sidebar({ user, activePage, onNavigate, onLogout }) {
+
+  const { isStore2, setIsStore2 } = useContext(App2Context);
   const isAdmin = ALLOWED_ADMINS.includes(user?.username);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -420,7 +423,13 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
               <div className="ob-nav-item">
                 <button
                   className={`ob-navlink${activePage === item.id ? ' active' : ''}`}
-                  onClick={() => { !disabled && handleNav(item.id) }}
+                  onClick={() => {
+                    if (item.id === 'store2') {
+                      setIsStore2(prev => !prev);
+                      return;
+                    }
+                    !disabled && handleNav(item.id)
+                  }}
                   disabled={disabled}
                   aria-label={item.label}
                 >
@@ -819,6 +828,8 @@ export default function App() {
                   <Route path="/shifts"
                     element={user ? <ShiftsWithSidebar user={user} /> : <LoginPage />}
                   />
+
+
                 </Routes>
               </Router>
             </PlayerDashboardPlayerNameProvider>
