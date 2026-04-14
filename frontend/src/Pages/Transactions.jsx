@@ -502,7 +502,7 @@ export default function Transactions() {
         <div style={{ display: 'flex', gap: '0', borderBottom: '1px solid #e2e8f0', padding: '0 18px' }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => { setFilterTab(t.id); setCurrPage(1); }}
-              style={{ padding: '10px 14px', background: 'none', border: 'none', fontWeight: '700', fontSize: '12px', color: filterTab === t.id ? '#0ea5e9' : '#94a3b8', borderBottom: `2px solid ${filterTab === t.id ? '#0ea5e9' : 'transparent'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all .12s', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+              style={{ padding: '10px 14px', background: 'none', border: 'none', fontWeight: '700', fontSize: '12px', color: filterTab === t.id ? '#0ea5e9' : '#94a3b8', borderBottom: `2px solid ${filterTab === t.id ? '#0ea5e9' : 'transparent'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all .12s', letterSpacing: '0.4px' }}>
               {t.label}
               {t.badge && <span style={{ background: '#ef4444', color: '#fff', borderRadius: '99px', fontSize: '9px', fontWeight: '800', padding: '1px 6px', minWidth: '16px', textAlign: 'center' }}>{t.badge}</span>}
             </button>
