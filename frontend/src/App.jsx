@@ -37,6 +37,7 @@ import { TaskEdit01Icon } from '@hugeicons/core-free-icons';
 import { CheckListIcon } from '@hugeicons/core-free-icons';
 import { Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
 import { FolderOpenIcon } from '@hugeicons/core-free-icons';
+import { DollarCircleIcon } from '@hugeicons/core-free-icons';
 import { ArrowDataTransferDiagonalIcon } from '@hugeicons/core-free-icons';
 import PlayerDashboard from "./Pages/PlayerDashboard.jsx";
 import { AddPlayerContext } from "./Context/addPlayer.jsx";
