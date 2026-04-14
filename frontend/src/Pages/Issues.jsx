@@ -13,7 +13,7 @@ const CARD = {
 };
 const LABEL = {
   display: 'block', fontSize: '11px', fontWeight: '700', color: '#64748b',
-letterSpacing: '0.5px', marginBottom: '6px',
+  letterSpacing: '0.5px', marginBottom: '6px',
 };
 const INPUT = {
   width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0',
@@ -25,9 +25,9 @@ const INPUT_FOCUS = { borderColor: '#0ea5e9', background: '#fff', boxShadow: '0 
 
 // ─── Priority config ──────────────────────────────────────────────────────────
 const PRIORITY = {
-  HIGH:   { bg: '#fee2e2', text: '#991b1b', border: '#fca5a5', dot: '#ef4444', label: 'High' },
+  HIGH: { bg: '#fee2e2', text: '#991b1b', border: '#fca5a5', dot: '#ef4444', label: 'High' },
   MEDIUM: { bg: '#fef3c7', text: '#92400e', border: '#fde68a', dot: '#f59e0b', label: 'Medium' },
-  LOW:    { bg: '#dcfce7', text: '#166534', border: '#86efac', dot: '#22c55e', label: 'Low' },
+  LOW: { bg: '#dcfce7', text: '#166534', border: '#86efac', dot: '#22c55e', label: 'Low' },
 };
 const getPriority = (p) => PRIORITY[p?.toUpperCase()] || PRIORITY.MEDIUM;
 
@@ -78,7 +78,7 @@ function FocusInput({ as: Tag = 'input', style, ...props }) {
 function AddIssueModal({ onClose, onCreated }) {
   const [form, setForm] = useState({ title: '', description: '', playerName: '', priority: 'MEDIUM' });
   const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState('');
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
@@ -86,7 +86,7 @@ function AddIssueModal({ onClose, onCreated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setSuccess('');
-    if (!form.title.trim())       { setError('Issue title is required'); return; }
+    if (!form.title.trim()) { setError('Issue title is required'); return; }
     if (!form.description.trim()) { setError('Description is required'); return; }
     try {
       setLoading(true);
@@ -234,14 +234,14 @@ function IssueCard({ issue, onResolve, resolving }) {
 
 // ─── Main Issues page ─────────────────────────────────────────────────────────
 export default function Issues() {
-  const [issues, setIssues]   = useState([]);
+  const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterTab, setFilterTab] = useState('unresolved');
-  const [search, setSearch]   = useState('');
+  const [search, setSearch] = useState('');
   const [filterPriority, setFilterPriority] = useState('All');
   const [showAdd, setShowAdd] = useState(false);
   const [resolving, setResolving] = useState(null);
-  const [banner, setBanner]   = useState({ type: '', msg: '' });
+  const [banner, setBanner] = useState({ type: '', msg: '' });
 
   const showBanner = (type, msg) => { setBanner({ type, msg }); setTimeout(() => setBanner({ type: '', msg: '' }), 4000); };
 
@@ -269,10 +269,10 @@ export default function Issues() {
   const isResolved = (issue) => issue.status === 'RESOLVED' || issue.status === 'Resolved';
 
   // Stats
-  const total      = issues.length;
+  const total = issues.length;
   const unresolved = issues.filter(i => !isResolved(i)).length;
-  const resolved   = issues.filter(i => isResolved(i)).length;
-  const highPri    = issues.filter(i => !isResolved(i) && i.priority?.toUpperCase() === 'HIGH').length;
+  const resolved = issues.filter(i => isResolved(i)).length;
+  const highPri = issues.filter(i => !isResolved(i) && i.priority?.toUpperCase() === 'HIGH').length;
 
   // Filtered list
   let filtered = issues.filter(i => filterTab === 'unresolved' ? !isResolved(i) : isResolved(i));
@@ -284,7 +284,7 @@ export default function Issues() {
 
   const TABS = [
     { id: 'unresolved', label: 'Unresolved', count: unresolved },
-    { id: 'resolved',   label: 'Resolved',   count: resolved },
+    { id: 'resolved', label: 'Resolved', count: resolved },
   ];
 
   return (
@@ -292,10 +292,10 @@ export default function Issues() {
 
       {/* ── Stat strip ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
-        <StatCard icon={Inbox}       label="Total Issues"    value={total}      color="#0ea5e9" bg="#f0f9ff" border="#bae6fd" />
-        <StatCard icon={AlertCircle} label="Unresolved"      value={unresolved} color="#f59e0b" bg="#fffbeb" border="#fde68a" />
-        <StatCard icon={CheckCircle} label="Resolved"        value={resolved}   color="#10b981" bg="#f0fdf4" border="#86efac" />
-        <StatCard icon={Flag}        label="High Priority"   value={highPri}    color="#ef4444" bg="#fee2e2" border="#fca5a5" />
+        <StatCard icon={Inbox} label="Total Issues" value={total} color="#0ea5e9" bg="#f0f9ff" border="#bae6fd" />
+        <StatCard icon={AlertCircle} label="Unresolved" value={unresolved} color="#f59e0b" bg="#fffbeb" border="#fde68a" />
+        <StatCard icon={CheckCircle} label="Resolved" value={resolved} color="#10b981" bg="#f0fdf4" border="#86efac" />
+        <StatCard icon={Flag} label="High Priority" value={highPri} color="#ef4444" bg="#fee2e2" border="#fca5a5" />
       </div>
 
       {/* ── Banner ── */}
@@ -362,7 +362,9 @@ export default function Issues() {
         <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', padding: '0 18px' }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => setFilterTab(t.id)}
-              style={{ padding: '10px 14px', background: 'none', border: 'none', fontWeight: '700', fontSize: '12px', color: filterTab === t.id ? '#0ea5e9' : '#94a3b8', borderBottom: `2px solid ${filterTab === t.id ? '#0ea5e9' : 'transparent'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all .12s', letterSpacing: '0.4px' }}>
+              style={{
+                padding: '10px 14px', background: 'none', border: 'none', fontWeight: '700', fontSize: '12px', color: filterTab === t.id ? '#0ea5e9' : '#94a3b8', borderBottom: `2px solid ${filterTab === t.id ? '#0ea5e9' : 'transparent'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all .12s', letterSpacing: '0.4px', textTransform: 'none'
+              }}>
               {t.label}
               <span style={{ display: 'inline-block', padding: '1px 7px', borderRadius: '20px', fontSize: '10px', fontWeight: '800', background: filterTab === t.id ? (t.id === 'unresolved' ? '#fef3c7' : '#dcfce7') : '#f1f5f9', color: filterTab === t.id ? (t.id === 'unresolved' ? '#92400e' : '#166634') : '#94a3b8' }}>
                 {t.count}
