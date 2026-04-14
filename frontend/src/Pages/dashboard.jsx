@@ -1,758 +1,800 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { TrendingDown, TrendingUp, Users, BarChart3 } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import {
+  TrendingDown, TrendingUp, Users, BarChart3,
+  ArrowUpRight, ArrowDownRight, DollarSign, Zap,
+  Activity, Target, AlertCircle, CheckCircle2,
+  ChevronRight, Flame, Trophy, Star
+} from 'lucide-react';
+import {
+  LineChart, Line, BarChart, Bar, XAxis, YAxis,
+  CartesianGrid, Tooltip, ResponsiveContainer, Cell, Area, AreaChart
+} from 'recharts';
 import { api } from '../api';
 import DashboardClock from './DashboardClock.jsx';
 
 // ═══════════════════════════════════════════════════════════════
-// MEMOIZED COMPONENTS
+// DESIGN TOKENS
 // ═══════════════════════════════════════════════════════════════
 
-const TabSelector = React.memo(({ options, active, onChange }) => (
-    <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
-        {options.map(opt => (
-            <button
-                key={opt}
-                onClick={() => onChange(opt)}
-                style={{
-                    padding: '8px 0',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: active === opt ? '#0ea5e9' : '#64748b',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    borderBottom: active === opt ? '2px solid #0ea5e9' : 'none',
-                    transition: 'all .2s'
-                }}
-            >
-                {opt}
-            </button>
-        ))}
-    </div>
-));
+const C = {
+  blue:    '#3b82f6',
+  green:   '#10b981',
+  red:     '#ef4444',
+  amber:   '#f59e0b',
+  purple:  '#8b5cf6',
+  cyan:    '#06b6d4',
+  slate50: '#f8fafc',
+  slate100:'#f1f5f9',
+  slate200:'#e2e8f0',
+  slate400:'#94a3b8',
+  slate500:'#64748b',
+  slate700:'#334155',
+  slate900:'#0f172a',
+};
 
+// ═══════════════════════════════════════════════════════════════
+// REUSABLE PRIMITIVES
+// ═══════════════════════════════════════════════════════════════
+
+const Card = ({ children, style = {} }) => (
+  <div style={{
+    background: 'var(--color-cards-background, #fff)',
+    borderRadius: 16,
+    padding: 20,
+    boxShadow: '0 1px 3px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.04)',
+    border: '1px solid rgba(226,232,240,.7)',
+    ...style,
+  }}>
+    {children}
+  </div>
+);
+
+const Label = ({ children, style = {} }) => (
+  <p style={{
+    fontSize: 11, fontWeight: 700, letterSpacing: '.7px',
+    textTransform: 'uppercase', color: C.slate400, margin: '0 0 8px 0', ...style,
+  }}>
+    {children}
+  </p>
+);
+
+const TabSelector = React.memo(({ options, active, onChange }) => (
+  <div style={{
+    display: 'flex', gap: 4, background: C.slate100,
+    borderRadius: 8, padding: 3, marginBottom: 14, width: 'fit-content',
+  }}>
+    {options.map(opt => (
+      <button
+        key={opt}
+        onClick={() => onChange(opt)}
+        style={{
+          padding: '5px 12px', fontSize: 11, fontWeight: 600,
+          borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all .15s',
+          background: active === opt ? '#fff' : 'transparent',
+          color: active === opt ? C.slate900 : C.slate400,
+          boxShadow: active === opt ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
+        }}
+      >
+        {opt}
+      </button>
+    ))}
+  </div>
+));
 TabSelector.displayName = 'TabSelector';
 
-// Daily Profit Chart
-const DailyProfitChart = React.memo(({ data }) => (
-    <div className="ob-card" style={{ minHeight: '100%', minHeight: 300 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-                <h3 style={{ fontSize: '13px', fontWeight: '600', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.5px', margin: 0 }}>Daily Profit (Last 7 Days)</h3>
-            </div>
-            <button style={{ padding: '8px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}>
-                ⋯
-            </button>
+// ═══════════════════════════════════════════════════════════════
+// CUSTOM TOOLTIP
+// ═══════════════════════════════════════════════════════════════
+
+const ChartTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{
+      background: C.slate900, border: 'none', borderRadius: 10,
+      padding: '8px 12px', fontSize: 12, color: '#fff',
+      boxShadow: '0 8px 24px rgba(0,0,0,.25)',
+    }}>
+      <p style={{ margin: '0 0 4px 0', color: C.slate400, fontWeight: 600 }}>{label}</p>
+      {payload.map((p, i) => (
+        <p key={i} style={{ margin: 0, color: p.color, fontWeight: 600 }}>
+          {p.name}: ${p.value?.toLocaleString()}
+        </p>
+      ))}
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// STAT CARD
+// ═══════════════════════════════════════════════════════════════
+
+const StatCard = React.memo(({ title, value, color, trend, icon: Icon, prefix = '$' }) => (
+  <Card style={{ position: 'relative', overflow: 'hidden' }}>
+    {/* Decorative accent */}
+    <div style={{
+      position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+      background: color, borderRadius: '16px 16px 0 0',
+    }} />
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+      <Label>{title}</Label>
+      {Icon && (
+        <div style={{
+          width: 34, height: 34, borderRadius: 10,
+          background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Icon size={16} color={color} />
         </div>
-        <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={data || []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="day" stroke="#94a3b8" style={{ fontSize: '12px' }} />
-                <YAxis stroke="#94a3b8" style={{ fontSize: '12px' }} />
-                <Tooltip
-                    contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
-                />
-                <Bar dataKey="profit" fill="#3b82f6" radius={[8, 8, 0, 0]} isAnimationActive={false} />
-            </BarChart>
-        </ResponsiveContainer>
+      )}
     </div>
-));
-
-DailyProfitChart.displayName = 'DailyProfitChart';
-
-// Stat Card Component
-const StatCard = React.memo(({ title, value, color, trend }) => (
-    <div className="ob-card" style={{ borderTop: `3px solid ${color}` }}>
-        <div className="ob-card-title">{title}</div>
-        <div className="ob-card-value" style={{ color, marginBottom: '8px' }}>${value.toLocaleString()}</div>
-        {trend && (
-            <div style={{ fontSize: '12px', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {trend > 0 ? <TrendingUp style={{ width: '14px', height: '14px', color: '#10b981' }} /> : <TrendingDown style={{ width: '14px', height: '14px', color: '#ef4444' }} />}
-                {Math.abs(trend)}% {trend > 0 ? 'up' : 'down'} from last month
-            </div>
-        )}
+    <div style={{ fontSize: 26, fontWeight: 800, color: C.slate900, letterSpacing: '-.5px', marginBottom: 6 }}>
+      {prefix}{typeof value === 'number' ? value.toLocaleString() : value}
     </div>
+    {trend !== undefined && (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 4,
+        fontSize: 12, color: trend > 0 ? C.green : C.red, fontWeight: 600,
+      }}>
+        {trend > 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+        {Math.abs(trend)}% vs last month
+      </div>
+    )}
+  </Card>
 ));
-
 StatCard.displayName = 'StatCard';
 
-// Progress Bar Component
-const ProgressBar = React.memo(({ percentage, goal, current }) => (
-    <div style={{ marginBottom: '12px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--muted)' }}>Progress to Goal</span>
-            <span style={{ fontSize: '13px', fontWeight: '600' }}>{Math.round(percentage)}%</span>
-        </div>
-        <div style={{ width: '100%', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-            <div
-                style={{
-                    height: '100%',
-                    background: 'linear-gradient(90deg, #14b8a6 0%, #06b6d4 100%)',
-                    borderRadius: '4px',
-                    transition: 'width 0.3s ease',
-                    width: `${Math.min(percentage, 100)}%`
-                }}
-            />
-        </div>
-        <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
-            ${current.toLocaleString()} / ${goal.toLocaleString()}
-        </div>
-    </div>
-));
+// ═══════════════════════════════════════════════════════════════
+// PROGRESS BAR
+// ═══════════════════════════════════════════════════════════════
 
+const ProgressBar = React.memo(({ percentage, goal, current }) => (
+  <div>
+    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+      <span style={{ fontSize: 12, color: C.slate500, fontWeight: 500 }}>Progress to Goal</span>
+      <span style={{ fontSize: 12, fontWeight: 700, color: C.slate900 }}>{Math.round(percentage)}%</span>
+    </div>
+    <div style={{ width: '100%', height: 7, background: C.slate100, borderRadius: 99, overflow: 'hidden' }}>
+      <div style={{
+        height: '100%', borderRadius: 99,
+        background: 'linear-gradient(90deg, #3b82f6 0%, #06b6d4 100%)',
+        width: `${Math.min(percentage, 100)}%`, transition: 'width .5s ease',
+      }} />
+    </div>
+    <div style={{ fontSize: 11, color: C.slate400, marginTop: 5 }}>
+      ${current.toLocaleString()} / ${goal.toLocaleString()}
+    </div>
+  </div>
+));
 ProgressBar.displayName = 'ProgressBar';
 
-// Player Attendance Card
-const PlayerAttendanceCard = React.memo(({ stats }) => (
-    <div className="ob-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.5px', margin: 0 }}>Player Attendance</h3>
-            <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>⋯</button>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-            {stats.map((stat, idx) => (
-                <div key={idx} style={{ padding: '16px', background: '#f8fafc', borderRadius: '10px', textAlign: 'center' }}>
-                    <p style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.3px', margin: '0 0 8px 0' }}>{stat.label}</p>
-                    <p style={{ fontSize: '28px', fontWeight: '700', color: stat.color, margin: 0 }}>{stat.value}</p>
-                </div>
-            ))}
-        </div>
+// ═══════════════════════════════════════════════════════════════
+// LEADERBOARD ROW (used by depositors / cashouts / games)
+// ═══════════════════════════════════════════════════════════════
+
+const LeaderboardRow = ({ rank, label, value, isLast }) => {
+  const medalColors = ['#f59e0b', '#94a3b8', '#cd7f32'];
+  const bg = rank <= 3 ? `${medalColors[rank - 1]}12` : 'transparent';
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 10,
+      padding: '9px 10px', borderRadius: 8, background: bg,
+      borderBottom: !isLast ? `1px solid ${C.slate100}` : 'none',
+    }}>
+      <span style={{
+        width: 22, height: 22, borderRadius: 6, fontSize: 11, fontWeight: 700,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: rank <= 3 ? medalColors[rank - 1] : C.slate100,
+        color: rank <= 3 ? '#fff' : C.slate500,
+        flexShrink: 0,
+      }}>
+        {rank}
+      </span>
+      <span style={{ flex: 1, fontSize: 13, color: C.slate700, fontWeight: 500 }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 700, color: C.slate900 }}>${value?.toFixed(2)}</span>
     </div>
-));
+  );
+};
 
-PlayerAttendanceCard.displayName = 'PlayerAttendanceCard';
+// ═══════════════════════════════════════════════════════════════
+// TOP DEPOSITORS
+// ═══════════════════════════════════════════════════════════════
 
-// Top Depositors Card
 const TopDepositorsCard = React.memo(({ data: allData }) => {
-    const [period, setPeriod] = useState('30days');
-
-    const data = {
-        '30days': allData?.period_30days || [],
-        '7days': allData?.period_7days || [],
-        '1day': allData?.period_1day || []
-    };
-
-    const displayData = data[period] || [];
-
-    return (
-        <div className="ob-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.5px', margin: 0 }}>Top Depositors</h3>
-                <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>⋯</button>
-            </div>
-            <TabSelector options={['30days', '7days', '1day']} active={period} onChange={setPeriod} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {/* {displayData.slice(0, 5).map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: idx < Math.min(5, displayData.length - 1) ? '1px solid #e2e8f0' : 'none' }}>
-                        <span style={{ fontSize: '13px', color: '#0ea5e9', fontWeight: '500' }}>User #{item.userId}</span>
-                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>${item.totalDeposits.toFixed(2)}</span>
-                    </div>
-                ))} */}
-                {displayData.slice(0, 5).map((item, idx) => (
-                    <div
-                        key={idx}
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            paddingBottom: '12px',
-                            borderBottom:
-                                idx < Math.min(5, displayData.length - 1)
-                                    ? '1px solid #e2e8f0'
-                                    : 'none'
-                        }}
-                    >
-                        <span style={{ fontSize: '13px', color: '#0ea5e9', fontWeight: '500' }}>
-                            User {item.id}
-                        </span>
-                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>
-                            ${item.totalDeposited.toFixed(2)}
-                        </span>
-                    </div>
-                ))}
-
-            </div>
+  const [period, setPeriod] = useState('30days');
+  const displayData = allData?.[`period_${period}`] || [];
+  return (
+    <Card>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: `${C.green}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <TrendingUp size={14} color={C.green} />
+          </div>
+          <Label style={{ margin: 0 }}>Top Depositors</Label>
         </div>
-    );
+      </div>
+      <TabSelector options={['30days', '7days', '1day']} active={period} onChange={setPeriod} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {displayData.slice(0, 5).map((item, idx) => (
+          <LeaderboardRow
+            key={idx} rank={idx + 1}
+            label={item.name || `User ${item.id}`}
+            value={item.totalDeposited ?? 0}
+            isLast={idx === Math.min(4, displayData.length - 1)}
+          />
+        ))}
+        {!displayData.length && (
+          <p style={{ textAlign: 'center', color: C.slate400, fontSize: 13, padding: '16px 0' }}>No data</p>
+        )}
+      </div>
+    </Card>
+  );
 });
-
 TopDepositorsCard.displayName = 'TopDepositorsCard';
 
-// Top Cashouts Card
+// ═══════════════════════════════════════════════════════════════
+// TOP CASHOUTS
+// ═══════════════════════════════════════════════════════════════
+
 const TopCashoutsCard = React.memo(({ data: allData }) => {
-    const [period, setPeriod] = useState('30days');
-
-    const data = {
-        '30days': allData?.period_30days || [],
-        '7days': allData?.period_7days || [],
-        '1day': allData?.period_1day || []
-    };
-
-    const displayData = data[period] || [];
-
-    return (
-        <div className="ob-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.5px', margin: 0 }}>Top Cashouts</h3>
-                <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>⋯</button>
-            </div>
-            <TabSelector options={['30days', '7days', '1day']} active={period} onChange={setPeriod} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {displayData.slice(0, 5).map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: idx < Math.min(5, displayData.length - 1) ? '1px solid #e2e8f0' : 'none' }}>
-                        <span style={{ fontSize: '13px', color: '#0ea5e9', fontWeight: '500' }}>User {item.id}</span>
-                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>${item.totalCashouts.toFixed(2)}</span>
-                    </div>
-                ))}
-            </div>
+  const [period, setPeriod] = useState('30days');
+  const displayData = allData?.[`period_${period}`] || [];
+  return (
+    <Card>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: `${C.red}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <TrendingDown size={14} color={C.red} />
+          </div>
+          <Label style={{ margin: 0 }}>Top Cashouts</Label>
         </div>
-    );
+      </div>
+      <TabSelector options={['30days', '7days', '1day']} active={period} onChange={setPeriod} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {displayData.slice(0, 5).map((item, idx) => (
+          <LeaderboardRow
+            key={idx} rank={idx + 1}
+            label={item.name || `User ${item.id}`}
+            value={item.totalCashouts ?? 0}
+            isLast={idx === Math.min(4, displayData.length - 1)}
+          />
+        ))}
+        {!displayData.length && (
+          <p style={{ textAlign: 'center', color: C.slate400, fontSize: 13, padding: '16px 0' }}>No data</p>
+        )}
+      </div>
+    </Card>
+  );
 });
-
 TopCashoutsCard.displayName = 'TopCashoutsCard';
 
-// Top Games by Deposits Card
+// ═══════════════════════════════════════════════════════════════
+// TOP GAMES BY DEPOSITS
+// ═══════════════════════════════════════════════════════════════
+
 const TopGamesByDepositsCard = React.memo(({ data: allData }) => {
-    const [period, setPeriod] = useState('30days');
-
-    const data = {
-        '30days': allData?.period_30days || [],
-        '7days': allData?.period_7days || [],
-        '1day': allData?.period_1day || []
-    };
-
-    const displayData = data[period] || [];
-
-    return (
-        <div className="ob-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.5px', margin: 0 }}>Top Games by Deposits</h3>
-                <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>⋯</button>
-            </div>
-            <TabSelector options={['30days', '7days', '1day']} active={period} onChange={setPeriod} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {displayData.slice(0, 5).map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: idx < Math.min(5, displayData.length - 1) ? '1px solid #e2e8f0' : 'none' }}>
-                        <span style={{ fontSize: '13px', color: '#0f172a', fontWeight: '500' }}>{item.gameName}</span>
-                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>${item.totalDeposits.toFixed(2)}</span>
-                    </div>
-                ))}
-            </div>
+  const [period, setPeriod] = useState('30days');
+  const displayData = allData?.[`period_${period}`] || [];
+  return (
+    <Card>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: `${C.blue}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Trophy size={14} color={C.blue} />
         </div>
-    );
+        <Label style={{ margin: 0 }}>Top Games · Deposits</Label>
+      </div>
+      <TabSelector options={['30days', '7days', '1day']} active={period} onChange={setPeriod} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {displayData.slice(0, 5).map((item, idx) => (
+          <LeaderboardRow
+            key={idx} rank={idx + 1}
+            label={item.gameName || item.name || '—'}
+            value={item.totalDeposits ?? item.totalDeposited ?? 0}
+            isLast={idx === Math.min(4, displayData.length - 1)}
+          />
+        ))}
+        {!displayData.length && (
+          <p style={{ textAlign: 'center', color: C.slate400, fontSize: 13, padding: '16px 0' }}>No data</p>
+        )}
+      </div>
+    </Card>
+  );
 });
-
 TopGamesByDepositsCard.displayName = 'TopGamesByDepositsCard';
 
-// Top Games by Cashouts Card
+// ═══════════════════════════════════════════════════════════════
+// TOP GAMES BY CASHOUTS  ← BUG FIX: was totalCashouts, backend sends totalCashedOut
+// ═══════════════════════════════════════════════════════════════
+
 const TopGamesByCashoutsCard = React.memo(({ data: allData }) => {
-    const [period, setPeriod] = useState('30days');
-
-    const data = {
-        '30days': allData?.period_30days || [],
-        '7days': allData?.period_7days || [],
-        '1day': allData?.period_1day || []
-    };
-
-    const displayData = data[period] || [];
-
-    return (
-        <div className="ob-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.5px', margin: 0 }}>Top Games by Cashouts</h3>
-                <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>⋯</button>
-            </div>
-            <TabSelector options={['30days', '7days', '1day']} active={period} onChange={setPeriod} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {displayData.slice(0, 5).map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: idx < Math.min(5, displayData.length - 1) ? '1px solid #e2e8f0' : 'none' }}>
-                        <span style={{ fontSize: '13px', color: '#0f172a', fontWeight: '500' }}>{item.gameName}</span>
-                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>${item.totalCashouts.toFixed(2)}</span>
-                    </div>
-                ))}
-            </div>
+  const [period, setPeriod] = useState('30days');
+  const displayData = allData?.[`period_${period}`] || [];
+  return (
+    <Card>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: `${C.amber}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Star size={14} color={C.amber} />
         </div>
-    );
+        <Label style={{ margin: 0 }}>Top Games · Cashouts</Label>
+      </div>
+      <TabSelector options={['30days', '7days', '1day']} active={period} onChange={setPeriod} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {displayData.slice(0, 5).map((item, idx) => (
+          <LeaderboardRow
+            key={idx} rank={idx + 1}
+            label={item.gameName || item.name || '—'}
+            // ✅ FIX: backend returns totalCashedOut, not totalCashouts
+            value={item.totalCashedOut ?? item.totalCashouts ?? 0}
+            isLast={idx === Math.min(4, displayData.length - 1)}
+          />
+        ))}
+        {!displayData.length && (
+          <p style={{ textAlign: 'center', color: C.slate400, fontSize: 13, padding: '16px 0' }}>No data</p>
+        )}
+      </div>
+    </Card>
+  );
 });
-
 TopGamesByCashoutsCard.displayName = 'TopGamesByCashoutsCard';
 
-// Player Activity Chart
+// ═══════════════════════════════════════════════════════════════
+// DAILY PROFIT CHART
+// ═══════════════════════════════════════════════════════════════
+
+const DailyProfitChart = React.memo(({ data }) => (
+  <Card>
+    <Label>Daily Profit — Last 7 Days</Label>
+    <ResponsiveContainer width="100%" height={220}>
+      <BarChart data={data || []} barSize={28}>
+        <CartesianGrid strokeDasharray="3 3" stroke={C.slate100} vertical={false} />
+        <XAxis dataKey="day" stroke={C.slate400} tick={{ fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} />
+        <YAxis stroke={C.slate400} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} width={48} />
+        <Tooltip content={<ChartTooltip />} />
+        <Bar dataKey="profit" radius={[6, 6, 0, 0]} isAnimationActive={false}>
+          {(data || []).map((entry, i) => (
+            <Cell key={i} fill={entry.profit >= 0 ? C.blue : C.red} fillOpacity={0.85} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  </Card>
+));
+DailyProfitChart.displayName = 'DailyProfitChart';
+
+// ═══════════════════════════════════════════════════════════════
+// PLAYER ACTIVITY CHART
+// ═══════════════════════════════════════════════════════════════
+
 const PlayerActivityChart = React.memo(({ data }) => {
-
-    const [period, setPeriod] = useState('7days');
-
-    const chartData = period === '7days' ? data?.period_7days || [] : data?.period_30days || [];
-    return (
-        <div className="ob-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.5px', margin: 0 }}>Player Activity</h3>
-                <button style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>⋯</button>
-            </div>
-            <TabSelector options={['7days', '30days']} active={period} onChange={setPeriod} />
-            <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="date" stroke="#94a3b8" style={{ fontSize: '12px' }} />
-                    <YAxis stroke="#94a3b8" style={{ fontSize: '12px' }} />
-                    <Tooltip
-                        contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
-                    />
-                    <Line
-                        type="monotone"
-                        dataKey="deposits"
-                        stroke="#10b981"
-                        strokeWidth={2}
-                        dot={{ fill: '#10b981', r: 4 }}
-                        name="Deposits"
-                        isAnimationActive={false}
-                    />
-                    <Line
-                        type="monotone"
-                        dataKey="withdrawals"
-                        stroke="#ef4444"
-                        strokeWidth={2}
-                        dot={{ fill: '#ef4444', r: 4 }}
-                        name="Withdrawals"
-                        isAnimationActive={false}
-                    />
-                </LineChart>
-            </ResponsiveContainer>
-
-        </div>
-    );
+  const [period, setPeriod] = useState('7days');
+  const chartData = period === '7days' ? data?.period_7days || [] : data?.period_30days || [];
+  return (
+    <Card>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <Label style={{ margin: 0 }}>Deposits vs Withdrawals</Label>
+        <TabSelector options={['7days', '30days']} active={period} onChange={setPeriod} />
+      </div>
+      <ResponsiveContainer width="100%" height={260}>
+        <AreaChart data={chartData}>
+          <defs>
+            <linearGradient id="gDeposits" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={C.green} stopOpacity={0.15} />
+              <stop offset="95%" stopColor={C.green} stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="gWithdrawals" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={C.red} stopOpacity={0.15} />
+              <stop offset="95%" stopColor={C.red} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke={C.slate100} vertical={false} />
+          <XAxis dataKey="date" stroke={C.slate400} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+          <YAxis stroke={C.slate400} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} width={48} />
+          <Tooltip content={<ChartTooltip />} />
+          <Area type="monotone" dataKey="deposits" stroke={C.green} strokeWidth={2} fill="url(#gDeposits)" dot={{ fill: C.green, r: 3, strokeWidth: 0 }} name="Deposits" isAnimationActive={false} />
+          <Area type="monotone" dataKey="withdrawals" stroke={C.red} strokeWidth={2} fill="url(#gWithdrawals)" dot={{ fill: C.red, r: 3, strokeWidth: 0 }} name="Withdrawals" isAnimationActive={false} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </Card>
+  );
 });
-
 PlayerActivityChart.displayName = 'PlayerActivityChart';
 
 // ═══════════════════════════════════════════════════════════════
-// MAIN DASHBOARD COMPONENT
+// PLAYER ATTENDANCE
+// ═══════════════════════════════════════════════════════════════
+
+const PlayerAttendanceCard = React.memo(({ stats }) => (
+  <Card>
+    <Label>Player Attendance</Label>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {stats.map((stat, idx) => (
+        <div key={idx} style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 12px', borderRadius: 10,
+          background: `${stat.color}0d`,
+          border: `1px solid ${stat.color}25`,
+        }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: stat.color, letterSpacing: '.3px' }}>{stat.label}</span>
+          <span style={{ fontSize: 22, fontWeight: 800, color: stat.color }}>{stat.value}</span>
+        </div>
+      ))}
+    </div>
+  </Card>
+));
+PlayerAttendanceCard.displayName = 'PlayerAttendanceCard';
+
+// ═══════════════════════════════════════════════════════════════
+// ISSUE STATUS
+// ═══════════════════════════════════════════════════════════════
+
+const IssueStatusCard = ({ dashboardStats }) => {
+  const unresolved = dashboardStats?.issues?.unresolved ?? 0;
+  const resolved = dashboardStats?.issues?.resolved ?? 0;
+  const total = dashboardStats?.issues?.total ?? 0;
+  const highPriority = dashboardStats?.issues?.highPriority ?? 0;
+  const pct = total > 0 ? Math.round((resolved / total) * 100) : 0;
+
+  return (
+    <Card>
+      <Label>Issue Status</Label>
+      <div style={{ textAlign: 'center', marginBottom: 16 }}>
+        <div style={{
+          fontSize: 52, fontWeight: 900,
+          color: unresolved > 0 ? C.red : C.green,
+          letterSpacing: '-2px', lineHeight: 1,
+        }}>
+          {unresolved}
+        </div>
+        <p style={{ fontSize: 12, color: C.slate400, fontWeight: 600, margin: '4px 0 0 0' }}>Unresolved</p>
+        {highPriority > 0 && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            marginTop: 8, padding: '3px 10px', background: '#fee2e2',
+            borderRadius: 20, fontSize: 10, fontWeight: 700, color: '#dc2626',
+          }}>
+            <AlertCircle size={10} /> {highPriority} HIGH
+          </div>
+        )}
+      </div>
+      <div style={{ height: 6, background: '#fee2e2', borderRadius: 99, overflow: 'hidden', marginBottom: 10 }}>
+        <div style={{
+          height: '100%', width: `${pct}%`,
+          background: 'linear-gradient(90deg, #10b981, #06b6d4)',
+          borderRadius: 99, transition: 'width .4s ease',
+        }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        {[
+          { dot: C.red, label: 'Unresolved', val: unresolved },
+          { dot: C.green, label: 'Resolved', val: resolved },
+        ].map(({ dot, label, val }) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: dot }} />
+            <span style={{ fontSize: 11, color: C.slate500 }}>{label} <strong style={{ color: C.slate900 }}>{val}</strong></span>
+          </div>
+        ))}
+      </div>
+      <p style={{ fontSize: 10, color: C.slate400, textAlign: 'center', marginTop: 8 }}>
+        {pct}% resolution · {total} total
+      </p>
+    </Card>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// TODAY'S PROFIT CARD
+// ═══════════════════════════════════════════════════════════════
+
+const ProfitGoalCard = ({ profitGoal, deposits, cashouts, progressPercentage, goalTarget }) => (
+  <Card style={{
+    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+    border: 'none', color: '#fff', marginBottom: 20,
+  }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24 }}>
+      <div style={{ flex: 1 }}>
+        <Label style={{ color: 'rgba(255,255,255,.5)' }}>Today's Profit Goal</Label>
+        <div style={{ fontSize: 'clamp(28px,5vw,44px)', fontWeight: 900, letterSpacing: '-1px', marginBottom: 14 }}>
+          ${profitGoal.toFixed(2)}
+        </div>
+        <div style={{ display: 'flex', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.green }} />
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontWeight: 500 }}>
+              ${deposits.toLocaleString()} Deposits
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.red }} />
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontWeight: 500 }}>
+              ${cashouts.toLocaleString()} Cashouts
+            </span>
+          </div>
+        </div>
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>Progress</span>
+          <span style={{ fontSize: 12, fontWeight: 700 }}>{Math.round(progressPercentage)}%</span>
+        </div>
+        <div style={{ height: 8, background: 'rgba(255,255,255,.1)', borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%', borderRadius: 99,
+            background: 'linear-gradient(90deg, #3b82f6, #06b6d4)',
+            width: `${Math.min(progressPercentage, 100)}%`, transition: 'width .5s ease',
+          }} />
+        </div>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginTop: 5 }}>
+          ${profitGoal.toLocaleString()} / ${goalTarget.toLocaleString()}
+        </p>
+      </div>
+    </div>
+  </Card>
+);
+
+// ═══════════════════════════════════════════════════════════════
+// 30-DAY PROFIT CARD
+// ═══════════════════════════════════════════════════════════════
+
+const TotalProfitCard = ({ last30DaysProfit, depositsDetail, cashoutsDetail, avgTx }) => (
+  <Card style={{
+    background: 'linear-gradient(135deg, #0284c7 0%, #0891b2 100%)',
+    border: 'none', color: '#fff',
+  }}>
+    <Label style={{ color: 'rgba(255,255,255,.6)' }}>Total Profit — Last 30 Days</Label>
+    <div style={{ fontSize: 'clamp(26px,4vw,40px)', fontWeight: 900, letterSpacing: '-1px', marginBottom: 16 }}>
+      ${last30DaysProfit?.toLocaleString?.() ?? last30DaysProfit}
+    </div>
+    <div style={{
+      display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12,
+      paddingTop: 14, borderTop: '1px solid rgba(255,255,255,.15)',
+    }}>
+      {[
+        { label: 'Deposits', value: depositsDetail },
+        { label: 'Cashouts', value: cashoutsDetail },
+        { label: 'Avg Tx', value: avgTx?.toFixed?.(2) ?? 0 },
+      ].map(({ label, value }) => (
+        <div key={label}>
+          <p style={{ fontSize: 10, color: 'rgba(255,255,255,.6)', margin: '0 0 2px 0', fontWeight: 600 }}>{label}</p>
+          <p style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>${value?.toLocaleString?.() ?? value}</p>
+        </div>
+      ))}
+    </div>
+  </Card>
+);
+
+// ═══════════════════════════════════════════════════════════════
+// WEEKLY ACTIVITY MINI CHART
+// ═══════════════════════════════════════════════════════════════
+
+const WeeklyActivityCard = ({ playerActivity, totalDepositsWeek }) => (
+  <Card>
+    <Label>Player Activity — 7 Day</Label>
+    <div style={{ textAlign: 'center', marginBottom: 10 }}>
+      <div style={{ fontSize: 28, fontWeight: 800, color: C.slate900, letterSpacing: '-.5px' }}>
+        ${totalDepositsWeek?.toLocaleString()}
+      </div>
+      <p style={{ fontSize: 11, color: C.slate400, margin: '2px 0 0 0', fontWeight: 500 }}>Total Deposits This Week</p>
+    </div>
+    <ResponsiveContainer width="100%" height={130}>
+      {playerActivity?.data ? (
+        <AreaChart data={playerActivity.data}>
+          <defs>
+            <linearGradient id="gWeekly" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={C.blue} stopOpacity={0.2} />
+              <stop offset="95%" stopColor={C.blue} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <XAxis dataKey="name" tick={{ fontSize: 10, fill: C.slate400 }} axisLine={false} tickLine={false} />
+          <Tooltip content={<ChartTooltip />} />
+          <Area type="monotone" dataKey="deposits" stroke={C.blue} strokeWidth={2} fill="url(#gWeekly)" dot={false} name="Deposits" />
+        </AreaChart>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+          <p style={{ color: C.slate400, fontSize: 12 }}>Loading…</p>
+        </div>
+      )}
+    </ResponsiveContainer>
+  </Card>
+);
+
+// ═══════════════════════════════════════════════════════════════
+// LOADING SKELETON
+// ═══════════════════════════════════════════════════════════════
+
+const pulse = `@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`;
+
+const Skeleton = ({ h = 20, w = '100%', br = 6 }) => (
+  <div style={{ height: h, width: w, borderRadius: br, background: C.slate100, animation: 'pulse 1.5s ease-in-out infinite' }} />
+);
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN DASHBOARD
 // ═══════════════════════════════════════════════════════════════
 
 export default function Dashboard() {
-    // State
-    const [dashboardStats, setDashboardStats] = useState(null);
-    const [playerActivity, setPlayerActivity] = useState(null);
-    const [depoVsCashoutActivity, setDepoVsCashoutActivity] = useState(null);
-    const [topDepositors, setTopDepositors] = useState(null);
-    const [topCashouts, setTopCashouts] = useState(null);
-    const [topGamesByDeposits, setTopGamesByDeposits] = useState(null);
-    const [topGamesByCashouts, setTopGamesByCashouts] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [last30DaysProfit, setLast30DaysProfit] = useState(0);
-    const [dailyProfit, setDailyProfit] = useState(null);
-    const [totalDepositsWeek, setTotalDepositsWeek] = useState(0);
+  const [dashboardStats, setDashboardStats] = useState(null);
+  const [playerActivity, setPlayerActivity] = useState(null);
+  const [depoVsCashoutActivity, setDepoVsCashoutActivity] = useState(null);
+  const [topDepositors, setTopDepositors] = useState(null);
+  const [topCashouts, setTopCashouts] = useState(null);
+  const [topGamesByDeposits, setTopGamesByDeposits] = useState(null);
+  const [topGamesByCashouts, setTopGamesByCashouts] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [last30DaysProfit, setLast30DaysProfit] = useState(0);
+  const [dailyProfit, setDailyProfit] = useState(null);
+  const [totalDepositsWeek, setTotalDepositsWeek] = useState(0);
+  const [stats, setStats] = useState({ total: 0, active: 0, critical: 0, highlyCritical: 0, inactive: 0 });
 
-    const [data, setData] = useState(null);
-    const [stats, setStats] = useState({
-        total: 0,
-        active: 0,
-        critical: 0,
-        highlyCritical: 0,
-        inactive: 0
-    });
-    const [filterStatus, setFilterStatus] = useState('Active');
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
 
+        const profitResponse = await api.dashboard.getProfitStats();
+        if (profitResponse?.summary) {
+          setLast30DaysProfit(profitResponse.summary.total);
+          setDailyProfit(profitResponse);
+        }
 
+        const [statsData, dailyProfitData, activity, chart_depoVsCashout, depositors, cashouts, gameDeposits, gameCashouts] = await Promise.all([
+          api.dashboard.getStats(),
+          api.dashboard.getDailyProfit(),
+          api.dashboard.getPlayerActivity(),
+          api.dashboard.getDepoVsCashoutsActivity(),
+          api.dashboard.getTopDepositors?.() || Promise.resolve(null),
+          api.dashboard.getTopCashouts?.()   || Promise.resolve(null),
+          api.dashboard.getTopGamesByDeposits?.() || Promise.resolve(null),
+          api.dashboard.getTopGamesByCashouts?.() || Promise.resolve(null),
+        ]);
 
-    // Load all dashboard data
-    useEffect(() => {
-        const loadDashboardData = async () => {
-            try {
-                setLoading(true);
+        const result = await api.attendance.getAttendance('Active');
+        if (result?.stats) setStats(result.stats);
 
-                const profitResponse = await api.dashboard.getProfitStats();
-                if (profitResponse && profitResponse.summary) {
-                    setLast30DaysProfit(profitResponse.summary.total);
-                    setDailyProfit(profitResponse);
-                    console.log('✅ Profit stats loaded:', profitResponse.summary);
-                }
-                // Parallel fetch all data
-                const [stats, dailyProfit, activity, chart_depoVsCashout, depositors, cashouts, gameDeposits, gameCashouts] = await Promise.all([
-                    api.dashboard.getStats(),
-                    api.dashboard.getDailyProfit(),
-                    // api.dashboard.getProfitStats(),
-                    api.dashboard.getPlayerActivity(),
-                    api.dashboard.getDepoVsCashoutsActivity(),
-                    api.dashboard.getTopDepositors?.() || Promise.resolve(null),
-                    api.dashboard.getTopCashouts?.() || Promise.resolve(null),
-                    api.dashboard.getTopGamesByDeposits?.() || Promise.resolve(null),
-                    api.dashboard.getTopGamesByCashouts?.() || Promise.resolve(null)
-                ]);
+        setDashboardStats(statsData);
+        setDailyProfit(dailyProfitData);
+        setPlayerActivity(activity);
+        setDepoVsCashoutActivity(chart_depoVsCashout);
+        setTopDepositors(depositors);
+        setTopCashouts(cashouts);
+        setTopGamesByDeposits(gameDeposits);
+        setTopGamesByCashouts(gameCashouts);
 
+        const total = activity?.data?.reduce((sum, d) => sum + (d.deposits || 0), 0) ?? 0;
+        setTotalDepositsWeek(total);
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-                const result = await api.attendance.getAttendance(filterStatus);
-                // Set the data
-                setData(result);
-                // Set stats from backend (real counts from database)
-                if (result.stats) {
-                    setStats({
-                        total: result.stats.total,
-                        active: result.stats.active,
-                        critical: result.stats.critical,
-                        highlyCritical: result.stats.highlyCritical,
-                        inactive: result.stats.inactive
-                    });
-                    console.log('✓ Stats updated:', result.stats);
-                }
+    loadDashboardData();
+    const interval = setInterval(loadDashboardData, 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
-
-                setDashboardStats(stats);
-                setDailyProfit(dailyProfit);
-                // setLast30DaysProfit(profitStats);
-                setPlayerActivity(activity);
-                setDepoVsCashoutActivity(chart_depoVsCashout);
-                setTopDepositors(depositors);
-                setTopCashouts(cashouts);
-                setTopGamesByDeposits(gameDeposits);
-                setTopGamesByCashouts(gameCashouts);
-                // setPlayerActivity(activity);
-
-                const total = activity?.data.reduce((sum, d) => sum + d.deposits, 0);
-                setTotalDepositsWeek(total);
-
-            } catch (error) {
-                console.error('Failed to load dashboard data:', error);
-                setLast30DaysProfit(0);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadDashboardData();
-
-        // Auto-refresh every 30 seconds
-        const interval = setInterval(loadDashboardData, 30 * 1000);
-        return () => clearInterval(interval);
-    }, []);
-
-    if (loading) {
-        return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
-                <div style={{ textAlign: 'center', color: '#64748b' }}>
-                    <p>Loading dashboard...</p>
-                </div>
-            </div>
-        );
-    }
-
-    // Calculate derived values
-
-    const deposits = dashboardStats?.daily?.deposits || 0;
-    const cashouts = dashboardStats?.daily?.cashouts || 0;
-    const todaysProfit = deposits - cashouts;
-    const profitGoal = todaysProfit + 500;
-    const goalTarget = profitGoal;
-
-    const depositsDetail = dashboardStats?.revenue?.deposits || 0;
-    const cashoutsDetail = dashboardStats?.revenue?.withdrawals || 0;
-    // const last30DaysProfit = depositsDetail - cashoutsDetail;
-    const avgTx = depositsDetail / (dashboardStats?.transactions?.total || 1);
-    const issuesUnresolved = dashboardStats?.issues?.unresolved || 0;
-
-    const totalPlayers = dashboardStats?.players?.total || 0;
-    const newPlayersWeek = dashboardStats?.players?.newThisWeek || 0;
-
-    // Calculate week total from daily data
-    // const totalDepositsWeek = playerActivity?.period_7days?.reduce((sum, day) => sum + (day.deposits || 0), 0) || 0;
-
-    // Stat cards
-    const statCards = [
-        { title: 'Today\'s Profit', value: Math.round(todaysProfit), color: 'var(--color-cards)', trend: 2.5 },
-        { title: 'Total Top-Ups', value: Math.round(depositsDetail), color: '#10b981', trend: 3.2 },
-        { title: 'Total Cashouts', value: Math.round(cashoutsDetail), color: '#ef4444', trend: -1.1 },
-        { title: 'Bonuses Earned', value: Math.round(depositsDetail * 0.5), color: '#f59e0b', trend: 5.8 }
-    ];
-
-    // Attendance stats
-    const attendanceStats = [
-        { label: 'ACTIVE (24H)', value: stats?.active || 0, color: '#10b981' },
-        { label: 'CRITICAL (1-3D)', value: stats?.critical || 0, color: '#f59e0b' },
-        { label: 'HIGHLY CRITICAL (>3D)', value: stats?.highlyCritical || 0, color: '#ef4444' },
-        { label: 'INACTIVE (>1week)', value: stats?.inactive || 0, color: '#64748b' }
-    ];
-
-    // Progress calculation
-    const progressPercentage = (profitGoal / goalTarget) * 100;
-
+  if (loading) {
     return (
-
-        <div style={{
-            minHeight: '100vh', padding: '8px',
-            display: "grid",
-            gap: "24px",
-            gridTemplateColumns: "3fr 1fr"
-        }}
-        >
-            {/* Header */}
-
-            <div >
-
-
-                {/* Today's Profit Goal Card */}
-                <div className="ob-card" style={{ marginBottom: '24px' }}>
-                    <h2 style={{ fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: '12px' }}>
-                        Today's Profit Goal
-                    </h2>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                        <div>
-                            <h3 style={{ fontSize: 'clamp(24px, 5vw, 40px)', fontWeight: '700', marginBottom: '12px' }}>${profitGoal.toFixed(2)}</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <TrendingDown style={{ width: '16px', height: '16px', color: '#16a34a' }} />
-                                    <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600' }}>${deposits.toLocaleString()} Deposits</span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <TrendingUp style={{ width: '16px', height: '16px', color: '#dc2626' }} />
-                                    <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: '600' }}>${cashouts.toLocaleString()} Cashouts</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <ProgressBar
-                                percentage={progressPercentage}
-                                goal={goalTarget}
-                                current={profitGoal}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Stat Cards Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                    {statCards.map((stat, idx) => (
-                        <div style={{ borderRadius: "14px",
-                            padding: "20px 5px 5px 5px",
-                            boxShadow: "0 2px 8px rgba(15,23,42,.08)"
-                        }}>
-                            {stat.title}
-                            <StatCard
-                                key={idx}
-                                // title={stat.title}
-                                value={stat.value}
-                                // color={stat.color}
-                                trend={stat.trend}
-                                style={{ marginTop: '8px', padding: '0 12px', background: "var(--ring)" }}
-                            />
-                        </div>
-
-                    ))}
-                </div>
-
-                {/* Total Profit & Issue Status */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' }}>
-                    {/* Total Profit Card */}
-                    <div style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0891b2 100%)', borderRadius: '16px', boxShadow: '0 8px 20px rgba(2, 132, 199, .15)', padding: '24px', color: '#fff' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                            <div>
-                                <p style={{ fontSize: '12px', fontWeight: '600', color: 'rgba(255, 255, 255, .7)', margin: 0, marginBottom: '4px' }}>Total Profit (Last 30 Days)</p>
-                                <h3 style={{ fontSize: 'clamp(24px, 5vw, 40px)', fontWeight: '700', margin: 0 }}>${last30DaysProfit}</h3>
-                            </div>
-                            {/* <button style={{ background: 'rgba(255, 255, 255, .15)', border: 'none', color: '#fff', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontSize: '16px', transition: 'background .2s' }}>
-                            ⋯
-                        </button> */}
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, .15)' }}>
-                            <div>
-                                <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, .7)', margin: 0, marginBottom: '4px' }}>Deposits</p>
-                                <p style={{ fontSize: '20px', fontWeight: '700', margin: 0 }}>${depositsDetail.toLocaleString()}</p>
-                            </div>
-                            <div>
-                                <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, .7)', margin: 0, marginBottom: '4px' }}>Cashouts</p>
-                                <p style={{ fontSize: '20px', fontWeight: '700', margin: 0 }}>${cashoutsDetail.toLocaleString()}</p>
-                            </div>
-                            <div>
-                                <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, .7)', margin: 0, marginBottom: '4px' }}>Avg Tx</p>
-                                <p style={{ fontSize: '20px', fontWeight: '700', margin: 0 }}>${avgTx.toFixed(2)}</p>
-                            </div>
-                        </div>
-                    </div>
-
-
-
-                    {/* Player Activity Summary Card */}
-                    <div className="ob-card rounded-lg shadow p-6">
-                        {/* Header */}
-                        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                            Player Activity (7D)
-                        </h3>
-
-                        {/* Summary */}
-                        <div className="text-center mb-6">
-                            <p className="text-3xl font-bold">
-                                ${totalDepositsWeek.toLocaleString()}
-                            </p>
-                            <p className="text-sm text-slate-500 mt-1">
-                                Total Deposits This Week
-                            </p>
-                        </div>
-
-                        {/* Chart */}
-                        <div className="h-72">
-                            {playerActivity?.data ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={playerActivity.data}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                        <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#64748b" }} />
-                                        <YAxis tick={{ fontSize: 12, fill: "#64748b" }} />
-                                        <Tooltip />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="deposits"
-                                            stroke="#3b82f6"
-                                            strokeWidth={2}
-                                            dot={{ r: 3 }}
-                                        />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            ) : (
-                                <p className="text-center text-sm text-slate-400">Loading chart...</p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Top Section - Attendance, Depositors, Cashouts */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' }}>
-                    <TopDepositorsCard data={topDepositors} />
-                    <TopCashoutsCard data={topCashouts} />
-                </div>
-
-                {/* Games Section */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' }}>
-                    <TopGamesByDepositsCard data={topGamesByDeposits} />
-                    <TopGamesByCashoutsCard data={topGamesByCashouts} />
-                </div>
-
-                {/* Charts */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '24px' }}>
-                    <DailyProfitChart data={dailyProfit?.data} />
-                </div>
-
-                {/* Player Activity Chart - Full Width */}
-                <div style={{ marginBottom: '24px' }}>
-                    <PlayerActivityChart data={
-                        depoVsCashoutActivity
-                    } />
-                </div>
-
-
-
+      <div style={{ padding: 20 }}>
+        <style>{pulse}</style>
+        <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <Skeleton h={140} br={16} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
+              {[1,2,3,4].map(i => <Skeleton key={i} h={100} br={16} />)}
             </div>
-            <div style={{
-                display: 'flex',
-                //  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                flexDirection: "column",
-                gap: '16px',
-            }}>
-                {/* {statCards.map((stat, idx) => ( */}
-                <div style={{
-                    background: "none", borderRadius: "14px",
-                    // padding: "20px 5px 5px 5px",
-                    boxShadow: "0 2px 8px rgba(15,23,42,.08)"
-                }}>
-                    <div className={`rounded-xl border-2 p-6  `}
-                        style={{
-                            background: `var(--color-cards-background)`
-                        }}
-                    >
-                        <div style={{
-                            background: "var(--color-cards-background)",
-                            borderRadius: "14px",
-                            overflow: "hidden",   // ← so the dark clock card clips to the card's border radius
-                            boxShadow: "0 2px 8px rgba(15,23,42,.08)", 
-                            border: 'none',
-                        }}>
-                            <DashboardClock />
-                        </div>
-                        {/* <p className="text-2xl font-bold">{}</p> */}
-                    </div>
-
-
-
-                </div>
-
-                {/* Issue Status Card */}
-                <div className="ob-card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                        <h3 style={{ fontSize: '13px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '.5px', margin: 0 }}>
-                            Issue Status
-                        </h3>
-                    </div>
-
-                    {/* Big unresolved count */}
-                    <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                        <p style={{ fontSize: '48px', fontWeight: '800', color: issuesUnresolved > 0 ? '#ef4444' : '#10b981', margin: '0 0 2px 0', lineHeight: 1 }}>
-                            {dashboardStats?.issues?.unresolved ?? 0}
-                        </p>
-                        <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>Unresolved Issues</p>
-
-                        {/* High priority warning */}
-                        {(dashboardStats?.issues?.highPriority ?? 0) > 0 && (
-                            <div style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '5px',
-                                marginTop: '8px', padding: '4px 10px',
-                                background: '#fee2e2', borderRadius: '20px',
-                                fontSize: '11px', fontWeight: '700', color: '#dc2626'
-                            }}>
-                                ⚠ {dashboardStats.issues.highPriority} HIGH priority
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Resolved vs Unresolved bar */}
-                    {(() => {
-                        const total = dashboardStats?.issues?.total ?? 0;
-                        const resolved = dashboardStats?.issues?.resolved ?? 0;
-                        const unresolved = dashboardStats?.issues?.unresolved ?? 0;
-                        const pct = total > 0 ? Math.round((resolved / total) * 100) : 0;
-
-                        return (
-                            <div>
-                                {/* Progress bar */}
-                                <div style={{ width: '100%', height: '8px', background: '#fee2e2', borderRadius: '4px', overflow: 'hidden', marginBottom: '10px' }}>
-                                    <div style={{
-                                        height: '100%',
-                                        width: `${pct}%`,
-                                        background: 'linear-gradient(90deg, #10b981, #06b6d4)',
-                                        borderRadius: '4px',
-                                        transition: 'width 0.4s ease'
-                                    }} />
-                                </div>
-
-                                {/* Counts row */}
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }} />
-                                        <span style={{ fontSize: '12px', color: '#64748b' }}>
-                                            Unresolved <strong style={{ color: '#0f172a' }}>{unresolved}</strong>
-                                        </span>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
-                                        <span style={{ fontSize: '12px', color: '#64748b' }}>
-                                            Resolved <strong style={{ color: '#0f172a' }}>{resolved}</strong>
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Resolution rate */}
-                                <div style={{ marginTop: '10px', textAlign: 'center', fontSize: '11px', color: '#94a3b8' }}>
-                                    {pct}% resolution rate · {total} total
-                                </div>
-                            </div>
-                        );
-                    })()}
-                </div>
-
-                <PlayerAttendanceCard stats={attendanceStats} />
-                {/* ))} */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <Skeleton h={180} br={16} />
+              <Skeleton h={180} br={16} />
             </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <Skeleton h={120} br={16} />
+            <Skeleton h={180} br={16} />
+            <Skeleton h={200} br={16} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Derived values
+  const deposits        = dashboardStats?.daily?.deposits || 0;
+  const cashouts        = dashboardStats?.daily?.cashouts || 0;
+  const todaysProfit    = deposits - cashouts;
+  const profitGoal      = todaysProfit + 500;
+  const goalTarget      = profitGoal;
+  const progressPct     = (profitGoal / goalTarget) * 100;
+
+  const depositsDetail  = dashboardStats?.revenue?.deposits || 0;
+  const cashoutsDetail  = dashboardStats?.revenue?.withdrawals || 0;
+  const avgTx           = depositsDetail / (dashboardStats?.transactions?.total || 1);
+
+  const statCards = [
+    { title: "Today's Profit",  value: Math.round(todaysProfit),          color: C.blue,   icon: DollarSign,   trend: 2.5  },
+    { title: 'Total Top-Ups',   value: Math.round(depositsDetail),        color: C.green,  icon: TrendingUp,   trend: 3.2  },
+    { title: 'Total Cashouts',  value: Math.round(cashoutsDetail),        color: C.red,    icon: TrendingDown, trend: -1.1 },
+    { title: 'Bonuses Earned',  value: Math.round(depositsDetail * 0.5),  color: C.amber,  icon: Zap,          trend: 5.8  },
+  ];
+
+  const attendanceStats = [
+    { label: 'ACTIVE (24H)',          value: stats?.active || 0,         color: C.green  },
+    { label: 'CRITICAL (1–3D)',       value: stats?.critical || 0,       color: C.amber  },
+    { label: 'HIGHLY CRITICAL (>3D)', value: stats?.highlyCritical || 0, color: C.red    },
+    { label: 'INACTIVE (>1W)',        value: stats?.inactive || 0,       color: C.slate400 },
+  ];
+
+  return (
+    <>
+      <style>{pulse}</style>
+      <div style={{
+        minHeight: '100vh', padding: 16,
+        display: 'grid', gap: 20, gridTemplateColumns: '3fr 1fr',
+      }}>
+
+        {/* ── LEFT COLUMN ─────────────────────────────── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+
+          {/* Today's profit goal */}
+          <ProfitGoalCard
+            profitGoal={profitGoal}
+            deposits={deposits}
+            cashouts={cashouts}
+            progressPercentage={progressPct}
+            goalTarget={goalTarget}
+          />
+
+          {/* Stat cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px,1fr))', gap: 12 }}>
+            {statCards.map((s, i) => (
+              <StatCard key={i} title={s.title} value={s.value} color={s.color} icon={s.icon} trend={s.trend} />
+            ))}
+          </div>
+
+          {/* 30-day profit + weekly activity */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <TotalProfitCard
+              last30DaysProfit={last30DaysProfit}
+              depositsDetail={depositsDetail}
+              cashoutsDetail={cashoutsDetail}
+              avgTx={avgTx}
+            />
+            <WeeklyActivityCard playerActivity={playerActivity} totalDepositsWeek={totalDepositsWeek} />
+          </div>
+
+          {/* Top depositors + cashouts */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <TopDepositorsCard data={topDepositors} />
+            <TopCashoutsCard data={topCashouts} />
+          </div>
+
+          {/* Top games */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <TopGamesByDepositsCard data={topGamesByDeposits} />
+            <TopGamesByCashoutsCard data={topGamesByCashouts} />
+          </div>
+
+          {/* Daily profit bar chart */}
+          <DailyProfitChart data={dailyProfit?.data} />
+
+          {/* Deposits vs Withdrawals area chart */}
+          <PlayerActivityChart data={depoVsCashoutActivity} />
         </div>
 
-    );
+        {/* ── RIGHT COLUMN ────────────────────────────── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* Clock */}
+          <Card style={{ padding: 0, overflow: 'hidden', border: 'none', background: 'var(--color-cards-background)' }}>
+            <DashboardClock />
+          </Card>
+
+          {/* Issue status */}
+          <IssueStatusCard dashboardStats={dashboardStats} />
+
+          {/* Attendance */}
+          <PlayerAttendanceCard stats={attendanceStats} />
+        </div>
+
+      </div>
+    </>
+  );
 }
