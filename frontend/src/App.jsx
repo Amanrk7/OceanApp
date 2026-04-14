@@ -426,7 +426,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
                   onClick={() => {
                     if (item.id === 'store2') {
                       setIsStore2(prev => !prev);
-                      return;
+                      // return;
                     }
                     !disabled && handleNav(item.id)
                   }}
