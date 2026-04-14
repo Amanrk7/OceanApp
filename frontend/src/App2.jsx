@@ -761,7 +761,7 @@ function LoginPage() {
                     <div className="ob-avatar-lg">OB</div>
                     <div>
                         <div className="ob-title">OceanBets</div>
-                        <div className="ob-sub">Management Portal</div>
+                        <div className="ob-sub">Store 2 • Management Portal</div>
                     </div>
                 </div>
                 {error && <div className="ob-error">{error}</div>}
