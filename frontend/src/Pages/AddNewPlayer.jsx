@@ -235,6 +235,7 @@ function PlayerPicker({ label, hint, value, onChange, multi = true }) {
 
 // ─── Breadcrumb ───────────────────────────────────────────────────────────────
 function Breadcrumb({ onPlayersClick, onDashboardClick }) {
+    const navigate = useNavigate();
 
     return (
 
