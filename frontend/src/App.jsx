@@ -827,7 +827,68 @@ function LoginPage() {
     </div>
   );
 }
+function LoginPageStore2() {
+  const [user, setUser] = useState(null);
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault(); setError(""); setLoading(true);
+  //   try {
+  //     const result = await api.auth.login(username, password);
+  //     window.user = result.user;
+  //     window.location.reload();
+  //   } catch (err) {
+  //     setError(err.message || "Login failed");
+  //   } finally { setLoading(false); }
+  // };
+
+  const handleSubmit = async (e) => {
+    if (username === "admin" && password === "admin123") {
+      setUser({ username: "admin", name: "Admin User" });
+    } else {
+      setError("Invalid credentials");
+    }
+  };
+
+  return (
+    <div className="ob-login-wrap">
+      <button
+        onClick={toggleTheme}
+        style={{ position: 'fixed', top: 16, right: 16, background: 'var(--color-cards)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '600' }}
+      >
+        <HugeiconsIcon icon={theme === 'dark' ? Sun03Icon : Moon02Icon} size={16} />
+        {theme === 'dark' ? 'Light' : 'Dark'}
+      </button>
+
+      <div className="ob-login-card">
+        <div className="ob-login-logo">
+          <div className="ob-avatar-lg">OB</div>
+          <div>
+            <div className="ob-title">OceanBets</div>
+            <div className="ob-sub">Management Portal • Store 2</div>
+          </div>
+        </div>
+        {error && <div className="ob-error">{error}</div>}
+        <form onSubmit={handleSubmit}>
+          <label className="ob-label">Username</label>
+          <input type="text" className="ob-input" value={username} onChange={e => setUsername(e.target.value)} placeholder="Enter username" disabled={loading} />
+          <label className="ob-label">Password</label>
+          <input type="password" className="ob-input" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter password" disabled={loading} />
+          <button type="submit" className="ob-btn ob-btn-primary ob-btn-full" disabled={loading}>
+            {loading ? "Signing in…" : "Sign In"}
+          </button>
+        </form>
+        <p style={{ fontSize: "13px", color: "var(--color-text-muted)", marginTop: "16px", textAlign: "center" }}>
+          Demo: admin / admin123
+        </p>
+      </div>
+    </div>
+  );
+}
 // ══════════════════════════════════════════════════════════════════════════
 // ROOT APP
 // ══════════════════════════════════════════════════════════════════════════
@@ -876,7 +937,7 @@ export default function App() {
                   />
 
                   <Route path="/addNewPlayer"
-                    element={user ? <AddNewPlayerWithSidebar user={user} /> : <LoginPage />}
+                    element={user ? <AddNewPlayerWithSidebar user={user} /> : <LoginPageStore2 />}
                   />
 
                 </Routes>
