@@ -229,7 +229,7 @@ function Breadcrumb({ onPlayersClick, onDashboardClick }) {
             {[
                 { label: 'Dashboard', onClick: () => navigate('/') },
                 { label: 'Players', onClick: () => navigate('/?page=players') },
-                { label: player.name, onClick: null },
+                { label: 'Add New Player', onClick: null },
             ].map((item, i, arr) => (
                 <React.Fragment key={i}>
                     {item.onClick
@@ -245,6 +245,8 @@ function Breadcrumb({ onPlayersClick, onDashboardClick }) {
         </nav>
     );
 }
+
+
 
 
 // ─── Shared UI helpers ────────────────────────────────────────────────────────
