@@ -272,7 +272,7 @@ const CSS = `
   .ob-drawer-logo { display: flex; align-items: center; gap: 10px; padding: 0 16px 18px; flex-shrink: 0; }
   .ob-drawer-logo .ob-drawer-title { font-weight: 800; font-size: 15px; color: #f8fafc; letter-spacing: -.3px; }
 
-  .ob-nav { display: flex; flex-direction: column; gap: clamp(0px, 0.3vh, 2px); flex: 1; width: 100%; padding: 0 8px; min-height: 0; overflow: hidden; }
+  .ob-nav { display: flex; flex-direction: column; gap: clamp(0px, 0.3vh, 2px); flex: 1; width: 100%; padding: 0 8px; min-height: 0; }
   .ob-nav-item { position: relative; width: 100%; }
 
   .ob-navlink {
