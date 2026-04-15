@@ -8,7 +8,7 @@ import { CurrentUserProvider } from "./Context/currentUser.jsx";
 import { ThemeProvider, useTheme } from "./Context/Themecontext.jsx";
 import { App2Context, App2Provider } from "./Context/store2Switch.jsx";
 import AnalyticsDashboard from "./Pages/dashboard";
-import Players from "./Store2/Pages/Players.jsx";
+import PlayersStore2 from "./Store2/Pages/Players.jsx";
 import Attendance from "./Pages/Attendance";
 import Games from "./Pages/Games";
 import Issues from "./Pages/Issues";
@@ -380,7 +380,7 @@ const NAV_ITEMS = [
     { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: false },
     { id: "store1", label: "Store 1", icon: ArrowDataTransferDiagonalIcon },
     { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon, adminsOnly: false },
-    { id: "players", label: "Players", icon: UserGroup03Icon },
+    { id: "playersStore2", label: "PlayersStore2", icon: UserGroup03Icon },
     { id: "dailyCheckups", label: "Daily Checkups", icon: FolderOpenIcon },
     { id: "playTime", label: "Play Time", icon: TimeQuarter02Icon },
     { id: "games", label: "Games", icon: GameboyIcon },
@@ -579,7 +579,7 @@ function AdminDashboard({ user }) {
         if (urlPage !== page) {
             setPage(urlPage);
             // Clear addPlayer flag when navigating away from players section
-            if (urlPage !== 'players') setAddPlayer(false);
+            if (urlPage !== 'playersStore2') setAddPlayer(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.search]);
@@ -591,7 +591,7 @@ function AdminDashboard({ user }) {
     };
 
     const handleNavigate = (pageId, extra = {}) => {
-        if (pageId !== 'players') setAddPlayer(false);
+        if (pageId !== 'playersStore2') setAddPlayer(false);
         setPage(pageId);
         // If the banner sends tab:'pending', store it so Transactions can read it
         if (extra.tab) {
@@ -601,7 +601,7 @@ function AdminDashboard({ user }) {
 
 
     const navLabels = {
-        dashboard: 'Dashboard [Store 2]', store1: 'Store 1', memberDashboard: 'Member Dashboard', players: 'Players',
+        dashboard: 'Dashboard [Store 2]', store1: 'Store 1', memberDashboard: 'Member Dashboard', playersStore2: 'PlayersStore2',
         dailyCheckups: 'Daily Checkups',
         playTime: 'Play Time', games: 'Games', attendance: 'Attendance', issues: 'Issues',
         transactions: 'All Transactions', balances: 'Live Balances', expenses: 'Expenses', profitTakeouts: 'Profit Takeouts',
@@ -615,7 +615,7 @@ function AdminDashboard({ user }) {
             case "dashboard": return <AnalyticsDashboard />;
             case "store1": return <Store1 />;
             case "memberDashboard": return <TeamDashboard user={user} />;
-            case "players": return <Players />;
+            case "playersStore2": return <PlayersStore2 />;
             case "dailyCheckups": return <MissingPlayersPage currentUser={user} />;
             case "playTime": return <Playtimepage />;
             case "attendance": return <Attendance />;
