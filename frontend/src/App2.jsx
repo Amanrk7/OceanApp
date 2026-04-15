@@ -51,6 +51,7 @@ import MissingPlayersPage from "./Pages/Missingplayerspage.jsx";
 import Playtimepage from "./Pages/Playtimepage.jsx";
 import PendingTransactionsBanner from "./Components/Pendingtransactionsbanner.jsx";
 import ProfitTakeoutsPage from "./Pages/ProfitTakeoutsPage.jsx";
+import { setStoreId } from './api';
 
 const SIDEBAR_W = 62;
 
@@ -786,6 +787,7 @@ function LoginPage() {
 // ROOT APP
 // ══════════════════════════════════════════════════════════════════════════
 export default function App() {
+    setStoreId(2);
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
