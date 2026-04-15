@@ -51,6 +51,7 @@ import MissingPlayersPage from "./Pages/Missingplayerspage.jsx";
 import Playtimepage from "./Pages/Playtimepage.jsx";
 import PendingTransactionsBanner from "./Components/Pendingtransactionsbanner.jsx";
 import ProfitTakeoutsPage from "./Pages/ProfitTakeoutsPage.jsx";
+import AddNewPlayer from "./Pages/AddNewPlayer.jsx";
 import { setStoreId } from './api';
 
 const SIDEBAR_W = 62;
@@ -783,6 +784,33 @@ function LoginPage() {
     );
 }
 
+function AddNewPlayerWithSidebar({ user }) {
+  const { setUsr } = useContext(CurrentUserContext);
+  setUsr(user);
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try { await api.auth.logout(); window.location.reload(); }
+    catch { }
+  };
+
+  return (
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--color-bg)", width: "100vw" }}>
+      <Sidebar
+        user={user}
+        activePage="players"
+        onNavigate={(id) => navigate(`/?page=${id}`)}
+        onLogout={handleLogout}
+      />
+      <main className="ob-main">
+        <div className="ob-container">
+          <AddNewPlayer />
+        </div>
+      </main>
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 // ROOT APP
 // ══════════════════════════════════════════════════════════════════════════
@@ -830,7 +858,9 @@ export default function App() {
                                     <Route path="/shifts"
                                         element={user ? <ShiftsWithSidebar user={user} /> : <LoginPage />}
                                     />
-
+                                  <Route path="/addNewPlayer"
+                                        element={user ? <AddNewPlayerWithSidebar user={user} /> : <LoginPage />}
+                                    />
 
                                 </Routes>
                             </Router>
