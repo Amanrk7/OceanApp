@@ -179,7 +179,7 @@ export default function Players() {
         finally { setLoading(false); }
     }, [currentPage, searchTerm, filterTab]);
 
-    useEffect(() => { loadPlayers(); }, [loadPlayers]);
+    // useEffect(() => { loadPlayers(); }, [loadPlayers]);
     // 1. Refetch whenever the page is revisited (location changes)
     useEffect(() => {
         loadPlayers();
