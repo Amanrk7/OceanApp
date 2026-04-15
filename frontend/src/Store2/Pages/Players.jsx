@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from "react-router-dom";
-import { api } from '../api';
-import AddNewPlayer from './AddNewPlayer';
-import EditPlayer from './Editplayer';
-import { AddPlayerContext } from "../Context/addPlayer";
-import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
+import { api } from '../../api';
+import EditPlayer from '../../Pages/EditPlayer';
+import { AddPlayerContext } from "../../Context/addPlayer";
+import { PlayerDashboardPlayerNamecontext } from '../../Context/playerDashboardPlayerNamecontext';
 import { Search, Plus, RefreshCw, Eye, Pencil, Trash2, ChevronLeft, ChevronRight, Users, TrendingUp, AlertTriangle, UserX } from 'lucide-react';
 import { FaFacebookF, FaInstagram, FaSnapchatGhost, FaTelegramPlane } from "react-icons/fa";
 import { SiGmail, SiX } from "react-icons/si";
