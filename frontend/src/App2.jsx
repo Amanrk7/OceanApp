@@ -8,7 +8,7 @@ import { CurrentUserProvider } from "./Context/currentUser.jsx";
 import { ThemeProvider, useTheme } from "./Context/Themecontext.jsx";
 import { App2Context, App2Provider } from "./Context/store2Switch.jsx";
 import AnalyticsDashboard from "./Pages/dashboard";
-import Players from "./Pages/Players";
+import Players from "./Store2/Pages/Players.jsx";
 import Attendance from "./Pages/Attendance";
 import Games from "./Pages/Games";
 import Issues from "./Pages/Issues";
@@ -785,30 +785,30 @@ function LoginPage() {
 }
 
 function AddNewPlayerWithSidebar({ user }) {
-  const { setUsr } = useContext(CurrentUserContext);
-  setUsr(user);
-  const navigate = useNavigate();
+    const { setUsr } = useContext(CurrentUserContext);
+    setUsr(user);
+    const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    try { await api.auth.logout(); window.location.reload(); }
-    catch { }
-  };
+    const handleLogout = async () => {
+        try { await api.auth.logout(); window.location.reload(); }
+        catch { }
+    };
 
-  return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--color-bg)", width: "100vw" }}>
-      <Sidebar
-        user={user}
-        activePage="players"
-        onNavigate={(id) => navigate(`/?page=${id}`)}
-        onLogout={handleLogout}
-      />
-      <main className="ob-main">
-        <div className="ob-container">
-          <AddNewPlayer />
+    return (
+        <div style={{ display: "flex", minHeight: "100vh", background: "var(--color-bg)", width: "100vw" }}>
+            <Sidebar
+                user={user}
+                activePage="players"
+                onNavigate={(id) => navigate(`/?page=${id}`)}
+                onLogout={handleLogout}
+            />
+            <main className="ob-main">
+                <div className="ob-container">
+                    <AddNewPlayer />
+                </div>
+            </main>
         </div>
-      </main>
-    </div>
-  );
+    );
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -858,7 +858,7 @@ export default function App() {
                                     <Route path="/shifts"
                                         element={user ? <ShiftsWithSidebar user={user} /> : <LoginPage />}
                                     />
-                                  <Route path="/addNewPlayer"
+                                    <Route path="/addNewPlayer"
                                         element={user ? <AddNewPlayerWithSidebar user={user} /> : <LoginPage />}
                                     />
 
