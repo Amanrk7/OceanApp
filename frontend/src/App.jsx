@@ -587,7 +587,7 @@ function AdminDashboard({ user }) {
   const [page, setPage] = useState(getPageFromUrl);
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
-  const [playersKey, setPlayersKey] = useState(0);
+  // const [playersKey, setPlayersKey] = useState(0);
 
   // Sync page state whenever the URL search params change
   // (handles back-navigation from PlayerDashboard via breadcrumbs)
@@ -609,7 +609,7 @@ function AdminDashboard({ user }) {
 
   const handleNavigate = (pageId, extra = {}) => {
     if (pageId !== 'players') setAddPlayer(false);
-    if (pageId === 'players') setPlayersKey(k => k + 1); // 👈 add this
+    // if (pageId === 'players') setPlayersKey(k => k + 1); // 👈 add this
     setPage(pageId);
     // If the banner sends tab:'pending', store it so Transactions can read it
     if (extra.tab) {
@@ -633,7 +633,7 @@ function AdminDashboard({ user }) {
       case "dashboard": return <AnalyticsDashboard />;
       case "store2": return <Store2 />;
       case "memberDashboard": return <TeamDashboard user={user} />;
-      case "players": return <Players key={playersKey}/>;
+      case "players": return <Players />;
       case "dailyCheckups": return <MissingPlayersPage currentUser={user} />;
       case "playTime": return <Playtimepage />;
       case "attendance": return <Attendance />;
