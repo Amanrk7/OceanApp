@@ -179,17 +179,17 @@ export default function Players() {
         finally { setLoading(false); }
     }, [currentPage, searchTerm, filterTab]);
 
-    // useEffect(() => { loadPlayers(); }, [loadPlayers]);
+    useEffect(() => { loadPlayers(); }, [loadPlayers]);
     // 1. Refetch whenever the page is revisited (location changes)
-    useEffect(() => {
-        loadPlayers();
-    }, [location.key]); // location.key is unique per navigation event
+    // useEffect(() => {
+    //     loadPlayers();
+    // }, [location.key]); // location.key is unique per navigation event
 
-    // 2. Refetch when filters/search/page change (but NOT on initial mount, 
-    //    since effect #1 already handles that)
-    useEffect(() => {
-        loadPlayers();
-    }, [currentPage, searchTerm, filterTab]);
+    // // 2. Refetch when filters/search/page change (but NOT on initial mount, 
+    // //    since effect #1 already handles that)
+    // useEffect(() => {
+    //     loadPlayers();
+    // }, [currentPage, searchTerm, filterTab]);
 
     if (addPlayer) navigate(`/addNewPlayer`);
 
