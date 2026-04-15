@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { api } from '../api';
 import AddNewPlayer from './AddNewPlayer';
 import EditPlayer from './Editplayer';
@@ -157,6 +157,7 @@ function DeleteModal({ player, onClose, onDeleted }) {
 const TH = { padding: '10px 16px', fontWeight: '700', fontSize: '11px', color: C.grayLt, textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left', borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap', background: C.bg };
 
 export default function Players() {
+    const location = useLocation();
     const navigate = useNavigate();
     const { addPlayer, setAddPlayer } = useContext(AddPlayerContext);
     const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
@@ -179,7 +180,18 @@ export default function Players() {
         finally { setLoading(false); }
     }, [currentPage, searchTerm, filterTab]);
 
-    useEffect(() => { loadPlayers(); }, [loadPlayers]);
+    // useEffect(() => { loadPlayers(); }, [loadPlayers]);
+
+    // 1. Refetch whenever the page is revisited (location changes)
+    useEffect(() => {
+        loadPlayers();
+    }, [location.key]); // location.key is unique per navigation event
+
+    // 2. Refetch when filters/search/page change (but NOT on initial mount, 
+    //    since effect #1 already handles that)
+    useEffect(() => {
+        loadPlayers();
+    }, [currentPage, searchTerm, filterTab]);
 
     if (addPlayer) navigate(`/addNewPlayer`);
 
