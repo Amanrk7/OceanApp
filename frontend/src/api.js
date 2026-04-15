@@ -4,7 +4,12 @@
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// api.js — near the top, after API_BASE_URL
+let _currentStoreId = 1;
 
+export function setStoreId(id) {
+  _currentStoreId = id;
+}
 // ═══════════════════════════════════════════════════════════════
 // CACHE MANAGEMENT
 // ═══════════════════════════════════════════════════════════════
@@ -92,6 +97,7 @@ async function fetchAPI(endpoint, options = {}) {
     cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
+      'X-Store-Id': String(_currentStoreId),
       ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers
     }
@@ -348,7 +354,7 @@ export const playersAPI = {
   },
   getPendingBonuses: async (playerId) => {
     return fetchAPI(`/players/${playerId}/pending-bonuses`);
-},
+  },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -390,20 +396,20 @@ export const transactionsAPI = {
     });
   },
 
-// In api.js → transactionsAPI object, replace approveCashout and partialPayment:
+  // In api.js → transactionsAPI object, replace approveCashout and partialPayment:
 
-approveCashout: async (transactionId) => {
-  return fetchAPI(`/transactions/${transactionId}/approve`, {
-    method: 'PATCH',
-  });
-},
+  approveCashout: async (transactionId) => {
+    return fetchAPI(`/transactions/${transactionId}/approve`, {
+      method: 'PATCH',
+    });
+  },
 
-partialPayment: async (transactionId, { amount }) => {
-  return fetchAPI(`/transactions/${transactionId}/partial-payment`, {
-    method: 'POST',
-    body: JSON.stringify({ amount }),
-  });
-},
+  partialPayment: async (transactionId, { amount }) => {
+    return fetchAPI(`/transactions/${transactionId}/partial-payment`, {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    });
+  },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -496,19 +502,19 @@ export const streakAPI = {
       method: 'POST',
       body: JSON.stringify({ hours, note }),
     }),
- 
+
   extendFreeze: (playerId, hours, note) =>
     fetchAPI(`/players/${playerId}/streak/extend-freeze`, {
       method: 'POST',
       body: JSON.stringify({ hours, note }),
     }),
- 
+
   unfreeze: (playerId) =>
     fetchAPI(`/players/${playerId}/streak/unfreeze`, {
       method: 'POST',
       body: JSON.stringify({}),
     }),
- 
+
   getStatus: (playerId) =>
     fetchAPI(`/players/${playerId}/streak/freeze-status`),
 };
@@ -660,12 +666,12 @@ export const tasksAPI = {
   getTeamMembers: async () => fetchAPI("/team-members"),
 
   connectSSE: () => {
-  const token = localStorage.getItem('authToken');
-  const url = token
-    ? `${API_BASE_URL}/tasks/events?token=${encodeURIComponent(token)}`
-    : `${API_BASE_URL}/tasks/events`;
-  return new EventSource(url, { withCredentials: true });
-},
+    const token = localStorage.getItem('authToken');
+    const url = token
+      ? `${API_BASE_URL}/tasks/events?token=${encodeURIComponent(token)}`
+      : `${API_BASE_URL}/tasks/events`;
+    return new EventSource(url, { withCredentials: true });
+  },
 };
 
 export const reportsAPI = {
@@ -696,10 +702,10 @@ export const referralBonusAPI = {
 };
 
 export const profitTakeoutsAPI = {
-      getAll:  (page = 1) => fetchAPI(`/profit-takeouts?page=${page}&limit=100`),
-      create:  (body)     => fetchAPI('/profit-takeouts', { method: 'POST', body: JSON.stringify(body) }),
-      update:  (id, body) => fetchAPI(`/profit-takeouts/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
-      remove:  (id)       => fetchAPI(`/profit-takeouts/${id}`, { method: 'DELETE' }),
+  getAll: (page = 1) => fetchAPI(`/profit-takeouts?page=${page}&limit=100`),
+  create: (body) => fetchAPI('/profit-takeouts', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id, body) => fetchAPI(`/profit-takeouts/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  remove: (id) => fetchAPI(`/profit-takeouts/${id}`, { method: 'DELETE' }),
 };
 // ═══════════════════════════════════════════════════════════════
 // CONSOLIDATED API EXPORT
