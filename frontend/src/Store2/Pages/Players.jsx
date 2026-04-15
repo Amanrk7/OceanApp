@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from "react-router-dom";
 import { api } from '../../api';
-import EditPlayer from '../../Pages/EditPlayer';
+import EditPlayer from '../../Pages/Editplayer';
 import { AddPlayerContext } from "../../Context/addPlayer";
 import { PlayerDashboardPlayerNamecontext } from '../../Context/playerDashboardPlayerNamecontext';
 import { Search, Plus, RefreshCw, Eye, Pencil, Trash2, ChevronLeft, ChevronRight, Users, TrendingUp, AlertTriangle, UserX } from 'lucide-react';
