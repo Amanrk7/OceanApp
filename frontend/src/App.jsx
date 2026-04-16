@@ -674,7 +674,7 @@ function AdminDashboard({ user }) {
           <div className="ob-header" style={{ alignItems: "center", justifyContent: "space-between", gap: "4px" }}>
             <h1>{navLabels[page] || 'Dashboard'}</h1>
 
-            <button onClick={() => setIsStore2(prev => !prev)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 18px', background: C.sky, color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', justifyContent: "space-between" }}>
+            <button onClick={() => setIsStore2(prev => !prev)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 18px', background: C.sky, color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit'}}>
               {/* <ArrowDataTransferDiagonalIcon /> */}
               <HugeiconsIcon icon={ArrowDataTransferDiagonalIcon} size={16} />
               Store 2
