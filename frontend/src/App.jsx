@@ -377,7 +377,7 @@ const CSS = `
 
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: false },
-  { id: "store2", label: "Store 2", icon: ArrowDataTransferDiagonalIcon },
+  // { id: "store2", label: "Store 2", icon: ArrowDataTransferDiagonalIcon },
   { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon, adminsOnly: false },
   { id: "players", label: "Players", icon: UserGroup03Icon },
   { id: "dailyCheckups", label: "Daily Checkups", icon: FolderOpenIcon },
@@ -429,7 +429,6 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
                   onClick={() => {
                     if (item.id === 'store2') {
                       setIsStore2(prev => !prev);
-                      handleNav('/');
                     }
                     !disabled && handleNav(item.id)
                   }}
@@ -669,8 +668,13 @@ function AdminDashboard({ user }) {
           />
           <div className="ob-header" style={{ alignItems: "center", justifyContent: "flex-start", gap: "4px" }}>
             <h1>{navLabels[page] || 'Dashboard'}</h1>
+
+            <button onClick={() => setIsStore2(prev => !prev)} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-cards)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '6px 10px', cursor: 'pointer', color: isStore2 ? '#22c55e' : 'var(--color-text)' }}>
+              <ArrowDataTransferDiagonalIcon />
+              Store 2
+            </button>
             {/* {addPlayer && (
-              <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-text)" }}>
+                <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-text)" }}>
                 &gt; Add New Player
               </span>
             )} */}
@@ -678,8 +682,8 @@ function AdminDashboard({ user }) {
           {errorMsg && <div className="ob-error">{errorMsg}</div>}
           {renderPage()}
         </div>
-      </main>
-    </div>
+      </main >
+    </div >
   );
 }
 
