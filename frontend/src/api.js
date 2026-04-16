@@ -154,7 +154,8 @@ export const authAPI = {
 
 export const dashboardAPI = {
   getStats: async (forceRefresh = false) => {
-    const cacheKey = 'dashboardStats';
+    const cacheKey = `${storeKey()}_dashboardStats`;
+    // const cacheKey = 'dashboardStats';
     if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
     const data = await fetchAPI('/dashboard/stats');
     cache.set(cacheKey, data, 30 * 1000);
@@ -162,7 +163,8 @@ export const dashboardAPI = {
   },
 
   getProfitStats: async (forceRefresh = false) => {
-    const cacheKey = 'profitStats';
+    // const cacheKey = 'profitStats';
+    const cacheKey = `${storeKey()}_profitStats`;
     if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
     const data = await fetchAPI('/profit/stats');
     cache.set(cacheKey, data, 2 * 60 * 1000);
@@ -170,7 +172,8 @@ export const dashboardAPI = {
   },
 
   getDailyProfit: async (forceRefresh = false) => {
-    const cacheKey = 'dailyProfitChart';
+    // const cacheKey = 'dailyProfitChart';
+    const cacheKey = `${storeKey()}_dailyProfitChart`;
     if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
     const data = await fetchAPI('/chart/daily-profit');
     cache.set(cacheKey, data, 60 * 1000);
@@ -178,7 +181,8 @@ export const dashboardAPI = {
   },
 
   getPlayerActivity: async (forceRefresh = false) => {
-    const cacheKey = 'playerActivityChart';
+    // const cacheKey = 'playerActivityChart';
+    const cacheKey = `${storeKey()}_playerActivityChart`;
     if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
     const data = await fetchAPI('/chart/player-activity');
     cache.set(cacheKey, data, 60 * 1000);
@@ -186,7 +190,8 @@ export const dashboardAPI = {
   },
 
   getDepoVsCashoutsActivity: async (forceRefresh = false) => {
-    const cacheKey = 'depoVsCashoutsActivity';
+    // const cacheKey = 'depoVsCashoutsActivity';
+    const cacheKey = `${storeKey()}_depoVsCashoutsActivity`;
     if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
     try {
       const data = await fetchAPI('/chart/player-deposit-withdrawal');
@@ -196,7 +201,8 @@ export const dashboardAPI = {
   },
 
   getTopDepositors: async (forceRefresh = false) => {
-    const cacheKey = 'topDepositors';
+    // const cacheKey = 'topDepositors';
+    const cacheKey = `${storeKey()}_topDepositors`;
     if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
     try {
       const data = await fetchAPI('/analytics/top-depositors');
@@ -206,7 +212,8 @@ export const dashboardAPI = {
   },
 
   getTopCashouts: async (forceRefresh = false) => {
-    const cacheKey = 'topCashouts';
+    // const cacheKey = 'topCashouts';
+    const cacheKey = `${storeKey()}_topCashouts`;
     if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
     try {
       const data = await fetchAPI('/analytics/top-cashouts');
@@ -216,7 +223,8 @@ export const dashboardAPI = {
   },
 
   getTopGamesByDeposits: async (forceRefresh = false) => {
-    const cacheKey = 'topGamesByDeposits';
+    // const cacheKey = 'topGamesByDeposits';
+    const cacheKey = `${storeKey()}_topGamesByDeposits`;
     if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
     try {
       const data = await fetchAPI('/analytics/top-games-deposits');
@@ -226,7 +234,8 @@ export const dashboardAPI = {
   },
 
   getTopGamesByCashouts: async (forceRefresh = false) => {
-    const cacheKey = 'topGamesByCashouts';
+    // const cacheKey = 'topGamesByCashouts';
+    const cacheKey = `${storeKey()}_topGamesByCashouts`;
     if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
     try {
       const data = await fetchAPI('/analytics/top-games-cashouts');
@@ -243,7 +252,8 @@ export const dashboardAPI = {
 export const playersAPI = {
   getPlayers: async (page = 1, limit = 10, search = '', status = '') => {
     const queryString = buildQueryString({ page, limit, search, status });
-    const cacheKey = `players_${page}_${limit}_${search}_${status}`;
+    const cacheKey = `${storeKey()}_players_${page}_${limit}_${search}_${status}`;
+    // const cacheKey = `players_${page}_${limit}_${search}_${status}`;
     const cached = cache.get(cacheKey);
     if (cached) return cached;
     const data = await fetchAPI(`/players${queryString}`);
@@ -259,7 +269,8 @@ export const playersAPI = {
   // ✅ FIX: was using raw relative fetch('/api/players/missing-info') in the component
   // which hits the frontend server instead of the backend. Now routed through fetchAPI.
   getMissingInfo: async (forceRefresh = false) => {
-    const cacheKey = 'players_missing_info';
+    // const cacheKey = 'players_missing_info';
+    const cacheKey = `${storeKey()}_players_missing_info`;
     if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
     const data = await fetchAPI('/players/missing-info');
     cache.set(cacheKey, data, 2 * 60 * 1000);
@@ -423,7 +434,8 @@ export const gamesAPI = {
 
 export const expensesAPI = {
   getExpenses: async (forceRefresh = false, { category = '', search = '' } = {}) => {
-    const cacheKey = `expenses_${category}_${search}`;
+    // const cacheKey = `expenses_${category}_${search}`;
+    const cacheKey = `${storeKey()}_expenses_${category}_${search}`;
     if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
     const queryString = buildQueryString({ category, search });
     const data = await fetchAPI(`/expenses${queryString}`);
@@ -529,7 +541,8 @@ export const streakAPI = {
 // };
 export const walletsAPI = {
   getGroupedWallets: async (forceRefresh = false) => {
-    const cacheKey = 'wallets_grouped';
+    // const cacheKey = 'wallets_grouped';
+    const cacheKey = `${storeKey()}_wallets_grouped`;
     if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
     const data = await fetchAPI('/wallets');
     cache.set(cacheKey, data, 2 * 60 * 1000);
@@ -538,21 +551,24 @@ export const walletsAPI = {
 
   createWallet: async (walletData) => {
     const data = await fetchAPI('/wallets', { method: 'POST', body: JSON.stringify(walletData) });
-    cache.clear('wallets_grouped');                          // ← only clear wallets, not everything
+    cache.clear(`${storeKey()}_wallets_grouped`);
+    // cache.clear('wallets_grouped');                          // ← only clear wallets, not everything
     broadcastWalletChange();
     return data;
   },
 
   updateWallet: async (id, walletData) => {
     const data = await fetchAPI(`/wallets/${id}`, { method: 'PATCH', body: JSON.stringify(walletData) });
-    cache.clear('wallets_grouped');
+    // cache.clear('wallets_grouped');
+    cache.clear(`${storeKey()}_wallets_grouped`);
     broadcastWalletChange();
     return data;
   },
 
   deleteWallet: async (id) => {
     const data = await fetchAPI(`/wallets/${id}`, { method: 'DELETE' });
-    cache.clear('wallets_grouped');
+    // cache.clear('wallets_grouped');
+    cache.clear(`${storeKey()}_wallets_grouped`);
     broadcastWalletChange();
     return data;
   }
@@ -567,7 +583,8 @@ export const walletsAPI = {
 export const attendanceAPI = {
   getAttendance: async (status = 'Active', page = 1, limit = 10) => {
     const queryString = buildQueryString({ status: status || 'all', page, limit });
-    const cacheKey = `attendance_${status}_${page}_${limit}`;
+    // const cacheKey = `attendance_${status}_${page}_${limit}`;
+    const cacheKey = `${storeKey()}_attendance_${status}_${page}_${limit}`;
     const cached = cache.get(cacheKey);
     if (cached) return cached;
     const data = await fetchAPI(`/attendance${queryString}`);
