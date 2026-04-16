@@ -835,7 +835,9 @@ function LoginPage() {
 // ROOT APP
 // ══════════════════════════════════════════════════════════════════════════
 export default function App() {
-  setStoreId(1);
+  useEffect(() => {
+    setStoreId(1);
+  }, []);
   const [user, setUser] = useState(false);
   const [loading, setLoading] = useState(true);
 
