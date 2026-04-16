@@ -665,7 +665,8 @@ function AdminDashboard({ user }) {
             <h1>{navLabels[page] || 'Dashboard'}</h1>
 
             <button onClick={() => setIsStore2(prev => !prev)} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-cards)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '6px 10px', cursor: 'pointer', color: isStore2 ? '#22c55e' : 'var(--color-text)' }}>
-              <ArrowDataTransferDiagonalIcon />
+              {/* <ArrowDataTransferDiagonalIcon /> */}
+              <HugeiconsIcon icon={ArrowDataTransferDiagonalIcon} size={16} />
               Store 2
             </button>
             {/* {addPlayer && (
