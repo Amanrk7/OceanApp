@@ -6,6 +6,8 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 // api.js — near the top, after API_BASE_URL
 let _currentStoreId = 1;
+const storeKey = () => `s${_currentStoreId}`;
+
 
 export function setStoreId(id) {
   _currentStoreId = id;
@@ -13,39 +15,6 @@ export function setStoreId(id) {
 // ═══════════════════════════════════════════════════════════════
 // CACHE MANAGEMENT
 // ═══════════════════════════════════════════════════════════════
-
-// const cache = {
-//   data: {},
-//   timestamps: {},
-//   ttl: 5 * 60 * 1000,
-
-//   set(key, data, customTtl = null) {
-//     this.data[key] = data;
-//     this.timestamps[key] = Date.now();
-//     if (customTtl) this.ttl = customTtl;
-//   },
-
-//   get(key) {
-//     if (!this.data[key]) return null;
-//     const age = Date.now() - this.timestamps[key];
-//     if (age > this.ttl) {
-//       delete this.data[key];
-//       delete this.timestamps[key];
-//       return null;
-//     }
-//     return this.data[key];
-//   },
-
-//   clear(key) {
-//     delete this.data[key];
-//     delete this.timestamps[key];
-//   },
-
-//   clearAll() {
-//     this.data = {};
-//     this.timestamps = {};
-//   }
-// };
 
 // ─── CACHE: fix TTL mutation bug ─────────────────────────────
 const cache = {
@@ -362,14 +331,23 @@ export const playersAPI = {
 // ═══════════════════════════════════════════════════════════════
 
 export const transactionsAPI = {
+  // getTransactions: async (page = 1, limit = 10, type = '', status = '', forceRefresh = false) => {
+  //   const queryString = buildQueryString({ page, limit, type, status });
+  //   const cacheKey = `transactions_${page}_${limit}_${type}_${status}`;
+  //   if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
+  //   const data = await fetchAPI(`/transactions${queryString}`);
+  //   cache.set(cacheKey, data, 30 * 1000);
+  //   return data;
+  // },
   getTransactions: async (page = 1, limit = 10, type = '', status = '', forceRefresh = false) => {
-    const queryString = buildQueryString({ page, limit, type, status });
-    const cacheKey = `transactions_${page}_${limit}_${type}_${status}`;
-    if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
-    const data = await fetchAPI(`/transactions${queryString}`);
-    cache.set(cacheKey, data, 30 * 1000);
-    return data;
-  },
+  const queryString = buildQueryString({ page, limit, type, status });
+  // ✅ Include storeKey so store 1 and store 2 never share cache entries
+  const cacheKey = `${storeKey()}_transactions_${page}_${limit}_${type}_${status}`;
+  if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
+  const data = await fetchAPI(`/transactions${queryString}`);
+  cache.set(cacheKey, data, 30 * 1000);
+  return data;
+},
 
   undoTransaction: async (transactionId) => {
     const data = await fetchAPI(`/transactions/${transactionId}/undo`, { method: 'POST' });
