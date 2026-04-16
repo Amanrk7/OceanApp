@@ -8,7 +8,7 @@ import { CurrentUserProvider } from "./Context/currentUser.jsx";
 import { ThemeProvider, useTheme } from "./Context/Themecontext.jsx";
 import { App2Context, App2Provider } from "./Context/store2Switch.jsx";
 import AnalyticsDashboard from "./Pages/dashboard";
-import PlayersStore2 from "./Store2/Pages/Players.jsx";
+import Players from "./Store2/Pages/Players.jsx";
 import Attendance from "./Pages/Attendance";
 import Games from "./Pages/Games";
 import Issues from "./Pages/Issues";
@@ -378,9 +378,8 @@ const CSS = `
 
 const NAV_ITEMS = [
     { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: false },
-    // { id: "store1", label: "Store 1", icon: ArrowDataTransferDiagonalIcon },
     { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon, adminsOnly: false },
-    { id: "playersStore2", label: "PlayersStore2", icon: UserGroup03Icon },
+    { id: "players", label: "Players", icon: UserGroup03Icon },
     { id: "dailyCheckups", label: "Daily Checkups", icon: FolderOpenIcon },
     { id: "playTime", label: "Play Time", icon: TimeQuarter02Icon },
     { id: "games", label: "Games", icon: GameboyIcon },
@@ -404,7 +403,6 @@ const ALLOWED_ADMINS = ["admin", "SUPER_ADMIN"];
 // ══════════════════════════════════════════════════════════════════════════
 export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 
-    const { isStore2, setIsStore2 } = useContext(App2Context);
     const isAdmin = ALLOWED_ADMINS.includes(user?.username);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const { theme, toggleTheme } = useTheme();
@@ -426,10 +424,6 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
                                 <button
                                     className={`ob-navlink${activePage === item.id ? ' active' : ''}`}
                                     onClick={() => {
-                                        if (item.id === 'store1') {
-                                            setIsStore2(prev => !prev);
-                                            // return;
-                                        }
                                         !disabled && handleNav(item.id)
                                     }}
                                     disabled={disabled}
@@ -555,6 +549,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 // ADMIN DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════
 function AdminDashboard({ user }) {
+    const { isStore2, setIsStore2 } = useContext(App2Context);
     const { addPlayer, setAddPlayer } = useContext(AddPlayerContext);
     const { usr, setUsr } = useContext(CurrentUserContext);
     setUsr(user);
@@ -592,7 +587,7 @@ function AdminDashboard({ user }) {
     };
 
     const handleNavigate = (pageId, extra = {}) => {
-        if (pageId !== 'playersStore2') setAddPlayer(false);
+        if (pageId !== 'players') setAddPlayer(false);
         setPage(pageId);
         // If the banner sends tab:'pending', store it so Transactions can read it
         if (extra.tab) {
@@ -602,7 +597,7 @@ function AdminDashboard({ user }) {
 
 
     const navLabels = {
-        dashboard: 'Dashboard [Store 2]', memberDashboard: 'Member Dashboard', playersStore2: 'PlayersStore2',
+        dashboard: 'Dashboard [Store 2]', memberDashboard: 'Member Dashboard', players: 'Players',
         dailyCheckups: 'Daily Checkups',
         playTime: 'Play Time', games: 'Games', attendance: 'Attendance', issues: 'Issues',
         transactions: 'All Transactions', balances: 'Live Balances', expenses: 'Expenses', profitTakeouts: 'Profit Takeouts',
@@ -615,7 +610,7 @@ function AdminDashboard({ user }) {
         switch (page) {
             case "dashboard": return <AnalyticsDashboard />;
             case "memberDashboard": return <TeamDashboard user={user} />;
-            // case "playersStore2": return <PlayersStore2 />;
+            case "players": return <Players />;
             case "dailyCheckups": return <MissingPlayersPage currentUser={user} />;
             case "playTime": return <Playtimepage />;
             case "attendance": return <Attendance />;
