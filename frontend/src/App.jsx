@@ -377,7 +377,6 @@ const CSS = `
 
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: false },
-  // { id: "store2", label: "Store 2", icon: ArrowDataTransferDiagonalIcon },
   { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon, adminsOnly: false },
   { id: "players", label: "Players", icon: UserGroup03Icon },
   { id: "dailyCheckups", label: "Daily Checkups", icon: FolderOpenIcon },
@@ -405,7 +404,6 @@ const ALLOWED_ADMINS = ["admin", "SUPER_ADMIN"];
 export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 
   const navigate = useNavigate();
-  const { isStore2, setIsStore2 } = useContext(App2Context);
   const isAdmin = ALLOWED_ADMINS.includes(user?.username);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -427,9 +425,6 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
                 <button
                   className={`ob-navlink${activePage === item.id ? ' active' : ''}`}
                   onClick={() => {
-                    if (item.id === 'store2') {
-                      setIsStore2(prev => !prev);
-                    }
                     !disabled && handleNav(item.id)
                   }}
                   disabled={disabled}
@@ -571,6 +566,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 // ADMIN DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════
 function AdminDashboard({ user }) {
+  const { isStore2, setIsStore2 } = useContext(App2Context);
   const { addPlayer, setAddPlayer } = useContext(AddPlayerContext);
   const { usr, setUsr } = useContext(CurrentUserContext);
   setUsr(user);
@@ -631,7 +627,6 @@ function AdminDashboard({ user }) {
   const renderPage = () => {
     switch (page) {
       case "dashboard": return <AnalyticsDashboard />;
-      // case "store2": return <Store2 />;
       case "memberDashboard": return <TeamDashboard user={user} />;
       case "players": return <Players />;
       case "dailyCheckups": return <MissingPlayersPage currentUser={user} />;
@@ -666,7 +661,7 @@ function AdminDashboard({ user }) {
             currentPage={page}
             onNavigate={handleNavigate}
           />
-          <div className="ob-header" style={{ alignItems: "center", justifyContent: "flex-start", gap: "4px" }}>
+          <div className="ob-header" style={{ alignItems: "center", justifyContent: "space-between", gap: "4px" }}>
             <h1>{navLabels[page] || 'Dashboard'}</h1>
 
             <button onClick={() => setIsStore2(prev => !prev)} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-cards)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '6px 10px', cursor: 'pointer', color: isStore2 ? '#22c55e' : 'var(--color-text)' }}>
