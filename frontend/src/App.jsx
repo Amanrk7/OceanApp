@@ -404,6 +404,7 @@ const ALLOWED_ADMINS = ["admin", "SUPER_ADMIN"];
 // ══════════════════════════════════════════════════════════════════════════
 export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 
+  const navigate = useNavigate();
   const { isStore2, setIsStore2 } = useContext(App2Context);
   const isAdmin = ALLOWED_ADMINS.includes(user?.username);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -428,7 +429,6 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
                   onClick={() => {
                     if (item.id === 'store2') {
                       setIsStore2(prev => !prev);
-                      // return;
                     }
                     !disabled && handleNav(item.id)
                   }}
@@ -619,7 +619,7 @@ function AdminDashboard({ user }) {
 
 
   const navLabels = {
-    dashboard: 'Dashboard [Store 1]', store2: 'Store 2', memberDashboard: 'Member Dashboard', players: 'Players',
+    dashboard: 'Dashboard [Store 1]', memberDashboard: 'Member Dashboard', players: 'Players',
     dailyCheckups: 'Daily Checkups',
     playTime: 'Play Time', games: 'Games', attendance: 'Attendance', issues: 'Issues',
     transactions: 'All Transactions', balances: 'Live Balances', expenses: 'Expenses', profitTakeouts: 'Profit Takeouts',
