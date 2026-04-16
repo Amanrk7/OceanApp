@@ -816,7 +816,10 @@ function AddNewPlayerWithSidebar({ user }) {
 // ROOT APP
 // ══════════════════════════════════════════════════════════════════════════
 export default function App2() {
+
+  useEffect(() => {
     setStoreId(2);
+  }, []);
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
