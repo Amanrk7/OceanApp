@@ -671,10 +671,10 @@ function AdminDashboard({ user }) {
             currentPage={page}
             onNavigate={handleNavigate}
           />
-          <div className="ob-header" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 18px', background: C.sky, color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', justifyContent: "space-between" }}>
+          <div className="ob-header" style={{ alignItems: "center", justifyContent: "space-between", gap: "4px" }}>
             <h1>{navLabels[page] || 'Dashboard'}</h1>
 
-            <button onClick={() => setIsStore2(prev => !prev)} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-cards)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '6px 10px', cursor: 'pointer', color: isStore2 ? '#22c55e' : 'var(--color-text)' }}>
+            <button onClick={() => setIsStore2(prev => !prev)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 18px', background: C.sky, color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', justifyContent: "space-between" }}>
               {/* <ArrowDataTransferDiagonalIcon /> */}
               <HugeiconsIcon icon={ArrowDataTransferDiagonalIcon} size={16} />
               Store 2
