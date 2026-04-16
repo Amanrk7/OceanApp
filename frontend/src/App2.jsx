@@ -378,7 +378,7 @@ const CSS = `
 
 const NAV_ITEMS = [
     { id: "dashboard", label: "Dashboard", icon: Home01Icon, adminsOnly: false },
-    { id: "store1", label: "Store 1", icon: ArrowDataTransferDiagonalIcon },
+    // { id: "store1", label: "Store 1", icon: ArrowDataTransferDiagonalIcon },
     { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon, adminsOnly: false },
     { id: "playersStore2", label: "PlayersStore2", icon: UserGroup03Icon },
     { id: "dailyCheckups", label: "Daily Checkups", icon: FolderOpenIcon },
@@ -602,7 +602,7 @@ function AdminDashboard({ user }) {
 
 
     const navLabels = {
-        dashboard: 'Dashboard [Store 2]', store1: 'Store 1', memberDashboard: 'Member Dashboard', playersStore2: 'PlayersStore2',
+        dashboard: 'Dashboard [Store 2]', memberDashboard: 'Member Dashboard', playersStore2: 'PlayersStore2',
         dailyCheckups: 'Daily Checkups',
         playTime: 'Play Time', games: 'Games', attendance: 'Attendance', issues: 'Issues',
         transactions: 'All Transactions', balances: 'Live Balances', expenses: 'Expenses', profitTakeouts: 'Profit Takeouts',
@@ -614,9 +614,8 @@ function AdminDashboard({ user }) {
     const renderPage = () => {
         switch (page) {
             case "dashboard": return <AnalyticsDashboard />;
-            case "store1": return <Store1 />;
             case "memberDashboard": return <TeamDashboard user={user} />;
-            case "playersStore2": return <PlayersStore2 />;
+            // case "playersStore2": return <PlayersStore2 />;
             case "dailyCheckups": return <MissingPlayersPage currentUser={user} />;
             case "playTime": return <Playtimepage />;
             case "attendance": return <Attendance />;
@@ -651,6 +650,10 @@ function AdminDashboard({ user }) {
                     />
                     <div className="ob-header" style={{ alignItems: "center", justifyContent: "flex-start", gap: "4px" }}>
                         <h1>{navLabels[page] || 'Dashboard'}</h1>
+                        <button onClick={() => setIsStore2(prev => !prev)} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--color-cards)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '6px 10px', cursor: 'pointer', color: isStore2 ? '#22c55e' : 'var(--color-text)' }}>
+                            <ArrowDataTransferDiagonalIcon />
+                            Store 1
+                        </button>
                         {addPlayer && (
                             <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-text)" }}>
                                 &gt; Add New Player
@@ -816,10 +819,9 @@ function AddNewPlayerWithSidebar({ user }) {
 // ROOT APP
 // ══════════════════════════════════════════════════════════════════════════
 export default function App2() {
-
-  useEffect(() => {
-    setStoreId(2);
-  }, []);
+    useEffect(() => {
+        setStoreId(2);
+    }, []);
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
