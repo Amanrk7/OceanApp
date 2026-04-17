@@ -710,7 +710,7 @@ export default function Dashboard() {
 
   const statCards = [
     { title: "Today's Profit",  value: Math.round(todaysProfit),          color: C.blue,   icon: DollarSign,   trend: 2.5  },
-    { title: 'Total Top-Ups',   value: Math.round(depositsDetail),        color: C.green,  icon: TrendingUp,   trend: 3.2  },
+    { title: 'Total Deposits',   value: Math.round(depositsDetail),        color: C.green,  icon: TrendingUp,   trend: 3.2  },
     { title: 'Total Cashouts',  value: Math.round(cashoutsDetail),        color: C.red,    icon: TrendingDown, trend: -1.1 },
     { title: 'Bonuses Earned',  value: Math.round(depositsDetail * 0.5),  color: C.amber,  icon: Zap,          trend: 5.8  },
   ];
