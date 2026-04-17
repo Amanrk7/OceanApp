@@ -483,7 +483,7 @@ const IssueStatusCard = ({ dashboardStats }) => {
 // TODAY'S PROFIT CARD
 // ═══════════════════════════════════════════════════════════════
 
-const ProfitGoalCard = ({ profitGoal, deposits, cashouts, progressPercentage, goalTarget }) => (
+const ProfitGoalCard = ({ profitGoal, todaysProfit, deposits, cashouts, progressPercentage, goalTarget }) => (
   <Card style={{
     background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
     border: 'none', color: '#fff', marginBottom: 20,
@@ -522,7 +522,7 @@ const ProfitGoalCard = ({ profitGoal, deposits, cashouts, progressPercentage, go
           }} />
         </div>
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginTop: 5 }}>
-          ${profitGoal.toLocaleString()} / ${goalTarget.toLocaleString()}
+          ${todaysProfit.toLocaleString()} / ${goalTarget.toLocaleString()}
         </p>
       </div>
     </div>
@@ -736,6 +736,7 @@ export default function Dashboard() {
           {/* Today's profit goal */}
           <ProfitGoalCard
             profitGoal={profitGoal}
+            todaysProfit={todaysProfit}
             deposits={deposits}
             cashouts={cashouts}
             progressPercentage={progressPct}
