@@ -96,27 +96,26 @@ const CSS = `
     --color-table-row-hover: #fafbff;
     --color-shadow: rgba(15,23,42,.07);
 
-    /* ── MemberDashboard tokens ── */
---color-background-primary: #ffffff;
---color-background-secondary: #f8fafc;
---color-background-success: #f0fdf4;
---color-background-warning: #fffbeb;
---color-background-info: #eff6ff;
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f8fafc;
+    --color-background-success: #f0fdf4;
+    --color-background-warning: #fffbeb;
+    --color-background-info: #eff6ff;
 
---color-border-secondary: #e2e8f0;
---color-border-tertiary: #f1f5f9;
---color-border-success: #bbf7d0;
---color-border-warning: #fde68a;
---color-border-info: #bfdbfe;
+    --color-border-secondary: #e2e8f0;
+    --color-border-tertiary: #f1f5f9;
+    --color-border-success: #bbf7d0;
+    --color-border-warning: #fde68a;
+    --color-border-info: #bfdbfe;
 
---color-text-primary: #0f172a;
---color-text-secondary: #64748b;
---color-text-tertiary: #94a3b8;
---color-text-info: #1d4ed8;
---color-text-warning: #92400e;
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #64748b;
+    --color-text-tertiary: #94a3b8;
+    --color-text-info: #1d4ed8;
+    --color-text-warning: #92400e;
 
---border-radius-md: 8px;
---border-radius-lg: 12px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
   }
 
   [data-theme="dark"] {
@@ -144,27 +143,26 @@ const CSS = `
     --color-table-row-hover: #1a2236;
     --color-shadow: rgba(0,0,0,.35);
 
-    /* ── MemberDashboard tokens ── */
---color-background-primary: #131929;
---color-background-secondary: #1a2236;
---color-background-success: #052e16;
---color-background-warning: #1c1200;
---color-background-info: #0c1a3a;
+    --color-background-primary: #131929;
+    --color-background-secondary: #1a2236;
+    --color-background-success: #052e16;
+    --color-background-warning: #1c1200;
+    --color-background-info: #0c1a3a;
 
---color-border-secondary: #1e293b;
---color-border-tertiary: #1e293b;
---color-border-success: #166534;
---color-border-warning: #78350f;
---color-border-info: #1e3a5f;
+    --color-border-secondary: #1e293b;
+    --color-border-tertiary: #1e293b;
+    --color-border-success: #166534;
+    --color-border-warning: #78350f;
+    --color-border-info: #1e3a5f;
 
---color-text-primary: #f1f5f9;
---color-text-secondary: #94a3b8;
---color-text-tertiary: #64748b;
---color-text-info: #38bdf8;
---color-text-warning: #fbbf24;
+    --color-text-primary: #f1f5f9;
+    --color-text-secondary: #94a3b8;
+    --color-text-tertiary: #64748b;
+    --color-text-info: #38bdf8;
+    --color-text-warning: #fbbf24;
 
---border-radius-md: 8px;
---border-radius-lg: 12px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -236,7 +234,7 @@ const CSS = `
     display: flex; flex-direction: column; align-items: center;
     z-index: 100;
     transition: background .25s;
-}
+  }
 
   .ob-sidebar-drawer {
     position: fixed; left: 0; top: 0; bottom: 0;
@@ -278,17 +276,32 @@ const CSS = `
     .ob-main { margin-left: 0 !important; padding-top: 60px !important; }
   }
 
-  .ob-sidebar-logo { display: flex; align-items: center; justify-content: center; width: 100%; padding: 6px 0 18px; flex-shrink: 0; }
+  .ob-sidebar-logo { display: flex; align-items: center; justify-content: center; width: 100%; padding: 6px 0 14px; flex-shrink: 0; }
   .ob-avatar-sm { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg,#0ea5e9,#6366f1); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; letter-spacing: -.5px; }
   .ob-drawer-logo { display: flex; align-items: center; gap: 10px; padding: 0 16px 18px; flex-shrink: 0; }
   .ob-drawer-logo .ob-drawer-title { font-weight: 800; font-size: 15px; color: #f8fafc; letter-spacing: -.3px; }
 
-  .ob-nav { display: flex; flex-direction: column; gap: clamp(0px, 0.3vh, 0.1px); flex: 1; width: 100%; padding: 0 8px; min-height: 0; }
+  /* ── FIX: nav no longer squishes items ── */
+  .ob-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    width: 100%;
+    padding: 0 8px;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+  }
+  .ob-nav::-webkit-scrollbar { display: none; }
+
   .ob-nav-item { position: relative; width: 100%; }
 
+  /* ── FIX: fixed padding instead of broken clamp ── */
   .ob-navlink {
     display: flex; align-items: center; justify-content: center;
-    width: 100%; padding: clamp(4px, 0.9vh, 10px); border-radius: 8px;
+    width: 100%; padding: 8px; border-radius: 8px;
     font-weight: 500; font-size: 14px; color: #64748b;
     cursor: pointer; transition: all .15s;
     border: none; background: none; font-family: inherit;
@@ -303,6 +316,46 @@ const CSS = `
   .ob-navlink.theme-toggle:hover { color: #fbbf24; background: rgba(251,191,36,.1); }
   [data-theme="light"] .ob-navlink.theme-toggle { color: #94a3b8; }
   [data-theme="light"] .ob-navlink.theme-toggle:hover { color: #6366f1; background: rgba(99,102,241,.1); }
+
+  /* ── Store switch button in sidebar footer ── */
+  .ob-navlink.store-switch {
+    color: #0ea5e9;
+    background: rgba(14,165,233,.08);
+    border: 1px solid rgba(14,165,233,.2);
+    border-radius: 8px;
+    position: relative;
+  }
+  .ob-navlink.store-switch:hover {
+    background: rgba(14,165,233,.2);
+    color: #38bdf8;
+    border-color: rgba(14,165,233,.4);
+  }
+  /* Small store number badge */
+  .ob-store-badge {
+    position: absolute;
+    top: 2px; right: 2px;
+    width: 13px; height: 13px;
+    background: #0ea5e9;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 8px;
+    font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  /* Drawer store switch */
+  .ob-navlink-drawer.store-switch {
+    color: #0ea5e9;
+    background: rgba(14,165,233,.08);
+    border: 1px solid rgba(14,165,233,.2);
+    margin: 0 0 2px;
+  }
+  .ob-navlink-drawer.store-switch:hover {
+    background: rgba(14,165,233,.2);
+    color: #38bdf8;
+  }
 
   .ob-navlink-drawer {
     display: flex; align-items: center; gap: 12px;
@@ -332,10 +385,10 @@ const CSS = `
   }
   .ob-nav-item:hover .ob-nav-tooltip { opacity: 1; }
 
-  .ob-sidebar-footer { margin-top: auto; padding: 12px 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; flex-shrink: 0; }
+  .ob-sidebar-footer { margin-top: auto; padding: 12px 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; flex-shrink: 0; border-top: 1px solid #1e293b; }
   .ob-drawer-footer { margin-top: auto; padding: 12px 16px 4px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
   .ob-user-avatar { width: 30px; height: 30px; border-radius: 50%; background: #334155; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-weight: 700; font-size: 13px; flex-shrink: 0; }
-  .ob-nav-divider { height: 1px; background: #1e293b; margin: 6px 0; width: 100%; }
+  .ob-nav-divider { height: 1px; background: #1e293b; margin: 4px 0; width: 100%; flex-shrink: 0; }
 
   .ob-main {
     margin-left: var(--sidebar-w);
@@ -375,14 +428,14 @@ const CSS = `
   @keyframes spin { to { transform: rotate(360deg); } }
   button:focus { outline: 2px solid rgba(255,255,255,0.2); outline-offset: 2px; }
 
-[data-theme="dark"] body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  backdrop-filter: grayscale(1);
-  pointer-events: none;
-  z-index: 9998;
-}
+  [data-theme="dark"] body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    backdrop-filter: grayscale(1);
+    pointer-events: none;
+    z-index: 9998;
+  }
 `;
 
 const NAV_ITEMS = [
@@ -411,9 +464,8 @@ const ALLOWED_ADMINS = ["admin", "SUPER_ADMIN"];
 // ══════════════════════════════════════════════════════════════════════════
 // SIDEBAR
 // ══════════════════════════════════════════════════════════════════════════
-export function Sidebar({ user, activePage, onNavigate, onLogout }) {
+export function Sidebar({ user, activePage, onNavigate, onLogout, onStoreSwitch, storeSwitchLabel = "Switch to Store 2", storeSwitchNum = "2" }) {
 
-  const navigate = useNavigate();
   const isAdmin = ALLOWED_ADMINS.includes(user?.username);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -434,9 +486,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
               <div className="ob-nav-item">
                 <button
                   className={`ob-navlink${activePage === item.id ? ' active' : ''}`}
-                  onClick={() => {
-                    !disabled && handleNav(item.id)
-                  }}
+                  onClick={() => !disabled && handleNav(item.id)}
                   disabled={disabled}
                   aria-label={item.label}
                 >
@@ -451,6 +501,22 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
       </nav>
 
       <div className="ob-sidebar-footer">
+        {/* ── Store Switch Button ── */}
+        {onStoreSwitch && (
+          <div className="ob-nav-item">
+            <button
+              className="ob-navlink store-switch"
+              onClick={onStoreSwitch}
+              aria-label={storeSwitchLabel}
+            >
+              <HugeiconsIcon icon={ArrowDataTransferDiagonalIcon} size={18} />
+              <span className="ob-store-badge">{storeSwitchNum}</span>
+            </button>
+            <span className="ob-nav-tooltip">{storeSwitchLabel}</span>
+          </div>
+        )}
+
+        {/* ── Theme Toggle ── */}
         <div className="ob-nav-item">
           <button
             className="ob-navlink theme-toggle"
@@ -464,6 +530,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
           </span>
         </div>
 
+        {/* ── Logout ── */}
         <div className="ob-nav-item">
           <button
             className="ob-navlink"
@@ -482,13 +549,12 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
       </div>
 
       <style>{`
-                ::-webkit-scrollbar { width: 5px; height: 5px; }
-                ::-webkit-scrollbar-track { background: #f8fafc; }
-                ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-                ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-            `}</style>
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+      `}</style>
     </aside>
-
   );
 
   const MobileNav = (
@@ -531,6 +597,17 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
         <div className="ob-drawer-footer">
           <div style={{ height: '1px', background: '#1e293b', marginBottom: '4px' }} />
 
+          {/* ── Store Switch in Drawer ── */}
+          {onStoreSwitch && (
+            <button
+              className="ob-navlink-drawer store-switch"
+              onClick={() => { setDrawerOpen(false); onStoreSwitch(); }}
+            >
+              <HugeiconsIcon icon={ArrowDataTransferDiagonalIcon} size={18} />
+              <span>{storeSwitchLabel}</span>
+            </button>
+          )}
+
           <button
             className="ob-navlink-drawer"
             onClick={toggleTheme}
@@ -557,14 +634,6 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
             </div>
           </div>
         </div>
-
-        <style>{`
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                ::-webkit-scrollbar { width: 5px; height: 5px; }
-                ::-webkit-scrollbar-track { background: #f8fafc; }
-                ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-                ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-            `}</style>
       </div>
     </>
   );
@@ -581,8 +650,6 @@ function AdminDashboard({ user }) {
   const { usr, setUsr } = useContext(CurrentUserContext);
   setUsr(user);
 
-  // ── FIX: Read ?page= query param from URL on every navigation ──────────
-  // This makes breadcrumbs work: navigate('/?page=players') → sets page to 'players'
   const location = useLocation();
 
   const getPageFromUrl = () => {
@@ -593,15 +660,11 @@ function AdminDashboard({ user }) {
   const [page, setPage] = useState(getPageFromUrl);
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
-  // const [playersKey, setPlayersKey] = useState(0);
 
-  // Sync page state whenever the URL search params change
-  // (handles back-navigation from PlayerDashboard via breadcrumbs)
   useEffect(() => {
     const urlPage = getPageFromUrl();
     if (urlPage !== page) {
       setPage(urlPage);
-      // Clear addPlayer flag when navigating away from players section
       if (urlPage !== 'players') setAddPlayer(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -615,14 +678,11 @@ function AdminDashboard({ user }) {
 
   const handleNavigate = (pageId, extra = {}) => {
     if (pageId !== 'players') setAddPlayer(false);
-    // if (pageId === 'players') setPlayersKey(k => k + 1); // 👈 add this
     setPage(pageId);
-    // If the banner sends tab:'pending', store it so Transactions can read it
     if (extra.tab) {
       sessionStorage.setItem('transactions_initialTab', extra.tab);
     }
   };
-
 
   const navLabels = {
     dashboard: 'Dashboard [Store 1]', memberDashboard: 'Member Dashboard', players: 'Players',
@@ -664,33 +724,29 @@ function AdminDashboard({ user }) {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--color-bg)", width: "100vw" }}>
-      <Sidebar user={user} activePage={page} onNavigate={handleNavigate} onLogout={handleLogout} />
+      <Sidebar
+        user={user}
+        activePage={page}
+        onNavigate={handleNavigate}
+        onLogout={handleLogout}
+        onStoreSwitch={() => setIsStore2(true)}
+        storeSwitchLabel="Switch to Store 2"
+        storeSwitchNum="2"
+      />
       <main className="ob-main">
         <div className="ob-container">
           <PendingTransactionsBanner
             currentPage={page}
             onNavigate={handleNavigate}
           />
-          <div className="ob-header" style={{ alignItems: "center", justifyContent: "space-between", gap: "4px" }}>
+          <div className="ob-header">
             <h1>{navLabels[page] || 'Dashboard'}</h1>
-
-            <button onClick={() => setIsStore2(prev => !prev)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 18px', background: C.sky, color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit'}}>
-              {/* <ArrowDataTransferDiagonalIcon /> */}
-              <HugeiconsIcon icon={ArrowDataTransferDiagonalIcon} size={16} />
-              Store 2
-            </button>
-            
-            {/* {addPlayer && (
-                <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-text)" }}>
-                &gt; Add New Player
-              </span>
-            )} */}
           </div>
           {errorMsg && <div className="ob-error">{errorMsg}</div>}
           {renderPage()}
         </div>
-      </main >
-    </div >
+      </main>
+    </div>
   );
 }
 
@@ -701,8 +757,9 @@ function PlayerDashboardWithSidebar({ user }) {
   const { setUsr } = useContext(CurrentUserContext);
   setUsr(user);
   const navigate = useNavigate();
+  const { setIsStore2 } = useContext(App2Context);
   const [loading, setLoading] = useState(false);
-  // console.log("user is the: ", user);
+
   const handleLogout = async () => {
     try { setLoading(true); await api.auth.logout(); window.location.reload(); }
     catch { } finally { setLoading(false); }
@@ -715,6 +772,9 @@ function PlayerDashboardWithSidebar({ user }) {
         activePage="players"
         onNavigate={(id) => navigate(`/?page=${id}`)}
         onLogout={handleLogout}
+        onStoreSwitch={() => setIsStore2(true)}
+        storeSwitchLabel="Switch to Store 2"
+        storeSwitchNum="2"
       />
       <main className="ob-main">
         <div className="ob-container">
@@ -726,14 +786,15 @@ function PlayerDashboardWithSidebar({ user }) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// Add New Player page WITH SIDEBAR
+// ADD NEW PLAYER WITH SIDEBAR
 // ══════════════════════════════════════════════════════════════════════════
 function AddNewPlayerWithSidebar({ user }) {
   const { setUsr } = useContext(CurrentUserContext);
   setUsr(user);
   const navigate = useNavigate();
+  const { setIsStore2 } = useContext(App2Context);
   const [loading, setLoading] = useState(false);
-  // console.log("user is the: ", user);
+
   const handleLogout = async () => {
     try { setLoading(true); await api.auth.logout(); window.location.reload(); }
     catch { } finally { setLoading(false); }
@@ -746,6 +807,9 @@ function AddNewPlayerWithSidebar({ user }) {
         activePage="players"
         onNavigate={(id) => navigate(`/?page=${id}`)}
         onLogout={handleLogout}
+        onStoreSwitch={() => setIsStore2(true)}
+        storeSwitchLabel="Switch to Store 2"
+        storeSwitchNum="2"
       />
       <main className="ob-main">
         <div className="ob-container">
@@ -755,11 +819,15 @@ function AddNewPlayerWithSidebar({ user }) {
     </div>
   );
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// SHIFTS WITH SIDEBAR
 // ══════════════════════════════════════════════════════════════════════════
 function ShiftsWithSidebar({ user }) {
   const { setUsr } = useContext(CurrentUserContext);
   setUsr(user);
   const navigate = useNavigate();
+  const { setIsStore2 } = useContext(App2Context);
   const [loading, setLoading] = useState(false);
 
   const handleLogout = async () => {
@@ -774,6 +842,9 @@ function ShiftsWithSidebar({ user }) {
         activePage="shifts"
         onNavigate={(id) => navigate(`/?page=${id}`)}
         onLogout={handleLogout}
+        onStoreSwitch={() => setIsStore2(true)}
+        storeSwitchLabel="Switch to Store 2"
+        storeSwitchNum="2"
       />
       <main className="ob-main">
         <div className="ob-container">
@@ -786,6 +857,7 @@ function ShiftsWithSidebar({ user }) {
     </div>
   );
 }
+
 // ══════════════════════════════════════════════════════════════════════════
 // LOGIN PAGE
 // ══════════════════════════════════════════════════════════════════════════
@@ -867,7 +939,7 @@ export default function App() {
       <ThemeProvider>
         <style>{CSS}</style>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-          <div className="ob-loading" style={{ justifyContent: 'center', width: '100vw' }} ><div className="ob-spinner" /></div>
+          <div className="ob-loading" style={{ justifyContent: 'center', width: '100vw' }}><div className="ob-spinner" /></div>
         </div>
       </ThemeProvider>
     );
@@ -888,15 +960,12 @@ export default function App() {
                   <Route path="/PlayerDashboard/:playerId"
                     element={user ? <PlayerDashboardWithSidebar user={user} /> : <LoginPage />}
                   />
-
                   <Route path="/shifts"
                     element={user ? <ShiftsWithSidebar user={user} /> : <LoginPage />}
                   />
-
                   <Route path="/addNewPlayer"
                     element={user ? <AddNewPlayerWithSidebar user={user} /> : <LoginPage />}
                   />
-
                 </Routes>
               </Router>
             </PlayerDashboardPlayerNameProvider>
