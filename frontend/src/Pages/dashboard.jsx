@@ -690,6 +690,14 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  // ── useMemo MUST be before any early returns (Rules of Hooks) ──
+  const avgDailyProfit = useMemo(() => {
+    const chartData = dailyProfitData?.data;
+    if (!chartData?.length) return 0;
+    const sum = chartData.reduce((s, d) => s + (d.profit || 0), 0);
+    return sum / chartData.length;
+  }, [dailyProfitData]);
+
   if (loading) {
     return (
       <div style={{ padding: 20 }}>
@@ -731,14 +739,6 @@ export default function Dashboard() {
   const cashoutsDetail  = dashboardStats?.revenue?.withdrawals || 0;
   // All-time profit: deposits − withdrawals (from revenue endpoint)
   const allTimeProfit   = dashboardStats?.revenue?.profit      || 0;
-
-  // Average daily profit from 7-day chart data (more meaningful than avgTx)
-  const avgDailyProfit = useMemo(() => {
-    const chartData = dailyProfitData?.data;
-    if (!chartData?.length) return 0;
-    const sum = chartData.reduce((s, d) => s + (d.profit || 0), 0);
-    return sum / chartData.length;
-  }, [dailyProfitData]);
 
   // 4 stat cards — all using real backend fields
   const statCards = [
