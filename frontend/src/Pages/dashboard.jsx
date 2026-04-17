@@ -108,7 +108,7 @@ const ChartTooltip = ({ active, payload, label }) => {
 // STAT CARD
 // ═══════════════════════════════════════════════════════════════
 
-const StatCard = React.memo(({ title, value, color, trend, icon: Icon, prefix = '$' }) => (
+const StatCard = React.memo(({ title, value, color, icon: Icon, prefix = '$' }) => (
   <Card style={{ position: 'relative', overflow: 'hidden' }}>
     {/* Decorative accent */}
     <div style={{
@@ -129,45 +129,12 @@ const StatCard = React.memo(({ title, value, color, trend, icon: Icon, prefix = 
     <div style={{ fontSize: 26, fontWeight: 800, color: C.slate900, letterSpacing: '-.5px', marginBottom: 6 }}>
       {prefix}{typeof value === 'number' ? value.toLocaleString() : value}
     </div>
-    {trend !== undefined && (
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 4,
-        fontSize: 12, color: trend > 0 ? C.green : C.red, fontWeight: 600,
-      }}>
-        {trend > 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-        {Math.abs(trend)}% vs last month
-      </div>
-    )}
   </Card>
 ));
 StatCard.displayName = 'StatCard';
 
 // ═══════════════════════════════════════════════════════════════
-// PROGRESS BAR
-// ═══════════════════════════════════════════════════════════════
-
-const ProgressBar = React.memo(({ percentage, goal, current }) => (
-  <div>
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-      <span style={{ fontSize: 12, color: C.slate500, fontWeight: 500 }}>Progress to Goal</span>
-      <span style={{ fontSize: 12, fontWeight: 700, color: C.slate900 }}>{Math.round(percentage)}%</span>
-    </div>
-    <div style={{ width: '100%', height: 7, background: C.slate100, borderRadius: 99, overflow: 'hidden' }}>
-      <div style={{
-        height: '100%', borderRadius: 99,
-        background: 'linear-gradient(90deg, #3b82f6 0%, #06b6d4 100%)',
-        width: `${Math.min(percentage, 100)}%`, transition: 'width .5s ease',
-      }} />
-    </div>
-    <div style={{ fontSize: 11, color: C.slate400, marginTop: 5 }}>
-      ${current.toLocaleString()} / ${goal.toLocaleString()}
-    </div>
-  </div>
-));
-ProgressBar.displayName = 'ProgressBar';
-
-// ═══════════════════════════════════════════════════════════════
-// LEADERBOARD ROW (used by depositors / cashouts / games)
+// LEADERBOARD ROW
 // ═══════════════════════════════════════════════════════════════
 
 const LeaderboardRow = ({ rank, label, value, isLast }) => {
@@ -196,6 +163,8 @@ const LeaderboardRow = ({ rank, label, value, isLast }) => {
 
 // ═══════════════════════════════════════════════════════════════
 // TOP DEPOSITORS
+// Backend: period_1day | period_7days | period_30days
+// Each item: { id, name, username, totalDeposited }
 // ═══════════════════════════════════════════════════════════════
 
 const TopDepositorsCard = React.memo(({ data: allData }) => {
@@ -217,6 +186,7 @@ const TopDepositorsCard = React.memo(({ data: allData }) => {
           <LeaderboardRow
             key={idx} rank={idx + 1}
             label={item.name || `User ${item.id}`}
+            // Backend field: totalDeposited
             value={item.totalDeposited ?? 0}
             isLast={idx === Math.min(4, displayData.length - 1)}
           />
@@ -232,6 +202,8 @@ TopDepositorsCard.displayName = 'TopDepositorsCard';
 
 // ═══════════════════════════════════════════════════════════════
 // TOP CASHOUTS
+// Backend: period_1day | period_7days | period_30days
+// Each item: { id, name, username, totalCashouts }
 // ═══════════════════════════════════════════════════════════════
 
 const TopCashoutsCard = React.memo(({ data: allData }) => {
@@ -253,6 +225,7 @@ const TopCashoutsCard = React.memo(({ data: allData }) => {
           <LeaderboardRow
             key={idx} rank={idx + 1}
             label={item.name || `User ${item.id}`}
+            // Backend field: totalCashouts (user cashouts endpoint)
             value={item.totalCashouts ?? 0}
             isLast={idx === Math.min(4, displayData.length - 1)}
           />
@@ -268,6 +241,8 @@ TopCashoutsCard.displayName = 'TopCashoutsCard';
 
 // ═══════════════════════════════════════════════════════════════
 // TOP GAMES BY DEPOSITS
+// Backend: period_1day | period_7days | period_30days
+// Each item: { id, name, totalDeposited }
 // ═══════════════════════════════════════════════════════════════
 
 const TopGamesByDepositsCard = React.memo(({ data: allData }) => {
@@ -286,8 +261,9 @@ const TopGamesByDepositsCard = React.memo(({ data: allData }) => {
         {displayData.slice(0, 5).map((item, idx) => (
           <LeaderboardRow
             key={idx} rank={idx + 1}
-            label={item.gameName || item.name || '—'}
-            value={item.totalDeposits ?? item.totalDeposited ?? 0}
+            label={item.name || '—'}
+            // Backend field: totalDeposited (from /analytics/top-games-deposits)
+            value={item.totalDeposited ?? 0}
             isLast={idx === Math.min(4, displayData.length - 1)}
           />
         ))}
@@ -301,7 +277,9 @@ const TopGamesByDepositsCard = React.memo(({ data: allData }) => {
 TopGamesByDepositsCard.displayName = 'TopGamesByDepositsCard';
 
 // ═══════════════════════════════════════════════════════════════
-// TOP GAMES BY CASHOUTS  ← BUG FIX: was totalCashouts, backend sends totalCashedOut
+// TOP GAMES BY CASHOUTS
+// Backend: period_1day | period_7days | period_30days
+// Each item: { id, name, totalCashedOut }
 // ═══════════════════════════════════════════════════════════════
 
 const TopGamesByCashoutsCard = React.memo(({ data: allData }) => {
@@ -320,9 +298,9 @@ const TopGamesByCashoutsCard = React.memo(({ data: allData }) => {
         {displayData.slice(0, 5).map((item, idx) => (
           <LeaderboardRow
             key={idx} rank={idx + 1}
-            label={item.gameName || item.name || '—'}
-            // ✅ FIX: backend returns totalCashedOut, not totalCashouts
-            value={item.totalCashedOut ?? item.totalCashouts ?? 0}
+            label={item.name || '—'}
+            // Backend field: totalCashedOut (from /analytics/top-games-cashouts)
+            value={item.totalCashedOut ?? 0}
             isLast={idx === Math.min(4, displayData.length - 1)}
           />
         ))}
@@ -337,6 +315,7 @@ TopGamesByCashoutsCard.displayName = 'TopGamesByCashoutsCard';
 
 // ═══════════════════════════════════════════════════════════════
 // DAILY PROFIT CHART
+// Backend /api/chart/daily-profit → { data: [{day, profit}] }
 // ═══════════════════════════════════════════════════════════════
 
 const DailyProfitChart = React.memo(({ data }) => (
@@ -360,7 +339,9 @@ const DailyProfitChart = React.memo(({ data }) => (
 DailyProfitChart.displayName = 'DailyProfitChart';
 
 // ═══════════════════════════════════════════════════════════════
-// PLAYER ACTIVITY CHART
+// DEPOSITS VS WITHDRAWALS CHART
+// Backend /api/chart/player-deposit-withdrawal →
+//   { period_7days: [{date, deposits, withdrawals}], period_30days: [...] }
 // ═══════════════════════════════════════════════════════════════
 
 const PlayerActivityChart = React.memo(({ data }) => {
@@ -385,9 +366,11 @@ const PlayerActivityChart = React.memo(({ data }) => {
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke={C.slate100} vertical={false} />
+          {/* Backend returns `date` key */}
           <XAxis dataKey="date" stroke={C.slate400} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
           <YAxis stroke={C.slate400} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} width={48} />
           <Tooltip content={<ChartTooltip />} />
+          {/* Backend returns `deposits` and `withdrawals` keys */}
           <Area type="monotone" dataKey="deposits" stroke={C.green} strokeWidth={2} fill="url(#gDeposits)" dot={{ fill: C.green, r: 3, strokeWidth: 0 }} name="Deposits" isAnimationActive={false} />
           <Area type="monotone" dataKey="withdrawals" stroke={C.red} strokeWidth={2} fill="url(#gWithdrawals)" dot={{ fill: C.red, r: 3, strokeWidth: 0 }} name="Withdrawals" isAnimationActive={false} />
         </AreaChart>
@@ -399,6 +382,7 @@ PlayerActivityChart.displayName = 'PlayerActivityChart';
 
 // ═══════════════════════════════════════════════════════════════
 // PLAYER ATTENDANCE
+// Backend /api/attendance → { stats: { total, active, critical, highlyCritical, inactive } }
 // ═══════════════════════════════════════════════════════════════
 
 const PlayerAttendanceCard = React.memo(({ stats }) => (
@@ -423,12 +407,13 @@ PlayerAttendanceCard.displayName = 'PlayerAttendanceCard';
 
 // ═══════════════════════════════════════════════════════════════
 // ISSUE STATUS
+// Backend: dashboardStats.issues → { unresolved, resolved, total, highPriority }
 // ═══════════════════════════════════════════════════════════════
 
 const IssueStatusCard = ({ dashboardStats }) => {
-  const unresolved = dashboardStats?.issues?.unresolved ?? 0;
-  const resolved = dashboardStats?.issues?.resolved ?? 0;
-  const total = dashboardStats?.issues?.total ?? 0;
+  const unresolved  = dashboardStats?.issues?.unresolved   ?? 0;
+  const resolved    = dashboardStats?.issues?.resolved     ?? 0;
+  const total       = dashboardStats?.issues?.total        ?? 0;
   const highPriority = dashboardStats?.issues?.highPriority ?? 0;
   const pct = total > 0 ? Math.round((resolved / total) * 100) : 0;
 
@@ -463,8 +448,8 @@ const IssueStatusCard = ({ dashboardStats }) => {
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         {[
-          { dot: C.red, label: 'Unresolved', val: unresolved },
-          { dot: C.green, label: 'Resolved', val: resolved },
+          { dot: C.red,   label: 'Unresolved', val: unresolved },
+          { dot: C.green, label: 'Resolved',   val: resolved },
         ].map(({ dot, label, val }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 7, height: 7, borderRadius: '50%', background: dot }} />
@@ -481,18 +466,26 @@ const IssueStatusCard = ({ dashboardStats }) => {
 
 // ═══════════════════════════════════════════════════════════════
 // TODAY'S PROFIT CARD
+// Uses dashboardStats.daily.{deposits, cashouts}
+// Daily profit goal: fixed $1,000 target (adjustable constant below)
 // ═══════════════════════════════════════════════════════════════
 
-const ProfitGoalCard = ({ profitGoal, todaysProfit, deposits, cashouts, progressPercentage, goalTarget }) => (
+const DAILY_PROFIT_GOAL = 1000; // fixed daily target — adjust as needed
+
+const ProfitGoalCard = ({ todaysProfit, deposits, cashouts, progressPercentage }) => (
   <Card style={{
     background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
     border: 'none', color: '#fff', marginBottom: 20,
   }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24 }}>
       <div style={{ flex: 1 }}>
-        <Label style={{ color: 'rgba(255,255,255,.5)' }}>Today's Profit Goal</Label>
-        <div style={{ fontSize: 'clamp(28px,5vw,44px)', fontWeight: 900, letterSpacing: '-1px', marginBottom: 14 }}>
-          ${profitGoal.toFixed(2)}
+        {/* Today's ACTUAL profit (deposits − cashouts) */}
+        <Label style={{ color: 'rgba(255,255,255,.5)' }}>Today's Profit</Label>
+        <div style={{
+          fontSize: 'clamp(28px,5vw,44px)', fontWeight: 900, letterSpacing: '-1px', marginBottom: 14,
+          color: todaysProfit >= 0 ? '#fff' : C.red,
+        }}>
+          {todaysProfit < 0 ? '-' : ''}${Math.abs(todaysProfit).toFixed(2)}
         </div>
         <div style={{ display: 'flex', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -510,19 +503,24 @@ const ProfitGoalCard = ({ profitGoal, todaysProfit, deposits, cashouts, progress
         </div>
       </div>
       <div style={{ flex: 1 }}>
+        {/* Progress toward fixed daily goal */}
         <div style={{ marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>Progress</span>
-          <span style={{ fontSize: 12, fontWeight: 700 }}>{Math.round(progressPercentage)}%</span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>
+            Goal: ${DAILY_PROFIT_GOAL.toLocaleString()}
+          </span>
+          <span style={{ fontSize: 12, fontWeight: 700 }}>{Math.min(Math.round(progressPercentage), 100)}%</span>
         </div>
         <div style={{ height: 8, background: 'rgba(255,255,255,.1)', borderRadius: 99, overflow: 'hidden' }}>
           <div style={{
             height: '100%', borderRadius: 99,
-            background: 'linear-gradient(90deg, #3b82f6, #06b6d4)',
+            background: progressPercentage >= 100
+              ? 'linear-gradient(90deg, #10b981, #06b6d4)'
+              : 'linear-gradient(90deg, #3b82f6, #06b6d4)',
             width: `${Math.min(progressPercentage, 100)}%`, transition: 'width .5s ease',
           }} />
         </div>
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginTop: 5 }}>
-          ${todaysProfit.toLocaleString()} / ${goalTarget.toLocaleString()}
+          ${Math.max(todaysProfit, 0).toLocaleString()} / ${DAILY_PROFIT_GOAL.toLocaleString()}
         </p>
       </div>
     </div>
@@ -530,30 +528,36 @@ const ProfitGoalCard = ({ profitGoal, todaysProfit, deposits, cashouts, progress
 );
 
 // ═══════════════════════════════════════════════════════════════
-// 30-DAY PROFIT CARD
+// ALL-TIME PROFIT CARD
+// Backend dashboardStats.revenue → { deposits, withdrawals, profit }
+// Profit = all-time deposits − all-time withdrawals
 // ═══════════════════════════════════════════════════════════════
 
-const TotalProfitCard = ({ last30DaysProfit, depositsDetail, cashoutsDetail, avgTx }) => (
+const TotalProfitCard = ({ allTimeProfit, depositsDetail, cashoutsDetail, avgDailyProfit }) => (
   <Card style={{
     background: 'linear-gradient(135deg, #0284c7 0%, #0891b2 100%)',
     border: 'none', color: '#fff',
   }}>
-    <Label style={{ color: 'rgba(255,255,255,.6)' }}>Total Profit — Last 30 Days</Label>
+    {/* Label accurately reflects all-time data from revenue endpoint */}
+    <Label style={{ color: 'rgba(255,255,255,.6)' }}>All-Time Profit</Label>
     <div style={{ fontSize: 'clamp(26px,4vw,40px)', fontWeight: 900, letterSpacing: '-1px', marginBottom: 16 }}>
-      ${last30DaysProfit?.toLocaleString?.() ?? last30DaysProfit}
+      ${allTimeProfit?.toLocaleString?.() ?? allTimeProfit}
     </div>
     <div style={{
       display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12,
       paddingTop: 14, borderTop: '1px solid rgba(255,255,255,.15)',
     }}>
       {[
-        { label: 'Deposits', value: depositsDetail },
-        { label: 'Cashouts', value: cashoutsDetail },
-        { label: 'Avg Tx', value: avgTx?.toFixed?.(2) ?? 0 },
+        { label: 'Deposits',    value: depositsDetail },
+        { label: 'Cashouts',    value: cashoutsDetail },
+        // Avg daily profit from 7-day bar chart data — more meaningful than avgTx
+        { label: 'Avg/Day (7d)', value: avgDailyProfit?.toFixed?.(0) ?? '—' },
       ].map(({ label, value }) => (
         <div key={label}>
           <p style={{ fontSize: 10, color: 'rgba(255,255,255,.6)', margin: '0 0 2px 0', fontWeight: 600 }}>{label}</p>
-          <p style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>${value?.toLocaleString?.() ?? value}</p>
+          <p style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>
+            {typeof value === 'string' && value !== '—' ? `$${Number(value).toLocaleString()}` : value === '—' ? '—' : `$${value?.toLocaleString?.() ?? value}`}
+          </p>
         </div>
       ))}
     </div>
@@ -562,6 +566,7 @@ const TotalProfitCard = ({ last30DaysProfit, depositsDetail, cashoutsDetail, avg
 
 // ═══════════════════════════════════════════════════════════════
 // WEEKLY ACTIVITY MINI CHART
+// Backend /api/chart/player-activity → { data: [{name, deposits}] }
 // ═══════════════════════════════════════════════════════════════
 
 const WeeklyActivityCard = ({ playerActivity, totalDepositsWeek }) => (
@@ -582,8 +587,10 @@ const WeeklyActivityCard = ({ playerActivity, totalDepositsWeek }) => (
               <stop offset="95%" stopColor={C.blue} stopOpacity={0} />
             </linearGradient>
           </defs>
+          {/* Backend returns `name` for the day label */}
           <XAxis dataKey="name" tick={{ fontSize: 10, fill: C.slate400 }} axisLine={false} tickLine={false} />
           <Tooltip content={<ChartTooltip />} />
+          {/* Backend returns `deposits` as the value key */}
           <Area type="monotone" dataKey="deposits" stroke={C.blue} strokeWidth={2} fill="url(#gWeekly)" dot={false} name="Deposits" />
         </AreaChart>
       ) : (
@@ -610,17 +617,19 @@ const Skeleton = ({ h = 20, w = '100%', br = 6 }) => (
 // ═══════════════════════════════════════════════════════════════
 
 export default function Dashboard() {
-  const [dashboardStats, setDashboardStats] = useState(null);
-  const [playerActivity, setPlayerActivity] = useState(null);
+  const [dashboardStats, setDashboardStats]             = useState(null);
+  const [playerActivity, setPlayerActivity]             = useState(null);
   const [depoVsCashoutActivity, setDepoVsCashoutActivity] = useState(null);
-  const [topDepositors, setTopDepositors] = useState(null);
-  const [topCashouts, setTopCashouts] = useState(null);
-  const [topGamesByDeposits, setTopGamesByDeposits] = useState(null);
-  const [topGamesByCashouts, setTopGamesByCashouts] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [last30DaysProfit, setLast30DaysProfit] = useState(0);
-  const [dailyProfit, setDailyProfit] = useState(null);
-  const [totalDepositsWeek, setTotalDepositsWeek] = useState(0);
+  const [topDepositors, setTopDepositors]               = useState(null);
+  const [topCashouts, setTopCashouts]                   = useState(null);
+  const [topGamesByDeposits, setTopGamesByDeposits]     = useState(null);
+  const [topGamesByCashouts, setTopGamesByCashouts]     = useState(null);
+  const [loading, setLoading]                           = useState(true);
+  // last30DaysProfit from /api/profit/stats (ProfitStat table).
+  // Falls back to revenue.profit from dashboardStats if no entries exist.
+  const [profitStatsSummary, setProfitStatsSummary]     = useState(null);
+  const [dailyProfitData, setDailyProfitData]           = useState(null);
+  const [totalDepositsWeek, setTotalDepositsWeek]       = useState(0);
   const [stats, setStats] = useState({ total: 0, active: 0, critical: 0, highlyCritical: 0, inactive: 0 });
 
   useEffect(() => {
@@ -628,28 +637,37 @@ export default function Dashboard() {
       try {
         setLoading(true);
 
-        const profitResponse = await api.dashboard.getProfitStats();
-        if (profitResponse?.summary) {
-          setLast30DaysProfit(profitResponse.summary.total);
-          setDailyProfit(profitResponse);
-        }
-
-        const [statsData, dailyProfitData, activity, chart_depoVsCashout, depositors, cashouts, gameDeposits, gameCashouts] = await Promise.all([
+        const [
+          statsData,
+          profitStatsData,
+          dailyProfit,
+          activity,
+          chart_depoVsCashout,
+          depositors,
+          cashouts,
+          gameDeposits,
+          gameCashouts,
+          attendanceResult,
+        ] = await Promise.all([
           api.dashboard.getStats(),
+          api.dashboard.getProfitStats(),
           api.dashboard.getDailyProfit(),
           api.dashboard.getPlayerActivity(),
           api.dashboard.getDepoVsCashoutsActivity(),
-          api.dashboard.getTopDepositors?.() || Promise.resolve(null),
-          api.dashboard.getTopCashouts?.()   || Promise.resolve(null),
-          api.dashboard.getTopGamesByDeposits?.() || Promise.resolve(null),
-          api.dashboard.getTopGamesByCashouts?.() || Promise.resolve(null),
+          api.dashboard.getTopDepositors?.()        || Promise.resolve(null),
+          api.dashboard.getTopCashouts?.()          || Promise.resolve(null),
+          api.dashboard.getTopGamesByDeposits?.()   || Promise.resolve(null),
+          api.dashboard.getTopGamesByCashouts?.()   || Promise.resolve(null),
+          api.attendance.getAttendance('Active'),
         ]);
 
-        const result = await api.attendance.getAttendance('Active');
-        if (result?.stats) setStats(result.stats);
+        if (attendanceResult?.stats) setStats(attendanceResult.stats);
 
         setDashboardStats(statsData);
-        setDailyProfit(dailyProfitData);
+        // /api/profit/stats → { data: [...], summary: { total, average, max, min, daysCount } }
+        setProfitStatsSummary(profitStatsData?.summary ?? null);
+        // /api/chart/daily-profit → { data: [{day, profit}] }
+        setDailyProfitData(dailyProfit);
         setPlayerActivity(activity);
         setDepoVsCashoutActivity(chart_depoVsCashout);
         setTopDepositors(depositors);
@@ -657,8 +675,9 @@ export default function Dashboard() {
         setTopGamesByDeposits(gameDeposits);
         setTopGamesByCashouts(gameCashouts);
 
-        const total = activity?.data?.reduce((sum, d) => sum + (d.deposits || 0), 0) ?? 0;
-        setTotalDepositsWeek(total);
+        // Weekly deposit total: sum `deposits` from /api/chart/player-activity data array
+        const weekTotal = activity?.data?.reduce((sum, d) => sum + (d.deposits || 0), 0) ?? 0;
+        setTotalDepositsWeek(weekTotal);
       } catch (err) {
         console.error('Dashboard load error:', err);
       } finally {
@@ -696,30 +715,73 @@ export default function Dashboard() {
     );
   }
 
-  // Derived values
-  const deposits        = dashboardStats?.daily?.deposits || 0;
-  const cashouts        = dashboardStats?.daily?.cashouts || 0;
-  const todaysProfit    = deposits - cashouts;
-  const profitGoal      = todaysProfit + 500;
-  const goalTarget      = profitGoal;
-  const progressPct     = (todaysProfit / goalTarget) * 100;
+  // ── Derived values ─────────────────────────────────────────────
+  // Today's deposits and cashouts from dashboardStats.daily
+  const deposits     = dashboardStats?.daily?.deposits  || 0;
+  const cashouts     = dashboardStats?.daily?.cashouts  || 0;
+  const todaysProfit = deposits - cashouts;
 
-  const depositsDetail  = dashboardStats?.revenue?.deposits || 0;
+  // Progress toward fixed daily goal
+  const progressPct = DAILY_PROFIT_GOAL > 0
+    ? (Math.max(todaysProfit, 0) / DAILY_PROFIT_GOAL) * 100
+    : 0;
+
+  // All-time deposits and cashouts from dashboardStats.revenue
+  const depositsDetail  = dashboardStats?.revenue?.deposits    || 0;
   const cashoutsDetail  = dashboardStats?.revenue?.withdrawals || 0;
-  const avgTx           = depositsDetail / (dashboardStats?.transactions?.total || 1);
+  // All-time profit: deposits − withdrawals (from revenue endpoint)
+  const allTimeProfit   = dashboardStats?.revenue?.profit      || 0;
 
+  // Average daily profit from 7-day chart data (more meaningful than avgTx)
+  const avgDailyProfit = useMemo(() => {
+    const chartData = dailyProfitData?.data;
+    if (!chartData?.length) return 0;
+    const sum = chartData.reduce((s, d) => s + (d.profit || 0), 0);
+    return sum / chartData.length;
+  }, [dailyProfitData]);
+
+  // 4 stat cards — all using real backend fields
   const statCards = [
-    { title: "Today's Profit",  value: Math.round(todaysProfit),          color: C.blue,   icon: DollarSign,   trend: 2.5  },
-    { title: 'Total Deposits',   value: Math.round(depositsDetail),        color: C.green,  icon: TrendingUp,   trend: 3.2  },
-    { title: 'Total Cashouts',  value: Math.round(cashoutsDetail),        color: C.red,    icon: TrendingDown, trend: -1.1 },
-    { title: 'Bonuses Earned',  value: Math.round(depositsDetail * 0.5),  color: C.amber,  icon: Zap,          trend: 5.8  },
+    {
+      title: "Today's Profit",
+      // daily.deposits − daily.cashouts
+      value: Math.round(todaysProfit),
+      color: todaysProfit >= 0 ? C.blue : C.red,
+      icon: DollarSign,
+      prefix: '$',
+    },
+    {
+      title: 'All-Time Deposits',
+      // revenue.deposits (all-time completed deposits)
+      value: Math.round(depositsDetail),
+      color: C.green,
+      icon: TrendingUp,
+      prefix: '$',
+    },
+    {
+      title: 'All-Time Cashouts',
+      // revenue.withdrawals (all-time completed withdrawals)
+      value: Math.round(cashoutsDetail),
+      color: C.red,
+      icon: TrendingDown,
+      prefix: '$',
+    },
+    {
+      title: 'New Players (7d)',
+      // players.newThisWeek — actual new player count this week
+      value: dashboardStats?.players?.newThisWeek || 0,
+      color: C.amber,
+      icon: Users,
+      prefix: '',  // not a dollar amount
+    },
   ];
 
+  // Attendance stats from /api/attendance → stats.{ active, critical, highlyCritical, inactive }
   const attendanceStats = [
-    { label: 'ACTIVE (24H)',          value: stats?.active || 0,         color: C.green  },
-    { label: 'CRITICAL (1–3D)',       value: stats?.critical || 0,       color: C.amber  },
-    { label: 'HIGHLY CRITICAL (>3D)', value: stats?.highlyCritical || 0, color: C.red    },
-    { label: 'INACTIVE (>1W)',        value: stats?.inactive || 0,       color: C.slate400 },
+    { label: 'ACTIVE (24H)',          value: stats?.active         || 0, color: C.green   },
+    { label: 'CRITICAL (1–3D)',       value: stats?.critical       || 0, color: C.amber   },
+    { label: 'HIGHLY CRITICAL (>3D)', value: stats?.highlyCritical || 0, color: C.red     },
+    { label: 'INACTIVE (>1W)',        value: stats?.inactive       || 0, color: C.slate400 },
   ];
 
   return (
@@ -733,30 +795,28 @@ export default function Dashboard() {
         {/* ── LEFT COLUMN ─────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
 
-          {/* Today's profit goal */}
+          {/* Today's profit vs fixed goal */}
           <ProfitGoalCard
-            profitGoal={profitGoal}
             todaysProfit={todaysProfit}
             deposits={deposits}
             cashouts={cashouts}
             progressPercentage={progressPct}
-            goalTarget={goalTarget}
           />
 
-          {/* Stat cards */}
+          {/* Stat cards — all backed by real API fields */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px,1fr))', gap: 12 }}>
             {statCards.map((s, i) => (
-              <StatCard key={i} title={s.title} value={s.value} color={s.color} icon={s.icon} trend={s.trend} />
+              <StatCard key={i} title={s.title} value={s.value} color={s.color} icon={s.icon} prefix={s.prefix} />
             ))}
           </div>
 
-          {/* 30-day profit + weekly activity */}
+          {/* All-time profit + weekly activity */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <TotalProfitCard
-              last30DaysProfit={last30DaysProfit}
+              allTimeProfit={allTimeProfit}
               depositsDetail={depositsDetail}
               cashoutsDetail={cashoutsDetail}
-              avgTx={avgTx}
+              avgDailyProfit={avgDailyProfit}
             />
             <WeeklyActivityCard playerActivity={playerActivity} totalDepositsWeek={totalDepositsWeek} />
           </div>
@@ -773,8 +833,8 @@ export default function Dashboard() {
             <TopGamesByCashoutsCard data={topGamesByCashouts} />
           </div>
 
-          {/* Daily profit bar chart */}
-          <DailyProfitChart data={dailyProfit?.data} />
+          {/* Daily profit bar chart — uses dailyProfitData.data */}
+          <DailyProfitChart data={dailyProfitData?.data} />
 
           {/* Deposits vs Withdrawals area chart */}
           <PlayerActivityChart data={depoVsCashoutActivity} />
@@ -788,10 +848,10 @@ export default function Dashboard() {
             <DashboardClock />
           </Card>
 
-          {/* Issue status */}
+          {/* Issue status — uses dashboardStats.issues */}
           <IssueStatusCard dashboardStats={dashboardStats} />
 
-          {/* Attendance */}
+          {/* Attendance — uses /api/attendance stats */}
           <PlayerAttendanceCard stats={attendanceStats} />
         </div>
 
