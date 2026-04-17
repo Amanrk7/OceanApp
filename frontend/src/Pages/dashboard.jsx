@@ -701,7 +701,7 @@ export default function Dashboard() {
   const cashouts        = dashboardStats?.daily?.cashouts || 0;
   const todaysProfit    = deposits - cashouts;
   const profitGoal      = todaysProfit + 500;
-  const goalTarget      = profitGoal;
+  const goalTarget      = todaysProfit;
   const progressPct     = (profitGoal / goalTarget) * 100;
 
   const depositsDetail  = dashboardStats?.revenue?.deposits || 0;
