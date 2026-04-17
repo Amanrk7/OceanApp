@@ -281,7 +281,6 @@ const CSS = `
   .ob-drawer-logo { display: flex; align-items: center; gap: 10px; padding: 0 16px 18px; flex-shrink: 0; }
   .ob-drawer-logo .ob-drawer-title { font-weight: 800; font-size: 15px; color: #f8fafc; letter-spacing: -.3px; }
 
-  /* ── FIX: nav no longer squishes items ── */
   .ob-nav {
     display: flex;
     flex-direction: column;
@@ -290,16 +289,14 @@ const CSS = `
     width: 100%;
     padding: 0 8px;
     min-height: 0;
-    // overflow-y: auto;
-    // overflow-x: hidden;
-    overflow: visible;
+    overflow-y: auto;
+    overflow-x: hidden;
     scrollbar-width: none;
   }
   .ob-nav::-webkit-scrollbar { display: none; }
 
   .ob-nav-item { position: relative; width: 100%; }
 
-  /* ── FIX: fixed padding instead of broken clamp ── */
   .ob-navlink {
     display: flex; align-items: center; justify-content: center;
     width: 100%; padding: 8px; border-radius: 8px;
@@ -318,7 +315,6 @@ const CSS = `
   [data-theme="light"] .ob-navlink.theme-toggle { color: #94a3b8; }
   [data-theme="light"] .ob-navlink.theme-toggle:hover { color: #6366f1; background: rgba(99,102,241,.1); }
 
-  /* ── Store switch button in sidebar footer ── */
   .ob-navlink.store-switch {
     color: #0ea5e9;
     background: rgba(14,165,233,.08);
@@ -331,7 +327,6 @@ const CSS = `
     color: #38bdf8;
     border-color: rgba(14,165,233,.4);
   }
-  /* Small store number badge */
   .ob-store-badge {
     position: absolute;
     top: 2px; right: 2px;
@@ -346,7 +341,6 @@ const CSS = `
     pointer-events: none;
   }
 
-  /* Drawer store switch */
   .ob-navlink-drawer.store-switch {
     color: #0ea5e9;
     background: rgba(14,165,233,.08);
@@ -370,21 +364,6 @@ const CSS = `
   .ob-navlink-drawer.active { background: var(--color-hover-tab); color: #fff; font-weight: 600; }
   .ob-navlink-drawer:disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
   .ob-navlink-drawer svg { width: 18px; height: 18px; flex-shrink: 0; }
-
-  .ob-nav-tooltip {
-    position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
-    background: #1e293b; color: #f1f5f9;
-    padding: 5px 10px; border-radius: 7px;
-    font-size: 12px; font-weight: 600; white-space: nowrap;
-    pointer-events: none; z-index: 9999;
-    box-shadow: 0 4px 14px rgba(0,0,0,.35);
-    opacity: 0; transition: opacity .12s ease; letter-spacing: .1px;
-  }
-  .ob-nav-tooltip::before {
-    content: ''; position: absolute; right: 100%; top: 50%; transform: translateY(-50%);
-    border: 5px solid transparent; border-right-color: #1e293b;
-  }
-  .ob-nav-item:hover .ob-nav-tooltip { opacity: 1; }
 
   .ob-sidebar-footer { margin-top: auto; padding: 12px 8px 4px; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; flex-shrink: 0; border-top: 1px solid #1e293b; }
   .ob-drawer-footer { margin-top: auto; padding: 12px 16px 4px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
@@ -471,10 +450,54 @@ export function Sidebar({ user, activePage, onNavigate, onLogout, onStoreSwitch,
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
+  // Fixed-position tooltip state — immune to overflow clipping
+  const [tooltip, setTooltip] = useState({ visible: false, label: '', y: 0 });
+
+  const handleMouseEnter = (e, label) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltip({ visible: true, label, y: rect.top + rect.height / 2 });
+  };
+
+  const handleMouseLeave = () => setTooltip(t => ({ ...t, visible: false }));
+
   const handleNav = (id) => { onNavigate(id); setDrawerOpen(false); };
 
   const DesktopSidebar = (
     <aside className="ob-sidebar">
+
+      {/* ── Fixed tooltip rendered once, positioned via JS ── */}
+      <div style={{
+        position: 'fixed',
+        left: SIDEBAR_W + 10,
+        top: tooltip.y,
+        transform: 'translateY(-50%)',
+        background: '#1e293b',
+        color: '#f1f5f9',
+        padding: '5px 10px',
+        borderRadius: '7px',
+        fontSize: '12px',
+        fontWeight: 600,
+        whiteSpace: 'nowrap',
+        pointerEvents: 'none',
+        zIndex: 9999,
+        boxShadow: '0 4px 14px rgba(0,0,0,.35)',
+        opacity: tooltip.visible ? 1 : 0,
+        transition: 'opacity .12s ease',
+        letterSpacing: '.1px',
+      }}>
+        {/* Arrow */}
+        <span style={{
+          position: 'absolute',
+          right: '100%',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          borderWidth: 5,
+          borderStyle: 'solid',
+          borderColor: 'transparent #1e293b transparent transparent',
+        }} />
+        {tooltip.label}
+      </div>
+
       <div className="ob-sidebar-logo">
         <div className="ob-avatar-sm">OB</div>
       </div>
@@ -484,7 +507,11 @@ export function Sidebar({ user, activePage, onNavigate, onLogout, onStoreSwitch,
           const disabled = item.adminsOnly && !isAdmin;
           return (
             <div key={item.id}>
-              <div className="ob-nav-item">
+              <div
+                className="ob-nav-item"
+                onMouseEnter={(e) => handleMouseEnter(e, item.label)}
+                onMouseLeave={handleMouseLeave}
+              >
                 <button
                   className={`ob-navlink${activePage === item.id ? ' active' : ''}`}
                   onClick={() => !disabled && handleNav(item.id)}
@@ -493,7 +520,6 @@ export function Sidebar({ user, activePage, onNavigate, onLogout, onStoreSwitch,
                 >
                   <HugeiconsIcon icon={item.icon} size={20} />
                 </button>
-                <span className="ob-nav-tooltip">{item.label}</span>
               </div>
               {item.dividerAfter && <div className="ob-nav-divider" />}
             </div>
@@ -504,7 +530,11 @@ export function Sidebar({ user, activePage, onNavigate, onLogout, onStoreSwitch,
       <div className="ob-sidebar-footer">
         {/* ── Store Switch Button ── */}
         {onStoreSwitch && (
-          <div className="ob-nav-item">
+          <div
+            className="ob-nav-item"
+            onMouseEnter={(e) => handleMouseEnter(e, storeSwitchLabel)}
+            onMouseLeave={handleMouseLeave}
+          >
             <button
               className="ob-navlink store-switch"
               onClick={onStoreSwitch}
@@ -513,12 +543,15 @@ export function Sidebar({ user, activePage, onNavigate, onLogout, onStoreSwitch,
               <HugeiconsIcon icon={ArrowDataTransferDiagonalIcon} size={18} />
               <span className="ob-store-badge">{storeSwitchNum}</span>
             </button>
-            <span className="ob-nav-tooltip">{storeSwitchLabel}</span>
           </div>
         )}
 
         {/* ── Theme Toggle ── */}
-        <div className="ob-nav-item">
+        <div
+          className="ob-nav-item"
+          onMouseEnter={(e) => handleMouseEnter(e, theme === 'dark' ? 'Light Mode' : 'Dark Mode')}
+          onMouseLeave={handleMouseLeave}
+        >
           <button
             className="ob-navlink theme-toggle"
             onClick={toggleTheme}
@@ -526,13 +559,14 @@ export function Sidebar({ user, activePage, onNavigate, onLogout, onStoreSwitch,
           >
             <HugeiconsIcon icon={theme === 'dark' ? Sun03Icon : Moon02Icon} size={20} />
           </button>
-          <span className="ob-nav-tooltip">
-            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-          </span>
         </div>
 
         {/* ── Logout ── */}
-        <div className="ob-nav-item">
+        <div
+          className="ob-nav-item"
+          onMouseEnter={(e) => handleMouseEnter(e, 'Logout')}
+          onMouseLeave={handleMouseLeave}
+        >
           <button
             className="ob-navlink"
             onClick={onLogout}
@@ -541,7 +575,6 @@ export function Sidebar({ user, activePage, onNavigate, onLogout, onStoreSwitch,
           >
             <HugeiconsIcon icon={Logout01Icon} size={20} />
           </button>
-          <span className="ob-nav-tooltip">Logout</span>
         </div>
 
         <div className="ob-user-avatar">
