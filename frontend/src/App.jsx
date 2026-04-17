@@ -290,8 +290,9 @@ const CSS = `
     width: 100%;
     padding: 0 8px;
     min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
+    // overflow-y: auto;
+    // overflow-x: hidden;
+    overflow: visible;
     scrollbar-width: none;
   }
   .ob-nav::-webkit-scrollbar { display: none; }
