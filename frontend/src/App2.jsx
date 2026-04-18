@@ -774,9 +774,59 @@ function AdminDashboard({ user }) {
                         currentPage={page}
                         onNavigate={handleNavigate}
                     />
-                    <div className="ob-header">
+                    {/* <div className="ob-header">
                         <h1>{navLabels[page] || 'Dashboard'}</h1>
-                    </div>
+                    </div> */}
+                    <div className="ob-header">
+  <h1>{navLabels[page] || 'Dashboard'}</h1>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+    <button
+      onClick={() => handleNavigate('addTransactions')}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        padding: '6px 13px', borderRadius: '8px', fontSize: '12px', fontWeight: '700',
+        cursor: 'pointer', border: '1px solid #86efac',
+        background: page === 'addTransactions' ? '#16a34a' : '#f0fdf4',
+        color: page === 'addTransactions' ? '#fff' : '#16a34a',
+        transition: 'all .15s', whiteSpace: 'nowrap',
+      }}
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Transaction
+    </button>
+
+    <button
+      onClick={() => handleNavigate('addBonus')}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        padding: '6px 13px', borderRadius: '8px', fontSize: '12px', fontWeight: '700',
+        cursor: 'pointer', border: '1px solid #e9d5ff',
+        background: page === 'addBonus' ? '#7c3aed' : '#faf5ff',
+        color: page === 'addBonus' ? '#fff' : '#7c3aed',
+        transition: 'all .15s', whiteSpace: 'nowrap',
+      }}
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20 12v10H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
+      Add Bonus
+    </button>
+
+    {/* Store switch — App.jsx uses setIsStore2(true), App2.jsx uses setIsStore2(false) */}
+    <button
+      onClick={() => setIsStore2(false)}   // ← App2.jsx: change to setIsStore2(false)
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        padding: '6px 13px', borderRadius: '8px', fontSize: '12px', fontWeight: '700',
+        cursor: 'pointer', border: '1px solid rgba(14,165,233,.3)',
+        background: 'rgba(14,165,233,.08)', color: '#0ea5e9',
+        transition: 'all .15s', whiteSpace: 'nowrap',
+      }}
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M7 16V4m0 0L3 8m4-4l4 4"/><path d="M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+      Store 1 {/* ← App2.jsx: change to Store 1 */}
+    </button>
+  </div>
+</div>
+
                     {errorMsg && <div className="ob-error">{errorMsg}</div>}
                     {renderPage()}
                 </div>
