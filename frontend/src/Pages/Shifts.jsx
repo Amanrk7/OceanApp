@@ -21,6 +21,28 @@ import { api } from '../api';
 import ShiftRatingModal from './ShiftRatingModal.jsx';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// const fj = async (path, opts = {}) => {
+//   const token = localStorage.getItem('authToken');
+//   const r = await fetch(`${API_BASE}${path}`, {
+//     credentials: 'include',
+//     cache: 'no-store',
+//     ...opts,
+//     headers: {
+//       'Content-Type': 'application/json',
+//       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+//       ...(opts.headers ?? {}),
+//     },
+//   });
+//   if (!r.ok) {
+//     const b = await r.json().catch(() => ({}));
+//     throw new Error(b.error ?? r.statusText);
+//   }
+//   return r.json();
+// };
+
+// ShiftsPage.jsx — replace the fj helper at the top
+const getStoreId = () => parseInt(localStorage.getItem('__obStoreId') || '1', 10);
+
 const fj = async (path, opts = {}) => {
   const token = localStorage.getItem('authToken');
   const r = await fetch(`${API_BASE}${path}`, {
@@ -29,6 +51,7 @@ const fj = async (path, opts = {}) => {
     ...opts,
     headers: {
       'Content-Type': 'application/json',
+      'X-Store-Id': String(getStoreId()),   // ← THIS is the fix
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(opts.headers ?? {}),
     },
