@@ -662,7 +662,7 @@ function MilestoneGrantModal({ milestone, player, todayDeposits, onClose, onGran
         <div onClick={e => { if (e.target === e.currentTarget) onClose(); }}
             style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
             <div style={{ background: C.white, borderRadius: '14px', boxShadow: '0 24px 60px rgba(15,23,42,.25)', width: '100%', maxWidth: '440px' }}>
-                <div style={{ padding: '18px 20px', background: '#fffbeb', borderBottom: '1px solid #fde68a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ borderTopLeftRadius: '14px', borderTopRightRadius: '14px', padding: '18px 20px', background: '#fffbeb', borderBottom: '1px solid #fde68a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <p style={{ margin: 0, fontWeight: '800', fontSize: '15px', color: '#92400e' }}>🏆 Grant Milestone Bonus</p>
                         <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#d97706' }}>
@@ -709,7 +709,7 @@ function MilestoneGrantModal({ milestone, player, todayDeposits, onClose, onGran
 
                     {error && <p style={{ margin: 0, fontSize: '12px', color: C.red, padding: '8px 12px', background: C.redLt, borderRadius: '6px' }}>{error}</p>}
                 </div>
-                <div style={{ padding: '14px 20px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: '10px', background: C.bg }}>
+                <div style={{ borderBottomLeftRadius: '14px', borderBottomRightRadius: '14px', padding: '14px 20px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: '10px', background: C.bg }}>
                     <button onClick={onClose} style={{ flex: 1, padding: '10px', background: C.white, border: `1px solid ${C.border}`, borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
                     <button onClick={handleGrant} disabled={loading || !gameId}
                         style={{ flex: 2, padding: '10px', background: loading || !gameId ? '#e2e8f0' : '#d97706', color: loading || !gameId ? C.grayLt : '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: loading || !gameId ? 'not-allowed' : 'pointer' }}>
