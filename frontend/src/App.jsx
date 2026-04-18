@@ -15,6 +15,7 @@ import Issues from "./Pages/Issues";
 import Transactions from "./Pages/Transactions";
 import { ExpensesPage } from './Pages/Expenses.jsx';
 import { ShiftsPage } from './Pages/Shifts.jsx';
+import ShiftStartGate from './Components/ShiftStartGate.jsx';
 import AddTransactionsPage from './Pages/AddTransaction.jsx';
 import AddBonusPage from "./Pages/AddBonus.jsx";
 import { BalancesPage } from './Pages/BalancesPage';
@@ -57,13 +58,13 @@ import { setStoreId } from './api';
 const SIDEBAR_W = 62;
 
 const C = {
-    sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
-    red: '#dc2626', redLt: '#fff1f2', redBdr: '#fecdd3',
-    green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
-    amber: '#d97706', amberLt: '#fffbeb',
-    violet: '#7c3aed', violetLt: '#f5f3ff',
-    border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
-    slate: '#0f172a', gray: '#64748b', grayLt: '#94a3b8',
+  sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
+  red: '#dc2626', redLt: '#fff1f2', redBdr: '#fecdd3',
+  green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
+  amber: '#d97706', amberLt: '#fffbeb',
+  violet: '#7c3aed', violetLt: '#f5f3ff',
+  border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
+  slate: '#0f172a', gray: '#64748b', grayLt: '#94a3b8',
 };
 
 const CSS = `
@@ -989,7 +990,11 @@ export default function App() {
               <Router>
                 <Routes>
                   <Route path="/"
-                    element={user ? <AdminDashboard user={user} /> : <LoginPage />}
+                    element={user ? <ShiftStartGate>
+
+                      <AdminDashboard user={user} />
+                    </ShiftStartGate>
+                      : <LoginPage />}
                   />
                   <Route path="/PlayerDashboard/:playerId"
                     element={user ? <PlayerDashboardWithSidebar user={user} /> : <LoginPage />}
