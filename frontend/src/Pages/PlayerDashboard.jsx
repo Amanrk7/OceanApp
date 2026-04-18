@@ -8,7 +8,7 @@ import {
 import { fmtTXTime } from '../utils/txTime';
 import EditPlayer from './Editplayer';
 import PendingBonusesCard from './PendingBonusesCard';
-import MilestoneGrantModal from './MilestoneGrantModal';
+// import MilestoneGrantModal from './MilestoneGrantModal';
 
 
 const C = {
@@ -342,6 +342,8 @@ function PlayerActivityStats({ player }) {
     const bon7d = bonusSum(start7d);
     const bon30d = bonusSum(start30d);
     const bonTotal = parseFloat(player.bonusTracker?.totalBonusEarned || 0);
+    const depAll = parseFloat(player.allTimeDeposits || 0);
+    const cashAll = parseFloat(player.allTimeCashouts || 0);
     const depCount30 = count('deposit', start30d);
     const cashCount30 = count('cashout', start30d);
     const bonCount30 = bonusCount(start30d);
@@ -356,7 +358,8 @@ function PlayerActivityStats({ player }) {
         { label: '1 day', hColor: '#059669', bgAlpha: 'rgba(16,185,129,.04)', dep: dep1d, cash: cash1d, bon: bon1d, total: false },
         { label: '7 days', hColor: '#0284c7', bgAlpha: 'rgba(14,165,233,.04)', dep: dep7d, cash: cash7d, bon: bon7d, total: false },
         { label: '30 days', hColor: '#7c3aed', bgAlpha: 'rgba(139,92,246,.04)', dep: dep30d, cash: cash30d, bon: bon30d, total: false },
-        { label: 'All-time', hColor: '#d97706', bgAlpha: 'rgba(249,115,22,.05)', dep: dep30d, cash: cash30d, bon: bonTotal, total: true },
+        // { label: 'All-time', hColor: '#d97706', bgAlpha: 'rgba(249,115,22,.05)', dep: dep30d, cash: cash30d, bon: bonTotal, total: true },
+        { label: 'All-time', hColor: '#d97706', bgAlpha: 'rgba(249,115,22,.05)', dep: depAll, cash: cashAll, bon: bonTotal, total: true },
     ];
 
     const ROWS = [
@@ -402,8 +405,6 @@ function PlayerActivityStats({ player }) {
                                     return (
                                         <td key={p.label} style={{ ...tdBase, color: row.color, background: 'transparent' }}>
                                             {fmt(row.getVal(p))}
-                                            {isTotal && <span style={{ fontSize: '9px', color: C.grayLt, fontWeight: '400', marginLeft: '3px' }}>30d</span>}
-                                            {p.total && row.key === 'bon' && <span style={{ fontSize: '9px', color: '#16a34a', fontWeight: '700', marginLeft: '3px' }}>★</span>}
                                         </td>
                                     );
                                 })}
@@ -426,7 +427,8 @@ function PlayerActivityStats({ player }) {
                 <span style={{ padding: '4px 10px', background: '#f0fdf4', color: '#059669', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{depCount30} deposit{depCount30 !== 1 ? 's' : ''} (30d)</span>
                 <span style={{ padding: '4px 10px', background: '#fff1f2', color: '#dc2626', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{cashCount30} cashout{cashCount30 !== 1 ? 's' : ''} (30d)</span>
                 <span style={{ padding: '4px 10px', background: '#faf5ff', color: '#7c3aed', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{bonCount30} bonus{bonCount30 !== 1 ? 'es' : ''} (30d)</span>
-                <span style={{ fontSize: '11px', color: C.grayLt, marginLeft: 'auto' }}>★ All-time from bonus tracker &nbsp;·&nbsp; deposits/cashouts limited to 30d history</span>
+                {/* <span style={{ fontSize: '11px', color: C.grayLt, marginLeft: 'auto' }}>★ All-time from bonus tracker &nbsp;·&nbsp; deposits/cashouts limited to 30d history</span> */}
+                <span style={{ fontSize: '11px', color: C.grayLt, marginLeft: 'auto' }}>★ All-time bonuses from bonus tracker &nbsp;·&nbsp; dep/cashout from last 200 txns</span>
             </div>
         </div>
     );
@@ -621,6 +623,103 @@ function SavedFlash({ show }) {
 }
 
 const fmt = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
+
+// ── Inline MilestoneGrantModal ────────────────────────────────────────────────
+function MilestoneGrantModal({ milestone, player, todayDeposits, onClose, onGranted }) {
+    const [games, setGames] = useState([]);
+    const [gameId, setGameId] = useState('');
+    const [amount, setAmount] = useState(String(parseFloat(milestone?.bonusAmount || 5).toFixed(2)));
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        api.games.getGames().then(r => setGames(r.data || [])).catch(() => {});
+    }, []);
+
+    const handleGrant = async () => {
+        if (!gameId) return setError('Please select a game.');
+        const amt = parseFloat(amount);
+        if (isNaN(amt) || amt <= 0) return setError('Enter a valid bonus amount.');
+        setLoading(true); setError('');
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await fetch(`${BACKEND_BASE}/api/milestone-bonuses/${milestone.id}/claim`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                credentials: 'include',
+                body: JSON.stringify({ gameId, amount: amt, notes: '' }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to grant bonus');
+            onGranted();
+        } catch (err) { setError(err.message); }
+        finally { setLoading(false); }
+    };
+
+    const selectedGame = games.find(g => g.id === gameId);
+
+    return (
+        <div onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ background: C.white, borderRadius: '14px', boxShadow: '0 24px 60px rgba(15,23,42,.25)', width: '100%', maxWidth: '440px' }}>
+                <div style={{ padding: '18px 20px', background: '#fffbeb', borderBottom: '1px solid #fde68a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <p style={{ margin: 0, fontWeight: '800', fontSize: '15px', color: '#92400e' }}>🏆 Grant Milestone Bonus</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#d97706' }}>
+                            ${milestone?.milestone} daily deposit milestone · {milestone?.date}
+                        </p>
+                    </div>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.grayLt, fontSize: '18px' }}>✕</button>
+                </div>
+                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div style={{ padding: '12px 14px', background: '#f8fafc', border: `1px solid ${C.border}`, borderRadius: '8px' }}>
+                        <p style={{ margin: 0, fontWeight: '700', color: C.slate, fontSize: '13px' }}>{player.name}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: C.grayLt }}>
+                            @{player.username} · ${todayDeposits.toFixed(2)} deposited today
+                        </p>
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: C.gray, textTransform: 'uppercase', marginBottom: '6px' }}>Bonus Amount ($) *</label>
+                        <input
+                            type="number" min="0.01" step="0.01" value={amount}
+                            onChange={e => setAmount(e.target.value)}
+                            style={{ width: '100%', padding: '10px 12px', border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '15px', fontWeight: '700', color: '#d97706', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }}
+                        />
+                        <p style={{ margin: '4px 0 0', fontSize: '11px', color: C.grayLt }}>
+                            Default: ${parseFloat(milestone?.bonusAmount || 5).toFixed(2)} · edit to grant a different amount
+                        </p>
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: C.gray, textTransform: 'uppercase', marginBottom: '6px' }}>Select Game *</label>
+                        <select value={gameId} onChange={e => setGameId(e.target.value)}
+                            style={{ width: '100%', padding: '10px 12px', border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '13px', fontFamily: 'inherit', boxSizing: 'border-box', background: C.white, outline: 'none' }}>
+                            <option value="">— choose a game —</option>
+                            {games.map(g => (
+                                <option key={g.id} value={g.id}>
+                                    {g.name} · {g.pointStock?.toFixed(0)} pts ({g.status})
+                                </option>
+                            ))}
+                        </select>
+                        {selectedGame && parseFloat(amount) > selectedGame.pointStock && (
+                            <p style={{ margin: '4px 0 0', fontSize: '11px', color: C.red }}>⚠️ Insufficient stock — game has {selectedGame.pointStock.toFixed(0)} pts</p>
+                        )}
+                    </div>
+
+                    {error && <p style={{ margin: 0, fontSize: '12px', color: C.red, padding: '8px 12px', background: C.redLt, borderRadius: '6px' }}>{error}</p>}
+                </div>
+                <div style={{ padding: '14px 20px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: '10px', background: C.bg }}>
+                    <button onClick={onClose} style={{ flex: 1, padding: '10px', background: C.white, border: `1px solid ${C.border}`, borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
+                    <button onClick={handleGrant} disabled={loading || !gameId}
+                        style={{ flex: 2, padding: '10px', background: loading || !gameId ? '#e2e8f0' : '#d97706', color: loading || !gameId ? C.grayLt : '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: loading || !gameId ? 'not-allowed' : 'pointer' }}>
+                        {loading ? '⏳ Granting…' : `🏆 Grant $${parseFloat(amount || 0).toFixed(2)} Bonus`}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN PLAYER DASHBOARD
