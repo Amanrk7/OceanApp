@@ -371,7 +371,9 @@ function AddTransactionsPage() {
     const specialAmt = (form.bonusSpecial && amt > 0) ? amt * 0.2 : 0;
     const totalBonus = matchAmt + specialAmt;
     const stockNeeded = isDeposit ? amt + matchAmt + specialAmt : amt;
-    const stockOk = !selGame || stockNeeded <= selGame.pointStock;
+    // const stockOk = !selGame || stockNeeded <= selGame.pointStock;
+    const stockOk = !selGame || !isDeposit || stockNeeded <= selGame.pointStock;
+
 
     const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     const todayCashoutTotal = (!isDeposit && player)
@@ -663,7 +665,8 @@ function AddTransactionsPage() {
     return (
         <option key={g.id} value={g.id} disabled={disableForDeposit}>
             {g.name}  ({(g.pointStock ?? 0).toFixed(0)} pts)
-            {isDeficit ? (isDeposit ? " — EMPTY" : " — DEFICIT") : ""}
+            {isDeficit ? (isDeposit ? " — EMPTY" : " — 0 pts (will refill)") : ""}
+
         </option>
     );
 })}
