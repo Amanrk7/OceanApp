@@ -690,10 +690,15 @@ export const reportsAPI = {
 
 export const referralBonusAPI = {
   getEligible: (playerId) => fetchAPI(`/players/${playerId}/eligible-bonuses`),
-  claim: (rbId, { side, gameId, notes }) =>
+  // claim: (rbId, { side, gameId, notes }) =>
+  //   fetchAPI(`/referral-bonuses/${rbId}/claim`, {
+  //     method: 'POST',
+  //     body: JSON.stringify({ side, gameId, notes }),
+  //   }),
+  claim: (rbId, { side, gameId, notes, amount, grantBoth }) =>
     fetchAPI(`/referral-bonuses/${rbId}/claim`, {
       method: 'POST',
-      body: JSON.stringify({ side, gameId, notes }),
+      body: JSON.stringify({ side, gameId, notes, amount, grantBoth }),
     }),
   getLedger: () => fetchAPI('/referral-bonuses'),
 };
