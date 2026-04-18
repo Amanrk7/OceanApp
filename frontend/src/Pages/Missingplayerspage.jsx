@@ -1,93 +1,72 @@
 /**
- * MissingPlayersPage.jsx  — fixes:
- *  1. Accurate data  — threshold bumped, backend already filters non-missing players
- *  2. HIGHLY CRITICAL at 3+ missing, CRITICAL at 2 missing (display only)
- *  3. Only players with ≥1 missing field shown (backend + frontend guard)
- *  4. Edit → auto-syncs task via SSE; undo button on completed task
- *  5. Edit button locked: admin always; member only if they own the task
+ * MissingPlayersPage.jsx — UI matched to PlaytimePage.jsx
  */
 
 import { useState, useEffect, useRef, useCallback, useContext } from "react";
-
 import {
   AlertTriangle, Search, RefreshCw,
   Phone, Mail, Camera, Instagram, Send, Users, X,
   ClipboardList, CheckCircle2, ChevronDown, ShieldCheck,
-  UserCheck, Clock, AlertCircle, CheckCircle, Edit2, Save, User,
+  UserCheck, Clock, AlertCircle, CheckCircle, Edit2, Save,
   Loader2, Undo2, Lock,
 } from 'lucide-react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ShiftStatusContext } from "../Context/membershiftStatus";
-
 import { api } from '../api';
 
 // ─── Config ────────────────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-// 2 missing = CRITICAL (orange badge)
-// 3+ missing = HIGHLY CRITICAL (red badge)
 const CRITICAL_THRESHOLD = 2;
 const HIGH_CRITICAL_THRESHOLD = 3;
 
-// ─── Inline SVG icons ─────────────────────────────────────────────────────────
-const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', flexShrink: 0 }}>
-    {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
-  </svg>
-);
-const ICheck = () => <Ico d="M20 6L9 17l-5-5" />;
-const IAlert = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} />;
-const IPlus = () => <Ico d="M12 5v14M5 12h14" />;
-const IX = () => <Ico d="M18 6L6 18M6 6l12 12" />;
-const IUser = () => <Ico d={['M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2', 'M12 11a4 4 0 100-8 4 4 0 000 8z']} />;
-const ILock = () => <Ico d={['M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z', 'M7 11V7a5 5 0 0110 0v4']} />;
-const IMail = () => <Ico d={['M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z', 'M22 6l-10 7L2 6']} />;
-const IPhone = () => <Ico d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" />;
-const IUsers = () => <Ico d={['M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2', 'M23 21v-2a4 4 0 00-3-3.87', 'M16 3.13a4 4 0 010 7.75', 'M9 7a4 4 0 100 8 4 4 0 000-8z']} />;
-const IShield = () => <Ico d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />;
-const IWarn = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} size={13} />;
-const C = {
-  sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
-  green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
-  red: '#dc2626', redLt: '#fff1f2', redBdr: '#fecdd3',
-  amber: '#d97706', amberLt: '#fffbeb', amberBdr: '#fcd34d',
-  violet: '#7c3aed', violetLt: '#f5f3ff', violetBdr: '#ddd6fe',
-  slate: '#0f172a', gray: '#64748b', grayLt: '#94a3b8',
-  border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
-};
-const LABEL = {
-  display: "block", fontSize: "11px", fontWeight: "700",
-  color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px",
-};
-const INPUT = {
-  width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0",
-  borderRadius: "8px", fontSize: "14px", fontFamily: "inherit",
-  boxSizing: "border-box", background: "#fff", color: "#0f172a", outline: "none",
+// ─── Shared style constants (matches PlaytimePage) ─────────────
+const CARD_STYLE = {
+  background: "var(--color-cards)",
+  borderRadius: "14px",
+  border: "1px solid var(--color-border)",
+  boxShadow: "0 2px 12px var(--color-shadow)",
 };
 
-function Card({ children, style = {}, accent }) {
-  return (
-    <div style={{
-      background: "var(--color-background-primary)",
-      borderRadius: "var(--border-radius-lg)",
-      border: "0.5px solid var(--color-border-tertiary)",
-      ...(accent ? { borderLeft: `3px solid ${accent}` } : {}),
-      ...style,
-    }}>
-      {children}
-    </div>
-  );
-}
+const INPUT_STYLE = {
+  width: "100%",
+  padding: "8px 12px",
+  border: "1px solid var(--color-border)",
+  borderRadius: "8px",
+  fontSize: "13px",
+  fontFamily: "inherit",
+  boxSizing: "border-box",
+  background: "var(--color-input-bg)",
+  color: "var(--color-text)",
+  outline: "none",
+};
 
+const SELECT_STYLE = {
+  ...INPUT_STYLE,
+  paddingRight: "32px",
+  appearance: "none",
+  cursor: "pointer",
+};
+
+const LABEL_STYLE = {
+  display: "block",
+  fontSize: "11px",
+  fontWeight: "700",
+  color: "var(--color-text-muted)",
+  textTransform: "uppercase",
+  letterSpacing: "0.5px",
+  marginBottom: "6px",
+};
+
+// ─── Helpers ────────────────────────────────────────────────────
 const CONTACT_FIELD_META = {
-  email: { icon: Mail, label: 'Email', color: '#3b82f6', bg: '#eff6ff' },
-  phone: { icon: Phone, label: 'Phone', color: '#8b5cf6', bg: '#f5f3ff' },
-  snapchat: { icon: Camera, label: 'Snapchat', color: '#eab308', bg: '#fefce8' },
+  email:     { icon: Mail,      label: 'Email',     color: '#3b82f6', bg: '#eff6ff' },
+  phone:     { icon: Phone,     label: 'Phone',     color: '#8b5cf6', bg: '#f5f3ff' },
+  snapchat:  { icon: Camera,    label: 'Snapchat',  color: '#eab308', bg: '#fefce8' },
   instagram: { icon: Instagram, label: 'Instagram', color: '#ec4899', bg: '#fdf2f8' },
-  telegram: { icon: Send, label: 'Telegram', color: '#0ea5e9', bg: '#f0f9ff' },
+  telegram:  { icon: Send,      label: 'Telegram',  color: '#0ea5e9', bg: '#f0f9ff' },
 };
 const CONTACT_KEYS = Object.keys(CONTACT_FIELD_META);
 
-// ─── Pure helpers ──────────────────────────────────────────────
 function getMissingContactFields(player) {
   return CONTACT_KEYS.filter(key => {
     const val = player[key];
@@ -108,33 +87,36 @@ function getTaskPlayerId(task) {
   if (task.playerId) return String(task.playerId);
   if (task.targetPlayerId) return String(task.targetPlayerId);
   if (task.player?.id) return String(task.player.id);
-  try { const m = JSON.parse(task.notes || '{}'); if (m.playerId) return String(m.playerId); } catch { }
+  try { const m = JSON.parse(task.notes || '{}'); if (m.playerId) return String(m.playerId); } catch {}
   const m = String(task.description || '').match(/player[_ ]?id[:\s]+(\d+)/i);
   return m ? m[1] : null;
 }
 
-// ─── Avatar ────────────────────────────────────────────────────
+// ─── Avatar ──────────────────────────────────────────────────────
 const AVATAR_COLORS = [
   ['#6366f1', '#eef2ff'], ['#0ea5e9', '#f0f9ff'], ['#10b981', '#f0fdf4'],
   ['#f59e0b', '#fffbeb'], ['#8b5cf6', '#f5f3ff'], ['#ec4899', '#fdf2f8'],
 ];
-function Avatar({ name, size = 40 }) {
-  const idx = (name || '?').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_COLORS.length;
-  const [bg, fg] = AVATAR_COLORS[idx];
+function Avatar({ name, size = 36 }) {
+  const initials = (name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const [fg, bg] = AVATAR_COLORS[(name || '').charCodeAt(0) % AVATAR_COLORS.length];
   return (
-    <div style={{ width: size, height: size, borderRadius: 12, background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.4, fontWeight: 800, flexShrink: 0 }}>
-      {(name || '?')[0].toUpperCase()}
-    </div>
+    <div style={{
+      width: size, height: size, borderRadius: '50%', background: bg,
+      color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontWeight: '700', fontSize: size * 0.35, flexShrink: 0,
+      border: `1.5px solid ${fg}30`,
+    }}>{initials}</div>
   );
 }
 
 function TierBadge({ tier }) {
   const map = {
-    GOLD: { bg: '#fffbeb', color: '#d97706', border: '#fde68a' },
-    SILVER: { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
-    BRONZE: { bg: '#fef3c7', color: '#b45309', border: '#fde68a' },
+    GOLD:   { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
+    SILVER: { bg: '#e0e7ff', color: '#3730a3', border: '#c7d2fe' },
+    BRONZE: { bg: '#fed7aa', color: '#9a3412', border: '#fdba74' },
   };
-  const s = map[tier] || { bg: '#f8fafc', color: '#94a3b8', border: '#e2e8f0' };
+  const s = map[tier] || { bg: 'var(--color-bg)', color: 'var(--color-text-muted)', border: 'var(--color-border)' };
   return (
     <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800, background: s.bg, color: s.color, border: `1px solid ${s.border}`, whiteSpace: 'nowrap' }}>
       {tier || 'N/A'}
@@ -153,7 +135,7 @@ function FieldChip({ field }) {
   );
 }
 
-// ─── Inline Admin Assign Dropdown ──────────────────────────────
+// ─── Inline Admin Assign Dropdown ────────────────────────────────
 function InlineAdminAssign({ player, task, teamMembers, onAssigned, assigning }) {
   const isDone = ['COMPLETED', 'DONE'].includes(task?.status);
   const currentValue = (!task?.assignToAll && task?.assignedToId) ? String(task.assignedToId) : '';
@@ -161,7 +143,7 @@ function InlineAdminAssign({ player, task, teamMembers, onAssigned, assigning })
 
   return (
     <div style={{ marginTop: 2 }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 5 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 5 }}>
         Assign to member
       </div>
       <div style={{ position: 'relative' }}>
@@ -170,13 +152,11 @@ function InlineAdminAssign({ player, task, teamMembers, onAssigned, assigning })
           onChange={e => onAssigned(player, e.target.value || null)}
           disabled={assigning || isDone}
           style={{
-            width: '100%', padding: '8px 28px 8px 10px',
-            border: `1.5px solid ${currentValue ? '#86efac' : '#e2e8f0'}`,
-            borderRadius: 8, fontSize: 12, fontFamily: 'inherit', appearance: 'none',
-            background: currentValue ? '#f0fdf4' : '#fff',
-            color: currentValue ? '#166534' : '#374151',
-            outline: 'none', cursor: assigning || isDone ? 'not-allowed' : 'pointer',
-            opacity: isDone ? 0.6 : 1, boxSizing: 'border-box',
+            ...SELECT_STYLE,
+            border: `1.5px solid ${currentValue ? '#86efac' : 'var(--color-border)'}`,
+            background: currentValue ? 'var(--color-background-success)' : 'var(--color-input-bg)',
+            color: currentValue ? 'var(--success)' : 'var(--color-text)',
+            opacity: isDone ? 0.6 : 1,
           }}
         >
           <option value="">— Assign to member —</option>
@@ -187,15 +167,12 @@ function InlineAdminAssign({ player, task, teamMembers, onAssigned, assigning })
           ))}
         </select>
         {assigning
-          ? <Loader2 style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 12, height: 12, color: '#94a3b8', animation: 'spin 0.8s linear infinite' }} />
-          : <ChevronDown style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 12, height: 12, color: '#94a3b8', pointerEvents: 'none' }} />
+          ? <Loader2 style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 12, height: 12, color: 'var(--color-text-muted)', animation: 'spin 0.8s linear infinite' }} />
+          : <ChevronDown style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 12, height: 12, color: 'var(--color-text-muted)', pointerEvents: 'none' }} />
         }
       </div>
       {task && (
-        <div style={{
-          marginTop: 5, fontSize: 11, display: 'flex', alignItems: 'center', gap: 4,
-          color: isDone ? '#16a34a' : task.assignToAll ? '#2563eb' : '#7c3aed'
-        }}>
+        <div style={{ marginTop: 5, fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, color: isDone ? 'var(--success)' : task.assignToAll ? '#2563eb' : '#7c3aed' }}>
           {isDone
             ? <><CheckCircle2 style={{ width: 10, height: 10 }} /> Task completed</>
             : task.assignToAll
@@ -208,7 +185,7 @@ function InlineAdminAssign({ player, task, teamMembers, onAssigned, assigning })
   );
 }
 
-// ─── Edit Modal ────────────────────────────────────────────────
+// ─── Edit Modal ──────────────────────────────────────────────────
 function EditModal({ player, onClose, onSaved }) {
   const [form, setForm] = useState({
     name: player.name || '', email: player.email || '', phone: player.phone || '',
@@ -225,11 +202,8 @@ function EditModal({ player, onClose, onSaved }) {
     try {
       const res = await api.players.updatePlayer(player.id, {
         name: form.name || undefined,
-        email: form.email || null,
-        phone: form.phone || null,
-        snapchat: form.snapchat || null,
-        instagram: form.instagram || null,
-        telegram: form.telegram || null,
+        email: form.email || null, phone: form.phone || null,
+        snapchat: form.snapchat || null, instagram: form.instagram || null, telegram: form.telegram || null,
       });
       setDone(true);
       setTimeout(() => onSaved({ ...player, ...form, ...(res?.data || {}) }), 700);
@@ -237,24 +211,26 @@ function EditModal({ player, onClose, onSaved }) {
   };
 
   const FIELDS = [
-    { key: 'name', label: 'Full Name', type: 'text', required: true },
-    { key: 'email', label: 'Email', type: 'email' },
-    { key: 'phone', label: 'Phone', type: 'text' },
-    { key: 'telegram', label: 'Telegram', type: 'text' },
+    { key: 'name',      label: 'Full Name', type: 'text',  required: true },
+    { key: 'email',     label: 'Email',     type: 'email' },
+    { key: 'phone',     label: 'Phone',     type: 'text' },
+    { key: 'telegram',  label: 'Telegram',  type: 'text' },
     { key: 'instagram', label: 'Instagram', type: 'text' },
-    { key: 'snapchat', label: 'Snapchat', type: 'text' },
+    { key: 'snapchat',  label: 'Snapchat',  type: 'text' },
   ];
 
   return (
     <div onClick={e => e.target === e.currentTarget && onClose()}
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,23,42,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 460, boxShadow: '0 24px 60px rgba(0,0,0,.2)', overflow: 'hidden' }}>
-        <div style={{ padding: '18px 20px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,23,42,.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ ...CARD_STYLE, width: '100%', maxWidth: 460, overflow: 'hidden' }}>
+        <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--color-border)', background: 'var(--color-background-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: '#0f172a' }}>Edit Player</p>
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748b' }}>@{player.username}</p>
+            <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: 'var(--color-text)' }}>Edit Player</p>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--color-text-muted)' }}>@{player.username}</p>
           </div>
-          <button onClick={onClose} style={S.iconBtn}><X style={{ width: 18, height: 18 }} /></button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: 4 }}>
+            <X style={{ width: 18, height: 18 }} />
+          </button>
         </div>
         <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '60vh', overflowY: 'auto' }}>
           {FIELDS.map(f => {
@@ -263,27 +239,26 @@ function EditModal({ player, onClose, onSaved }) {
             const Icon = meta?.icon;
             return (
               <div key={f.key}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 5 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 5 }}>
                   {Icon && <Icon style={{ width: 11, height: 11, color: meta.color }} />}
                   {f.label}
-                  {f.required && <span style={{ color: '#ef4444' }}>*</span>}
+                  {f.required && <span style={{ color: 'var(--danger)' }}>*</span>}
                   {isMissing && <span style={{ marginLeft: 4, fontSize: 9, fontWeight: 700, background: '#fee2e2', color: '#dc2626', padding: '1px 5px', borderRadius: 4 }}>MISSING</span>}
                 </label>
                 <input type={f.type} value={form[f.key]} onChange={set(f.key)}
                   placeholder={`Enter ${f.label.toLowerCase()}…`}
-                  style={{ width: '100%', padding: '9px 12px', border: `1.5px solid ${isMissing ? '#fca5a5' : '#e2e8f0'}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', background: isMissing ? '#fff5f5' : '#fff' }}
-                  onFocus={e => e.target.style.borderColor = '#3b82f6'}
-                  onBlur={e => e.target.style.borderColor = isMissing ? '#fca5a5' : '#e2e8f0'}
+                  style={{ ...INPUT_STYLE, border: `1.5px solid ${isMissing ? '#fca5a5' : 'var(--color-border)'}`, background: isMissing ? 'var(--color-background-warning)' : 'var(--color-input-bg)' }}
                 />
               </div>
             );
           })}
-          {err && <div style={S.errBox}>⚠️ {err}</div>}
-          {done && <div style={S.okBox}>✅ Updated! Task synced automatically.</div>}
+          {err && <div style={{ padding: '10px 12px', background: 'var(--color-background-warning)', border: '1px solid var(--color-border-warning)', borderRadius: 8, fontSize: 12, color: 'var(--amber)' }}>⚠️ {err}</div>}
+          {done && <div style={{ padding: '10px 12px', background: 'var(--color-background-success)', border: '1px solid var(--color-border-success)', borderRadius: 8, fontSize: 12, color: 'var(--success)' }}>✅ Updated! Task synced automatically.</div>}
         </div>
-        <div style={{ padding: '14px 20px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', gap: 10 }}>
-          <button onClick={onClose} disabled={saving} style={S.cancelBtn}>Cancel</button>
-          <button onClick={save} disabled={saving || done} style={{ ...S.primaryBtn, background: saving || done ? '#e2e8f0' : '#0ea5e9', color: saving || done ? '#94a3b8' : '#fff' }}>
+        <div style={{ padding: '14px 20px', borderTop: '1px solid var(--color-border)', background: 'var(--color-background-secondary)', display: 'flex', gap: 10 }}>
+          <button onClick={onClose} disabled={saving} style={{ flex: 1, padding: 10, background: 'var(--color-cards)', border: '1px solid var(--color-border)', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-text)' }}>Cancel</button>
+          <button onClick={save} disabled={saving || done}
+            style={{ flex: 2, padding: 10, border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: saving || done ? 'not-allowed' : 'pointer', background: saving || done ? 'var(--color-border)' : 'var(--brand)', color: saving || done ? 'var(--color-text-muted)' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
             <Save style={{ width: 14, height: 14 }} />
             {saving ? 'Saving…' : done ? 'Saved!' : 'Save Changes'}
           </button>
@@ -293,11 +268,8 @@ function EditModal({ player, onClose, onSaved }) {
   );
 }
 
-// ─── Player Card ───────────────────────────────────────────────
-function PlayerCard({
-  player, onEdit, onInlineAssign, onClaim, onUndoTask,
-  userRole, task, claimingId, assigningId, undoingId, teamMembers, currentUserId,
-}) {
+// ─── Player Card ─────────────────────────────────────────────────
+function PlayerCard({ player, onEdit, onInlineAssign, onClaim, onUndoTask, userRole, task, claimingId, assigningId, undoingId, teamMembers, currentUserId }) {
   const missing = getMissingContactFields(player);
   const isCritical = missing.length >= CRITICAL_THRESHOLD;
   const isHighCritical = missing.length >= HIGH_CRITICAL_THRESHOLD;
@@ -308,128 +280,100 @@ function PlayerCard({
   const undoing = undoingId === player.id;
 
   const isDone = ['COMPLETED', 'DONE'].includes(task?.status);
-  const isOpenToAll = !!task && (task.assignToAll === true || !task.assignedToId);
   const isAssigned = !!task && !!task.assignedToId && !task.assignToAll;
   const assignedName = task?.assignedTo?.name || task?.assignedTo?.username;
   const isClaimedByMe = isAssigned && currentUserId && String(task.assignedToId) === String(currentUserId);
   const isClaimedByOther = isAssigned && !isClaimedByMe;
-
-  // ── Edit permission: admin always; member only if they own the task ──
   const canEdit = isAdmin || (isMember && isClaimedByMe);
-
   const canClaim = isMember && !isDone && !isClaimedByOther && missing.length > 0;
 
+  const borderColor = isDone ? 'var(--color-border-success)'
+    : isHighCritical ? 'var(--danger)'
+      : isCritical ? '#fca5a5'
+        : 'var(--color-border)';
+
+  const bgColor = isDone ? 'var(--color-background-success)'
+    : isHighCritical ? 'var(--color-background-warning)'
+      : 'var(--color-cards)';
+
   return (
-    <div style={{
-      borderRadius: 14, padding: 16, boxSizing: 'border-box',
-      border: isDone
-        ? '2px solid #86efac'
-        : isHighCritical ? '2px solid #ef4444'
-          : isCritical ? '1.5px solid #fca5a5'
-            : '1px solid #e2e8f0',
-      background: isDone ? '#f0fdf4' : isHighCritical ? '#fff5f5' : isCritical ? '#fffbfb' : '#fff',
-      display: 'flex', flexDirection: 'column', gap: 10,
-    }}>
+    <div style={{ ...CARD_STYLE, border: `1.5px solid ${borderColor}`, background: bgColor, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
       {/* Row 1: Avatar + name + tier */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <Avatar name={player.name} size={40} />
+        <Avatar name={player.name} size={38} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', lineHeight: 1.3, wordBreak: 'break-word' }}>{player.name || 'Unnamed'}</div>
-          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>@{player.username || '—'}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.3, wordBreak: 'break-word' }}>{player.name || 'Unnamed'}</div>
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 1 }}>@{player.username || '—'}</div>
         </div>
         <TierBadge tier={player.tier} />
       </div>
 
-      {/* Critical badge — only show HIGHLY CRITICAL at 3+ */}
+      {/* Severity badge */}
       {isHighCritical && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: '#ef4444', color: '#fff', fontSize: 10, fontWeight: 800, alignSelf: 'flex-start' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: 'var(--danger)', color: '#fff', fontSize: 10, fontWeight: 800, alignSelf: 'flex-start' }}>
           <AlertTriangle style={{ width: 10, height: 10 }} /> HIGHLY CRITICAL
         </div>
       )}
       {isCritical && !isHighCritical && (
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: '#fee2e2', color: '#dc2626', fontSize: 10, fontWeight: 800, alignSelf: 'flex-start' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: '#fee2e2', color: 'var(--danger)', fontSize: 10, fontWeight: 800, alignSelf: 'flex-start' }}>
           <AlertTriangle style={{ width: 10, height: 10 }} /> CRITICAL
         </div>
       )}
 
       {/* Missing fields */}
       <div>
-        <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 5 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 5 }}>
           Missing Fields ({missing.length})
         </div>
         {missing.length === 0
-          ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#22c55e', fontWeight: 600 }}>
-            <CheckCircle style={{ width: 11, height: 11 }} /> All contact info present
-          </span>
+          ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--success)', fontWeight: 600 }}>
+              <CheckCircle style={{ width: 11, height: 11 }} /> All contact info present
+            </span>
           : <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-            {missing.map(f => <FieldChip key={f} field={f} />)}
-          </div>
+              {missing.map(f => <FieldChip key={f} field={f} />)}
+            </div>
         }
       </div>
 
       {/* Task completed banner + undo */}
       {isDone && (
-        <div style={{ padding: '8px 10px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div style={{ padding: '8px 10px', background: 'var(--color-background-success)', border: '1px solid var(--color-border-success)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: 4 }}>
             <CheckCircle2 style={{ width: 13, height: 13 }} /> Task completed
           </span>
           {(isAdmin || isClaimedByMe) && (
-            <button
-              onClick={() => onUndoTask(player, task)}
-              disabled={undoing}
-              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: '1px solid #86efac', background: '#fff', fontSize: 11, fontWeight: 700, color: '#16a34a', cursor: undoing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
-            >
-              {undoing
-                ? <Loader2 style={{ width: 11, height: 11, animation: 'spin 0.8s linear infinite' }} />
-                : <Undo2 style={{ width: 11, height: 11 }} />
-              }
+            <button onClick={() => onUndoTask(player, task)} disabled={undoing}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--color-border-success)', background: 'var(--color-cards)', fontSize: 11, fontWeight: 700, color: 'var(--success)', cursor: undoing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+              {undoing ? <Loader2 style={{ width: 11, height: 11, animation: 'spin 0.8s linear infinite' }} /> : <Undo2 style={{ width: 11, height: 11 }} />}
               Undo
             </button>
           )}
         </div>
       )}
 
-      {/* ── ADMIN: inline assign dropdown ── */}
+      {/* Admin: inline assign */}
       {isAdmin && (
-        <InlineAdminAssign
-          player={player}
-          task={task}
-          teamMembers={teamMembers}
-          onAssigned={onInlineAssign}
-          assigning={assigning}
-        />
+        <InlineAdminAssign player={player} task={task} teamMembers={teamMembers} onAssigned={onInlineAssign} assigning={assigning} />
       )}
 
-      {/* ── MEMBER: claim / status ── */}
+      {/* Member: claim / status */}
       {isMember && !isDone && (
         <div>
           {isClaimedByMe ? (
-            <div style={{ padding: '7px 10px', borderRadius: 8, background: '#fff7ed', border: '1px solid #fed7aa', fontSize: 11, fontWeight: 600, color: '#ea580c', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ padding: '7px 10px', borderRadius: 8, background: 'var(--color-background-warning)', border: '1px solid var(--color-border-warning)', fontSize: 11, fontWeight: 600, color: 'var(--amber)', display: 'flex', alignItems: 'center', gap: 5 }}>
               <ClipboardList style={{ width: 11, height: 11 }} /> You're working on this task
             </div>
           ) : isClaimedByOther ? (
-            <div style={{ padding: '7px 10px', borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: 11, color: '#64748b', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ padding: '7px 10px', borderRadius: 8, background: 'var(--color-background-secondary)', border: '1px solid var(--color-border)', fontSize: 11, color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
               <Lock style={{ width: 11, height: 11 }} /> Claimed by {assignedName || 'another member'}
             </div>
           ) : canClaim ? (
-            <button
-              onClick={() => onClaim(player, task)}
-              disabled={claiming}
-              style={{
-                width: '100%', padding: '9px 0', borderRadius: 9, border: 'none', cursor: claiming ? 'not-allowed' : 'pointer',
-                background: claiming ? '#e2e8f0' : 'linear-gradient(135deg,#10b981,#059669)',
-                color: claiming ? '#94a3b8' : '#fff', fontWeight: 700, fontSize: 12,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                fontFamily: 'inherit', boxShadow: claiming ? 'none' : '0 2px 10px #10b98135',
-              }}
-            >
-              {claiming
-                ? <><Loader2 style={{ width: 12, height: 12, animation: 'spin 0.8s linear infinite' }} /> Claiming…</>
-                : <><UserCheck style={{ width: 12, height: 12 }} /> Claim This Player</>
-              }
+            <button onClick={() => onClaim(player, task)} disabled={claiming}
+              style={{ width: '100%', padding: '9px 0', borderRadius: 9, border: 'none', cursor: claiming ? 'not-allowed' : 'pointer', background: claiming ? 'var(--color-border)' : 'linear-gradient(135deg,#10b981,#059669)', color: claiming ? 'var(--color-text-muted)' : '#fff', fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit', boxShadow: claiming ? 'none' : '0 2px 10px #10b98135' }}>
+              {claiming ? <><Loader2 style={{ width: 12, height: 12, animation: 'spin 0.8s linear infinite' }} /> Claiming…</> : <><UserCheck style={{ width: 12, height: 12 }} /> Claim This Player</>}
             </button>
           ) : missing.length === 0 ? null : (
-            <div style={{ padding: '7px 10px', borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ padding: '7px 10px', borderRadius: 8, background: 'var(--color-background-secondary)', border: '1px solid var(--color-border)', fontSize: 11, color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
               <Clock style={{ width: 10, height: 10 }} /> Awaiting task assignment
             </div>
           )}
@@ -437,16 +381,15 @@ function PlayerCard({
       )}
 
       {/* Footer */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid #f1f5f9', marginTop: 'auto' }}>
-        <span style={{ fontSize: 10, color: '#94a3b8' }}>Added {new Date(player.createdAt).toLocaleDateString()}</span>
-
-        {/* Edit button: admin always, member only if they own the task */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid var(--color-border)', marginTop: 'auto' }}>
+        <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>Added {new Date(player.createdAt).toLocaleDateString()}</span>
         {canEdit ? (
-          <button onClick={() => onEdit(player)} style={{ ...S.btn, background: '#fff', color: '#3b82f6', border: '1px solid #bfdbfe' }}>
+          <button onClick={() => onEdit(player)}
+            style={{ fontSize: 11, fontWeight: 600, borderRadius: 6, padding: '4px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit', background: 'var(--color-cards)', color: 'var(--brand)', border: '1px solid var(--color-border-info)' }}>
             <Edit2 style={{ width: 10, height: 10 }} /> Edit
           </button>
         ) : isMember && !isClaimedByMe && (
-          <span style={{ fontSize: 10, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 3 }}>
+          <span style={{ fontSize: 10, color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
             <Lock style={{ width: 9, height: 9 }} /> Claim to edit
           </span>
         )}
@@ -455,15 +398,17 @@ function PlayerCard({
   );
 }
 
-// ─── Stat Card ──────────────────────────────────────────────────
-function StatCard({ label, value, color, bg, icon: Icon, highlight }) {
+// ─── Stat Card (matches PlaytimePage stat strip) ─────────────────
+function StatCard({ label, value, color, bg, border, icon: Icon }) {
   return (
-    <div style={{ padding: '14px 16px', borderRadius: 12, background: bg, border: `1px solid ${color}25`, outline: highlight ? `2px solid ${color}` : 'none' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ fontSize: 26, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
-        <Icon style={{ width: 15, height: 15, color, opacity: 0.7 }} />
+    <div style={{ ...CARD_STYLE, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ width: 38, height: 38, borderRadius: 10, background: bg, border: `1px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <Icon style={{ width: 17, height: 17, color }} />
       </div>
-      <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginTop: 5 }}>{label}</div>
+      <div>
+        <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--color-text)', lineHeight: 1 }}>{value}</div>
+        <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 3, fontWeight: 600 }}>{label}</div>
+      </div>
     </div>
   );
 }
@@ -474,13 +419,14 @@ function StatCard({ label, value, color, bg, icon: Icon, highlight }) {
 export default function MissingPlayersPage() {
   const { shiftActive } = useContext(ShiftStatusContext);
   const navigate = useNavigate();
+
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [editTarget, setEditTarget] = useState(null);
-  const [tasks, setTasks] = useState({});         // String(playerId) → task
+  const [tasks, setTasks] = useState({});
   const [teamMembers, setTeamMembers] = useState([]);
   const [userRole, setUserRole] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
@@ -492,8 +438,6 @@ export default function MissingPlayersPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const sseRef = useRef(null);
 
-
-
   // ── Current user ──────────────────────────────────────────────
   useEffect(() => {
     api.auth.getUser()
@@ -501,12 +445,10 @@ export default function MissingPlayersPage() {
         const u = res?.data || res?.user || res;
         setUserRole(u?.role || null);
         setCurrentUserId(u?.id ? String(u.id) : null);
-      })
-      .catch(() => { });
-
+      }).catch(() => {});
     api.tasks.getTeamMembers()
       .then(res => setTeamMembers(res?.data || res || []))
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   // ── Load players ──────────────────────────────────────────────
@@ -515,7 +457,6 @@ export default function MissingPlayersPage() {
     setError(null);
     try {
       const res = await api.players.getMissingInfo(true);
-      // Backend already filters to players with ≥1 missing field
       const list = res?.data || res?.players || res || [];
       setPlayers(Array.isArray(list) ? list.filter(p => getMissingContactFields(p).length > 0) : []);
       setLastRefresh(new Date());
@@ -526,17 +467,16 @@ export default function MissingPlayersPage() {
     }
   }, []);
 
-  // ── Load MISSING_INFO tasks ───────────────────────────────────
+  // ── Load tasks ────────────────────────────────────────────────
   const loadTasks = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/tasks?taskType=MISSING_INFO`, { credentials: 'include', headers: authHeaders() });
       if (!res.ok) return;
       const data = await res.json();
-      const list = data?.data || [];
       const map = {};
-      list.forEach(task => { const pid = getTaskPlayerId(task); if (pid) map[pid] = task; });
+      (data?.data || []).forEach(task => { const pid = getTaskPlayerId(task); if (pid) map[pid] = task; });
       setTasks(map);
-    } catch { }
+    } catch {}
   }, []);
 
   useEffect(() => { loadPlayers(); loadTasks(); }, [loadPlayers, loadTasks, refreshKey]);
@@ -547,67 +487,44 @@ export default function MissingPlayersPage() {
     return () => clearInterval(id);
   }, [autoRefresh, loadPlayers, loadTasks]);
 
-  // ── SSE (real-time updates from task sync + player edits) ─────
+  // ── SSE ───────────────────────────────────────────────────────
   useEffect(() => {
     try {
       const es = api.tasks.connectSSE();
       sseRef.current = es;
-      const onUpdate = () => { loadPlayers(true); loadTasks(); };
       es.onmessage = e => {
         try {
           const { type, data } = JSON.parse(e.data);
           if (['task_created', 'task_updated', 'task_deleted'].includes(type)) {
-            // Optimistic task update in map
-            if (type === 'task_updated' && data) {
-              const pid = getTaskPlayerId(data);
-              if (pid) setTasks(prev => ({ ...prev, [pid]: data }));
-            }
-            if (type === 'task_deleted' && data?.id) {
-              setTasks(prev => {
-                const next = { ...prev };
-                Object.keys(next).forEach(k => { if (next[k]?.id === data.id) delete next[k]; });
-                return next;
-              });
-            }
+            if (type === 'task_updated' && data) { const pid = getTaskPlayerId(data); if (pid) setTasks(prev => ({ ...prev, [pid]: data })); }
+            if (type === 'task_deleted' && data?.id) { setTasks(prev => { const next = { ...prev }; Object.keys(next).forEach(k => { if (next[k]?.id === data.id) delete next[k]; }); return next; }); }
             loadTasks();
           }
-          if (type === 'player_updated') {
-            loadPlayers(true);
-          }
-        } catch { }
+          if (type === 'player_updated') loadPlayers(true);
+        } catch {}
       };
-      es.onerror = () => { };
-    } catch { }
+      es.onerror = () => {};
+    } catch {}
     return () => sseRef.current?.close();
   }, [loadPlayers, loadTasks]);
 
-  // ── ADMIN: inline assign ──────────────────────────────────────
+  // ── Actions ───────────────────────────────────────────────────
   const handleInlineAssign = useCallback(async (player, memberId) => {
-    setAssigningId(player.id);
-    setError(null);
+    setAssigningId(player.id); setError(null);
     try {
-      const res = await fetch(`${API_BASE}/players/${player.id}/assign-missing-info-task`, {
-        method: 'POST', credentials: 'include', headers: authHeaders(true),
-        body: JSON.stringify({ assignedToId: memberId ? parseInt(memberId, 10) : null, priority: 'HIGH' }),
-      });
+      const res = await fetch(`${API_BASE}/players/${player.id}/assign-missing-info-task`, { method: 'POST', credentials: 'include', headers: authHeaders(true), body: JSON.stringify({ assignedToId: memberId ? parseInt(memberId, 10) : null, priority: 'HIGH' }) });
       const data = await res.json();
       if (res.status === 409) { if (data.existingTaskId) await loadTasks(); return; }
       if (!res.ok) throw new Error(data.error || data.message || 'Failed to assign task');
       const task = data.data || data.task || data;
       const pid = getTaskPlayerId(task) || String(player.id);
       setTasks(prev => ({ ...prev, [pid]: task }));
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setAssigningId(null);
-    }
+    } catch (e) { setError(e.message); } finally { setAssigningId(null); }
   }, [loadTasks]);
 
-  // ── MEMBER: claim ─────────────────────────────────────────────
   const handleClaim = useCallback(async (player, task) => {
     if (!currentUserId) return;
-    setClaimingId(player.id);
-    setError(null);
+    setClaimingId(player.id); setError(null);
     try {
       if (task?.id) {
         const res = await fetch(`${API_BASE}/tasks/${task.id}/claim`, { method: 'POST', credentials: 'include', headers: authHeaders(true) });
@@ -616,10 +533,7 @@ export default function MissingPlayersPage() {
         const updated = { ...(data.data || data.task || data), assignToAll: false, assignedToId: parseInt(currentUserId) };
         setTasks(prev => ({ ...prev, [String(player.id)]: updated }));
       } else {
-        const res = await fetch(`${API_BASE}/players/${player.id}/assign-missing-info-task`, {
-          method: 'POST', credentials: 'include', headers: authHeaders(true),
-          body: JSON.stringify({ assignedToId: parseInt(currentUserId), priority: 'MEDIUM' }),
-        });
+        const res = await fetch(`${API_BASE}/players/${player.id}/assign-missing-info-task`, { method: 'POST', credentials: 'include', headers: authHeaders(true), body: JSON.stringify({ assignedToId: parseInt(currentUserId), priority: 'MEDIUM' }) });
         const data = await res.json();
         if (res.status === 409) { await loadTasks(); return; }
         if (!res.ok) throw new Error(data.error || data.message || 'Failed to claim');
@@ -628,48 +542,32 @@ export default function MissingPlayersPage() {
         setTasks(prev => ({ ...prev, [pid]: newTask }));
       }
       setTimeout(loadTasks, 1000);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setClaimingId(null);
-    }
+    } catch (e) { setError(e.message); } finally { setClaimingId(null); }
   }, [currentUserId, loadTasks]);
 
-  // ── Undo task completion ──────────────────────────────────────
   const handleUndoTask = useCallback(async (player, task) => {
     if (!task?.id) return;
-    setUndoingId(player.id);
-    setError(null);
+    setUndoingId(player.id); setError(null);
     try {
-      const res = await fetch(`${API_BASE}/tasks/${task.id}/undo-completion`, {
-        method: 'POST', credentials: 'include', headers: authHeaders(true),
-      });
+      const res = await fetch(`${API_BASE}/tasks/${task.id}/undo-completion`, { method: 'POST', credentials: 'include', headers: authHeaders(true) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to undo task');
       const updated = data.data || data.task || data;
       const pid = getTaskPlayerId(updated) || String(player.id);
       setTasks(prev => ({ ...prev, [pid]: updated }));
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setUndoingId(null);
-    }
+    } catch (e) { setError(e.message); } finally { setUndoingId(null); }
   }, []);
 
-  // ── Edit saved ────────────────────────────────────────────────
-  // Backend PATCH already syncs the task and broadcasts via SSE,
-  // so the task state updates automatically via the SSE listener above.
   const handleSaved = useCallback((updated) => {
     setEditTarget(null);
     setPlayers(prev => {
-      // If all fields now filled, remove from list
       const missing = getMissingContactFields(updated);
       if (missing.length === 0) return prev.filter(p => p.id !== updated.id);
       return prev.map(p => p.id !== updated.id ? p : { ...p, ...updated });
     });
   }, []);
 
-  // ── Stats (based on what's visible) ──────────────────────────
+  // ── Stats ─────────────────────────────────────────────────────
   const stats = {
     total: players.length,
     highCritical: players.filter(p => getMissingContactFields(p).length >= HIGH_CRITICAL_THRESHOLD).length,
@@ -680,18 +578,16 @@ export default function MissingPlayersPage() {
     unassigned: players.filter(p => !tasks[String(p.id)]).length,
   };
 
-  // ── Filtered list ─────────────────────────────────────────────
   const filtered = players.filter(p => {
     const missing = getMissingContactFields(p);
     const q = search.toLowerCase();
-    const matchSearch =
-      !q || p.name?.toLowerCase().includes(q) || p.username?.toLowerCase().includes(q);
+    const matchSearch = !q || p.name?.toLowerCase().includes(q) || p.username?.toLowerCase().includes(q);
     const matchFilter =
       filter === 'all' ? true :
-        filter === 'highcritical' ? missing.length >= HIGH_CRITICAL_THRESHOLD :
-          filter === 'critical' ? missing.length >= CRITICAL_THRESHOLD :
-            filter === 'unassigned' ? !tasks[String(p.id)] :
-              CONTACT_KEYS.includes(filter) ? missing.includes(filter) : true;
+      filter === 'highcritical' ? missing.length >= HIGH_CRITICAL_THRESHOLD :
+      filter === 'critical' ? missing.length >= CRITICAL_THRESHOLD :
+      filter === 'unassigned' ? !tasks[String(p.id)] :
+      CONTACT_KEYS.includes(filter) ? missing.includes(filter) : true;
     return matchSearch && matchFilter;
   });
 
@@ -699,188 +595,175 @@ export default function MissingPlayersPage() {
   const isMember = isMemberRole(userRole);
 
   const FILTERS = [
-    { id: 'all', label: 'All', count: stats.total },
-    { id: 'highcritical', label: '🔴 Highly Critical', count: stats.highCritical },
-    { id: 'critical', label: '🟠 Critical', count: stats.critical },
-    { id: 'snapchat', label: 'Snapchat', count: stats.misSnap },
-    { id: 'phone', label: 'Phone', count: stats.misPhone },
-    { id: 'email', label: 'Email', count: stats.misEmail },
-    { id: 'unassigned', label: 'Unassigned', count: stats.unassigned },
+    { id: 'all',         label: 'All',              count: stats.total },
+    { id: 'highcritical',label: '🔴 High Critical', count: stats.highCritical },
+    { id: 'critical',    label: '🟠 Critical',      count: stats.critical },
+    { id: 'snapchat',    label: 'Snapchat',          count: stats.misSnap },
+    { id: 'phone',       label: 'Phone',             count: stats.misPhone },
+    { id: 'email',       label: 'Email',             count: stats.misEmail },
+    { id: 'unassigned',  label: 'Unassigned',        count: stats.unassigned },
   ];
 
+  // ── Shift gate (matches PlaytimePage layout) ──────────────────
   if (!shiftActive) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <button onClick={() => navigate('/shifts')} style={{ alignSelf: "flex-start", padding: "9px 18px", background: "var(--color-background-info)", color: "var(--color-text-info)", border: "0.5px solid var(--color-border-info)", borderRadius: "var(--border-radius-md)", fontWeight: "500", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <button onClick={() => navigate('/shifts')}
+          style={{ alignSelf: 'flex-start', padding: '9px 18px', background: 'var(--color-background-info)', color: 'var(--color-text-info)', border: '0.5px solid var(--color-border-info)', borderRadius: 'var(--border-radius-md)', fontWeight: 500, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
           Start Shift
         </button>
-        <Card style={{ padding: "14px 16px", borderLeft: "3px solid var(--color-border-warning)", background: "var(--color-background-warning)" }}>
-          <p style={{ fontWeight: "500", color: "var(--color-text-warning)", margin: "0 0 2px", fontSize: "13px" }}>Shift required</p>
-          <p style={{ color: "var(--color-text-warning)", margin: 0, fontSize: "12px" }}>You must have an active shift to grant bonuses and view tasks.</p>
-        </Card>
-        <Card style={{ padding: "60px 24px", textAlign: "center" }}>
-          <div style={{ width: "48px", height: "48px", background: "var(--color-background-secondary)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
-            <Lock style={{ width: "20px", height: "20px", color: "var(--color-text-tertiary)" }} />
+        <div style={{ ...CARD_STYLE, padding: '14px 16px', borderLeft: '3px solid var(--color-border-warning)', background: 'var(--color-background-warning)' }}>
+          <p style={{ fontWeight: 500, color: 'var(--color-text-warning)', margin: '0 0 2px', fontSize: 13 }}>Shift required</p>
+          <p style={{ color: 'var(--color-text-warning)', margin: 0, fontSize: 12 }}>You must have an active shift to view tasks.</p>
+        </div>
+        <div style={{ ...CARD_STYLE, padding: '60px 24px', textAlign: 'center' }}>
+          <div style={{ width: 48, height: 48, background: 'var(--color-background-secondary)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+            <Lock style={{ width: 20, height: 20, color: 'var(--color-text-muted)' }} />
           </div>
-          <p style={{ margin: "0 0 4px", fontSize: "14px", fontWeight: "500", color: "var(--color-text-primary)" }}>Dashboard locked</p>
-          <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-tertiary)" }}>Go to Shifts and start your shift first.</p>
-        </Card>
+          <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 500, color: 'var(--color-text)' }}>Dashboard locked</p>
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-muted)' }}>Go to Shifts and start your shift first.</p>
+        </div>
       </div>
     );
   }
 
-
-
+  // ── Main render ───────────────────────────────────────────────
   return (
-    <div style={S.page}>
-      {/* Header */}
-      <div style={S.header}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={S.pageIcon}><AlertTriangle style={{
-            width: '30px',
-            height: '30px', color: '#dc2626'
-          }} /></div>
-          <div>
-            {/* <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0 }}>Missing Player Info</h1> */}
-            <p style={{ fontSize: 13, color: '#64748b', margin: '2px 0 0' }}>Players with incomplete contact details</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+      {/* ── Stat Strip (matches PlaytimePage) ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+        <StatCard label="Total (Missing Info)"  value={stats.total}       color="#64748b" bg="#f1f5f9"  border="#cbd5e1"  icon={Users} />
+        <StatCard label="Highly Critical (3+)"  value={stats.highCritical} color="#dc2626" bg="#fff1f2"  border="#fecdd3"  icon={AlertTriangle} />
+        <StatCard label="Critical (2+ missing)" value={stats.critical}    color="#f97316" bg="#fff7ed"  border="#fed7aa"  icon={AlertCircle} />
+        <StatCard label="Missing Snapchat"       value={stats.misSnap}     color="#eab308" bg="#fefce8"  border="#fde047"  icon={Camera} />
+        <StatCard label="Missing Phone"          value={stats.misPhone}    color="#8b5cf6" bg="#faf5ff"  border="#ddd6fe"  icon={Phone} />
+        <StatCard label="Unassigned Tasks"       value={stats.unassigned}  color="#0ea5e9" bg="#f0f9ff"  border="#bae6fd"  icon={ClipboardList} />
+      </div>
+
+      {/* ── Main Card ── */}
+      <div style={CARD_STYLE}>
+
+        {/* Toolbar (matches PlaytimePage toolbar exactly) */}
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+            <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--color-text)' }}>Missing Player Info</div>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 1 }}>
+              Players with incomplete contact details · 2 missing = Critical · 3+ = Highly Critical
+            </div>
           </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+
+          {/* Search */}
+          <div style={{ position: 'relative', flex: '0 0 auto' }}>
+            <Search style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--color-text-muted)', pointerEvents: 'none' }} />
+            <input type="text" placeholder="Search players…" value={search} onChange={e => setSearch(e.target.value)}
+              style={{ ...INPUT_STYLE, paddingLeft: 30, paddingRight: search ? 30 : 12, width: 175 }} />
+            {search && (
+              <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', display: 'flex' }}>
+                <X style={{ width: 13, height: 13 }} />
+              </button>
+            )}
+          </div>
+
+          {/* Filter dropdown */}
+          <div style={{ position: 'relative', flex: '0 0 auto' }}>
+            <select value={filter} onChange={e => setFilter(e.target.value)}
+              style={{ ...SELECT_STYLE, width: 160 }}>
+              {FILTERS.map(f => <option key={f.id} value={f.id}>{f.label}{f.count > 0 ? ` (${f.count})` : ''}</option>)}
+            </select>
+            <ChevronDown style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 12, height: 12, color: 'var(--color-text-muted)', pointerEvents: 'none' }} />
+          </div>
+
+          {/* Role badge */}
           {userRole && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 7, background: isAdmin ? '#fef3c7' : '#eff6ff', border: `1px solid ${isAdmin ? '#fde68a' : '#bfdbfe'}` }}>
-              <ShieldCheck style={{ width: 12, height: 12, color: isAdmin ? '#92400e' : '#1d4ed8' }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: isAdmin ? '#92400e' : '#1d4ed8' }}>{isAdmin ? 'Admin' : userRole} View</span>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--color-border)', background: isAdmin ? 'var(--color-background-warning)' : 'var(--color-background-info)', flexShrink: 0 }}>
+              <ShieldCheck style={{ width: 12, height: 12, color: isAdmin ? 'var(--amber)' : 'var(--brand)' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: isAdmin ? 'var(--amber)' : 'var(--brand)' }}>{isAdmin ? 'Admin' : userRole}</span>
             </div>
           )}
-          <div onClick={() => setAutoRefresh(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', borderRadius: 8, border: '1px solid #e2e8f0', cursor: 'pointer', background: autoRefresh ? '#dcfce7' : '#fff', userSelect: 'none' }}>
-            <div style={{ width: 7, height: 7, borderRadius: '50%', background: autoRefresh ? '#22c55e' : '#cbd5e1', boxShadow: autoRefresh ? '0 0 5px #22c55e' : 'none' }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: autoRefresh ? '#166534' : '#64748b' }}>Live {autoRefresh ? 'ON' : 'OFF'}</span>
+
+          {/* Live toggle */}
+          <div onClick={() => setAutoRefresh(v => !v)}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--color-border)', cursor: 'pointer', background: autoRefresh ? 'var(--color-background-success)' : 'var(--color-cards)', flexShrink: 0 }}>
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: autoRefresh ? '#22c55e' : 'var(--color-border)', boxShadow: autoRefresh ? '0 0 5px #22c55e' : 'none' }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: autoRefresh ? 'var(--success)' : 'var(--color-text-muted)' }}>Live {autoRefresh ? 'ON' : 'OFF'}</span>
           </div>
-          <button onClick={() => setRefreshKey(k => k + 1)} style={S.refreshBtn}>
-            <RefreshCw style={{ width: 13, height: 13, animation: loading ? 'spin 1s linear infinite' : 'none' }} /> Refresh
+
+          <button onClick={() => setRefreshKey(k => k + 1)} disabled={loading}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 10px', border: '1px solid var(--color-border)', borderRadius: 8, background: 'var(--color-cards)', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 600, flexShrink: 0, fontFamily: 'inherit' }}>
+            <RefreshCw style={{ width: 12, height: 12, animation: loading ? 'spin 1s linear infinite' : 'none' }} /> Refresh
           </button>
-          <span style={{ fontSize: 10, color: '#cbd5e1' }}>{lastRefresh.toLocaleTimeString()}</span>
-        </div>
-      </div>
 
-      {/* Stats */}
-      <div style={S.statsGrid}>
-        <StatCard label="Total (Missing Info)" value={stats.total} color="#64748b" bg="#f8fafc" icon={Users} />
-        <StatCard label="Highly Critical (3+)" value={stats.highCritical} color="#dc2626" bg="#fff1f2" icon={AlertTriangle} highlight={stats.highCritical > 0} />
-        <StatCard label="Critical (2+ missing)" value={stats.critical} color="#f97316" bg="#fff7ed" icon={AlertCircle} highlight={stats.critical > 0} />
-        <StatCard label="Missing Snapchat" value={stats.misSnap} color="#eab308" bg="#fefce8" icon={Camera} />
-        <StatCard label="Missing Phone" value={stats.misPhone} color="#8b5cf6" bg="#f5f3ff" icon={Phone} />
-        <StatCard label="Missing Email" value={stats.misEmail} color="#3b82f6" bg="#eff6ff" icon={Mail} />
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div style={{ padding: '10px 14px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: 8, fontSize: 13, color: '#991b1b', display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
-          <AlertCircle style={{ width: 14, height: 14, flexShrink: 0 }} />
-          {error}
-          <button onClick={() => setError(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#991b1b' }}><X style={{ width: 13, height: 13 }} /></button>
+          <span style={{ fontSize: 10, color: 'var(--color-text-muted)', flexShrink: 0 }}>{lastRefresh.toLocaleTimeString()}</span>
         </div>
-      )}
 
-      {/* Role hints */}
-      {isAdmin && (
-        <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, fontSize: 12, color: '#92400e', marginBottom: 10 }}>
-          💡 <strong>Admin:</strong> Assign players using the dropdown. Only the assigned member can edit that player's info. Use <strong>Undo</strong> to reopen completed tasks.
-        </div>
-      )}
-      {isMember && (
-        <div style={{ padding: '10px 14px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, fontSize: 12, color: '#0369a1', marginBottom: 10 }}>
-          💡 Click <strong>Claim This Player</strong> to take ownership — then you can edit their missing info. Saving auto-completes the task in your dashboard.
-        </div>
-      )}
-
-      {/* Search */}
-      <div style={{ position: 'relative', marginBottom: 10 }}>
-        <Search style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: '#94a3b8', pointerEvents: 'none' }} />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or username…"
-          style={{ width: '100%', padding: '11px 36px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
-          onFocus={e => e.target.style.borderColor = '#3b82f6'}
-          onBlur={e => e.target.style.borderColor = '#e2e8f0'}
-        />
-        {search && (
-          <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
-            <X style={{ width: 13, height: 13 }} />
-          </button>
+        {/* Role hint banners */}
+        {isAdmin && (
+          <div style={{ margin: '10px 18px 0', padding: '9px 14px', background: 'var(--color-background-warning)', border: '1px solid var(--color-border-warning)', borderRadius: 8, fontSize: 12, color: 'var(--amber)' }}>
+            💡 <strong>Admin:</strong> Use the dropdown on each card to assign players to members. Use <strong>Undo</strong> to reopen completed tasks.
+          </div>
         )}
+        {isMember && (
+          <div style={{ margin: '10px 18px 0', padding: '9px 14px', background: 'var(--color-background-info)', border: '1px solid var(--color-border-info)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-info)' }}>
+            💡 Click <strong>Claim This Player</strong> to take ownership — then you can edit their missing info.
+          </div>
+        )}
+
+        {/* Error */}
+        {error && (
+          <div style={{ margin: '10px 18px 0', padding: '10px 14px', background: 'var(--color-background-warning)', border: '1px solid var(--color-border-warning)', borderRadius: 8, fontSize: 13, color: 'var(--danger)', display: 'flex', gap: 8, alignItems: 'center' }}>
+            <AlertCircle style={{ width: 14, height: 14, flexShrink: 0 }} /> {error}
+            <button onClick={() => setError(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}><X style={{ width: 13, height: 13 }} /></button>
+          </div>
+        )}
+
+        {/* Count */}
+        <div style={{ padding: '10px 18px 0', fontSize: 12, color: 'var(--color-text-muted)' }}>
+          Showing {filtered.length} of {players.length} players with missing info
+          {filter !== 'all' && <span style={{ color: 'var(--danger)', marginLeft: 6 }}>• filtered</span>}
+        </div>
+
+        {/* Grid */}
+        <div style={{ padding: 18 }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid var(--color-border)', borderTopColor: 'var(--danger)', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+              <p style={{ color: 'var(--color-text-muted)', fontSize: 13, margin: 0 }}>Loading players…</p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-text-muted)', fontSize: 14 }}>
+              {search || filter !== 'all'
+                ? 'No players match your filters.'
+                : <><CheckCircle style={{ width: 34, height: 34, color: 'var(--success)', display: 'block', margin: '0 auto 10px' }} />All contact info is complete!</>
+              }
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
+              {filtered.map(player => (
+                <PlayerCard
+                  key={player.id}
+                  player={player}
+                  onEdit={setEditTarget}
+                  onInlineAssign={handleInlineAssign}
+                  onClaim={handleClaim}
+                  onUndoTask={handleUndoTask}
+                  userRole={userRole}
+                  task={tasks[String(player.id)] || null}
+                  claimingId={claimingId}
+                  assigningId={assigningId}
+                  undoingId={undoingId}
+                  teamMembers={teamMembers}
+                  currentUserId={currentUserId}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Filter tabs */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-        {FILTERS.map(f => (
-          <button key={f.id} onClick={() => setFilter(f.id)}
-            style={{ padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: filter === f.id ? 'rgb(14, 165, 233)' : '#f8fafc', color: filter === f.id ? '#fff' : '#64748b' }}>
-            {f.label}{f.count > 0 ? <span style={{ opacity: 0.65, marginLeft: 4 }}>{f.count}</span> : null}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>
-        Showing {filtered.length} of {players.length} players with missing info
-        {filter !== 'all' && <span style={{ color: '#ef4444', marginLeft: 6 }}>• filtered</span>}
-      </div>
-
-      {/* Grid */}
-      {loading ? (
-        <div style={S.empty}>
-          <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid #e2e8f0', borderTopColor: '#ef4444', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
-          Loading players…
-        </div>
-      ) : filtered.length === 0 ? (
-        <div style={S.empty}>
-          {search || filter !== 'all'
-            ? 'No players match your filters.'
-            : <><CheckCircle style={{ width: 34, height: 34, color: '#22c55e', display: 'block', margin: '0 auto 10px' }} />All contact info is complete!</>
-          }
-        </div>
-      ) : (
-        <div style={S.grid}>
-          {filtered.map(player => (
-            <PlayerCard
-              key={player.id}
-              player={player}
-              onEdit={setEditTarget}
-              onInlineAssign={handleInlineAssign}
-              onClaim={handleClaim}
-              onUndoTask={handleUndoTask}
-              userRole={userRole}
-              task={tasks[String(player.id)] || null}
-              claimingId={claimingId}
-              assigningId={assigningId}
-              undoingId={undoingId}
-              teamMembers={teamMembers}
-              currentUserId={currentUserId}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Modals */}
       {editTarget && <EditModal player={editTarget} onClose={() => setEditTarget(null)} onSaved={handleSaved} />}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
-
-// ─── Shared styles ──────────────────────────────────────────────
-const S = {
-  page: { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', margin: '0 auto' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 12 },
-  pageIcon: { width: 44, height: 44, borderRadius: 12, background: '#fff1f2', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  refreshBtn: { display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', border: '1px solid #e2e8f0', borderRadius: 10, background: '#fff', fontSize: 12, fontWeight: 600, color: '#374151', cursor: 'pointer', fontFamily: 'inherit' },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12, marginBottom: 20 },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 },
-  empty: { textAlign: 'center', padding: '60px 20px', color: '#94a3b8', fontSize: 14 },
-  btn: { fontSize: 11, fontWeight: 600, borderRadius: 6, padding: '4px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' },
-  iconBtn: { background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4 },
-  cancelBtn: { flex: 1, padding: 10, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', color: '#374151' },
-  primaryBtn: { flex: 2, padding: 10, border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' },
-  errBox: { padding: '10px 12px', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 8, fontSize: 12, color: '#dc2626' },
-  okBox: { padding: '10px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, fontSize: 12, color: '#16a34a' },
-};
-
