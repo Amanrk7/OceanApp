@@ -123,6 +123,8 @@ export default function BonusPage() {
     const [error, setError] = useState("");
 
     const [hover, setHover] = useState(false);
+    const [bonusPct, setBonusPct] = useState(50);   // configurable percentage
+    const [grantBoth, setGrantBoth] = useState(false); // default: referrer only
 
     const handleView = (player) => {
         setSelectedPlayer(player);
@@ -140,12 +142,24 @@ export default function BonusPage() {
     }, [player?.id]);
 
     // Auto-fill amount when a referral record is selected:
+    // useEffect(() => {
+    //     if (bonusType !== 'referral') return;
+    //     const rb = eligibleBonuses.find(e => e.id === selectedRbId);
+    //     if (rb) setAmount(rb.bonusAmount.toFixed(2));
+    //     else setAmount('');
+    // }, [selectedRbId, bonusType, eligibleBonuses]);
+
+    // Auto-fill amount based on selected record + percentage
     useEffect(() => {
         if (bonusType !== 'referral') return;
         const rb = eligibleBonuses.find(e => e.id === selectedRbId);
-        if (rb) setAmount(rb.bonusAmount.toFixed(2));
-        else setAmount('');
-    }, [selectedRbId, bonusType, eligibleBonuses]);
+        if (rb) {
+            const computed = parseFloat((rb.depositAmount * (bonusPct / 100)).toFixed(2));
+            setAmount(computed.toFixed(2));
+        } else {
+            setAmount('');
+        }
+    }, [selectedRbId, bonusType, eligibleBonuses, bonusPct]);
 
     // ── Load games ────────────────────────────────────────────────────────────
     const loadGames = useCallback(async (silent = false) => {
@@ -359,10 +373,17 @@ export default function BonusPage() {
             if (!selectedRbId) { setError('Please select a referral bonus record.'); return; }
             try {
                 setSubmitting(true);
+                // const result = await api.referralBonuses.claim(selectedRbId, {
+                //     side: referralSide,
+                //     gameId: selectedGameId,
+                //     notes: notes.trim() || undefined,
+                // });
                 const result = await api.referralBonuses.claim(selectedRbId, {
                     side: referralSide,
                     gameId: selectedGameId,
                     notes: notes.trim() || undefined,
+                    amount: parseFloat(amount),   // ← custom amount
+                    grantBoth,                    // ← grant mode
                 });
                 setSuccess(result.message);
                 setAmount(''); setNotes(''); setSelectedGameId(''); setSelectedRbId(null);
@@ -651,7 +672,7 @@ export default function BonusPage() {
 
                         {/* ── Referral target selector ── */}
                         {/* ── Referral Bonus: eligible records picker ── */}
-                        {bonusType === 'referral' && player && (
+                        {/* {bonusType === 'referral' && player && (
                             <div style={{ marginTop: '12px', padding: '14px 16px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px' }}>
                                 <div style={{ fontWeight: '700', fontSize: '13px', color: '#166534', marginBottom: '10px' }}>
                                     👤 Select Referral Bonus Record
@@ -702,6 +723,129 @@ export default function BonusPage() {
 
                                 <div style={{ marginTop: '10px', fontSize: '12px', color: '#166534', lineHeight: '1.6', padding: '8px 12px', background: '#bbf7d030', borderRadius: '6px', border: '1px solid #d1fae5' }}>
                                     💡 Amount is auto-filled from the deposit record. Game stock deducted <strong>1×</strong> per claim. Grant A and B separately — each is its own record.
+                                </div>
+                            </div>
+                        )} */}
+
+                        {bonusType === 'referral' && player && (
+                            <div style={{ marginTop: '12px', padding: '14px 16px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px' }}>
+                                <div style={{ fontWeight: '700', fontSize: '13px', color: '#166534', marginBottom: '10px' }}>
+                                    👤 Select Referral Bonus Record
+                                </div>
+
+                                {eligLoading && <div style={{ fontSize: '12px', color: '#94a3b8' }}>Loading eligible records…</div>}
+
+                                {!eligLoading && eligibleBonuses.length === 0 && (
+                                    <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '12px', color: '#92400e' }}>
+                                        ⚠ No unclaimed referral bonus eligibility found for {player.name}.
+                                        Record it first via the referral toggle during deposit on the Transactions page.
+                                    </div>
+                                )}
+
+                                {!eligLoading && eligibleBonuses.length > 0 && (
+                                    <>
+                                        {/* Record picker */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                                            {eligibleBonuses.map(rb => {
+                                                const isSelected = selectedRbId === rb.id;
+                                                const isBside = rb.side === 'referred';
+                                                const sideLabel = isBside
+                                                    ? `${player.name} was referred by ${rb.counterpartName}`
+                                                    : `${player.name} referred ${rb.counterpartName}`;
+                                                return (
+                                                    <div key={rb.id} onClick={() => { setSelectedRbId(rb.id); setReferralSide(rb.side); }}
+                                                        style={{ padding: '12px 14px', borderRadius: '8px', cursor: 'pointer', border: `2px solid ${isSelected ? '#16a34a' : '#d1fae5'}`, background: isSelected ? '#dcfce7' : '#f0fdf4', transition: 'all .15s' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                            <div>
+                                                                <div style={{ fontWeight: '700', fontSize: '12px', color: '#14532d' }}>
+                                                                    {isBside ? '🙋 Player bonus (B side)' : '👤 Referrer bonus (A side)'}
+                                                                </div>
+                                                                <div style={{ fontSize: '11px', color: '#166534', marginTop: '2px' }}>{sideLabel}</div>
+                                                                <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '4px' }}>
+                                                                    Deposit was <strong>${rb.depositAmount.toFixed(2)}</strong>
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
+                                                                <div style={{ fontSize: '11px', color: '#94a3b8' }}>stored amount</div>
+                                                                <div style={{ fontSize: '16px', fontWeight: '900', color: '#16a34a' }}>${rb.bonusAmount.toFixed(2)}</div>
+                                                                {isSelected && <CheckCircle style={{ width: '14px', height: '14px', color: '#16a34a', marginTop: '4px' }} />}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* ── Percentage + Grant Mode controls (only when a record is selected) ── */}
+                                        {selectedRbId && (() => {
+                                            const rb = eligibleBonuses.find(e => e.id === selectedRbId);
+                                            const depositAmt = rb?.depositAmount || 0;
+                                            const computedAmt = parseFloat((depositAmt * (bonusPct / 100)).toFixed(2));
+                                            return (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '14px', background: '#fff', border: '1px solid #d1fae5', borderRadius: '10px' }}>
+
+                                                    {/* Percentage input */}
+                                                    <div>
+                                                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                                                            Bonus % of deposit
+                                                            <span style={{ marginLeft: '6px', fontWeight: '400', textTransform: 'none', color: '#94a3b8' }}>
+                                                                — deposit was ${depositAmt.toFixed(2)}
+                                                            </span>
+                                                        </label>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            <input
+                                                                type="number" min="1" max="200" step="1"
+                                                                value={bonusPct}
+                                                                onChange={e => setBonusPct(Math.max(1, parseFloat(e.target.value) || 50))}
+                                                                style={{ width: '90px', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '15px', fontWeight: '700', color: '#16a34a', fontFamily: 'inherit', outline: 'none', textAlign: 'center' }}
+                                                            />
+                                                            <span style={{ fontSize: '13px', color: '#64748b' }}>%</span>
+                                                            <div style={{ display: 'flex', gap: '6px' }}>
+                                                                {[25, 50, 75, 100].map(p => (
+                                                                    <button key={p} type="button" onClick={() => setBonusPct(p)}
+                                                                        style={{ padding: '4px 10px', borderRadius: '6px', border: `1px solid ${bonusPct === p ? '#16a34a' : '#e2e8f0'}`, background: bonusPct === p ? '#f0fdf4' : '#fafafa', color: bonusPct === p ? '#16a34a' : '#64748b', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
+                                                                        {p}%
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                            <span style={{ fontSize: '16px', fontWeight: '900', color: '#16a34a', marginLeft: 'auto' }}>
+                                                                = ${computedAmt.toFixed(2)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Grant mode toggle */}
+                                                    <div>
+                                                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                                                            Grant to
+                                                        </label>
+                                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                                            {[
+                                                                { value: false, label: 'Referrer only (default)', sub: `Only ${rb?.counterpartName || 'referrer'} (A) receives $${computedAmt.toFixed(2)}`, emoji: '👤', color: '#0ea5e9', bg: '#f0f9ff', border: '#bae6fd', deduction: `${computedAmt.toFixed(2)} pts` },
+                                                                { value: true, label: 'Both A and B', sub: `Both ${rb?.counterpartName || 'referrer'} and ${player.name} each receive $${computedAmt.toFixed(2)}`, emoji: '👥', color: '#16a34a', bg: '#f0fdf4', border: '#86efac', deduction: `${(computedAmt * 2).toFixed(2)} pts` },
+                                                            ].map(opt => (
+                                                                <button key={String(opt.value)} type="button" onClick={() => setGrantBoth(opt.value)}
+                                                                    style={{ flex: 1, padding: '12px 14px', borderRadius: '10px', border: `2px solid ${grantBoth === opt.value ? opt.color : '#e2e8f0'}`, background: grantBoth === opt.value ? opt.bg : '#fafafa', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'all .15s' }}>
+                                                                    <div style={{ fontWeight: '700', fontSize: '13px', color: grantBoth === opt.value ? opt.color : '#374151', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                        <span>{opt.emoji}</span> {opt.label}
+                                                                        {grantBoth === opt.value && <CheckCircle style={{ width: '13px', height: '13px', marginLeft: 'auto' }} />}
+                                                                    </div>
+                                                                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', lineHeight: '1.4' }}>{opt.sub}</div>
+                                                                    <div style={{ marginTop: '6px', fontSize: '11px', fontWeight: '600', color: grantBoth === opt.value ? opt.color : '#94a3b8' }}>
+                                                                        Game deduction: {opt.deduction}
+                                                                    </div>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                    </>
+                                )}
+
+                                <div style={{ marginTop: '10px', fontSize: '12px', color: '#166534', lineHeight: '1.6', padding: '8px 12px', background: '#bbf7d030', borderRadius: '6px', border: '1px solid #d1fae5' }}>
+                                    💡 Default grants only to the <strong>referrer (A)</strong>. Switch to "Both" to also reward the referred player. Adjust the % to change the bonus amount.
                                 </div>
                             </div>
                         )}
