@@ -11,7 +11,9 @@ const storeKey = () => `s${_currentStoreId}`;
 
 export function setStoreId(id) {
   _currentStoreId = id;
+  localStorage.setItem('__obStoreId', String(id));
 }
+export function getStoreId() { return _currentStoreId; }
 // ═══════════════════════════════════════════════════════════════
 // CACHE MANAGEMENT
 // ═══════════════════════════════════════════════════════════════
