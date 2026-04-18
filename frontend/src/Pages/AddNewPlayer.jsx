@@ -418,7 +418,11 @@ export default function AddNewPlayer({ onIssueCreated }) {
     const { shiftActive } = useContext(ShiftStatusContext);
     const navigate = useNavigate();
 
-    const goToPlayers = () => { setAddPlayer(false); };
+    // const goToPlayers = () => { setAddPlayer(false); };
+    const goToPlayers = () => { 
+    setAddPlayer(false); 
+    navigate('/?page=players');
+};
     const goToDashboard = () => { setAddPlayer(false); navigate('/'); };
 
     const EMPTY = {
