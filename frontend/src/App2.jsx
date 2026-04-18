@@ -15,6 +15,7 @@ import Issues from "./Pages/Issues";
 import Transactions from "./Pages/Transactions";
 import { ExpensesPage } from './Pages/Expenses.jsx';
 import { ShiftsPage } from './Pages/Shifts.jsx';
+import ShiftStartGate from './Components/ShiftStartGate.jsx';
 import AddTransactionsPage from './Pages/AddTransaction.jsx';
 import AddBonusPage from "./Pages/AddBonus.jsx";
 import { BalancesPage } from './Pages/BalancesPage';
@@ -988,7 +989,12 @@ export default function App2() {
                             <Router>
                                 <Routes>
                                     <Route path="/"
-                                        element={user ? <AdminDashboard user={user} /> : <LoginPage />}
+                                        element={user ?
+                                            <ShiftStartGate>
+
+                                                <AdminDashboard user={user} />
+                                            </ShiftStartGate>
+                                            : <LoginPage />}
                                     />
                                     <Route path="/PlayerDashboard/:playerId"
                                         element={user ? <PlayerDashboardWithSidebar user={user} /> : <LoginPage />}
