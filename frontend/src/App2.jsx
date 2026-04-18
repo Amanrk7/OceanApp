@@ -8,7 +8,7 @@ import { CurrentUserProvider } from "./Context/currentUser.jsx";
 import { ThemeProvider, useTheme } from "./Context/Themecontext.jsx";
 import { App2Context, App2Provider } from "./Context/store2Switch.jsx";
 import AnalyticsDashboard from "./Pages/dashboard";
-import Players from "./Store2/Pages/Players.jsx";
+import Players from "./Pages/Players.jsx";
 import Attendance from "./Pages/Attendance";
 import Games from "./Pages/Games";
 import Issues from "./Pages/Issues";
