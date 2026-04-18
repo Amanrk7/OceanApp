@@ -505,7 +505,8 @@ export default function AddNewPlayer({ onIssueCreated }) {
             setSuccess(`✓ Player "${form.name}" created successfully!`);
             setTimeout(() => {
                 if (onIssueCreated) onIssueCreated();
-                setAddPlayer(false);
+                // setAddPlayer(false);
+                goToPlayers();
             }, 1400);
         } catch (err) {
             setError(err.message || 'Failed to create player. Please try again.');
