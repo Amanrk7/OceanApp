@@ -657,7 +657,16 @@ function AddTransactionsPage() {
                         <div style={{ position: "relative" }}>
                             <select value={form.gameId} onChange={e => set("gameId", e.target.value)} style={{ ...SELECT, borderColor: !form.gameId ? "#fca5a5" : "#e2e8f0" }}>
                                 <option value="">— Select a game —</option>
-                                {games.map(g => <option key={g.id} value={g.id} disabled={g.pointStock <= 0}>{g.name}  ({(g.pointStock ?? 0).toFixed(0)} pts){g.pointStock <= 0 ? " — EMPTY" : ""}</option>)}
+                                {games.map(g => {
+    const isDeficit = g.pointStock <= 0;
+    const disableForDeposit = isDeposit && isDeficit;
+    return (
+        <option key={g.id} value={g.id} disabled={disableForDeposit}>
+            {g.name}  ({(g.pointStock ?? 0).toFixed(0)} pts)
+            {isDeficit ? (isDeposit ? " — EMPTY" : " — DEFICIT") : ""}
+        </option>
+    );
+})}
                             </select>
                             <ChevronDown style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
                         </div>
