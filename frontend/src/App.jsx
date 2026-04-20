@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useCallback } from "react";
+import { useState, useEffect, useRef, useContext, useCallback } from "react";
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import { api } from "./api";
 import { AddPlayerProvider, AddPlayerContext } from "./Context/addPlayer.jsx";
@@ -40,6 +40,7 @@ import Playtimepage from "./Pages/Playtimepage.jsx";
 import PendingTransactionsBanner from "./Components/Pendingtransactionsbanner.jsx";
 import ProfitTakeoutsPage from "./Pages/ProfitTakeoutsPage.jsx";
 import AddNewPlayer from "./Pages/AddNewPlayer.jsx";
+import { setStoreId } from './api';
 
 // ─────────────────────────────────────────────────────────────────────────
 const SIDEBAR_W = 62;
@@ -79,19 +80,29 @@ const ADMIN_USERNAMES = ["admin", "superadmin"];
 // ══════════════════════════════════════════════════════════════
 // STORE SWITCHER — popover showing all accessible stores
 // ══════════════════════════════════════════════════════════════
+import { useState, useEffect, useRef } from "react";
+
 function StoreSwitcher({ user, onSwitch }) {
     const { currentStoreId } = useContext(App2Context);
     const [open, setOpen] = useState(false);
     const [switching, setSwitching] = useState(false);
     const [error, setError] = useState('');
+    const ref = useRef(null);
 
-    // Admins can access all stores; team members use storeAccess[]
     const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role);
-    const accessibleStores = isAdmin
-        ? [1, 2, 3]   // ← extend as you add stores
-        : (user?.storeAccess || [1]);
+    const accessibleStores = isAdmin ? [1, 2, 3] : (user?.storeAccess || [1]);
 
-    // Only show the switcher if the user has access to >1 store
+    // ── Close on outside click ───────────────────────────────
+    useEffect(() => {
+        if (!open) return;
+        const handle = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handle);
+        return () => document.removeEventListener('mousedown', handle);
+    }, [open]);
+
+    // Don't render if only 1 store
     if (accessibleStores.length <= 1) return null;
 
     const otherStores = accessibleStores.filter(id => id !== currentStoreId);
@@ -101,7 +112,7 @@ function StoreSwitcher({ user, onSwitch }) {
         setSwitching(true);
         setOpen(false);
         try {
-            // Auto-end the active shift on the current store before switching
+            // Auto-end active shift on current store for team members
             if (TEAM_ROLES.includes(user?.role)) {
                 const token = localStorage.getItem('authToken');
                 const activeRes = await fetch(
@@ -131,23 +142,22 @@ function StoreSwitcher({ user, onSwitch }) {
             }
             onSwitch(targetStoreId);
         } catch (err) {
-            setError('Store switch failed — please try again.');
+            setError('Store switch failed — try again.');
         } finally {
             setSwitching(false);
         }
     };
 
     return (
-        <div style={{ position: 'relative', width: '100%' }}>
-            {/* Trigger button */}
+        <div ref={ref} style={{ position: 'relative', width: '100%' }}>
+            {/* ── Trigger button ── */}
             <div
-                title={`Currently on Store ${currentStoreId} — click to switch`}
-                onMouseEnter={() => setOpen(true)}
-                onMouseLeave={() => setOpen(false)}
-                style={{ width: '100%' }}
+                className="ob-nav-item"
+                title={`Store ${currentStoreId} — click to switch`}
             >
                 <button
                     className="ob-navlink store-switch"
+                    onClick={() => setOpen(o => !o)}
                     disabled={switching}
                     aria-label="Switch store"
                     style={{ position: 'relative' }}
@@ -156,93 +166,101 @@ function StoreSwitcher({ user, onSwitch }) {
                         ? <span style={{ fontSize: 11, fontWeight: 800, color: '#fbbf24' }}>…</span>
                         : <HugeiconsIcon icon={ArrowDataTransferDiagonalIcon} size={18} />
                     }
-                    {/* Current store badge */}
                     <span className="ob-store-badge">{currentStoreId}</span>
                 </button>
-
-                {/* Popover */}
-                {open && (
-                    <div
-                        style={{
-                            position: 'fixed',
-                            left: SIDEBAR_W + 8,
-                            // vertically centered near the bottom of the sidebar
-                            bottom: 80,
-                            background: '#1e293b',
-                            border: '1px solid #334155',
-                            borderRadius: 10,
-                            padding: 8,
-                            minWidth: 160,
-                            boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
-                            zIndex: 10000,
-                        }}
-                    >
-                        <p style={{
-                            fontSize: 10, fontWeight: 700, color: '#475569',
-                            textTransform: 'uppercase', letterSpacing: '.6px',
-                            padding: '4px 8px 6px',
-                        }}>
-                            Switch Store
-                        </p>
-
-                        {/* Current store (non-clickable) */}
-                        <div style={{
-                            display: 'flex', alignItems: 'center', gap: 8,
-                            padding: '7px 10px', borderRadius: 7,
-                            background: 'rgba(14,165,233,0.12)',
-                            border: '1px solid rgba(14,165,233,0.25)',
-                            marginBottom: 4,
-                        }}>
-                            <span style={{
-                                width: 20, height: 20, borderRadius: 5,
-                                background: '#0ea5e9', color: '#fff',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 10, fontWeight: 800,
-                            }}>{currentStoreId}</span>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: '#38bdf8' }}>
-                                Store {currentStoreId}
-                            </span>
-                            <span style={{ fontSize: 10, color: '#38bdf8', marginLeft: 'auto' }}>● Active</span>
-                        </div>
-
-                        {/* Other accessible stores */}
-                        {otherStores.map(storeId => (
-                            <button
-                                key={storeId}
-                                onClick={() => handleSwitch(storeId)}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-                                    padding: '7px 10px', borderRadius: 7, border: 'none',
-                                    background: 'transparent', cursor: 'pointer',
-                                    transition: 'background .15s',
-                                    fontFamily: 'inherit',
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                            >
-                                <span style={{
-                                    width: 20, height: 20, borderRadius: 5,
-                                    background: '#334155', color: '#94a3b8',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: 10, fontWeight: 800,
-                                }}>{storeId}</span>
-                                <span style={{ fontSize: 13, fontWeight: 500, color: '#94a3b8' }}>
-                                    Store {storeId}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-                )}
             </div>
 
-            {error && (
+            {/* ── Popover ── */}
+            {open && (
                 <div style={{
-                    position: 'fixed', left: SIDEBAR_W + 8, bottom: 60,
-                    background: '#7f1d1d', color: '#fca5a5', border: '1px solid #dc2626',
-                    borderRadius: 8, padding: '8px 12px', fontSize: 12, zIndex: 10000,
-                    maxWidth: 200,
+                    position: 'fixed',
+                    left: SIDEBAR_W + 8,
+                    bottom: 80,
+                    background: '#1e293b',
+                    border: '1px solid #334155',
+                    borderRadius: 10,
+                    padding: 8,
+                    minWidth: 170,
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                    zIndex: 10000,
                 }}>
-                    {error}
+                    <p style={{
+                        fontSize: 10, fontWeight: 700, color: '#475569',
+                        textTransform: 'uppercase', letterSpacing: '.6px',
+                        padding: '4px 8px 8px',
+                    }}>
+                        Switch Store
+                    </p>
+
+                    {/* Current store — not clickable */}
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        padding: '8px 10px', borderRadius: 7,
+                        background: 'rgba(14,165,233,0.12)',
+                        border: '1px solid rgba(14,165,233,0.25)',
+                        marginBottom: 4,
+                    }}>
+                        <span style={{
+                            width: 22, height: 22, borderRadius: 6,
+                            background: '#0ea5e9', color: '#fff',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 11, fontWeight: 800, flexShrink: 0,
+                        }}>{currentStoreId}</span>
+                        <div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: '#38bdf8' }}>
+                                Store {currentStoreId}
+                            </div>
+                            <div style={{ fontSize: 10, color: '#38bdf8', opacity: 0.7 }}>
+                                Currently active
+                            </div>
+                        </div>
+                        <span style={{
+                            marginLeft: 'auto', width: 7, height: 7,
+                            borderRadius: '50%', background: '#22c55e', flexShrink: 0,
+                        }} />
+                    </div>
+
+                    {/* Other stores */}
+                    {otherStores.map(storeId => (
+                        <button
+                            key={storeId}
+                            onClick={() => handleSwitch(storeId)}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 8,
+                                width: '100%', padding: '8px 10px', borderRadius: 7,
+                                border: 'none', background: 'transparent',
+                                cursor: 'pointer', transition: 'background .15s',
+                                fontFamily: 'inherit',
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                            <span style={{
+                                width: 22, height: 22, borderRadius: 6,
+                                background: '#334155', color: '#94a3b8',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 11, fontWeight: 800, flexShrink: 0,
+                            }}>{storeId}</span>
+                            <div style={{ textAlign: 'left' }}>
+                                <div style={{ fontSize: 13, fontWeight: 500, color: '#94a3b8' }}>
+                                    Store {storeId}
+                                </div>
+                                <div style={{ fontSize: 10, color: '#64748b' }}>
+                                    Click to switch
+                                </div>
+                            </div>
+                        </button>
+                    ))}
+
+                    {error && (
+                        <div style={{
+                            marginTop: 6, padding: '6px 10px', borderRadius: 6,
+                            background: 'rgba(239,68,68,0.1)', color: '#f87171',
+                            fontSize: 11, border: '1px solid rgba(239,68,68,0.2)',
+                        }}>
+                            {error}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
@@ -587,12 +605,32 @@ function LoginPage() {
 // ROOT APP — single file, store-agnostic
 // ══════════════════════════════════════════════════════════════
 export default function App() {
+    const { setCurrentStoreId } = useContext(App2Context);
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // useEffect(() => {
+    //     api.auth.getUser().then(setUser).catch(() => setUser(null)).finally(() => setLoading(false));
+    // }, []);
+
     useEffect(() => {
-        api.auth.getUser().then(setUser).catch(() => setUser(null)).finally(() => setLoading(false));
-    }, []);
+        api.auth.getUser()
+            .then(u => {
+                setUser(u);
+
+                // ── Auto-set store based on user's primary storeAccess ──
+                // Team members: storeAccess[0] is their store (e.g. [2] → Store 2)
+                // Admins: storeAccess is irrelevant, they can switch freely
+                const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(u?.role);
+                if (!isAdmin && u?.storeAccess?.length > 0) {
+                    const primaryStore = u.storeAccess[0];
+                    setCurrentStoreId(primaryStore);
+                    setStoreId(primaryStore);
+                }
+            })
+            .catch(() => setUser(null))
+            .finally(() => setLoading(false));
+    }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
     if (loading) {
         return (
