@@ -1,162 +1,112 @@
 import { useState, useEffect, useContext } from 'react';
-import { api } from '../api';
 import { CurrentUserContext } from '../Context/currentUser';
 
 const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
 
 export default function ShiftStartGate({ children }) {
     const { usr } = useContext(CurrentUserContext);
-    const [status, setStatus] = useState('loading'); // loading | checking | show_modal | done
-    const [shiftStatus, setShiftStatus] = useState({}); // { 1: shift|null, 2: shift|null }
-    const [storeAccess, setStoreAccess] = useState([]);
-    const [selectedStores, setSelectedStores] = useState([]);
-    const [step, setStep] = useState('ask_stores'); // ask_stores | start_shifts | done
-    const [loading, setLoading] = useState(false);
-    const [games, setGames] = useState([]);
+    const [show, setShow] = useState(false);
+    const [animate, setAnimate] = useState(false);
 
     const isTeamMember = TEAM_ROLES.includes(usr?.role);
 
     useEffect(() => {
-        if (!usr || !isTeamMember) { setStatus('done'); return; }
-
-        (async () => {
-            try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/shifts/my-status`, {
-                    credentials: 'include',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-                        'X-Store-Id': '1'
-                    }
-                });
-                const data = await res.json();
-                setShiftStatus(data.data || {});
-                setStoreAccess(data.storeAccess || [1]);
-
-                // If all accessible stores already have active shifts → skip modal
-                const allActive = (data.storeAccess || [1]).every(s => data.data?.[s]?.isActive);
-                if (allActive) { setStatus('done'); return; }
-
-                setStatus('show_modal');
-            } catch {
-                setStatus('done'); // fail-open
-            }
-        })();
-    }, [usr?.id]);
-
-    const handleStoreSelection = async () => {
-        if (!selectedStores.length) return;
-        setLoading(true);
-        try {
-            for (const storeId of selectedStores) {
-                if (shiftStatus[storeId]?.isActive) continue; // already active
-                await fetch(`${import.meta.env.VITE_API_URL}/shifts/start`, {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-                        'X-Store-Id': String(storeId)
-                    },
-                    body: JSON.stringify({ teamRole: usr.role })
-                });
-            }
-            setStatus('done');
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
+        if (!usr || !isTeamMember) return;
+        // Show once per session per user
+        const key = `shift_notice_${usr.id}`;
+        if (!sessionStorage.getItem(key)) {
+            sessionStorage.setItem(key, '1');
+            setShow(true);
+            // Trigger entrance animation after mount
+            requestAnimationFrame(() => setAnimate(true));
         }
+    }, [usr?.id, isTeamMember]);
+
+    const dismiss = () => {
+        setAnimate(false);
+        setTimeout(() => setShow(false), 300);
     };
-
-    if (status === 'loading' || status === 'checking') {
-        return <>{children}</>;  // render app, modal appears on top
-    }
-
-    if (status === 'done') return <>{children}</>;
 
     return (
         <>
+            {show && (
+                <>
+                    {/* Spacer so content doesn't hide under the banner */}
+                    <div style={{ height: 52 }} />
+
+                    <div style={{
+                        position: 'fixed',
+                        top: 0, left: 0, right: 0,
+                        zIndex: 10001,
+                        background: 'linear-gradient(90deg, #0f172a 0%, #1e293b 100%)',
+                        borderBottom: '1px solid #334155',
+                        color: '#f1f5f9',
+                        padding: '0 20px',
+                        height: 52,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        boxShadow: '0 4px 24px rgba(0,0,0,0.35)',
+                        transform: animate ? 'translateY(0)' : 'translateY(-100%)',
+                        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    }}>
+                        {/* Icon */}
+                        <span style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            width: 28, height: 28, borderRadius: 8,
+                            background: 'rgba(14,165,233,0.15)',
+                            border: '1px solid rgba(14,165,233,0.3)',
+                            flexShrink: 0,
+                        }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg>
+                        </span>
+
+                        {/* Message */}
+                        <p style={{ flex: 1, fontSize: 13, lineHeight: 1.5, color: '#cbd5e1' }}>
+                            <span style={{ fontWeight: 700, color: '#38bdf8' }}>Shift Note — </span>
+                            End the current store's shift before starting another store's shift.
+                            {' '}Starting a new store's shift while one is active will{' '}
+                            <span style={{ fontWeight: 700, color: '#fbbf24' }}>
+                                automatically end the current shift.
+                            </span>
+                        </p>
+
+                        {/* Dismiss */}
+                        <button
+                            onClick={dismiss}
+                            style={{
+                                flexShrink: 0,
+                                padding: '5px 14px',
+                                borderRadius: 7,
+                                border: '1px solid #334155',
+                                background: 'rgba(255,255,255,0.06)',
+                                color: '#94a3b8',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                transition: 'all .15s',
+                                fontFamily: 'inherit',
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
+                                e.currentTarget.style.color = '#f1f5f9';
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                                e.currentTarget.style.color = '#94a3b8';
+                            }}
+                        >
+                            Got it ✕
+                        </button>
+                    </div>
+                </>
+            )}
             {children}
-            {/* Overlay */}
-            <div style={{
-                position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
-                zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                backdropFilter: 'blur(4px)'
-            }}>
-                <div style={{
-                    background: 'var(--color-cards)', border: '1px solid var(--color-border)',
-                    borderRadius: 16, padding: 32, width: 420, maxWidth: '90vw',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
-                }}>
-                    <h2 style={{ color: 'var(--color-text)', marginBottom: 8, fontSize: 18, fontWeight: 700 }}>
-                        🌅 Start Your Shift
-                    </h2>
-                    <p style={{ color: 'var(--color-text-muted)', fontSize: 14, marginBottom: 24 }}>
-                        Which store(s) are you working on today?
-                    </p>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-                        {storeAccess.map(storeId => {
-                            const isActive = shiftStatus[storeId]?.isActive;
-                            const isSelected = selectedStores.includes(storeId);
-                            return (
-                                <label key={storeId} style={{
-                                    display: 'flex', alignItems: 'center', gap: 12,
-                                    padding: '12px 16px', borderRadius: 10, cursor: isActive ? 'default' : 'pointer',
-                                    border: `1px solid ${isActive ? 'var(--success)' : isSelected ? 'var(--brand)' : 'var(--color-border)'}`,
-                                    background: isActive ? 'var(--color-background-success)' : isSelected ? 'rgba(14,165,233,0.08)' : 'var(--color-background-secondary)',
-                                    opacity: isActive ? 0.7 : 1
-                                }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={isActive || isSelected}
-                                        disabled={isActive}
-                                        onChange={e => {
-                                            if (isActive) return;
-                                            setSelectedStores(prev =>
-                                                e.target.checked ? [...prev, storeId] : prev.filter(s => s !== storeId)
-                                            );
-                                        }}
-                                    />
-                                    <div>
-                                        <div style={{ fontWeight: 600, color: 'var(--color-text)', fontSize: 14 }}>
-                                            Store {storeId}
-                                        </div>
-                                        <div style={{ fontSize: 12, color: isActive ? 'var(--success)' : 'var(--color-text-muted)' }}>
-                                            {isActive ? '✅ Shift already active' : 'Start new shift'}
-                                        </div>
-                                    </div>
-                                </label>
-                            );
-                        })}
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 10 }}>
-                        <button
-                            onClick={handleStoreSelection}
-                            disabled={loading || !selectedStores.length}
-                            style={{
-                                flex: 1, padding: '11px 18px', borderRadius: 10,
-                                background: 'var(--brand)', color: '#fff', border: 'none',
-                                fontWeight: 600, fontSize: 14, cursor: 'pointer', opacity: loading ? 0.6 : 1
-                            }}
-                        >
-                            {loading ? 'Starting...' : 'Start Shift'}
-                        </button>
-                        <button
-                            onClick={() => setStatus('done')}
-                            style={{
-                                padding: '11px 18px', borderRadius: 10,
-                                background: 'transparent', color: 'var(--color-text-muted)',
-                                border: '1px solid var(--color-border)', fontWeight: 600,
-                                fontSize: 14, cursor: 'pointer'
-                            }}
-                        >
-                            Skip
-                        </button>
-                    </div>
-                </div>
-            </div>
         </>
     );
 }
