@@ -80,7 +80,6 @@ const ADMIN_USERNAMES = ["admin", "superadmin"];
 // ══════════════════════════════════════════════════════════════
 // STORE SWITCHER — popover showing all accessible stores
 // ══════════════════════════════════════════════════════════════
-import { useState, useEffect, useRef } from "react";
 
 function StoreSwitcher({ user, onSwitch }) {
     const { currentStoreId } = useContext(App2Context);
