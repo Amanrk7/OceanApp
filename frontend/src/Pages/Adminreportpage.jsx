@@ -5,7 +5,7 @@ import {
     TrendingDown, Gift, CheckCircle, Clock, AlertCircle,
     Activity, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp,
     DollarSign, BarChart2, Target, Wallet, Gamepad2, MessageSquare,
-    ShieldCheck, AlertTriangle, ArrowLeft, Zap, Star, List, DollarSign, TrendingDown
+    ShieldCheck, AlertTriangle, ArrowLeft, Zap, Star, List, DollarSign
 } from "lucide-react";
 import { api } from "../api";
 
