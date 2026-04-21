@@ -487,6 +487,15 @@ export default function BonusPage() {
         );
     }
 
+    const matchUsedToday = (() => {
+        if (!player) return false;
+        const todayStr = new Date().toLocaleDateString("en-US", {
+            month: "short", day: "numeric", year: "numeric"
+        });
+        return (player.transactionHistory || []).some(
+            tx => tx.date === todayStr && tx.type === "Match Bonus"
+        );
+    })();
     // ─────────────────────────────────────────────────────────────────────────
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
@@ -578,40 +587,96 @@ export default function BonusPage() {
 
                             {/* Selected player info strip */}
                             {player && !eligLoading && (
-                                <div style={{ marginTop: "10px", padding: "12px 14px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontWeight: "700", fontSize: "14px", color: "#0f172a" }}>{player.name}</div>
-                                        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "1px" }}>
-                                            ID {player.id} · Balance: <strong style={{ color: "#10b981" }}>{fmt(player.balance)}</strong>
-                                        </div>
-                                    </div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, flexWrap: "wrap" }}>
-                                        {/* Streak badge */}
-                                        {streak > 0 ? (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "20px", fontSize: "13px", fontWeight: "700", color: "#92400e" }}>
-                                                🔥 {streak}-day streak
-                                                <span style={{ fontWeight: "500", color: "#b45309", fontSize: "11px" }}>= {fmt(streak * 1.0)} bonus</span>
+                                // <div style={{ marginTop: "10px", padding: "12px 14px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                                //     <div style={{ flex: 1, minWidth: 0 }}>
+                                //         <div style={{ fontWeight: "700", fontSize: "14px", color: "#0f172a" }}>{player.name}</div>
+                                //         <div style={{ fontSize: "12px", color: "#64748b", marginTop: "1px" }}>
+                                //             ID {player.id} · Balance: <strong style={{ color: "#10b981" }}>{fmt(player.balance)}</strong>
+                                //         </div>
+                                //     </div>
+                                //     <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, flexWrap: "wrap" }}>
+                                //         {/* Streak badge */}
+                                //         {streak > 0 ? (
+                                //             <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "20px", fontSize: "13px", fontWeight: "700", color: "#92400e" }}>
+                                //                 🔥 {streak}-day streak
+                                //                 <span style={{ fontWeight: "500", color: "#b45309", fontSize: "11px" }}>= {fmt(streak * 1.0)} bonus</span>
+                                //             </span>
+                                //         ) : (
+                                //             <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#94a3b8" }}>
+                                //                 🔥 No active streak
+                                //             </span>
+                                //         )}
+                                //         {/* Referrer badge */}
+                                //         {hasReferrer && (
+                                //             <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166534" }}>
+                                //                 👤 Referred by {referrerInfo?.name || `ID ${referrerInfo?.id || referrerInfo}`}
+                                //             </span>
+                                //         )}
+                                //         {!hasReferrer && (
+                                //             <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#94a3b8" }}>
+                                //                 👤 No referrer
+                                //             </span>
+                                //         )}
+                                //         <span style={{ padding: "5px 12px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "rgb(14, 165, 233)" }}>
+                                //             {player.tier}
+                                //         </span>
+                                //     </div>
+                                // </div>
+
+                                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, flexWrap: "wrap" }}>
+
+                                    {/* Streak */}
+                                    {streak > 0 ? (
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "20px", fontSize: "13px", fontWeight: "700", color: "#92400e" }}>
+                                            🔥 {streak}-day streak
+                                            <span style={{ fontWeight: "500", color: "#b45309", fontSize: "11px" }}>= {fmt(streak * 1.0)} bonus</span>
+                                        </span>
+                                    ) : (
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#94a3b8" }}>
+                                            🔥 No active streak
+                                        </span>
+                                    )}
+
+                                    {/* Match bonus eligibility */}
+                                    {matchUsedToday ? (
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "#92400e" }}>
+                                            ⚠ Match bonus used today
+                                        </span>
+                                    ) : (
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "#166634" }}>
+                                            ✓ Match bonus available
+                                        </span>
+                                    )}
+
+                                    {/* Referral bonus eligibility */}
+                                    {eligLoading ? (
+                                        <span style={{ padding: "5px 12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", color: "#94a3b8" }}>
+                                            Checking referral…
+                                        </span>
+                                    ) : hasReferrer ? (
+                                        eligibleBonuses.length > 0 ? (
+                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "#166634" }}>
+                                                👥 {eligibleBonuses.length} referral bonus{eligibleBonuses.length !== 1 ? "es" : ""} pending
+                                                <span style={{ fontWeight: "500", fontSize: "11px", color: "#4ade80" }}>
+                                                    · ${eligibleBonuses.reduce((s, b) => s + b.bonusAmount, 0).toFixed(2)}
+                                                </span>
                                             </span>
                                         ) : (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#94a3b8" }}>
-                                                🔥 No active streak
+                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#64748b" }}>
+                                                👥 Referred by {referrerInfo?.name || `ID ${referrerInfo?.id || referrerInfo}`}
+                                                <span style={{ fontWeight: "400", color: "#94a3b8", fontSize: "11px" }}>· no pending bonus</span>
                                             </span>
-                                        )}
-                                        {/* Referrer badge */}
-                                        {hasReferrer && (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166534" }}>
-                                                👤 Referred by {referrerInfo?.name || `ID ${referrerInfo?.id || referrerInfo}`}
-                                            </span>
-                                        )}
-                                        {!hasReferrer && (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#94a3b8" }}>
-                                                👤 No referrer
-                                            </span>
-                                        )}
-                                        <span style={{ padding: "5px 12px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "rgb(14, 165, 233)" }}>
-                                            {player.tier}
+                                        )
+                                    ) : (
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#94a3b8" }}>
+                                            👥 No referrer
                                         </span>
-                                    </div>
+                                    )}
+
+                                    {/* Tier */}
+                                    <span style={{ padding: "5px 12px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "rgb(14, 165, 233)" }}>
+                                        {player.tier}
+                                    </span>
                                 </div>
                             )}
                         </div>
