@@ -181,14 +181,23 @@ const rows = allIds.map(id => {
 
 // 2. Fix the Total Revenue calculation (WHERE THE ERROR IS LIKELY)
 // Ensure 'aggr' is defined in the arguments of the reduce function
+// const totalRevenue = transactions.reduce((aggr, tx) => {
+//     const amt = tx.amount || 0;
+//     const type = (tx.type || "").toUpperCase();
+//     if (type === "DEPOSIT") return aggr + amt;
+//     if (type === "WITHDRAWAL" || type === "CASHOUT") return aggr - amt;
+//     return aggr;
+// }, 0); // <--- Ensure 0 is the initial value
+
+// 'aggr' is now properly defined as the first argument
 const totalRevenue = transactions.reduce((aggr, tx) => {
     const amt = tx.amount || 0;
     const type = (tx.type || "").toUpperCase();
     if (type === "DEPOSIT") return aggr + amt;
     if (type === "WITHDRAWAL" || type === "CASHOUT") return aggr - amt;
     return aggr;
-}, 0); // <--- Ensure 0 is the initial value
-
+}, 0); 
+    
 // 3. Fix the Bonus calculation
 const totalBonuses = transactions.reduce((aggr, tx) => {
     const type = (tx.type || "").toUpperCase();
