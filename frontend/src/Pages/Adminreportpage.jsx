@@ -1721,20 +1721,37 @@ export default function AdminReportPage() {
     const [error, setError] = useState("");
     const [teamFilter, setTeamFilter] = useState("ALL");
 
-    const fetchReport = useCallback(async (date, role) => {
-        setLoading(true);
-        setError("");
-        try {
-            const opts = { date };
-            if (team.storeLabel && team.storeLabel !== "ALL") opts.teamRole = role;
-            const data = await api.reports.getDailyReport(opts);
-            setReport(data);
-        } catch (e) {
-            setError(e.message || "Failed to load report");
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    // const fetchReport = useCallback(async (date, role) => {
+    //     setLoading(true);
+    //     setError("");
+    //     try {
+    //         const opts = { date };
+    //         if (team.storeLabel && team.storeLabel !== "ALL") opts.teamRole = role;
+    //         const data = await api.reports.getDailyReport(opts);
+    //         setReport(data);
+    //     } catch (e) {
+    //         setError(e.message || "Failed to load report");
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // }, []);
+    // In AdminReportPage.jsx — fix fetchReport:
+const fetchReport = useCallback(async (date, role) => {
+    setLoading(true);
+    setError("");
+    try {
+        const opts = { date };
+        // ✅ was: if (team.storeLabel && team.storeLabel !== "ALL")
+        // `team` doesn't exist here — use the `role` param directly
+        if (role && role !== "ALL") opts.teamRole = role;
+        const data = await api.reports.getDailyReport(opts);
+        setReport(data);
+    } catch (e) {
+        setError(e.message || "Failed to load report");
+    } finally {
+        setLoading(false);
+    }
+}, []);
 
     useEffect(() => { fetchReport(selectedDate, teamFilter); }, [selectedDate, teamFilter, fetchReport]);
 
