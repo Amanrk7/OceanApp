@@ -1042,6 +1042,12 @@ function MemberShiftSection({ team }) {
     const [expanded, setExpanded] = useState(true);
     const rc = ROLE_COLORS[team.role] || ROLE_COLORS.TEAM1;
 
+    // const memberName = shift.displayMember?.name || "Unassigned";
+    const memberName = team.member?.name 
+  || team.shifts[0]?.displayMember?.name 
+  || team.shifts[0]?.checkin?.user?.name
+  || "Unassigned";
+    
     const aggr = team.shifts.reduce((acc, s) => {
         const st = s.stats || {};
         acc.deposits += st.totalDeposits || 0;
@@ -1055,7 +1061,7 @@ function MemberShiftSection({ team }) {
         return acc;
     }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, txns: 0, tasks: 0, players: 0, duration: 0 });
 
-    const memberName = shift.displayMember?.name || "Unassigned";
+    
 
     return (
         <div style={{ ...CARD, overflow: "hidden" }}>
