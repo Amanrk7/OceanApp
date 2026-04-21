@@ -701,6 +701,9 @@ export const referralBonusAPI = {
       body: JSON.stringify({ side, gameId, notes, amount, grantBoth }),
     }),
   getLedger: () => fetchAPI('/referral-bonuses'),
+  // ── NEW: cancel a pending referral bonus eligibility record ──
+    cancel: (rbId) =>
+        fetchAPI(`/referral-bonuses/${rbId}`, { method: 'DELETE' }),
 };
 
 export const profitTakeoutsAPI = {
