@@ -880,6 +880,44 @@ function AddNewPlayerWithSidebar({ user }) {
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// SHIFTS WITH SIDEBAR
+// ══════════════════════════════════════════════════════════════════════════
+function ShiftsWithSidebar({ user }) {
+  const { setUsr } = useContext(CurrentUserContext);
+  setUsr(user);
+  const navigate = useNavigate();
+  const { setIsStore2 } = useContext(App2Context);
+  const [loading, setLoading] = useState(false);
+
+  const handleLogout = async () => {
+    try { setLoading(true); await api.auth.logout(); window.location.reload(); }
+    catch { } finally { setLoading(false); }
+  };
+
+  return (
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--color-bg)", width: "100vw" }}>
+      <Sidebar
+        user={user}
+        activePage="shifts"
+        onNavigate={(id) => navigate(`/?page=${id}`)}
+        onLogout={handleLogout}
+        onStoreSwitch={() => setIsStore2(false)}
+        storeSwitchLabel="Switch to Store 1"
+        storeSwitchNum="1"
+      />
+      <main className="ob-main">
+        <div className="ob-container">
+          <div className="ob-header">
+            <h1>Shifts</h1>
+          </div>
+          <ShiftsPage />
+        </div>
+      </main>
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════
 // LOGIN PAGE
 // ══════════════════════════════════════════════════════════════
@@ -1009,6 +1047,9 @@ export default function App() {
                   <Route path="/PlayerDashboard/:playerId" element={
                     user ? <PlayerDashboardWithSidebar user={user} /> : <LoginPage />
                   } />
+                  <Route path="/shifts"
+                    element={user ? <ShiftsWithSidebar user={user} /> : <LoginPage />}
+                  />
                   <Route path="/addNewPlayer" element={
                     user ? <AddNewPlayerWithSidebar user={user} /> : <LoginPage />
                   } />
