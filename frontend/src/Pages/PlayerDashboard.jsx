@@ -741,6 +741,8 @@ export default function PlayerDashboard() {
     const [savedFlash, setSavedFlash] = useState(false);
     const [lastUpdated, setLastUpdated] = useState(null);
     const [referralBannerDismissed, setReferralBannerDismissed] = useState(false);
+    const [cancellingBonusId, setCancellingBonusId] = useState(null);
+    const [cancelError, setCancelError] = useState('');
 
     const loadPlayer = useCallback(async (isInitial = false) => {
         if (!playerId) return;
@@ -869,6 +871,27 @@ export default function PlayerDashboard() {
         { key: 'cashappTag', label: 'Cash App', emoji: '💚', prefix: '$', urlFn: (v) => `https://cash.app/${v.startsWith('$') ? v : '$' + v}` },
         { key: 'paypalEmail', label: 'PayPal', emoji: '🔵', prefix: '', urlFn: (v) => `https://paypal.com/paypalme/${v}` },
     ];
+
+    // Split eligible bonuses by this player's role in each record
+    // side === 'referrer' → this player IS Player A (will receive a bonus)
+    // side === 'referred' → this player IS Player B (was referred, has a pending bonus)
+    const bonusesAsReferrer = eligibleBonuses.filter(rb => rb.side === 'referrer');
+    const bonusesAsReferred = eligibleBonuses.filter(rb => rb.side === 'referred');
+
+    const handleCancelReferralBonus = async (rbId) => {
+        setCancellingBonusId(rbId);
+        setCancelError('');
+        try {
+            await api.referralBonuses.cancel(rbId);
+            // Refresh eligible bonuses list
+            const r = await api.referralBonuses.getEligible(parseInt(playerId));
+            setEligibleBonuses(r?.data || []);
+            setCancellingBonusId(null);
+        } catch (err) {
+            setCancelError(err.message || 'Failed to cancel referral bonus.');
+            setCancellingBonusId(null);
+        }
+    };
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1650px', margin: '0 auto', width: '100%' }}>
@@ -1049,162 +1072,433 @@ export default function PlayerDashboard() {
                 </div>
             )} */}
 
-            {player.referredBy && !referralBannerDismissed && (
-                <div style={{
-                    ...card({ padding: "20px 24px" }),
-                    border: eligibleBonuses.length > 0
-                        ? "1.5px solid #86efac"
-                        : "1px solid #e2e8f0",
-                }}>
-                    {/* Header */}
-                    <div style={{
-                        display: "flex", alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: "14px", paddingBottom: "10px",
-                        borderBottom: `1px solid ${eligibleBonuses.length > 0 ? "#d1fae5" : C.border}`,
-                    }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <p style={{ margin: 0, fontSize: "12px", fontWeight: "800", color: eligibleBonuses.length > 0 ? "#16a34a" : C.gray, textTransform: "uppercase", letterSpacing: "0.6px" }}>
-                                🎯 Referral
-                            </p>
-                            {eligibleBonuses.length > 0 && (
-                                <span style={{ padding: "1px 8px", background: "#dcfce7", color: "#16a34a", borderRadius: "10px", fontSize: "11px", fontWeight: "700" }}>
-                                    {eligibleBonuses.length} bonus{eligibleBonuses.length !== 1 ? "es" : ""} pending
-                                </span>
-                            )}
-                        </div>
-                        {/* Dismiss button */}
-                        <button
-                            onClick={() => setReferralBannerDismissed(true)}
-                            style={{
-                                background: "none", border: "1px solid #e2e8f0", borderRadius: "6px",
-                                padding: "3px 10px", cursor: "pointer", fontSize: "11px",
-                                fontWeight: "600", color: "#64748b", fontFamily: "inherit",
-                                display: "flex", alignItems: "center", gap: "4px",
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.borderColor = "#ef4444"; e.currentTarget.style.color = "#ef4444"; }}
-                            onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.color = "#64748b"; }}
-                        >
-                            ✕ Dismiss
-                        </button>
-                    </div>
 
-                    {/* Referred-by relationship */}
-                    <div style={{
-                        display: "flex", alignItems: "center", gap: "10px",
-                        padding: "12px 14px", background: "#f8fafc",
-                        border: "1px solid #e2e8f0", borderRadius: "10px",
-                        marginBottom: eligibleBonuses.length > 0 ? "12px" : 0,
-                    }}>
-                        <span style={{ fontSize: "16px" }}>👤</span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: "700", fontSize: "13px", color: C.slate }}>
-                                {player.name} was referred by{" "}
-                                <span
-                                    onClick={() => navigate(`/playerDashboard/${player.referredBy.id}`)}
-                                    style={{ color: C.sky, cursor: "pointer", textDecoration: "underline" }}
-                                >
-                                    {player.referredBy.name || `ID ${player.referredBy.id}`}
-                                </span>
-                            </div>
-                            <div style={{ fontSize: "12px", color: C.gray, marginTop: "2px" }}>
-                                @{player.referredBy.username}
-                            </div>
-                        </div>
-                        {eligLoading ? (
-                            <div style={{ fontSize: "11px", color: C.grayLt }}>Checking…</div>
-                        ) : (
-                            <button
-                                onClick={() => navigate("/?page=addBonus")}
-                                style={{
-                                    padding: "6px 14px", borderRadius: "8px", cursor: "pointer",
-                                    fontFamily: "inherit", fontWeight: "700", fontSize: "12px",
-                                    border: eligibleBonuses.length > 0
-                                        ? "1px solid #86efac"
-                                        : "1px solid #e2e8f0",
-                                    background: eligibleBonuses.length > 0 ? "#f0fdf4" : "#f8fafc",
-                                    color: eligibleBonuses.length > 0 ? "#16a34a" : C.gray,
-                                    whiteSpace: "nowrap",
-                                }}
-                            >
-                                {eligibleBonuses.length > 0 ? "Grant bonus →" : "Bonus page →"}
-                            </button>
-                        )}
-                    </div>
+            {(bonusesAsReferrer.length > 0 || player.referredBy || (eligLoading && (player.referralsList?.length > 0 || player.referredBy))) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-                    {/* Pending bonus records (compact) */}
-                    {!eligLoading && eligibleBonuses.length > 0 && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                            {eligibleBonuses.map(rb => {
-                                const isBside = rb.side === "referred";
-                                return (
-                                    <div key={rb.id} style={{
-                                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                                        padding: "12px 14px", background: "#f0fdf4",
-                                        border: "1px solid #86efac", borderRadius: "10px",
-                                        flexWrap: "wrap", gap: "10px",
-                                    }}>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontWeight: "700", fontSize: "12px", color: "#166534" }}>
-                                                {isBside ? "🙋 Player's bonus (B)" : "👤 Referrer's bonus (A)"}
-                                            </div>
-                                            <div style={{ fontSize: "11px", color: "#16a34a", marginTop: "2px" }}>
-                                                {isBside
-                                                    ? `${player.name} was referred by ${rb.counterpartName}`
-                                                    : `${player.name} referred ${rb.counterpartName}`}
-                                                {" · "}
-                                                Based on ${rb.depositAmount.toFixed(2)} deposit
-                                            </div>
-                                        </div>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-                                            <div style={{ textAlign: "right" }}>
-                                                <div style={{ fontSize: "18px", fontWeight: "900", color: "#16a34a" }}>
-                                                    +${rb.bonusAmount.toFixed(2)}
-                                                </div>
-                                                <div style={{ fontSize: "10px", color: "#4ade80" }}>eligible</div>
-                                            </div>
-                                            <button
-                                                onClick={() => navigate("/?page=addBonus")}
-                                                style={{
-                                                    padding: "5px 12px", background: "#dcfce7",
-                                                    border: "1px solid #86efac", borderRadius: "6px",
-                                                    color: "#166634", fontWeight: "700", fontSize: "11px",
-                                                    cursor: "pointer", fontFamily: "inherit",
-                                                }}
-                                            >
-                                                Grant →
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                    {/* ─── SECTION A: This player is the REFERRER ─────────────────────────── */}
+                    {(bonusesAsReferrer.length > 0 || (eligLoading && player.referralsList?.length > 0)) && (
+                        <div style={{
+                            ...card({ padding: '20px 24px' }),
+                            border: bonusesAsReferrer.length > 0 ? '1.5px solid #86efac' : `1px solid ${C.border}`,
+                        }}>
+                            {/* Header */}
                             <div style={{
-                                padding: "8px 12px", background: "#bbf7d030",
-                                border: "1px solid #d1fae5", borderRadius: "8px",
-                                fontSize: "11px", color: "#166634", lineHeight: "1.6",
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                marginBottom: '14px', paddingBottom: '10px',
+                                borderBottom: `1px solid ${bonusesAsReferrer.length > 0 ? '#d1fae5' : C.border}`,
                             }}>
-                                💡 Go to the <strong>Bonus page</strong>, search for{" "}
-                                <strong>{player.name}</strong>, and grant each record.
-                                A-side (referrer) and B-side (referred) are granted separately.
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    {/* Blue [A] badge */}
+                                    <span style={{
+                                        padding: '2px 8px', borderRadius: '5px', fontSize: '11px',
+                                        fontWeight: '800', background: '#eff6ff',
+                                        border: '1px solid #bfdbfe', color: '#1d4ed8',
+                                    }}>A</span>
+                                    <p style={{
+                                        margin: 0, fontSize: '12px', fontWeight: '800',
+                                        color: bonusesAsReferrer.length > 0 ? '#16a34a' : C.gray,
+                                        textTransform: 'uppercase', letterSpacing: '0.6px',
+                                    }}>
+                                        Referral Bonuses — You as Referrer
+                                    </p>
+                                    {bonusesAsReferrer.length > 0 && (
+                                        <span style={{
+                                            padding: '1px 8px', background: '#dcfce7',
+                                            color: '#16a34a', borderRadius: '10px',
+                                            fontSize: '11px', fontWeight: '700',
+                                        }}>
+                                            {bonusesAsReferrer.length} pending
+                                        </span>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => navigate('/?page=addBonus')}
+                                    style={{
+                                        padding: '6px 14px', borderRadius: '8px', cursor: 'pointer',
+                                        fontFamily: 'inherit', fontWeight: '700', fontSize: '12px',
+                                        border: bonusesAsReferrer.length > 0 ? '1px solid #86efac' : `1px solid ${C.border}`,
+                                        background: bonusesAsReferrer.length > 0 ? '#f0fdf4' : C.bg,
+                                        color: bonusesAsReferrer.length > 0 ? '#16a34a' : C.gray,
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    {bonusesAsReferrer.length > 0 ? 'Grant on Bonus page →' : 'Bonus page →'}
+                                </button>
                             </div>
+
+                            {/* Info line */}
+                            <div style={{
+                                fontSize: '12px', color: C.gray, marginBottom: '12px',
+                                padding: '8px 12px', background: '#f0f9ff',
+                                border: '1px solid #bae6fd', borderRadius: '8px',
+                            }}>
+                                When players you referred make deposits, you earn <strong>50% of their deposit</strong> as a referral bonus.
+                                Each pending record below is ready to be granted.
+                            </div>
+
+                            {eligLoading && (
+                                <div style={{ fontSize: '12px', color: C.grayLt, padding: '8px 0' }}>
+                                    Checking for pending bonuses…
+                                </div>
+                            )}
+
+                            {!eligLoading && bonusesAsReferrer.length === 0 && (
+                                <div style={{
+                                    padding: '14px 16px', background: C.bg,
+                                    border: `1px solid ${C.border}`, borderRadius: '10px',
+                                    fontSize: '12px', color: C.grayLt, textAlign: 'center',
+                                }}>
+                                    No pending referral bonuses at the moment.
+                                    They appear here when a player you referred makes a deposit.
+                                </div>
+                            )}
+
+                            {!eligLoading && bonusesAsReferrer.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {bonusesAsReferrer.map(rb => (
+                                        <div key={rb.id} style={{
+                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                            padding: '13px 16px', background: '#f0fdf4',
+                                            border: '1px solid #86efac', borderRadius: '10px',
+                                            flexWrap: 'wrap', gap: '10px',
+                                        }}>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{
+                                                    fontWeight: '700', fontSize: '13px', color: '#166534',
+                                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                                }}>
+                                                    <span style={{
+                                                        padding: '1px 6px', borderRadius: '4px', fontSize: '10px',
+                                                        fontWeight: '800', background: '#eff6ff',
+                                                        border: '1px solid #bfdbfe', color: '#1d4ed8',
+                                                    }}>A</span>
+                                                    You referred {rb.counterpartName}
+                                                    <span style={{
+                                                        padding: '1px 6px', borderRadius: '4px', fontSize: '10px',
+                                                        fontWeight: '800', background: '#dcfce7',
+                                                        border: '1px solid #86efac', color: '#166534',
+                                                    }}>B</span>
+                                                </div>
+                                                <div style={{ fontSize: '11px', color: '#16a34a', marginTop: '3px' }}>
+                                                    {rb.counterpartName} deposited <strong>${rb.depositAmount.toFixed(2)}</strong>
+                                                    {' '}→ your share is <strong>50% = ${rb.bonusAmount.toFixed(2)}</strong>
+                                                </div>
+                                                <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '2px' }}>
+                                                    Recorded {new Date(rb.createdAt).toLocaleDateString('en-US', {
+                                                        month: 'short', day: 'numeric', year: 'numeric'
+                                                    })}
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ fontSize: '22px', fontWeight: '900', color: '#16a34a' }}>
+                                                        +${rb.bonusAmount.toFixed(2)}
+                                                    </div>
+                                                    <div style={{ fontSize: '10px', color: '#4ade80' }}>for you (A)</div>
+                                                </div>
+                                                <button
+                                                    onClick={() => navigate('/?page=addBonus')}
+                                                    style={{
+                                                        padding: '7px 14px', background: '#16a34a',
+                                                        border: 'none', borderRadius: '8px',
+                                                        color: '#fff', fontWeight: '700', fontSize: '12px',
+                                                        cursor: 'pointer', fontFamily: 'inherit',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
+                                                >
+                                                    Grant →
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <div style={{
+                                        padding: '8px 12px', background: '#bbf7d030',
+                                        border: '1px solid #d1fae5', borderRadius: '8px',
+                                        fontSize: '11px', color: '#166634',
+                                    }}>
+                                        💡 Go to the <strong>Bonus page</strong>, search for{' '}
+                                        <strong>{player.name}</strong>, select Referral Bonus and grant.
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {/* No pending — show quiet state */}
-                    {!eligLoading && eligibleBonuses.length === 0 && (
-                        <div style={{ fontSize: "12px", color: C.grayLt, marginTop: "4px" }}>
-                            No pending referral bonuses. Record eligibility during a deposit on the{" "}
-                            <span
-                                onClick={() => navigate("/?page=addTransactions")}
-                                style={{ color: C.sky, cursor: "pointer", textDecoration: "underline" }}
-                            >
-                                Transactions page
-                            </span>
-                            .
+
+                    {/* ─── SECTION B: This player WAS REFERRED (they are Player B) ──────────── */}
+                    {player.referredBy && (
+                        <div style={{
+                            ...card({ padding: '20px 24px' }),
+                            border: bonusesAsReferred.length > 0
+                                ? '1.5px solid #86efac'
+                                : `1px solid ${C.border}`,
+                        }}>
+                            {/* Header */}
+                            <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                marginBottom: '14px', paddingBottom: '10px',
+                                borderBottom: `1px solid ${bonusesAsReferred.length > 0 ? '#d1fae5' : C.border}`,
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{
+                                        padding: '2px 8px', borderRadius: '5px', fontSize: '11px',
+                                        fontWeight: '800', background: '#dcfce7',
+                                        border: '1px solid #86efac', color: '#166534',
+                                    }}>B</span>
+                                    <p style={{
+                                        margin: 0, fontSize: '12px', fontWeight: '800',
+                                        color: bonusesAsReferred.length > 0 ? '#16a34a' : C.gray,
+                                        textTransform: 'uppercase', letterSpacing: '0.6px',
+                                    }}>
+                                        Referred Player
+                                    </p>
+                                    {bonusesAsReferred.length > 0 && (
+                                        <span style={{
+                                            padding: '1px 8px', background: '#dcfce7',
+                                            color: '#16a34a', borderRadius: '10px',
+                                            fontSize: '11px', fontWeight: '700',
+                                        }}>
+                                            {bonusesAsReferred.length} bonus{bonusesAsReferred.length !== 1 ? 'es' : ''} pending
+                                        </span>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => navigate('/?page=addBonus')}
+                                    style={{
+                                        padding: '6px 14px', borderRadius: '8px', cursor: 'pointer',
+                                        fontFamily: 'inherit', fontWeight: '700', fontSize: '12px',
+                                        border: bonusesAsReferred.length > 0 ? '1px solid #86efac' : `1px solid ${C.border}`,
+                                        background: bonusesAsReferred.length > 0 ? '#f0fdf4' : C.bg,
+                                        color: bonusesAsReferred.length > 0 ? '#16a34a' : C.gray,
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    Bonus page →
+                                </button>
+                            </div>
+
+                            {/* Referred-by relationship row */}
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: '10px',
+                                padding: '10px 14px', background: '#f8fafc',
+                                border: `1px solid ${C.border}`, borderRadius: '10px',
+                                marginBottom: '14px',
+                            }}>
+                                <span style={{ fontSize: '15px' }}>👤</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontWeight: '700', fontSize: '13px', color: C.slate }}>
+                                        <span style={{
+                                            padding: '1px 6px', borderRadius: '4px', fontSize: '10px',
+                                            fontWeight: '800', background: '#dcfce7',
+                                            border: '1px solid #86efac', color: '#166534',
+                                            marginRight: '6px',
+                                        }}>B</span>
+                                        {player.name} was referred by{' '}
+                                        <span
+                                            onClick={() => navigate(`/playerDashboard/${player.referredBy.id}`)}
+                                            style={{
+                                                color: C.sky, cursor: 'pointer', textDecoration: 'underline',
+                                                fontWeight: '700',
+                                            }}
+                                        >
+                                            {player.referredBy.name || `ID ${player.referredBy.id}`}
+                                        </span>
+                                        <span style={{
+                                            padding: '1px 6px', borderRadius: '4px', fontSize: '10px',
+                                            fontWeight: '800', background: '#eff6ff',
+                                            border: '1px solid #bfdbfe', color: '#1d4ed8',
+                                            marginLeft: '6px',
+                                        }}>A</span>
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: C.grayLt, marginTop: '2px' }}>
+                                        @{player.referredBy.username}
+                                        {' · '}When this player deposits, Player A earns 50% as a referral bonus.
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Cancel error */}
+                            {cancelError && (
+                                <div style={{
+                                    padding: '8px 12px', marginBottom: '10px',
+                                    background: '#fee2e2', border: '1px solid #fca5a5',
+                                    borderRadius: '8px', fontSize: '12px', color: '#991b1b',
+                                }}>
+                                    ⚠ {cancelError}
+                                </div>
+                            )}
+
+                            {eligLoading && (
+                                <div style={{ fontSize: '12px', color: C.grayLt, padding: '8px 0' }}>
+                                    Checking for pending bonuses…
+                                </div>
+                            )}
+
+                            {!eligLoading && bonusesAsReferred.length === 0 && (
+                                <div style={{
+                                    padding: '12px 16px', background: C.bg,
+                                    border: `1px solid ${C.border}`, borderRadius: '10px',
+                                    fontSize: '12px', color: C.grayLt,
+                                }}>
+                                    No pending referral bonuses for this player right now.
+                                    Record eligibility via the referral toggle during a deposit on the{' '}
+                                    <span
+                                        onClick={() => navigate('/?page=addTransactions')}
+                                        style={{ color: C.sky, cursor: 'pointer', textDecoration: 'underline' }}
+                                    >
+                                        Transactions page
+                                    </span>.
+                                </div>
+                            )}
+
+                            {!eligLoading && bonusesAsReferred.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {bonusesAsReferred.map(rb => (
+                                        <div key={rb.id} style={{
+                                            padding: '13px 16px', background: '#f0fdf4',
+                                            border: '1px solid #86efac', borderRadius: '10px',
+                                        }}>
+                                            <div style={{
+                                                display: 'flex', alignItems: 'flex-start',
+                                                justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px',
+                                            }}>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{
+                                                        fontWeight: '700', fontSize: '12px', color: '#166534',
+                                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                                    }}>
+                                                        <span style={{
+                                                            padding: '1px 6px', borderRadius: '4px', fontSize: '10px',
+                                                            fontWeight: '800', background: '#dcfce7',
+                                                            border: '1px solid #86efac', color: '#166534',
+                                                        }}>B</span>
+                                                        {player.name}'s pending referral bonus
+                                                    </div>
+                                                    <div style={{ fontSize: '11px', color: '#16a34a', marginTop: '3px' }}>
+                                                        Deposit of <strong>${rb.depositAmount.toFixed(2)}</strong>
+                                                        {' '}→ referrer <strong>{rb.counterpartName} [A]</strong> earns{' '}
+                                                        <strong>${rb.bonusAmount.toFixed(2)}</strong>
+                                                    </div>
+                                                    <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '2px' }}>
+                                                        Recorded {new Date(rb.createdAt).toLocaleDateString('en-US', {
+                                                            month: 'short', day: 'numeric', year: 'numeric'
+                                                        })}
+                                                    </div>
+                                                </div>
+
+                                                <div style={{
+                                                    display: 'flex', alignItems: 'center',
+                                                    gap: '8px', flexShrink: 0,
+                                                }}>
+                                                    <div style={{ textAlign: 'right' }}>
+                                                        <div style={{ fontSize: '18px', fontWeight: '900', color: '#16a34a' }}>
+                                                            +${rb.bonusAmount.toFixed(2)}
+                                                        </div>
+                                                        <div style={{ fontSize: '10px', color: '#4ade80' }}>eligible</div>
+                                                    </div>
+
+                                                    {/* Grant button */}
+                                                    <button
+                                                        onClick={() => navigate('/?page=addBonus')}
+                                                        style={{
+                                                            padding: '6px 12px', background: '#dcfce7',
+                                                            border: '1px solid #86efac', borderRadius: '7px',
+                                                            color: '#166634', fontWeight: '700', fontSize: '11px',
+                                                            cursor: 'pointer', fontFamily: 'inherit',
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        Grant →
+                                                    </button>
+
+                                                    {/* Cancel button — only on Player B's view */}
+                                                    {cancellingBonusId === rb.id ? (
+                                                        // Confirm state
+                                                        <div style={{ display: 'flex', gap: '6px' }}>
+                                                            <button
+                                                                onClick={() => handleCancelReferralBonus(rb.id)}
+                                                                style={{
+                                                                    padding: '6px 10px', background: '#fee2e2',
+                                                                    border: '1px solid #fca5a5', borderRadius: '7px',
+                                                                    color: '#991b1b', fontWeight: '700', fontSize: '11px',
+                                                                    cursor: 'pointer', fontFamily: 'inherit',
+                                                                    whiteSpace: 'nowrap',
+                                                                }}
+                                                            >
+                                                                ✓ Confirm cancel
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setCancellingBonusId(null)}
+                                                                style={{
+                                                                    padding: '6px 10px', background: C.bg,
+                                                                    border: `1px solid ${C.border}`, borderRadius: '7px',
+                                                                    color: C.gray, fontWeight: '600', fontSize: '11px',
+                                                                    cursor: 'pointer', fontFamily: 'inherit',
+                                                                }}
+                                                            >
+                                                                ✕ Keep
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => {
+                                                                setCancelError('');
+                                                                setCancellingBonusId(rb.id);
+                                                            }}
+                                                            style={{
+                                                                padding: '6px 12px', background: '#fff1f2',
+                                                                border: '1px solid #fecdd3', borderRadius: '7px',
+                                                                color: C.red, fontWeight: '700', fontSize: '11px',
+                                                                cursor: 'pointer', fontFamily: 'inherit',
+                                                                whiteSpace: 'nowrap',
+                                                            }}
+                                                            onMouseEnter={e => {
+                                                                e.currentTarget.style.background = '#fee2e2';
+                                                                e.currentTarget.style.borderColor = '#fca5a5';
+                                                            }}
+                                                            onMouseLeave={e => {
+                                                                e.currentTarget.style.background = '#fff1f2';
+                                                                e.currentTarget.style.borderColor = '#fecdd3';
+                                                            }}
+                                                        >
+                                                            Cancel bonus
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Inline confirm message */}
+                                            {cancellingBonusId === rb.id && (
+                                                <div style={{
+                                                    marginTop: '10px', padding: '8px 12px',
+                                                    background: '#fff1f2', border: '1px solid #fecdd3',
+                                                    borderRadius: '8px', fontSize: '12px', color: '#991b1b',
+                                                }}>
+                                                    ⚠ This will permanently remove the referral bonus eligibility record.
+                                                    Neither {player.name} nor {rb.counterpartName} will receive the bonus.
+                                                    This cannot be undone — re-record it via a new deposit if needed.
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+
+                                    <div style={{
+                                        padding: '8px 12px', background: '#f0fdf4',
+                                        border: '1px solid #d1fae5', borderRadius: '8px',
+                                        fontSize: '11px', color: '#166634', lineHeight: '1.6',
+                                    }}>
+                                        💡 <strong>Grant</strong> goes to the Bonus page to credit{' '}
+                                        <strong>{player.referredBy?.name} [A]</strong> (and optionally this player).{' '}
+                                        <strong>Cancel bonus</strong> permanently removes the pending record if you decide not to grant it.
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
             )}
+
 
             {/* ── BONUS BREAKDOWN ── */}
             <div style={card({ padding: '20px 22px' })}>
