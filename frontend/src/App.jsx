@@ -439,7 +439,17 @@ function StoreSwitcher({ user, onSwitch }) {
   const ref = useRef(null);
 
   const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role);
-  const accessibleStores = isAdmin ? [1, 2, 3] : (user?.storeAccess || [1]);
+
+  const rawAccess = user?.storeAccess;
+  const accessibleStores = isAdmin
+    ? [1, 2, 3]
+    : Array.isArray(rawAccess)
+      ? rawAccess
+      : typeof rawAccess === 'number'
+        ? [rawAccess]
+        : typeof rawAccess === 'string'
+          ? rawAccess.split(',').map(Number).filter(Boolean)
+          : [1];
 
   // ── Close on outside click ───────────────────────────────
   useEffect(() => {
@@ -456,40 +466,53 @@ function StoreSwitcher({ user, onSwitch }) {
 
   const otherStores = accessibleStores.filter(id => id !== currentStoreId);
 
+  // const handleSwitch = async (targetStoreId) => {
+  //   setError('');
+  //   setSwitching(true);
+  //   setOpen(false);
+  //   try {
+  //     // Auto-end active shift on current store for team members
+  //     if (TEAM_ROLES.includes(user?.role)) {
+  //       const token = localStorage.getItem('authToken');
+  //       const activeRes = await fetch(
+  //         `${import.meta.env.VITE_API_URL}/shifts/active/${user.role}`,
+  //         {
+  //           credentials: 'include',
+  //           headers: {
+  //             Authorization: `Bearer ${token}`,
+  //             'X-Store-Id': String(currentStoreId),
+  //           },
+  //         }
+  //       );
+  //       const activeData = await activeRes.json();
+  //       if (activeData?.data?.id) {
+  //         await fetch(
+  //           `${import.meta.env.VITE_API_URL}/shifts/${activeData.data.id}/end`,
+  //           {
+  //             method: 'PATCH',
+  //             credentials: 'include',
+  //             headers: {
+  //               Authorization: `Bearer ${token}`,
+  //               'X-Store-Id': String(currentStoreId),
+  //             },
+  //           }
+  //         );
+  //       }
+  //     }
+  //     onSwitch(targetStoreId);
+  //   } catch (err) {
+  //     setError('Store switch failed — try again.');
+  //   } finally {
+  //     setSwitching(false);
+  //   }
+  // };
+
   const handleSwitch = async (targetStoreId) => {
     setError('');
     setSwitching(true);
     setOpen(false);
     try {
-      // Auto-end active shift on current store for team members
-      if (TEAM_ROLES.includes(user?.role)) {
-        const token = localStorage.getItem('authToken');
-        const activeRes = await fetch(
-          `${import.meta.env.VITE_API_URL}/shifts/active/${user.role}`,
-          {
-            credentials: 'include',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'X-Store-Id': String(currentStoreId),
-            },
-          }
-        );
-        const activeData = await activeRes.json();
-        if (activeData?.data?.id) {
-          await fetch(
-            `${import.meta.env.VITE_API_URL}/shifts/${activeData.data.id}/end`,
-            {
-              method: 'PATCH',
-              credentials: 'include',
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'X-Store-Id': String(currentStoreId),
-              },
-            }
-          );
-        }
-      }
-      onSwitch(targetStoreId);
+      onSwitch(targetStoreId);  // just switch — don't end shifts
     } catch (err) {
       setError('Store switch failed — try again.');
     } finally {
@@ -988,36 +1011,156 @@ function LoginPage() {
   );
 }
 
+function StoreSelectionModal({ user, onConfirm }) {
+  const accessibleStores = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role)
+    ? [1, 2, 3]
+    : Array.isArray(user?.storeAccess) ? user.storeAccess : [1];
+
+  const [selected, setSelected] = useState(accessibleStores);
+
+  // Only show if user has access to more than 1 store
+  if (accessibleStores.length <= 1) {
+    // Auto-confirm immediately
+    useEffect(() => { onConfirm(accessibleStores, accessibleStores[0]); }, []);
+    return null;
+  }
+
+  const toggle = (id) =>
+    setSelected(prev =>
+      prev.includes(id)
+        ? prev.length > 1 ? prev.filter(x => x !== id) : prev // keep at least 1
+        : [...prev, id]
+    );
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 9999, backdropFilter: 'blur(4px)',
+    }}>
+      <div style={{
+        background: 'var(--color-cards)', border: '1px solid var(--color-border)',
+        borderRadius: 18, padding: '36px 40px', width: '100%', maxWidth: 420,
+        boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: '50%',
+            background: 'linear-gradient(135deg,#0ea5e9,#6366f1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 auto 14px',
+          }}>OB</div>
+          <h2 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: 'var(--color-text)' }}>
+            Welcome, {user?.name?.split(' ')[0]}!
+          </h2>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-muted)' }}>
+            You have access to multiple stores. Select which store(s) to work on this session.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+          {accessibleStores.map(storeId => {
+            const isSelected = selected.includes(storeId);
+            return (
+              <button key={storeId} onClick={() => toggle(storeId)} style={{
+                padding: '14px 18px', borderRadius: 12, cursor: 'pointer',
+                border: `2px solid ${isSelected ? '#0ea5e9' : 'var(--color-border)'}`,
+                background: isSelected ? 'rgba(14,165,233,0.1)' : 'var(--color-bg)',
+                display: 'flex', alignItems: 'center', gap: 14,
+                transition: 'all .15s', fontFamily: 'inherit',
+              }}>
+                <span style={{
+                  width: 36, height: 36, borderRadius: 9,
+                  background: isSelected ? '#0ea5e9' : 'var(--color-border)',
+                  color: isSelected ? '#fff' : 'var(--color-text-muted)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 800, fontSize: 15, flexShrink: 0,
+                }}>{storeId}</span>
+                <div style={{ textAlign: 'left', flex: 1 }}>
+                  <div style={{ fontWeight: 700, color: 'var(--color-text)', fontSize: 15 }}>
+                    Store {storeId}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                    {isSelected ? '✓ Selected for this session' : 'Click to include'}
+                  </div>
+                </div>
+                <span style={{
+                  width: 20, height: 20, borderRadius: 4,
+                  border: `2px solid ${isSelected ? '#0ea5e9' : 'var(--color-border)'}`,
+                  background: isSelected ? '#0ea5e9' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, color: '#fff', fontSize: 12,
+                }}>
+                  {isSelected ? '✓' : ''}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {selected.length > 1 && (
+          <div style={{
+            padding: '10px 14px', background: 'rgba(14,165,233,0.08)',
+            border: '1px solid rgba(14,165,233,0.2)', borderRadius: 8,
+            fontSize: 12, color: '#0ea5e9', marginBottom: 20,
+          }}>
+            💡 Working on <b>both stores simultaneously</b> — you can start/end shifts on each store independently. Use the store switcher in the sidebar to toggle views.
+          </div>
+        )}
+
+        <button
+          onClick={() => onConfirm(selected, selected[0])}
+          disabled={selected.length === 0}
+          style={{
+            width: '100%', padding: '13px', borderRadius: 10,
+            background: '#0ea5e9', color: '#fff', border: 'none',
+            fontWeight: 700, fontSize: 15, cursor: 'pointer',
+            fontFamily: 'inherit', opacity: selected.length === 0 ? 0.5 : 1,
+          }}
+        >
+          Start Session on Store{selected.length > 1 ? 's' : ''} {selected.join(' & ')} →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════
 // ROOT APP — single file, store-agnostic
 // ══════════════════════════════════════════════════════════════
 export default function App() {
-  const { setCurrentStoreId } = useContext(App2Context);
+  const { setCurrentStoreId, setActiveStoreIds, storeSelectionDone, setStoreSelectionDone } = useContext(App2Context);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // useEffect(() => {
-  //     api.auth.getUser().then(setUser).catch(() => setUser(null)).finally(() => setLoading(false));
-  // }, []);
+  const [showStoreSelect, setShowStoreSelect] = useState(false);
 
   useEffect(() => {
     api.auth.getUser()
       .then(u => {
         setUser(u);
-
-        // ── Auto-set store based on user's primary storeAccess ──
-        // Team members: storeAccess[0] is their store (e.g. [2] → Store 2)
-        // Admins: storeAccess is irrelevant, they can switch freely
         const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(u?.role);
-        if (!isAdmin && u?.storeAccess?.length > 0) {
-          const primaryStore = u.storeAccess[0];
-          setCurrentStoreId(primaryStore);
-          setStoreId(primaryStore);
+        const stores = isAdmin ? [1, 2, 3] : (Array.isArray(u?.storeAccess) ? u.storeAccess : [1]);
+        if (stores.length > 1) {
+          setShowStoreSelect(true); // show popup
+        } else {
+          const s = stores[0] || 1;
+          setCurrentStoreId(s);
+          setActiveStoreIds([s]);
+          setStoreId(s);
+          setStoreSelectionDone(true);
         }
       })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
-  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleStoreConfirm = (selectedIds, primaryId) => {
+    setCurrentStoreId(primaryId);
+    setActiveStoreIds(selectedIds);
+    setStoreId(primaryId);
+    setStoreSelectionDone(true);
+    setShowStoreSelect(false);
+  };
 
   if (loading) {
     return (
@@ -1037,7 +1180,13 @@ export default function App() {
           <AddPlayerProvider>
             <PlayerDashboardPlayerNameProvider>
               <style>{CSS}</style>
+
+              {/* Store selection modal — shown before main app when multi-store */}
+              {user && showStoreSelect && !storeSelectionDone && (
+                <StoreSelectionModal user={user} onConfirm={handleStoreConfirm} />
+              )}
               <Router>
+
                 <Routes>
                   <Route path="/" element={
                     user
