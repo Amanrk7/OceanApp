@@ -158,12 +158,43 @@ function CashFlowAudit({ startSnapshot, endSnapshot, transactions }) {
     const endWallets = endSnapshot.walletSnapshot ?? [];
     const allIds = [...new Set([...startWallets.map(w => w.id), ...endWallets.map(w => w.id)])];
 
-    const rows = allIds.map(id => {
-        const sw = startWallets.find(w => w.id === id);
-        const ew = endWallets.find(w => w.id === id);
-        const delta = (ew?.balance ?? 0) - (sw?.balance ?? 0);
-        return { name: sw?.name ?? ew?.name ?? id, method: sw?.method ?? ew?.method ?? "", start: sw?.balance ?? 0, end: ew?.balance ?? 0, delta };
-    });
+    // const rows = allIds.map(id => {
+    //     const sw = startWallets.find(w => w.id === id);
+    //     const ew = endWallets.find(w => w.id === id);
+    //     const delta = (ew?.balance ?? 0) - (sw?.balance ?? 0);
+    //     return { name: sw?.name ?? ew?.name ?? id, method: sw?.method ?? ew?.method ?? "", start: sw?.balance ?? 0, end: ew?.balance ?? 0, delta };
+    // });
+
+    // 1. In the Cash Flow Audit calculation
+const rows = allIds.map(id => {
+    const sw = startWallets.find(w => w.id === id);
+    const ew = endWallets.find(w => w.id === id);
+    const delta = (ew?.balance ?? 0) - (sw?.balance ?? 0);
+    return { 
+        name: sw?.name ?? ew?.name ?? id, 
+        method: sw?.method ?? ew?.method ?? "", 
+        start: sw?.balance ?? 0, 
+        end: ew?.balance ?? 0, 
+        delta 
+    };
+});
+
+// 2. Fix the Total Revenue calculation (WHERE THE ERROR IS LIKELY)
+// Ensure 'aggr' is defined in the arguments of the reduce function
+const totalRevenue = transactions.reduce((aggr, tx) => {
+    const amt = tx.amount || 0;
+    const type = (tx.type || "").toUpperCase();
+    if (type === "DEPOSIT") return aggr + amt;
+    if (type === "WITHDRAWAL" || type === "CASHOUT") return aggr - amt;
+    return aggr;
+}, 0); // <--- Ensure 0 is the initial value
+
+// 3. Fix the Bonus calculation
+const totalBonuses = transactions.reduce((aggr, tx) => {
+    const type = (tx.type || "").toUpperCase();
+    if (type.includes("BONUS")) return aggr + (tx.amount || 0);
+    return aggr;
+}, 0);
 
     return (
         <div style={{ ...CARD, overflow: "hidden" }}>
