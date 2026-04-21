@@ -507,13 +507,14 @@ function StoreSwitcher({ user, onSwitch }) {
   //   }
   // };
 
-  const handleSwitch = async (targetStoreId) => {
+const handleSwitch = async (targetStoreId) => {
     setError('');
     setSwitching(true);
     setOpen(false);
     try {
       api.clearCache();
-      onSwitch(targetStoreId);  // just switch — don't end shifts
+      setStoreId(targetStoreId);   // ← sync api.js module-level _currentStoreId
+      onSwitch(targetStoreId);
     } catch (err) {
       setError('Store switch failed — try again.');
     } finally {
