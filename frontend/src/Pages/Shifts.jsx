@@ -495,36 +495,36 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   // const gameBalanced = Math.abs(gameDisc) < 2;
   // const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced);
 
-// ── Replace the existing discrepancy calculations ──────────────────────────
+  // ── Replace the existing discrepancy calculations ──────────────────────────
 
-// Expected wallet change (fees-adjusted): unchanged
-const expectedWalletChange = r2((deposits - depositFees) - (cashouts + cashoutFees));
+  // Expected wallet change (fees-adjusted): unchanged
+  const expectedWalletChange = r2((deposits - depositFees) - (cashouts + cashoutFees));
 
-// ✅ User's formula: walletChange + fees = -gameChange - bonuses
-// => expectedGameChange derived from wallet side (no circular dependency):
-// -gameChange = walletChange + fees + bonuses
-// gameChange  = -(walletChange_expected + fees + bonuses)
-//             = -((deposits - depositFees - cashouts - cashoutFees) + totalFees + bonuses)
-//             = -(deposits - cashouts + bonuses)   ← fees cancel out
-const expectedGameChange = Math.round(-(deposits - cashouts + bonuses));
-// Note: this is identical to the prior formula mathematically,
-// but now expressed from user's cross-check perspective
+  // ✅ User's formula: walletChange + fees = -gameChange - bonuses
+  // => expectedGameChange derived from wallet side (no circular dependency):
+  // -gameChange = walletChange + fees + bonuses
+  // gameChange  = -(walletChange_expected + fees + bonuses)
+  //             = -((deposits - depositFees - cashouts - cashoutFees) + totalFees + bonuses)
+  //             = -(deposits - cashouts + bonuses)   ← fees cancel out
+  const expectedGameChange = Math.round(-(deposits - cashouts + bonuses));
+  // Note: this is identical to the prior formula mathematically,
+  // but now expressed from user's cross-check perspective
 
-// Separate discrepancies
-const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
-const gameDisc   = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
+  // Separate discrepancies
+  const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
+  const gameDisc = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
 
-// ✅ Combined cross-check (user's formula):
-// walletChange + fees + gameChange + bonuses should = 0
-const crossDisc = hasStartSnapshot
-  ? r2(walletChange + totalFees + gameChange + bonuses)
-  : 0;
+  // ✅ Combined cross-check (user's formula):
+  // walletChange + fees + gameChange + bonuses should = 0
+  const crossDisc = hasStartSnapshot
+    ? r2(walletChange + totalFees + gameChange + bonuses)
+    : 0;
 
-const walletBalanced = Math.abs(walletDisc) < 0.02;
-const gameBalanced   = Math.abs(gameDisc) < 1;      // tighter: 0pt tolerance after rounding fix
-const crossBalanced  = Math.abs(crossDisc) < 0.02;  // cross-formula check
-const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced && crossBalanced);
-  
+  const walletBalanced = Math.abs(walletDisc) < 0.02;
+  const gameBalanced = Math.abs(gameDisc) < 1;      // tighter: 0pt tolerance after rounding fix
+  const crossBalanced = Math.abs(crossDisc) < 0.02;  // cross-formula check
+  const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced && crossBalanced);
+
   const walletRows = endWallets.map(w => {
     const s = startWallets.find(sw => sw.id === w.id);
     return { ...w, startBal: r2(s?.balance ?? 0), endBal: r2(w.balance ?? 0) };
@@ -785,15 +785,15 @@ const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced && c
                       : `${!walletBalanced ? `Wallet: ${sign$(walletDisc)}${fmt$(walletDisc)} vs expected $${expectedWalletChange.toFixed(2)}` : ''}${!walletBalanced && !gameBalanced ? ' | ' : ''}${!gameBalanced ? `Game: ${gameDisc >= 0 ? '+' : ''}${gameDisc} pts vs expected ${expectedGameChange} pts` : ''}`}
                   </p> */}
                   <p style={{ margin: 0, fontSize: '12px', color: balanced ? '#16a34a' : '#dc2626', lineHeight: 1.5 }}>
-  {balanced
-    ? `Net profit $${netProfit.toFixed(2)} · Wallet Δ ${sign$(walletChange)}${fmt$(walletChange)}${hasFees ? ` +$${totalFees.toFixed(2)} fees` : ''} = Points deducted ${Math.abs(gameChange)} pts${bonuses > 0 ? ` + $${bonuses.toFixed(2)} bonuses` : ''}`
-    : [
-        !walletBalanced ? `Wallet: ${sign$(walletDisc)}${fmt$(walletDisc)} vs expected` : '',
-        !gameBalanced   ? `Game: ${gameDisc >= 0 ? '+' : ''}${gameDisc} pts vs expected` : '',
-        !crossBalanced  ? `Cross-check: W+fees+G+bonus = ${crossDisc.toFixed(2)} (should be 0)` : '',
-      ].filter(Boolean).join(' | ')
-  }
-</p>
+                    {balanced
+                      ? `Net profit $${netProfit.toFixed(2)} · Wallet Δ ${sign$(walletChange)}${fmt$(walletChange)}${hasFees ? ` +$${totalFees.toFixed(2)} fees` : ''} = Points deducted ${Math.abs(gameChange)} pts${bonuses > 0 ? ` + $${bonuses.toFixed(2)} bonuses` : ''}`
+                      : [
+                        !walletBalanced ? `Wallet: ${sign$(walletDisc)}${fmt$(walletDisc)} vs expected` : '',
+                        !gameBalanced ? `Game: ${gameDisc >= 0 ? '+' : ''}${gameDisc} pts vs expected` : '',
+                        !crossBalanced ? `Cross-check: W+fees+G+bonus = ${crossDisc.toFixed(2)} (should be 0)` : '',
+                      ].filter(Boolean).join(' | ')
+                    }
+                  </p>
                 </div>
               </div>
             )}
@@ -1174,50 +1174,62 @@ export const ShiftsPage = () => {
   const [taskStatus, setTaskStatus] = useState('ALL');
 
   useEffect(() => {
-  if (!usr?.role) return;
+    if (!usr?.role) return;
+    (async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
 
-  (async () => {
-    try {
-      const token = localStorage.getItem('authToken');
-      const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
+        const [activeRes, historyRes, tasksRes] = await Promise.all([
+          // ✅ Check admin's own active shift too (removed the skip)
+          api.shifts.getActiveShift(usr.role),
 
-      const [activeRes, historyRes, tasksRes] = await Promise.all([
-        // ✅ Check admin's own active shift too (removed the skip)
-        api.shifts.getActiveShift(usr.role),
-
-        isAdmin
-          ? Promise.all(
+          isAdmin
+            ? Promise.all(
               // ✅ Include admin's own role alongside team roles
               [...TEAM_ROLES, usr.role].map(r => api.reports.getMyShifts({ role: r, limit: 30 }))
             ).then(results => ({
-                data: results
-                  .flatMap(r => r?.data ?? [])
-                  .sort((a, b) => new Date(b.startTime) - new Date(a.startTime)),
-              }))
-          : api.reports.getMyShifts({ role: usr.role, limit: 30 }),
+              data: results
+                .flatMap(r => r?.data ?? [])
+                .sort((a, b) => new Date(b.startTime) - new Date(a.startTime)),
+            }))
+            : api.reports.getMyShifts({ role: usr.role, limit: 30 }),
 
-        token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
-      ]);
+          token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
+        ]);
 
-      if (activeRes?.data) {
-        const sh = activeRes.data;
-        activeShiftIdRef.current = sh.id;
-        setActiveShift(sh);
-        setShiftActive(true);
-        const checkinRes = await fj(`/shifts/${sh.id}/checkin`).catch(() => null);
-        if (checkinRes?.data?.balanceNote) {
-          try { setStartSnapshot(JSON.parse(checkinRes.data.balanceNote)); } catch (_) {}
+        if (activeRes?.data) {
+          const sh = activeRes.data;
+          activeShiftIdRef.current = sh.id;
+          setActiveShift(sh);
+          setShiftActive(true);
+          const checkinRes = await fj(`/shifts/${sh.id}/checkin`).catch(() => null);
+          if (checkinRes?.data?.balanceNote) {
+            try { setStartSnapshot(JSON.parse(checkinRes.data.balanceNote)); } catch (_) { }
+          }
         }
-      }
 
-      setPastShifts(historyRes?.data ?? []);
-      setTasks((tasksRes?.data ?? []).filter(t => t.status !== 'COMPLETED'));
-    } catch (e) { console.error('Shift restore error:', e); }
-  })();
-}, [usr?.role]);
+        setPastShifts(historyRes?.data ?? []);
+        setTasks((tasksRes?.data ?? []).filter(t => t.status !== 'COMPLETED'));
+      } catch (e) { console.error('Shift restore error:', e); }
+    })();
+  }, [usr?.role]);
 
   useEffect(() => { if (success) { const t = setTimeout(() => setSuccess(''), 4000); return () => clearTimeout(t); } }, [success]);
   useEffect(() => { if (error) { const t = setTimeout(() => setError(''), 5000); return () => clearTimeout(t); } }, [error]);
+
+  // In ShiftsPage useEffect, add SSE listener:
+useEffect(() => {
+  if (!usr?.role) return;
+  const sse = api.tasks.connectSSE();
+  sse.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'shift_ended' || msg.type === 'shift_checkin') {
+      refreshPastShifts(); // auto-reload
+    }
+  };
+  return () => sse.close();
+}, [usr?.role, refreshPastShifts]);
 
   const handleCheckinConfirm = async (snapshot) => {
     try {
@@ -1238,6 +1250,7 @@ export const ShiftsPage = () => {
     } catch (err) { setError(err.message || 'Failed to start shift'); throw err; }
     finally { setLoading(false); }
   };
+
 
   const handleCheckoutSubmit = async ({ endSnapshot, feedback }) => {
     const shiftId = activeShiftIdRef.current;
@@ -1262,17 +1275,75 @@ export const ShiftsPage = () => {
         }),
       });
       await api.shifts.endShift(shiftId);
+
       activeShiftIdRef.current = null;
       setActiveShift(null);
       setStartSnapshot(null);
       setShiftActive(false);
       setShowCheckout(false);
       setSuccess('Shift ended and report saved! Great work!');
-      const h = await api.shifts.getShifts(usr?.role);
-      setPastShifts(h?.data ?? []);
+
+      // ── FIX: use enriched reports endpoint, not raw shifts ──
+      await refreshPastShifts();
+
     } catch (err) { setError(err.message || 'Failed to end shift'); throw err; }
     finally { setLoading(false); }
   };
+
+  // Add this helper function near the top of ShiftsPage:
+  const refreshPastShifts = useCallback(async () => {
+    try {
+      if (isAdmin) {
+        const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
+        const results = await Promise.all(
+          [...TEAM_ROLES, usr.role].map(r => api.reports.getMyShifts({ role: r, limit: 30 }))
+        );
+        setPastShifts(
+          results
+            .flatMap(r => r?.data ?? [])
+            .sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
+        );
+      } else {
+        const h = await api.reports.getMyShifts({ role: usr.role, limit: 30 });
+        setPastShifts(h?.data ?? []);
+      }
+    } catch (e) { console.error('Refresh shifts error:', e); }
+  }, [usr?.role, isAdmin]);
+
+  // const handleCheckoutSubmit = async ({ endSnapshot, feedback }) => {
+  //   const shiftId = activeShiftIdRef.current;
+  //   if (!shiftId) return;
+  //   try {
+  //     setLoading(true);
+  //     await fj(`/shifts/${shiftId}/checkout`, {
+  //       method: 'POST',
+  //       body: JSON.stringify({
+  //         effortRating: feedback.effort,
+  //         workSummary: feedback.workSummary,
+  //         issuesEncountered: feedback.issuesEncountered,
+  //         shoutouts: '',
+  //         additionalNotes: JSON.stringify({
+  //           effortReason: feedback.effortReason,
+  //           improvements: feedback.improvements,
+  //           shiftWorkDescription: feedback.shiftWorkDescription,
+  //           recommendationsLastShift: feedback.recommendationsLastShift,
+  //           recommendationsOverall: feedback.recommendationsOverall,
+  //           endSnapshot,
+  //         }),
+  //       }),
+  //     });
+  //     await api.shifts.endShift(shiftId);
+  //     activeShiftIdRef.current = null;
+  //     setActiveShift(null);
+  //     setStartSnapshot(null);
+  //     setShiftActive(false);
+  //     setShowCheckout(false);
+  //     setSuccess('Shift ended and report saved! Great work!');
+  //     const h = await api.shifts.getShifts(usr?.role);
+  //     setPastShifts(h?.data ?? []);
+  //   } catch (err) { setError(err.message || 'Failed to end shift'); throw err; }
+  //   finally { setLoading(false); }
+  // };
 
   const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString('en-US', { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit', hour12: true }) : '—';
   const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', year: 'numeric' }) : '—';
@@ -1497,14 +1568,16 @@ export const ShiftsPage = () => {
                         onMouseEnter={e => e.currentTarget.style.background = '#fafbfc'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
-                        {['ADMIN','SUPER_ADMIN'].includes(usr?.role) && (
-  <td style={T.TD}>
-    <span style={{ fontSize: '11px', fontWeight: '700', color: '#475569',
-      background: '#f1f5f9', padding: '2px 8px', borderRadius: '6px' }}>
-      {shift.teamRole}
-    </span>
-  </td>
-)}
+                        {['ADMIN', 'SUPER_ADMIN'].includes(usr?.role) && (
+                          <td style={T.TD}>
+                            <span style={{
+                              fontSize: '11px', fontWeight: '700', color: '#475569',
+                              background: '#f1f5f9', padding: '2px 8px', borderRadius: '6px'
+                            }}>
+                              {shift.teamRole}
+                            </span>
+                          </td>
+                        )}
                         <td style={{ ...T.TD, fontWeight: '600' }}>{fmtDate(shift.startTime)}</td>
                         <td style={{ ...T.TD, fontSize: '12px', color: '#475569' }}>
                           {fmtTime(shift.startTime)} → {fmtTime(shift.endTime)}
@@ -1537,26 +1610,26 @@ export const ShiftsPage = () => {
                           ) : '—'}
                         </td>
                         <td style={{ ...T.TD, textAlign: 'center' }}>
-  {/* ✅ was shift.checkin?.rating — rating lives at top level from enrichShift */}
-  {shift.rating ? (
-    <span style={{ display: 'inline-flex', gap: '1px' }}>
-      {[1, 2, 3, 4, 5].map(n => (
-        <span key={n} style={{ color: n <= Math.round(shift.rating.overallRating) ? '#f59e0b' : '#e2e8f0', fontSize: '14px' }}>★</span>
-      ))}
-    </span>
-  ) : (
-    usr?.role === 'ADMIN' || usr?.role === 'SUPER_ADMIN' ? (
-      <button
-        onClick={() => setRatingModal({ shift, memberName: shift.memberName || shift.teamRole })}
-        style={{ padding: '4px 10px', background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
-      >
-        ⭐ Rate
-      </button>
-    ) : (
-      <span style={{ fontSize: '11px', color: '#94a3b8' }}>Not rated</span>
-    )
-  )}
-</td>
+                          {/* ✅ was shift.checkin?.rating — rating lives at top level from enrichShift */}
+                          {shift.rating ? (
+                            <span style={{ display: 'inline-flex', gap: '1px' }}>
+                              {[1, 2, 3, 4, 5].map(n => (
+                                <span key={n} style={{ color: n <= Math.round(shift.rating.overallRating) ? '#f59e0b' : '#e2e8f0', fontSize: '14px' }}>★</span>
+                              ))}
+                            </span>
+                          ) : (
+                            usr?.role === 'ADMIN' || usr?.role === 'SUPER_ADMIN' ? (
+                              <button
+                                onClick={() => setRatingModal({ shift, memberName: shift.memberName || shift.teamRole })}
+                                style={{ padding: '4px 10px', background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
+                              >
+                                ⭐ Rate
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: '11px', color: '#94a3b8' }}>Not rated</span>
+                            )
+                          )}
+                        </td>
                         <td style={{ ...T.TD, textAlign: 'center' }}>
                           {balanced === null
                             ? <span style={{ color: '#94a3b8', fontSize: '12px' }}>N/A</span>
@@ -1591,14 +1664,14 @@ export const ShiftsPage = () => {
                         Totals ({completedShifts.length} shifts · {totDur} min)
                       </td> */}
                       <td style={{ ...T.TD, fontWeight: '700', color: '#374151' }} colSpan={isAdmin ? 4 : 3}>
-  Totals ({completedShifts.length} shifts · {totDur} min)
-</td>
+                        Totals ({completedShifts.length} shifts · {totDur} min)
+                      </td>
                       <td style={{ ...T.TD, textAlign: 'right', fontWeight: '800', color: '#16a34a' }}>${totDep.toFixed(2)}</td>
                       <td style={{ ...T.TD, textAlign: 'right', fontWeight: '800', color: '#dc2626' }}>${totCO.toFixed(2)}</td>
                       <td style={{ ...T.TD, textAlign: 'right', fontWeight: '800', color: totProf >= 0 ? '#16a34a' : '#dc2626' }}>{totProf >= 0 ? '+' : ''}${Math.abs(totProf).toFixed(2)}</td>
                       <td style={{ ...T.TD, textAlign: 'right', fontWeight: '800', color: '#c2410c' }}>${totBon.toFixed(2)}</td>
                       <td colSpan={4} style={T.TD}></td>
-                      
+
                     </tr>
                   );
                 })()}
