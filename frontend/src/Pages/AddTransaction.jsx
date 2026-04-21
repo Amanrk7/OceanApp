@@ -253,6 +253,7 @@ function AddTransactionsPage() {
     const [results, setResults] = useState([]);
     const [searching, setSearching] = useState(false);
     const [showDrop, setShowDrop] = useState(false);
+    const [eligibleBonuses, setEligibleBonuses] = useState([]);
     const dropRef = useRef(null);
 
     const loadGames = useCallback(async (force = false) => {
@@ -311,19 +312,40 @@ function AddTransactionsPage() {
     };
 
     // ── FIX: checkReferralStatus now receives the already-fetched full player ──
+    // const checkReferralStatus = async (fullPlayer) => {
+    //     if (!fullPlayer?.id || !fullPlayer?.referredBy) {
+    //         setReferralAlreadyRecorded(false);
+    //         return;
+    //     }
+    //     setReferralCheckLoading(true);
+    //     try {
+    //         const r = await api.referralBonuses.getEligible(fullPlayer.id);
+    //         // If there's already an unclaimed 'referred' side record, don't allow re-recording
+    //         const hasPending = (r?.data || []).some(e => e.side === 'referred');
+    //         setReferralAlreadyRecorded(hasPending);
+    //     } catch {
+    //         setReferralAlreadyRecorded(false);
+    //     } finally {
+    //         setReferralCheckLoading(false);
+    //     }
+    // };
+
     const checkReferralStatus = async (fullPlayer) => {
         if (!fullPlayer?.id || !fullPlayer?.referredBy) {
             setReferralAlreadyRecorded(false);
+            setEligibleBonuses([]);
             return;
         }
         setReferralCheckLoading(true);
         try {
             const r = await api.referralBonuses.getEligible(fullPlayer.id);
-            // If there's already an unclaimed 'referred' side record, don't allow re-recording
-            const hasPending = (r?.data || []).some(e => e.side === 'referred');
+            const bonuses = r?.data || [];
+            setEligibleBonuses(bonuses);
+            const hasPending = bonuses.some(e => e.side === 'referred');
             setReferralAlreadyRecorded(hasPending);
         } catch {
             setReferralAlreadyRecorded(false);
+            setEligibleBonuses([]);
         } finally {
             setReferralCheckLoading(false);
         }
@@ -349,9 +371,14 @@ function AddTransactionsPage() {
         }
     };
 
+    // const clearPlayer = () => {
+    //     setPlayer(null); setQuery(""); setMatchUsedToday(false); setBonusReferral(false);
+    //     setReferralAlreadyRecorded(false);
+    //     setForm(f => ({ ...EMPTY, txType: f.txType }));
+    // };
     const clearPlayer = () => {
         setPlayer(null); setQuery(""); setMatchUsedToday(false); setBonusReferral(false);
-        setReferralAlreadyRecorded(false);
+        setReferralAlreadyRecorded(false); setEligibleBonuses([]);
         setForm(f => ({ ...EMPTY, txType: f.txType }));
     };
 
@@ -550,7 +577,7 @@ function AddTransactionsPage() {
                                 </div>
                             )}
                             {eligLoading && <div style={{ marginTop: "6px", fontSize: "12px", color: "#94a3b8" }}>Loading player data…</div>}
-                            {player && !eligLoading && (
+                            {/* {player && !eligLoading && (
                                 <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                                     <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166534" }}><CheckCircle style={{ width: "11px", height: "11px" }} />{player.name}<span style={{ fontWeight: "400", color: "#4ade80" }}>· ID {player.id}</span></span>
                                     <span style={{ padding: "4px 10px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#1d4ed8" }}>Balance: {fmt(player.balance)}</span>
@@ -559,10 +586,10 @@ function AddTransactionsPage() {
                                     {!isDeposit && cashoutLimit > 0 && !streakWaived && <span style={{ padding: "4px 10px", background: cashoutOverLimit ? "#fee2e2" : "#fef2f2", border: `1px solid ${cashoutOverLimit ? "#fca5a5" : "#fecaca"}`, borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#991b1b" }}>Daily limit: {fmt(cashoutLimit - todayCashoutTotal)} remaining (of {fmt(cashoutLimit)})</span>}
                                     {!isDeposit && streakWaived && <span style={{ padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166634" }}>✓ Limit waived (30-day streak)</span>}
                                 </div>
-                            )}
+                            )} */}
 
                             {/* ── Referral bonus INFO banner — shown whenever player has referrer ── */}
-                            {player && !eligLoading && isDeposit && playerHasReferrer && (
+                            {/* {player && !eligLoading && isDeposit && playerHasReferrer && (
                                 <div style={{
                                     marginTop: "10px",
                                     padding: "13px 16px",
@@ -600,6 +627,131 @@ function AddTransactionsPage() {
                                         <div style={{ flexShrink: 0, textAlign: "right" }}>
                                             <div style={{ fontSize: "18px", fontWeight: "900", color: "#16a34a" }}>${referralBonusAmt.toFixed(2)}</div>
                                             <div style={{ fontSize: "10px", color: "#4ade80" }}>each party</div>
+                                        </div>
+                                    )}
+                                </div>
+                            )} */}
+
+                            {player && !eligLoading && (
+                                <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
+
+                                    {/* ── Player badges row ── */}
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166534" }}>
+                                            <CheckCircle style={{ width: "11px", height: "11px" }} />
+                                            {player.name}
+                                            <span style={{ fontWeight: "400", color: "#4ade80" }}>· ID {player.id}</span>
+                                        </span>
+                                        <span style={{ padding: "4px 10px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#1d4ed8" }}>
+                                            Balance: {fmt(player.balance)}
+                                        </span>
+                                        {streak > 0 && (
+                                            <span style={{ padding: "4px 10px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#92400e" }}>
+                                                🔥 {streak}-day streak
+                                            </span>
+                                        )}
+                                        {matchUsedToday && (
+                                            <span style={{ padding: "4px 10px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#92400e" }}>
+                                                ⚠ Match bonus used today
+                                            </span>
+                                        )}
+                                        {!isDeposit && cashoutLimit > 0 && !streakWaived && (
+                                            <span style={{ padding: "4px 10px", background: cashoutOverLimit ? "#fee2e2" : "#fef2f2", border: `1px solid ${cashoutOverLimit ? "#fca5a5" : "#fecaca"}`, borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#991b1b" }}>
+                                                Daily limit: {fmt(cashoutLimit - todayCashoutTotal)} remaining (of {fmt(cashoutLimit)})
+                                            </span>
+                                        )}
+                                        {!isDeposit && streakWaived && (
+                                            <span style={{ padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166634" }}>
+                                                ✓ Limit waived (30-day streak)
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* ── Referral bonus status card — shown when player has a referrer ── */}
+                                    {isDeposit && playerHasReferrer && (
+                                        <div style={{
+                                            padding: "12px 14px",
+                                            borderRadius: "10px",
+                                            border: `1px solid ${eligibleBonuses.length > 0
+                                                ? "#86efac"
+                                                : referralAlreadyRecorded
+                                                    ? "#fde68a"
+                                                    : "#e2e8f0"
+                                                }`,
+                                            background: eligibleBonuses.length > 0
+                                                ? "#f0fdf4"
+                                                : referralAlreadyRecorded
+                                                    ? "#fffbeb"
+                                                    : "#f8fafc",
+                                            display: "flex",
+                                            alignItems: "flex-start",
+                                            gap: "10px",
+                                        }}>
+                                            <Users style={{
+                                                width: "15px", height: "15px",
+                                                color: eligibleBonuses.length > 0
+                                                    ? "#16a34a"
+                                                    : referralAlreadyRecorded
+                                                        ? "#d97706"
+                                                        : "#94a3b8",
+                                                flexShrink: 0,
+                                                marginTop: "1px",
+                                            }} />
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{
+                                                    fontWeight: "700", fontSize: "12px",
+                                                    color: eligibleBonuses.length > 0
+                                                        ? "#166534"
+                                                        : referralAlreadyRecorded
+                                                            ? "#92400e"
+                                                            : "#475569",
+                                                }}>
+                                                    {referralCheckLoading
+                                                        ? "Checking referral status…"
+                                                        : eligibleBonuses.length > 0
+                                                            ? `${eligibleBonuses.length} referral bonus${eligibleBonuses.length !== 1 ? "es" : ""} pending`
+                                                            : referralAlreadyRecorded
+                                                                ? "Referral bonus already recorded"
+                                                                : `Referred by ${referrerName}`
+                                                    }
+                                                </div>
+                                                {!referralCheckLoading && (
+                                                    <div style={{ fontSize: "11px", marginTop: "3px", lineHeight: "1.5", color: "#64748b" }}>
+                                                        {eligibleBonuses.length > 0 ? (
+                                                            <>
+                                                                {eligibleBonuses.map((rb, i) => (
+                                                                    <div key={rb.id} style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: i > 0 ? "2px" : 0 }}>
+                                                                        <span style={{ padding: "2px 7px", background: "#dcfce7", border: "1px solid #86efac", borderRadius: "20px", fontSize: "11px", fontWeight: "700", color: "#166534" }}>
+                                                                            +${rb.bonusAmount.toFixed(2)}
+                                                                        </span>
+                                                                        <span style={{ color: "#64748b" }}>
+                                                                            {rb.side === "referred"
+                                                                                ? `for this player · referred by ${rb.counterpartName}`
+                                                                                : `for ${rb.counterpartName} (referrer)`}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                                <span style={{ marginTop: "4px", display: "inline-block", color: "#16a34a", fontWeight: "600" }}>
+                                                                    → Grant from the Bonus page
+                                                                </span>
+                                                            </>
+                                                        ) : referralAlreadyRecorded ? (
+                                                            "A pending record already exists — go to the Bonus page to grant it."
+                                                        ) : (
+                                                            `Referred by ${referrerName}. Toggle below to record referral eligibility with this deposit.`
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {/* Amount badge shown only when pending bonuses exist */}
+                                            {eligibleBonuses.length > 0 && (
+                                                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                                                    <div style={{ fontSize: "16px", fontWeight: "900", color: "#16a34a" }}>
+                                                        ${eligibleBonuses.reduce((s, b) => s + b.bonusAmount, 0).toFixed(2)}
+                                                    </div>
+                                                    <div style={{ fontSize: "10px", color: "#4ade80" }}>pending</div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -660,16 +812,16 @@ function AddTransactionsPage() {
                             <select value={form.gameId} onChange={e => set("gameId", e.target.value)} style={{ ...SELECT, borderColor: !form.gameId ? "#fca5a5" : "#e2e8f0" }}>
                                 <option value="">— Select a game —</option>
                                 {games.map(g => {
-    const isDeficit = g.pointStock <= 0;
-    const disableForDeposit = isDeposit && isDeficit;
-    return (
-        <option key={g.id} value={g.id} disabled={disableForDeposit}>
-            {g.name}  ({(g.pointStock ?? 0).toFixed(0)} pts)
-            {isDeficit ? (isDeposit ? " — EMPTY" : " — 0 pts (will refill)") : ""}
+                                    const isDeficit = g.pointStock <= 0;
+                                    const disableForDeposit = isDeposit && isDeficit;
+                                    return (
+                                        <option key={g.id} value={g.id} disabled={disableForDeposit}>
+                                            {g.name}  ({(g.pointStock ?? 0).toFixed(0)} pts)
+                                            {isDeficit ? (isDeposit ? " — EMPTY" : " — 0 pts (will refill)") : ""}
 
-        </option>
-    );
-})}
+                                        </option>
+                                    );
+                                })}
                             </select>
                             <ChevronDown style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
                         </div>
