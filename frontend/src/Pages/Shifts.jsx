@@ -1173,6 +1173,28 @@ export const ShiftsPage = () => {
   const [taskType, setTaskType] = useState('ALL');
   const [taskStatus, setTaskStatus] = useState('ALL');
 
+
+  // Add this helper function near the top of ShiftsPage:
+  const refreshPastShifts = useCallback(async () => {
+    try {
+      if (isAdmin) {
+        const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
+        const results = await Promise.all(
+          [...TEAM_ROLES, usr.role].map(r => api.reports.getMyShifts({ role: r, limit: 30 }))
+        );
+        setPastShifts(
+          results
+            .flatMap(r => r?.data ?? [])
+            .sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
+        );
+      } else {
+        const h = await api.reports.getMyShifts({ role: usr.role, limit: 30 });
+        setPastShifts(h?.data ?? []);
+      }
+    } catch (e) { console.error('Refresh shifts error:', e); }
+  }, [usr?.role, isAdmin]);
+
+
   useEffect(() => {
     if (!usr?.role) return;
     (async () => {
@@ -1219,17 +1241,17 @@ export const ShiftsPage = () => {
   useEffect(() => { if (error) { const t = setTimeout(() => setError(''), 5000); return () => clearTimeout(t); } }, [error]);
 
   // In ShiftsPage useEffect, add SSE listener:
-useEffect(() => {
-  if (!usr?.role) return;
-  const sse = api.tasks.connectSSE();
-  sse.onmessage = (e) => {
-    const msg = JSON.parse(e.data);
-    if (msg.type === 'shift_ended' || msg.type === 'shift_checkin') {
-      refreshPastShifts(); // auto-reload
-    }
-  };
-  return () => sse.close();
-}, [usr?.role, refreshPastShifts]);
+  useEffect(() => {
+    if (!usr?.role) return;
+    const sse = api.tasks.connectSSE();
+    sse.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'shift_ended' || msg.type === 'shift_checkin') {
+        refreshPastShifts(); // auto-reload
+      }
+    };
+    return () => sse.close();
+  }, [usr?.role, refreshPastShifts]);
 
   const handleCheckinConfirm = async (snapshot) => {
     try {
@@ -1290,25 +1312,6 @@ useEffect(() => {
     finally { setLoading(false); }
   };
 
-  // Add this helper function near the top of ShiftsPage:
-  const refreshPastShifts = useCallback(async () => {
-    try {
-      if (isAdmin) {
-        const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
-        const results = await Promise.all(
-          [...TEAM_ROLES, usr.role].map(r => api.reports.getMyShifts({ role: r, limit: 30 }))
-        );
-        setPastShifts(
-          results
-            .flatMap(r => r?.data ?? [])
-            .sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
-        );
-      } else {
-        const h = await api.reports.getMyShifts({ role: usr.role, limit: 30 });
-        setPastShifts(h?.data ?? []);
-      }
-    } catch (e) { console.error('Refresh shifts error:', e); }
-  }, [usr?.role, isAdmin]);
 
   // const handleCheckoutSubmit = async ({ endSnapshot, feedback }) => {
   //   const shiftId = activeShiftIdRef.current;
