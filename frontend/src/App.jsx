@@ -1012,85 +1012,135 @@ function LoginPage() {
   );
 }
 
+// ── CORRECTED StoreSelectionModal ──────────────────────────────
 function StoreSelectionModal({ user, onConfirm }) {
+  const STORE_IDS = [1, 2]; // only 2 stores
+
   const accessibleStores = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role)
-    ? [1, 2, 3]
-    : Array.isArray(user?.storeAccess) ? user.storeAccess : [1];
+    ? STORE_IDS
+    : Array.isArray(user?.storeAccess)
+      ? user.storeAccess.filter(id => STORE_IDS.includes(id))
+      : [1];
 
-  const [selected, setSelected] = useState(accessibleStores);
+  const [selected, setSelected] = useState(
+    accessibleStores.length > 0 ? accessibleStores : [1]
+  );
 
-  // Only show if user has access to more than 1 store
-  if (accessibleStores.length <= 1) {
-    // Auto-confirm immediately
-    useEffect(() => { onConfirm(accessibleStores, accessibleStores[0]); }, []);
-    return null;
-  }
+  // ✅ HOOKS MUST BE BEFORE ANY CONDITIONAL RETURN
+  useEffect(() => {
+    // If only one store accessible, auto-confirm — no popup needed
+    if (accessibleStores.length <= 1) {
+      const s = accessibleStores[0] || 1;
+      onConfirm([s], s);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Now safe to return early after hooks
+  if (accessibleStores.length <= 1) return null;
 
   const toggle = (id) =>
     setSelected(prev =>
       prev.includes(id)
-        ? prev.length > 1 ? prev.filter(x => x !== id) : prev // keep at least 1
+        ? prev.length > 1
+          ? prev.filter(x => x !== id)
+          : prev // keep at least 1 selected
         : [...prev, id]
     );
 
+  const storeLabels = {
+    1: 'Main Store',
+    2: 'Second Store',
+  };
+
   return (
     <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+      position: 'fixed', inset: 0,
+      background: 'rgba(0,0,0,0.7)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 9999, backdropFilter: 'blur(4px)',
     }}>
       <div style={{
-        background: 'var(--color-cards)', border: '1px solid var(--color-border)',
-        borderRadius: 18, padding: '36px 40px', width: '100%', maxWidth: 420,
+        background: 'var(--color-cards)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 18, padding: '36px 40px',
+        width: '100%', maxWidth: 420,
         boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
       }}>
+        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{
             width: 52, height: 52, borderRadius: '50%',
             background: 'linear-gradient(135deg,#0ea5e9,#6366f1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 auto 14px',
+            fontSize: 22, fontWeight: 800, color: '#fff',
+            margin: '0 auto 14px',
           }}>OB</div>
-          <h2 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: 'var(--color-text)' }}>
-            Welcome, {user?.name?.split(' ')[0]}!
+          <h2 style={{
+            margin: '0 0 6px', fontSize: 20,
+            fontWeight: 800, color: 'var(--color-text)',
+          }}>
+            Welcome back, {user?.name?.split(' ')[0]}!
           </h2>
           <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-muted)' }}>
-            You have access to multiple stores. Select which store(s) to work on this session.
+            You have access to multiple stores. Choose which store(s) to work on this session.
           </p>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+        {/* Store options */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
           {accessibleStores.map(storeId => {
             const isSelected = selected.includes(storeId);
             return (
-              <button key={storeId} onClick={() => toggle(storeId)} style={{
-                padding: '14px 18px', borderRadius: 12, cursor: 'pointer',
-                border: `2px solid ${isSelected ? '#0ea5e9' : 'var(--color-border)'}`,
-                background: isSelected ? 'rgba(14,165,233,0.1)' : 'var(--color-bg)',
-                display: 'flex', alignItems: 'center', gap: 14,
-                transition: 'all .15s', fontFamily: 'inherit',
-              }}>
+              <button
+                key={storeId}
+                onClick={() => toggle(storeId)}
+                style={{
+                  padding: '14px 18px', borderRadius: 12,
+                  cursor: 'pointer', textAlign: 'left',
+                  border: `2px solid ${isSelected ? '#0ea5e9' : 'var(--color-border)'}`,
+                  background: isSelected
+                    ? 'rgba(14,165,233,0.08)'
+                    : 'var(--color-bg)',
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  transition: 'all .15s', fontFamily: 'inherit',
+                }}
+              >
                 <span style={{
-                  width: 36, height: 36, borderRadius: 9,
+                  width: 38, height: 38, borderRadius: 10, flexShrink: 0,
                   background: isSelected ? '#0ea5e9' : 'var(--color-border)',
                   color: isSelected ? '#fff' : 'var(--color-text-muted)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 800, fontSize: 15, flexShrink: 0,
+                  fontWeight: 800, fontSize: 16,
                 }}>{storeId}</span>
-                <div style={{ textAlign: 'left', flex: 1 }}>
-                  <div style={{ fontWeight: 700, color: 'var(--color-text)', fontSize: 15 }}>
+
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    fontWeight: 700, fontSize: 15,
+                    color: 'var(--color-text)',
+                  }}>
                     Store {storeId}
+                    {storeLabels[storeId] && (
+                      <span style={{
+                        marginLeft: 8, fontSize: 11, fontWeight: 600,
+                        color: 'var(--color-text-muted)',
+                      }}>
+                        — {storeLabels[storeId]}
+                      </span>
+                    )}
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
                     {isSelected ? '✓ Selected for this session' : 'Click to include'}
                   </div>
                 </div>
+
+                {/* Checkbox */}
                 <span style={{
-                  width: 20, height: 20, borderRadius: 4,
+                  width: 22, height: 22, borderRadius: 6, flexShrink: 0,
                   border: `2px solid ${isSelected ? '#0ea5e9' : 'var(--color-border)'}`,
                   background: isSelected ? '#0ea5e9' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0, color: '#fff', fontSize: 12,
+                  color: '#fff', fontSize: 13, fontWeight: 700,
+                  transition: 'all .15s',
                 }}>
                   {isSelected ? '✓' : ''}
                 </span>
@@ -1099,28 +1149,44 @@ function StoreSelectionModal({ user, onConfirm }) {
           })}
         </div>
 
+        {/* Info banner when both selected */}
         {selected.length > 1 && (
           <div style={{
-            padding: '10px 14px', background: 'rgba(14,165,233,0.08)',
-            border: '1px solid rgba(14,165,233,0.2)', borderRadius: 8,
-            fontSize: 12, color: '#0ea5e9', marginBottom: 20,
+            padding: '10px 14px', marginBottom: 20,
+            background: 'rgba(14,165,233,0.08)',
+            border: '1px solid rgba(14,165,233,0.2)',
+            borderRadius: 8, fontSize: 12, color: '#38bdf8',
+            lineHeight: 1.5,
           }}>
-            💡 Working on <b>both stores simultaneously</b> — you can start/end shifts on each store independently. Use the store switcher in the sidebar to toggle views.
+            💡 <b>Simultaneous mode</b> — shifts on both stores run independently.
+            Use the store switcher in the sidebar to toggle between views.
           </div>
         )}
 
+        {/* Confirm button */}
         <button
           onClick={() => onConfirm(selected, selected[0])}
           disabled={selected.length === 0}
           style={{
             width: '100%', padding: '13px', borderRadius: 10,
-            background: '#0ea5e9', color: '#fff', border: 'none',
-            fontWeight: 700, fontSize: 15, cursor: 'pointer',
-            fontFamily: 'inherit', opacity: selected.length === 0 ? 0.5 : 1,
+            background: '#0ea5e9', color: '#fff',
+            border: 'none', fontWeight: 700, fontSize: 15,
+            cursor: selected.length === 0 ? 'not-allowed' : 'pointer',
+            fontFamily: 'inherit',
+            opacity: selected.length === 0 ? 0.5 : 1,
+            transition: 'opacity .15s',
           }}
         >
-          Start Session on Store{selected.length > 1 ? 's' : ''} {selected.join(' & ')} →
+          Start on Store{selected.length > 1 ? 's' : ''}{' '}
+          {selected.map(id => id).join(' & ')} →
         </button>
+
+        <p style={{
+          margin: '12px 0 0', textAlign: 'center',
+          fontSize: 11, color: 'var(--color-text-muted)',
+        }}>
+          You can switch stores anytime from the sidebar
+        </p>
       </div>
     </div>
   );
