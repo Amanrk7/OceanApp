@@ -5,7 +5,7 @@ import {
     TrendingDown, Gift, CheckCircle, Clock, AlertCircle,
     Activity, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp,
     DollarSign, BarChart2, Target, Wallet, Gamepad2, MessageSquare,
-    ShieldCheck, AlertTriangle, ArrowLeft, Zap, Star, List,
+    ShieldCheck, AlertTriangle, ArrowLeft, Zap, Star, List, DollarSign, TrendingDown
 } from "lucide-react";
 import { api } from "../api";
 
@@ -731,6 +731,127 @@ function FeedbackPanel({ shift }) {
     );
 }
 
+// ── Expenses Table ────────────────────────────────────────────
+function ExpensesTable({ expenses }) {
+  if (!expenses?.length) return null;
+  const total = expenses.reduce((s, e) => s + (e.amount ?? 0), 0);
+  const totalPts = expenses.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
+  return (
+    <div style={{ ...CARD, overflow: 'hidden' }}>
+      <div style={{ padding: '12px 16px', background: '#fffbeb', borderBottom: '1px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <DollarSign style={{ width: '14px', height: '14px', color: '#b45309' }} />
+          <span style={{ fontSize: '12px', fontWeight: '700', color: '#b45309', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+            Expenses ({expenses.length})
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: '12px', fontSize: '12px' }}>
+          <span style={{ fontWeight: '800', color: '#b45309' }}>−${total.toFixed(2)}</span>
+          {totalPts > 0 && <span style={{ color: '#7c3aed', fontWeight: '700' }}>+{totalPts} pts added</span>}
+        </div>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {['Details', 'Category', 'Game', 'Amount', 'Points Added', 'Payment', 'Notes'].map(h => (
+                <th key={h} style={{ ...TH }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {expenses.map(e => (
+              <tr key={e.id}
+                onMouseEnter={ev => ev.currentTarget.style.background = '#fefce8'}
+                onMouseLeave={ev => ev.currentTarget.style.background = ''}
+              >
+                <td style={{ ...TD, fontWeight: '600', maxWidth: '200px' }}>
+                  <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.details}</div>
+                </td>
+                <td style={TD}>
+                  <Badge label={e.category?.replace('_', ' ')} bg="#fffbeb" color="#b45309" />
+                </td>
+                <td style={{ ...TD, fontSize: '12px', color: '#64748b' }}>{e.game?.name || '—'}</td>
+                <td style={{ ...TD, fontWeight: '700', color: '#b45309' }}>${(e.amount ?? 0).toFixed(2)}</td>
+                <td style={{ ...TD, color: '#7c3aed' }}>{e.pointsAdded > 0 ? `+${e.pointsAdded} pts` : '—'}</td>
+                <td style={{ ...TD, color: '#64748b', fontSize: '12px' }}>
+                  {e.paymentMade > 0 ? `$${parseFloat(e.paymentMade).toFixed(2)}` : '—'}
+                </td>
+                <td style={{ ...TD, fontSize: '11px', color: '#94a3b8', maxWidth: '160px' }}>
+                  <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.notes || '—'}</div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr style={{ background: '#fffbeb', borderTop: '2px solid #fde68a' }}>
+              <td colSpan={3} style={{ ...TD, fontWeight: '700', fontSize: '12px', color: '#b45309' }}>Total</td>
+              <td style={{ ...TD, fontWeight: '800', color: '#b45309' }}>${total.toFixed(2)}</td>
+              <td style={{ ...TD, fontWeight: '700', color: '#7c3aed' }}>
+                {totalPts > 0 ? `+${totalPts} pts` : '—'}
+              </td>
+              <td colSpan={2} style={TD} />
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+}
+ 
+// ── Profit Takeouts Table ─────────────────────────────────────
+function ProfitTakeoutsTable({ takeouts }) {
+  if (!takeouts?.length) return null;
+  const total = takeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+  return (
+    <div style={{ ...CARD, overflow: 'hidden' }}>
+      <div style={{ padding: '12px 16px', background: '#fff1f2', borderBottom: '1px solid #fecdd3', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <TrendingDown style={{ width: '14px', height: '14px', color: '#991b1b' }} />
+          <span style={{ fontSize: '12px', fontWeight: '700', color: '#991b1b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+            Profit Takeouts ({takeouts.length})
+          </span>
+        </div>
+        <span style={{ fontSize: '12px', fontWeight: '800', color: '#991b1b' }}>−${total.toFixed(2)}</span>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {['Taken By', 'Method', 'Amount', 'Notes'].map(h => (
+                <th key={h} style={{ ...TH }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {takeouts.map(t => (
+              <tr key={t.id}
+                onMouseEnter={ev => ev.currentTarget.style.background = '#fff5f5'}
+                onMouseLeave={ev => ev.currentTarget.style.background = ''}
+              >
+                <td style={{ ...TD, fontWeight: '600' }}>{t.takenBy}</td>
+                <td style={TD}>
+                  <Badge label={t.method} bg="#fff1f2" color="#991b1b" />
+                </td>
+                <td style={{ ...TD, fontWeight: '800', color: '#991b1b' }}>${parseFloat(t.amount).toFixed(2)}</td>
+                <td style={{ ...TD, fontSize: '12px', color: '#64748b' }}>{t.notes || '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr style={{ background: '#fff1f2', borderTop: '2px solid #fecdd3' }}>
+              <td style={{ ...TD, fontWeight: '700', fontSize: '12px', color: '#991b1b' }}>Total</td>
+              <td style={TD} />
+              <td style={{ ...TD, fontWeight: '800', color: '#991b1b' }}>${total.toFixed(2)}</td>
+              <td style={TD} />
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ── Single Shift Detail (main redesign) ───────────────────────
 function ShiftDetail({ shift, index, total, memberName, teamRole }) {
     const [activeTab, setActiveTab] = useState("overview");
@@ -790,6 +911,10 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
                         { label: "Profit", val: fmtMoney(netProfit), color: netProfit >= 0 ? "#16a34a" : "#dc2626", bg: netProfit >= 0 ? "#f0fdf4" : "#fee2e2" },
                         { label: "Players", val: s.playersAdded ?? 0, color: "#6d28d9", bg: "#f5f3ff" },
                         { label: "Tasks", val: s.tasksCompleted ?? 0, color: "#475569", bg: "#f1f5f9" },
+               ...(s.totalExpenses > 0 ? [{ label: "Expenses", val: fmtMoney(s.totalExpenses), color: "#b45309", bg: "#fffbeb" }] : []),
+   ...(s.totalTakeouts > 0 ? [{ label: "Takeouts", val: fmtMoney(s.totalTakeouts), color: "#991b1b", bg: "#fff1f2" }] : []),
+              ...(aggr.expenses > 0 ? [{ label: "Expenses", val: fmtMoney(aggr.expenses), color: "#b45309", bg: "#fffbeb" }] : []),
+   ...(aggr.takeouts > 0 ? [{ label: "Takeouts", val: fmtMoney(aggr.takeouts), color: "#991b1b", bg: "#fff1f2" }] : []),
                     ].map(({ label, val, color, bg }) => (
                         <div key={label} style={{ padding: "5px 10px", borderRadius: "7px", background: bg, display: "flex", alignItems: "baseline", gap: "5px" }}>
                             <span style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" }}>{label}</span>
@@ -837,6 +962,9 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
                         <StatCard label="Player Cashouts" value={`−${fmtMoney(s.totalCashouts)}`} valueColor="#dc2626" icon={ArrowDownRight} accentColor="#dc2626" />
                         <StatCard label="Bonuses Given" value={`−${fmtMoney(s.totalBonuses)}`} valueColor="#c2410c" icon={Gift} accentColor="#c2410c" />
                         <StatCard label="Shift Net Profit" value={(netProfit >= 0 ? "+" : "") + fmtMoney(netProfit)} valueColor={netProfit >= 0 ? "#16a34a" : "#dc2626"} icon={netProfit >= 0 ? TrendingUp : TrendingDown} accentColor={netProfit >= 0 ? "#16a34a" : "#dc2626"} />
+
+                        {s.totalExpenses > 0 && <StatCard label="Expenses" value={`−${fmtMoney(s.totalExpenses)}`} valueColor="#b45309" icon={DollarSign} accentColor="#b45309" sub={`${s.expenseCount} records`} />}
+                        {s.totalTakeouts > 0 && <StatCard label="Profit Takeouts" value={`−${fmtMoney(s.totalTakeouts)}`} valueColor="#991b1b" icon={TrendingDown} accentColor="#991b1b" sub={`${s.takeoutCount} takeouts`} />}
                     </div>
 
                     {/* Opening notes */}
@@ -860,7 +988,14 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
 
 
                     {/* Audit Verification */}
-                    {hasReconciliation && <AuditVerification endSnapshot={endSnapshot} transactions={transactions} />}
+                    {/* /* {hasReconciliation && <AuditVerification endSnapshot={endSnapshot} transactions={transactions} />} */ */}
+
+                    //   {/* Expenses & Takeouts */}
+   {shift.expenses?.length > 0 && <ExpensesTable expenses={shift.expenses} />}
+   {shift.profitTakeouts?.length > 0 && <ProfitTakeoutsTable takeouts={shift.profitTakeouts} />}
+
+   {/* Audit Verification */}
+   {hasReconciliation && <AuditVerification endSnapshot={endSnapshot} transactions={transactions} />}
 
                     {/* No snapshots notice */}
                     {!hasReconciliation && (
@@ -1048,19 +1183,33 @@ function MemberShiftSection({ team }) {
   || team.shifts[0]?.checkin?.user?.name
   || "Unassigned";
     
-    const aggr = team.shifts.reduce((acc, s) => {
-        const st = s.stats || {};
-        acc.deposits += st.totalDeposits || 0;
-        acc.cashouts += st.totalCashouts || 0;
-        acc.bonuses += st.totalBonuses || 0;
-        acc.profit += st.netProfit || 0;
-        acc.txns += st.transactionCount || 0;
-        acc.tasks += st.tasksCompleted || 0;
-        acc.players += st.playersAdded || 0;
-        acc.duration += s.duration || 0;
-        return acc;
-    }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, txns: 0, tasks: 0, players: 0, duration: 0 });
+    // const aggr = team.shifts.reduce((acc, s) => {
+    //     const st = s.stats || {};
+    //     acc.deposits += st.totalDeposits || 0;
+    //     acc.cashouts += st.totalCashouts || 0;
+    //     acc.bonuses += st.totalBonuses || 0;
+    //     acc.profit += st.netProfit || 0;
+    //     acc.txns += st.transactionCount || 0;
+    //     acc.tasks += st.tasksCompleted || 0;
+    //     acc.players += st.playersAdded || 0;
+    //     acc.duration += s.duration || 0;
+    //     return acc;
+    // }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, txns: 0, tasks: 0, players: 0, duration: 0 });
 
+    const aggr = team.shifts.reduce((acc, s) => {
+     const st = s.stats || {};
+     acc.deposits += st.totalDeposits || 0;
+     acc.cashouts += st.totalCashouts || 0;
+     acc.bonuses += st.totalBonuses || 0;
+     acc.profit += st.netProfit || 0;
+     acc.txns += st.transactionCount || 0;
+     acc.tasks += st.tasksCompleted || 0;
+     acc.players += st.playersAdded || 0;
+     acc.duration += s.duration || 0;
+     acc.expenses += st.totalExpenses || 0;
+     acc.takeouts += st.totalTakeouts || 0;
+     return acc;
+   }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, txns: 0, tasks: 0, players: 0, duration: 0, expenses: 0, takeouts: 0 });
     
 
     return (
@@ -1336,7 +1485,50 @@ const activityHtml = `
         </table>`}
 </div>`;
     
-
+const expenses = shift.expenses || [];
+const takeouts = shift.profitTakeouts || [];
+const totalExpAmt = expenses.reduce((s, e) => s + (e.amount ?? 0), 0);
+const totalTakeAmt = takeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+ 
+const expRows = expenses.map(e => `<tr>
+    <td><b>${e.details}</b></td>
+    <td>${e.category?.replace('_', ' ') || '—'}</td>
+    <td>${e.game?.name || '—'}</td>
+    <td class="ta-r b amber">$${(e.amount ?? 0).toFixed(2)}</td>
+    <td class="ta-r" style="color:#7c3aed">${e.pointsAdded > 0 ? `+${e.pointsAdded} pts` : '—'}</td>
+    <td>${e.notes || '—'}</td>
+</tr>`).join('');
+ 
+const expensesHtml = expenses.length > 0 ? `
+<div class="audit-section">
+  <div class="audit-header" style="background:#fffbeb;border-bottom:1px solid #fde68a;color:#b45309">
+    📋 Expenses (${expenses.length}) — Total: $${totalExpAmt.toFixed(2)}
+  </div>
+  <table>
+    <thead><tr><th>Details</th><th>Category</th><th>Game</th><th class="ta-r">Amount</th><th class="ta-r">Pts Added</th><th>Notes</th></tr></thead>
+    <tbody>${expRows}</tbody>
+    <tfoot><tr class="total-row"><td colspan="3"><b>Total</b></td><td class="ta-r b amber">$${totalExpAmt.toFixed(2)}</td><td colspan="2"></td></tr></tfoot>
+  </table>
+</div>` : '';
+ 
+const takeoutRows = takeouts.map(t => `<tr>
+    <td><b>${t.takenBy}</b></td>
+    <td>${t.method}</td>
+    <td class="ta-r b r">$${parseFloat(t.amount).toFixed(2)}</td>
+    <td>${t.notes || '—'}</td>
+</tr>`).join('');
+ 
+const takeoutsHtml = takeouts.length > 0 ? `
+<div class="audit-section">
+  <div class="audit-header" style="background:#fff1f2;border-bottom:1px solid #fecdd3;color:#991b1b">
+    💸 Profit Takeouts (${takeouts.length}) — Total: $${totalTakeAmt.toFixed(2)}
+  </div>
+  <table>
+    <thead><tr><th>Taken By</th><th>Method</th><th class="ta-r">Amount</th><th>Notes</th></tr></thead>
+    <tbody>${takeoutRows}</tbody>
+    <tfoot><tr class="total-row"><td colspan="2"><b>Total</b></td><td class="ta-r b r">$${totalTakeAmt.toFixed(2)}</td><td></td></tr></tfoot>
+  </table>
+</div>` : '';
     // ── Audit Verification ─────────────────────────────────────
     let auditVerHtml = "";
     // if (endSnapshot) {
@@ -1570,6 +1762,10 @@ const activityHtml = `
       ${gameAuditHtml}
     </div>
     ${activityHtml}
+    ${activityHtml}
+${expensesHtml}
+   ${takeoutsHtml}
+   ${auditVerHtml}
     ${auditVerHtml}
     ${feedbackHtml}
     ${playersHtml}
@@ -1837,6 +2033,24 @@ const fetchReport = useCallback(async (date, role) => {
                             <StatCard label="Tasks Completed" value={s.tasksCompleted} icon={CheckCircle} accentColor="#16a34a" />
                             <StatCard label="Transactions" value={s.transactionCount} icon={Activity} accentColor="#2563eb" />
                             <StatCard label="Shifts Logged" value={s.totalShifts} sub={`${s.activeShifts} active`} icon={Clock} accentColor="#475569" />
+
+                             {(report.teams?.flatMap(t => t.shifts).reduce((s, sh) => s + (sh.stats?.totalExpenses ?? 0), 0) > 0) && (
+     <StatCard
+       label="Day Expenses"
+       value={fmtMoney(report.teams.flatMap(t => t.shifts).reduce((s, sh) => s + (sh.stats?.totalExpenses ?? 0), 0))}
+       valueColor="#b45309"
+       icon={DollarSign}      accentColor="#b45309"
+     />
+   )}
+  {(report.teams?.flatMap(t => t.shifts).reduce((s, sh) => s + (sh.stats?.totalTakeouts ?? 0), 0) > 0) && (
+     <StatCard
+       label="Day Takeouts"
+       value={fmtMoney(report.teams.flatMap(t => t.shifts).reduce((s, sh) => s + (sh.stats?.totalTakeouts ?? 0), 0))}
+       valueColor="#991b1b"
+       icon={TrendingDown}
+       accentColor="#991b1b"
+     />
+   )}
                         </div>
                     </div>
 
