@@ -1055,7 +1055,7 @@ function MemberShiftSection({ team }) {
         return acc;
     }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, txns: 0, tasks: 0, players: 0, duration: 0 });
 
-    const memberName = team.member?.name || "Unassigned";
+    const memberName = shift.displayMember?.name || "Unassigned";
 
     return (
         <div style={{ ...CARD, overflow: "hidden" }}>
@@ -1098,7 +1098,7 @@ function MemberShiftSection({ team }) {
                 team.shifts.length === 0
                     ? <div style={{ padding: "32px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No shifts recorded</div>
                     : team.shifts.map((shift, si) => (
-                        <ShiftDetail key={shift.id} shift={shift} index={si} total={team.shifts.length} memberName={team.member?.name} teamRole={team.role} />
+                        <ShiftDetail key={shift.id} shift={shift} index={si} total={team.shifts.length} memberName={shift.displayMember?.name} teamRole={team.role} />
                     ))
             )}
         </div>
@@ -1110,7 +1110,7 @@ function MemberShiftSection({ team }) {
 // ══════════════════════════════════════════════════════════════
 function buildShiftAuditHtml(team, shift) {
     const s = shift.stats || {};
-    const memberName = team.member?.name || "Unassigned";
+    const memberName = shift.displayMember?.name || "Unassigned";
     const roleLabel = ROLE_LABEL[team.role] || team.role;
     const netProfit = s.netProfit ?? 0;
 
@@ -1587,7 +1587,7 @@ function printReport(report, date) {
             const effort = shift.checkin?.effortRating ?? null;
             const balanced = s.isBalanced;
             return `<tr>
-              <td><strong>${team.member?.name || "—"}</strong><br/><span style="font-size:10px;color:#64748b">${ROLE_LABEL[team.role] || team.role}</span></td>
+              <td><strong>${shift.displayMember?.name || "—"}</strong><br/><span style="font-size:10px;color:#64748b">${ROLE_LABEL[team.role] || team.role}</span></td>
               <td>${fmtTime(shift.startTime)}</td>
               <td>${shift.isActive ? "<span style='color:#16a34a;font-weight:700'>ACTIVE</span>" : fmtTime(shift.endTime)}</td>
               <td>${shift.duration != null ? shift.duration + " min" : "—"}</td>
@@ -1726,7 +1726,7 @@ export default function AdminReportPage() {
         setError("");
         try {
             const opts = { date };
-            if (role && role !== "ALL") opts.teamRole = role;
+            if (team.storeLabel && team.storeLabel !== "ALL") opts.teamRole = role;
             const data = await api.reports.getDailyReport(opts);
             setReport(data);
         } catch (e) {
