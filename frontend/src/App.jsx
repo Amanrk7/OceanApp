@@ -512,6 +512,7 @@ function StoreSwitcher({ user, onSwitch }) {
     setSwitching(true);
     setOpen(false);
     try {
+      api.clearCache();
       onSwitch(targetStoreId);  // just switch — don't end shifts
     } catch (err) {
       setError('Store switch failed — try again.');
