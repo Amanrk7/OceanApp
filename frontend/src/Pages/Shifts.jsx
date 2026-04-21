@@ -13,7 +13,7 @@ import {
   Clock, CheckCircle, AlertCircle, RefreshCw, X,
   Wallet, Gamepad2, ClipboardList, TrendingUp, Download,
   Search, ChevronDown, ChevronUp, List, Users, Gift,
-  Filter, Calendar, FileText,
+  Filter, Calendar, FileText, DollarSign
 } from 'lucide-react';
 import { ShiftStatusContext } from '../Context/membershiftStatus.jsx';
 import { CurrentUserContext } from '../Context/currentUser.jsx';
