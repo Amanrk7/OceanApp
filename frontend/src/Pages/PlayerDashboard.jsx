@@ -299,8 +299,8 @@ function PlayerActivityStats({ player }) {
         return parsed;
     };
 
-    const start1d  = getTexasDayCutoff(0);   // Texas today at local midnight
-    const start7d  = getTexasDayCutoff(7);
+    const start1d = getTexasDayCutoff(0);   // Texas today at local midnight
+    const start7d = getTexasDayCutoff(7);
     const start30d = getTexasDayCutoff(30);
 
     const parseTxDate = (tx) => {
@@ -385,9 +385,9 @@ function PlayerActivityStats({ player }) {
             </div>
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '480px' }}>
-                    <thead style={{background: 'transparent'}}>
+                    <thead style={{ background: 'transparent' }}>
                         <tr>
-                            <th style={{ ...thStyle, textAlign: 'left'}}>Type</th>
+                            <th style={{ ...thStyle, textAlign: 'left' }}>Type</th>
                             {PERIODS.map(p => (
                                 <th key={p.label} style={{ ...thStyle, color: p.hColor, background: 'transparent' }}>{p.label}</th>
                             ))}
@@ -633,7 +633,7 @@ function MilestoneGrantModal({ milestone, player, todayDeposits, onClose, onGran
     const [error, setError] = useState('');
 
     useEffect(() => {
-        api.games.getGames().then(r => setGames(r.data || [])).catch(() => {});
+        api.games.getGames().then(r => setGames(r.data || [])).catch(() => { });
     }, []);
 
     const handleGrant = async () => {
@@ -740,6 +740,7 @@ export default function PlayerDashboard() {
     const [showEdit, setShowEdit] = useState(false);
     const [savedFlash, setSavedFlash] = useState(false);
     const [lastUpdated, setLastUpdated] = useState(null);
+    const [referralBannerDismissed, setReferralBannerDismissed] = useState(false);
 
     const loadPlayer = useCallback(async (isInitial = false) => {
         if (!playerId) return;
@@ -971,7 +972,7 @@ export default function PlayerDashboard() {
             />
 
             {/* ── ELIGIBLE REFERRAL BONUSES ── */}
-            {(player.referredBy || eligLoading || eligibleBonuses.length > 0) && (
+            {/* {(player.referredBy || eligLoading || eligibleBonuses.length > 0) && (
                 <div style={{ ...card({ padding: '20px 24px' }), border: eligibleBonuses.length > 0 ? '1.5px solid #86efac' : `1px solid ${C.border}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${eligibleBonuses.length > 0 ? '#d1fae5' : C.border}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1043,6 +1044,163 @@ export default function PlayerDashboard() {
                             <div style={{ padding: '10px 14px', background: '#bbf7d030', border: '1px solid #d1fae5', borderRadius: '8px', fontSize: '12px', color: '#166634', lineHeight: '1.6' }}>
                                 💡 Go to the <strong>Bonus page</strong>, search for this player, and use the Referral Bonus section to grant each record. A-side and B-side are granted separately.
                             </div>
+                        </div>
+                    )}
+                </div>
+            )} */}
+
+            {player.referredBy && !referralBannerDismissed && (
+                <div style={{
+                    ...card({ padding: "20px 24px" }),
+                    border: eligibleBonuses.length > 0
+                        ? "1.5px solid #86efac"
+                        : "1px solid #e2e8f0",
+                }}>
+                    {/* Header */}
+                    <div style={{
+                        display: "flex", alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: "14px", paddingBottom: "10px",
+                        borderBottom: `1px solid ${eligibleBonuses.length > 0 ? "#d1fae5" : C.border}`,
+                    }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <p style={{ margin: 0, fontSize: "12px", fontWeight: "800", color: eligibleBonuses.length > 0 ? "#16a34a" : C.gray, textTransform: "uppercase", letterSpacing: "0.6px" }}>
+                                🎯 Referral
+                            </p>
+                            {eligibleBonuses.length > 0 && (
+                                <span style={{ padding: "1px 8px", background: "#dcfce7", color: "#16a34a", borderRadius: "10px", fontSize: "11px", fontWeight: "700" }}>
+                                    {eligibleBonuses.length} bonus{eligibleBonuses.length !== 1 ? "es" : ""} pending
+                                </span>
+                            )}
+                        </div>
+                        {/* Dismiss button */}
+                        <button
+                            onClick={() => setReferralBannerDismissed(true)}
+                            style={{
+                                background: "none", border: "1px solid #e2e8f0", borderRadius: "6px",
+                                padding: "3px 10px", cursor: "pointer", fontSize: "11px",
+                                fontWeight: "600", color: "#64748b", fontFamily: "inherit",
+                                display: "flex", alignItems: "center", gap: "4px",
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = "#ef4444"; e.currentTarget.style.color = "#ef4444"; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.color = "#64748b"; }}
+                        >
+                            ✕ Dismiss
+                        </button>
+                    </div>
+
+                    {/* Referred-by relationship */}
+                    <div style={{
+                        display: "flex", alignItems: "center", gap: "10px",
+                        padding: "12px 14px", background: "#f8fafc",
+                        border: "1px solid #e2e8f0", borderRadius: "10px",
+                        marginBottom: eligibleBonuses.length > 0 ? "12px" : 0,
+                    }}>
+                        <span style={{ fontSize: "16px" }}>👤</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: "700", fontSize: "13px", color: C.slate }}>
+                                {player.name} was referred by{" "}
+                                <span
+                                    onClick={() => navigate(`/playerDashboard/${player.referredBy.id}`)}
+                                    style={{ color: C.sky, cursor: "pointer", textDecoration: "underline" }}
+                                >
+                                    {player.referredBy.name || `ID ${player.referredBy.id}`}
+                                </span>
+                            </div>
+                            <div style={{ fontSize: "12px", color: C.gray, marginTop: "2px" }}>
+                                @{player.referredBy.username}
+                            </div>
+                        </div>
+                        {eligLoading ? (
+                            <div style={{ fontSize: "11px", color: C.grayLt }}>Checking…</div>
+                        ) : (
+                            <button
+                                onClick={() => navigate("/?page=addBonus")}
+                                style={{
+                                    padding: "6px 14px", borderRadius: "8px", cursor: "pointer",
+                                    fontFamily: "inherit", fontWeight: "700", fontSize: "12px",
+                                    border: eligibleBonuses.length > 0
+                                        ? "1px solid #86efac"
+                                        : "1px solid #e2e8f0",
+                                    background: eligibleBonuses.length > 0 ? "#f0fdf4" : "#f8fafc",
+                                    color: eligibleBonuses.length > 0 ? "#16a34a" : C.gray,
+                                    whiteSpace: "nowrap",
+                                }}
+                            >
+                                {eligibleBonuses.length > 0 ? "Grant bonus →" : "Bonus page →"}
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Pending bonus records (compact) */}
+                    {!eligLoading && eligibleBonuses.length > 0 && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                            {eligibleBonuses.map(rb => {
+                                const isBside = rb.side === "referred";
+                                return (
+                                    <div key={rb.id} style={{
+                                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                                        padding: "12px 14px", background: "#f0fdf4",
+                                        border: "1px solid #86efac", borderRadius: "10px",
+                                        flexWrap: "wrap", gap: "10px",
+                                    }}>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontWeight: "700", fontSize: "12px", color: "#166534" }}>
+                                                {isBside ? "🙋 Player's bonus (B)" : "👤 Referrer's bonus (A)"}
+                                            </div>
+                                            <div style={{ fontSize: "11px", color: "#16a34a", marginTop: "2px" }}>
+                                                {isBside
+                                                    ? `${player.name} was referred by ${rb.counterpartName}`
+                                                    : `${player.name} referred ${rb.counterpartName}`}
+                                                {" · "}
+                                                Based on ${rb.depositAmount.toFixed(2)} deposit
+                                            </div>
+                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+                                            <div style={{ textAlign: "right" }}>
+                                                <div style={{ fontSize: "18px", fontWeight: "900", color: "#16a34a" }}>
+                                                    +${rb.bonusAmount.toFixed(2)}
+                                                </div>
+                                                <div style={{ fontSize: "10px", color: "#4ade80" }}>eligible</div>
+                                            </div>
+                                            <button
+                                                onClick={() => navigate("/?page=addBonus")}
+                                                style={{
+                                                    padding: "5px 12px", background: "#dcfce7",
+                                                    border: "1px solid #86efac", borderRadius: "6px",
+                                                    color: "#166634", fontWeight: "700", fontSize: "11px",
+                                                    cursor: "pointer", fontFamily: "inherit",
+                                                }}
+                                            >
+                                                Grant →
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            <div style={{
+                                padding: "8px 12px", background: "#bbf7d030",
+                                border: "1px solid #d1fae5", borderRadius: "8px",
+                                fontSize: "11px", color: "#166634", lineHeight: "1.6",
+                            }}>
+                                💡 Go to the <strong>Bonus page</strong>, search for{" "}
+                                <strong>{player.name}</strong>, and grant each record.
+                                A-side (referrer) and B-side (referred) are granted separately.
+                            </div>
+                        </div>
+                    )}
+
+                    {/* No pending — show quiet state */}
+                    {!eligLoading && eligibleBonuses.length === 0 && (
+                        <div style={{ fontSize: "12px", color: C.grayLt, marginTop: "4px" }}>
+                            No pending referral bonuses. Record eligibility during a deposit on the{" "}
+                            <span
+                                onClick={() => navigate("/?page=addTransactions")}
+                                style={{ color: C.sky, cursor: "pointer", textDecoration: "underline" }}
+                            >
+                                Transactions page
+                            </span>
+                            .
                         </div>
                     )}
                 </div>
@@ -1227,7 +1385,7 @@ export default function PlayerDashboard() {
             </div>
 
             {/* ── DEPOSIT / CASHOUT CHART ── */}
-            <div style={card({ padding: '20px 24px' })}>
+            {/* <div style={card({ padding: '20px 24px' })}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
                     <p style={{ margin: 0, fontWeight: '800', fontSize: '14px', color: C.slate }}>Deposits vs Cashouts</p>
                     <div style={{ display: 'flex', gap: '6px' }}>
@@ -1261,6 +1419,128 @@ export default function PlayerDashboard() {
                     </ResponsiveContainer>
                 ) : (
                     <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.grayLt, fontSize: '13px' }}>No transaction data in this range</div>
+                )}
+            </div> */}
+
+            <div style={card({ padding: "20px 24px" })}>
+                <div style={{
+                    display: "flex", justifyContent: "space-between",
+                    alignItems: "center", marginBottom: "18px", flexWrap: "wrap", gap: "10px",
+                }}>
+                    <p style={{ margin: 0, fontWeight: "800", fontSize: "14px", color: C.slate }}>
+                        Deposits vs Cashouts
+                    </p>
+                    {/* Tab selector matching Dashboard style */}
+                    <div style={{
+                        display: "flex", gap: "4px", background: "#f1f5f9",
+                        borderRadius: "8px", padding: "3px",
+                    }}>
+                        {[[7, "7d"], [14, "14d"], [30, "30d"]].map(([d, lbl]) => (
+                            <button
+                                key={d}
+                                onClick={() => setChartDays(d)}
+                                style={{
+                                    padding: "5px 12px", fontSize: "11px", fontWeight: "600",
+                                    borderRadius: "6px", border: "none", cursor: "pointer",
+                                    transition: "all .15s",
+                                    background: chartDays === d ? "#fff" : "transparent",
+                                    color: chartDays === d ? C.slate : C.gray,
+                                    boxShadow: chartDays === d ? "0 1px 4px rgba(0,0,0,.1)" : "none",
+                                    fontFamily: "inherit",
+                                }}
+                            >
+                                {lbl}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {finalChartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={240}>
+                        <AreaChart data={finalChartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="depGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.18} />
+                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                </linearGradient>
+                                <linearGradient id="cashGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.15} />
+                                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid
+                                stroke="#f1f5f9" strokeDasharray="3 3" vertical={false}
+                            />
+                            <XAxis
+                                dataKey="date"
+                                tick={{ fontSize: 11, fill: C.grayLt, fontWeight: 600 }}
+                                tickLine={false} axisLine={false}
+                            />
+                            <YAxis
+                                tick={{ fontSize: 11, fill: C.grayLt }}
+                                tickLine={false} axisLine={false}
+                                tickFormatter={v => `$${v}`}
+                            />
+                            {/* Dark tooltip matching Dashboard */}
+                            <Tooltip
+                                content={({ active, payload, label }) => {
+                                    if (!active || !payload?.length) return null;
+                                    return (
+                                        <div style={{
+                                            background: "#0f172a", border: "none",
+                                            borderRadius: "10px", padding: "8px 12px",
+                                            fontSize: "12px", color: "#fff",
+                                            boxShadow: "0 8px 24px rgba(0,0,0,.25)",
+                                        }}>
+                                            <p style={{ margin: "0 0 4px 0", color: "#94a3b8", fontWeight: "600" }}>
+                                                {label}
+                                            </p>
+                                            {payload.map((p, i) => (
+                                                <p key={i} style={{ margin: 0, color: p.color, fontWeight: "600" }}>
+                                                    {p.name}: ${parseFloat(p.value).toFixed(2)}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    );
+                                }}
+                            />
+                            <Legend
+                                formatter={value => (
+                                    <span style={{ fontSize: "12px", color: C.gray, fontWeight: "600" }}>
+                                        {value}
+                                    </span>
+                                )}
+                            />
+                            <Area
+                                type="monotone"
+                                dataKey="deposits"
+                                stroke="#10b981"
+                                strokeWidth={2.5}
+                                fill="url(#depGrad)"
+                                name="Deposits"
+                                dot={false}
+                                activeDot={{ r: 4, strokeWidth: 0 }}
+                            />
+                            <Area
+                                type="monotone"
+                                dataKey="cashouts"
+                                stroke="#ef4444"
+                                strokeWidth={2.5}
+                                fill="url(#cashGrad)"
+                                name="Cashouts"
+                                dot={false}
+                                activeDot={{ r: 4, strokeWidth: 0 }}
+                            />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div style={{
+                        height: "180px", display: "flex",
+                        alignItems: "center", justifyContent: "center",
+                        color: C.grayLt, fontSize: "13px",
+                    }}>
+                        No transaction data in this range
+                    </div>
                 )}
             </div>
 
