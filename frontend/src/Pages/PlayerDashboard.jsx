@@ -1100,7 +1100,7 @@ export default function PlayerDashboard() {
                                         color: bonusesAsReferrer.length > 0 ? '#16a34a' : C.gray,
                                         textTransform: 'uppercase', letterSpacing: '0.6px',
                                     }}>
-                                        Referral Bonuses — You as Referrer
+                                        Referral Bonuses — This player A as Referrer
                                     </p>
                                     {bonusesAsReferrer.length > 0 && (
                                         <span style={{
@@ -1133,7 +1133,7 @@ export default function PlayerDashboard() {
                                 padding: '8px 12px', background: '#f0f9ff',
                                 border: '1px solid #bae6fd', borderRadius: '8px',
                             }}>
-                                When players you referred make deposits, you earn <strong>50% of their deposit</strong> as a referral bonus.
+                                When a referred player B make deposits, the reffrer player A earns <strong>50% of their deposit</strong> as a referral bonus.
                                 Each pending record below is ready to be granted.
                             </div>
 
@@ -1150,7 +1150,7 @@ export default function PlayerDashboard() {
                                     fontSize: '12px', color: C.grayLt, textAlign: 'center',
                                 }}>
                                     No pending referral bonuses at the moment.
-                                    They appear here when a player you referred makes a deposit.
+                                    They appear here when this player refers someone and that referred player makes a deposit.
                                 </div>
                             )}
 
@@ -1173,7 +1173,7 @@ export default function PlayerDashboard() {
                                                         fontWeight: '800', background: '#eff6ff',
                                                         border: '1px solid #bfdbfe', color: '#1d4ed8',
                                                     }}>A</span>
-                                                    You referred {rb.counterpartName}
+                                                    This player referred {rb.counterpartName}
                                                     <span style={{
                                                         padding: '1px 6px', borderRadius: '4px', fontSize: '10px',
                                                         fontWeight: '800', background: '#dcfce7',
@@ -1182,7 +1182,7 @@ export default function PlayerDashboard() {
                                                 </div>
                                                 <div style={{ fontSize: '11px', color: '#16a34a', marginTop: '3px' }}>
                                                     {rb.counterpartName} deposited <strong>${rb.depositAmount.toFixed(2)}</strong>
-                                                    {' '}→ your share is <strong>50% = ${rb.bonusAmount.toFixed(2)}</strong>
+                                                    {' '}→ this player's share is <strong>50% = ${rb.bonusAmount.toFixed(2)}</strong>
                                                 </div>
                                                 <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '2px' }}>
                                                     Recorded {new Date(rb.createdAt).toLocaleDateString('en-US', {
@@ -1195,7 +1195,7 @@ export default function PlayerDashboard() {
                                                     <div style={{ fontSize: '22px', fontWeight: '900', color: '#16a34a' }}>
                                                         +${rb.bonusAmount.toFixed(2)}
                                                     </div>
-                                                    <div style={{ fontSize: '10px', color: '#4ade80' }}>for you (A)</div>
+                                                    <div style={{ fontSize: '10px', color: '#4ade80' }}>for this player (A)</div>
                                                 </div>
                                                 <button
                                                     onClick={() => navigate('/?page=addBonus')}
