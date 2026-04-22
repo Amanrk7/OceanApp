@@ -623,7 +623,7 @@ export default function BonusPage() {
                                 //     </div>
                                 // </div>
 
-                                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, flexWrap: "wrap" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, flexWrap: "wrap", marginTop: "8px" }}>
 
                                     {/* Streak */}
                                     {streak > 0 ? (
