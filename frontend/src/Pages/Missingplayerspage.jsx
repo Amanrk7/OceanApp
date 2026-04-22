@@ -59,19 +59,23 @@ const LABEL_STYLE = {
 
 // ─── Helpers ────────────────────────────────────────────────────
 const CONTACT_FIELD_META = {
-  email:     { icon: Mail,      label: 'Email',     color: '#3b82f6', bg: '#eff6ff' },
-  phone:     { icon: Phone,     label: 'Phone',     color: '#8b5cf6', bg: '#f5f3ff' },
-  snapchat:  { icon: Camera,    label: 'Snapchat',  color: '#eab308', bg: '#fefce8' },
+  email: { icon: Mail, label: 'Email', color: '#3b82f6', bg: '#eff6ff' },
+  phone: { icon: Phone, label: 'Phone', color: '#8b5cf6', bg: '#f5f3ff' },
+  snapchat: { icon: Camera, label: 'Snapchat', color: '#eab308', bg: '#fefce8' },
   instagram: { icon: Instagram, label: 'Instagram', color: '#ec4899', bg: '#fdf2f8' },
-  telegram:  { icon: Send,      label: 'Telegram',  color: '#0ea5e9', bg: '#f0f9ff' },
+  telegram: { icon: Send, label: 'Telegram', color: '#0ea5e9', bg: '#f0f9ff' },
 };
 const CONTACT_KEYS = Object.keys(CONTACT_FIELD_META);
 
-function getMissingContactFields(player) {
-  return CONTACT_KEYS.filter(key => {
-    const val = player[key];
-    return !val || String(val).trim() === '';
-  });
+// function getMissingContactFields(player) {
+//   return CONTACT_KEYS.filter(key => {
+//     const val = player[key];
+//     return !val || String(val).trim() === '';
+//   });
+// }
+// NEW helper:
+function getNAFields(player) {
+  return (player.noAccountOn || []).filter(k => CONTACT_KEYS.includes(k));
 }
 function isAdminRole(role) { return ['ADMIN', 'SUPER_ADMIN'].includes(role); }
 function isMemberRole(role) { return ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'].includes(role); }
@@ -87,7 +91,7 @@ function getTaskPlayerId(task) {
   if (task.playerId) return String(task.playerId);
   if (task.targetPlayerId) return String(task.targetPlayerId);
   if (task.player?.id) return String(task.player.id);
-  try { const m = JSON.parse(task.notes || '{}'); if (m.playerId) return String(m.playerId); } catch {}
+  try { const m = JSON.parse(task.notes || '{}'); if (m.playerId) return String(m.playerId); } catch { }
   const m = String(task.description || '').match(/player[_ ]?id[:\s]+(\d+)/i);
   return m ? m[1] : null;
 }
@@ -112,7 +116,7 @@ function Avatar({ name, size = 36 }) {
 
 function TierBadge({ tier }) {
   const map = {
-    GOLD:   { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
+    GOLD: { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
     SILVER: { bg: '#e0e7ff', color: '#3730a3', border: '#c7d2fe' },
     BRONZE: { bg: '#fed7aa', color: '#9a3412', border: '#fdba74' },
   };
@@ -124,13 +128,60 @@ function TierBadge({ tier }) {
   );
 }
 
-function FieldChip({ field }) {
+// function FieldChip({ field }) {
+//   const meta = CONTACT_FIELD_META[field];
+//   if (!meta) return null;
+//   const { icon: Icon, label, color, bg } = meta;
+//   return (
+//     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700, background: bg, color, border: `1px solid ${color}30` }}>
+//       <Icon style={{ width: 10, height: 10 }} /> {label}
+//     </span>
+//   );
+// }
+
+// Replace the old FieldChip with this:
+function FieldChip({ field, onMarkNA, onUnmarkNA, isNA = false, canEdit = false }) {
   const meta = CONTACT_FIELD_META[field];
   if (!meta) return null;
   const { icon: Icon, label, color, bg } = meta;
+
+  if (isNA) {
+    return (
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        padding: '3px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700,
+        background: '#f1f5f9', color: '#94a3b8',
+        border: '1px solid #e2e8f0', textDecoration: 'line-through',
+        opacity: 0.7,
+      }}>
+        <Icon style={{ width: 10, height: 10 }} /> {label}
+        {canEdit && (
+          <button onClick={() => onUnmarkNA(field)}
+            title="Remove N/A — mark as missing again"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginLeft: 2, color: '#94a3b8', display: 'inline-flex', lineHeight: 1 }}>
+            <X style={{ width: 9, height: 9 }} />
+          </button>
+        )}
+      </span>
+    );
+  }
+
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700, background: bg, color, border: `1px solid ${color}30` }}>
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      padding: '3px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700,
+      background: bg, color, border: `1px solid ${color}30`,
+    }}>
       <Icon style={{ width: 10, height: 10 }} /> {label}
+      {canEdit && onMarkNA && (
+        <button onClick={() => onMarkNA(field)}
+          title={`Mark ${label} as N/A — player has no account`}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 0 3px', color, display: 'inline-flex', lineHeight: 1, opacity: 0.6 }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '0.6'}>
+          <X style={{ width: 9, height: 9 }} />
+        </button>
+      )}
     </span>
   );
 }
@@ -211,12 +262,12 @@ function EditModal({ player, onClose, onSaved }) {
   };
 
   const FIELDS = [
-    { key: 'name',      label: 'Full Name', type: 'text',  required: true },
-    { key: 'email',     label: 'Email',     type: 'email' },
-    { key: 'phone',     label: 'Phone',     type: 'text' },
-    { key: 'telegram',  label: 'Telegram',  type: 'text' },
+    { key: 'name', label: 'Full Name', type: 'text', required: true },
+    { key: 'email', label: 'Email', type: 'email' },
+    { key: 'phone', label: 'Phone', type: 'text' },
+    { key: 'telegram', label: 'Telegram', type: 'text' },
     { key: 'instagram', label: 'Instagram', type: 'text' },
-    { key: 'snapchat',  label: 'Snapchat',  type: 'text' },
+    { key: 'snapchat', label: 'Snapchat', type: 'text' },
   ];
 
   return (
@@ -269,8 +320,143 @@ function EditModal({ player, onClose, onSaved }) {
 }
 
 // ─── Player Card ─────────────────────────────────────────────────
-function PlayerCard({ player, onEdit, onInlineAssign, onClaim, onUndoTask, userRole, task, claimingId, assigningId, undoingId, teamMembers, currentUserId }) {
+// function PlayerCard({ player, onEdit, onInlineAssign, onClaim, onUndoTask, userRole, task, claimingId, assigningId, undoingId, teamMembers, currentUserId }) {
+//   const missing = getMissingContactFields(player);
+//   const isCritical = missing.length >= CRITICAL_THRESHOLD;
+//   const isHighCritical = missing.length >= HIGH_CRITICAL_THRESHOLD;
+//   const isAdmin = isAdminRole(userRole);
+//   const isMember = isMemberRole(userRole);
+//   const claiming = claimingId === player.id;
+//   const assigning = assigningId === player.id;
+//   const undoing = undoingId === player.id;
+
+//   const isDone = ['COMPLETED', 'DONE'].includes(task?.status);
+//   const isAssigned = !!task && !!task.assignedToId && !task.assignToAll;
+//   const assignedName = task?.assignedTo?.name || task?.assignedTo?.username;
+//   const isClaimedByMe = isAssigned && currentUserId && String(task.assignedToId) === String(currentUserId);
+//   const isClaimedByOther = isAssigned && !isClaimedByMe;
+//   const canEdit = isAdmin || (isMember && isClaimedByMe);
+//   const canClaim = isMember && !isDone && !isClaimedByOther && missing.length > 0;
+
+//   const borderColor = isDone ? 'var(--color-border-success)'
+//     : isHighCritical ? 'var(--danger)'
+//       : isCritical ? '#fca5a5'
+//         : 'var(--color-border)';
+
+//   const bgColor = isDone ? 'var(--color-background-success)'
+//     : isHighCritical ? 'var(--color-background-warning)'
+//       : 'var(--color-cards)';
+
+//   return (
+//     <div style={{ ...CARD_STYLE, border: `1.5px solid ${borderColor}`, background: bgColor, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+//       {/* Row 1: Avatar + name + tier */}
+//       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+//         <Avatar name={player.name} size={38} />
+//         <div style={{ flex: 1, minWidth: 0 }}>
+//           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1.3, wordBreak: 'break-word' }}>{player.name || 'Unnamed'}</div>
+//           <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 1 }}>@{player.username || '—'}</div>
+//         </div>
+//         <TierBadge tier={player.tier} />
+//       </div>
+
+//       {/* Severity badge */}
+//       {isHighCritical && (
+//         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: 'var(--danger)', color: '#fff', fontSize: 10, fontWeight: 800, alignSelf: 'flex-start' }}>
+//           <AlertTriangle style={{ width: 10, height: 10 }} /> HIGHLY CRITICAL
+//         </div>
+//       )}
+//       {isCritical && !isHighCritical && (
+//         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: '#fee2e2', color: 'var(--danger)', fontSize: 10, fontWeight: 800, alignSelf: 'flex-start' }}>
+//           <AlertTriangle style={{ width: 10, height: 10 }} /> CRITICAL
+//         </div>
+//       )}
+
+//       {/* Missing fields */}
+//       <div>
+//         <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 5 }}>
+//           Missing Fields ({missing.length})
+//         </div>
+//         {missing.length === 0
+//           ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--success)', fontWeight: 600 }}>
+//             <CheckCircle style={{ width: 11, height: 11 }} /> All contact info present
+//           </span>
+//           : <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+//             {missing.map(f => <FieldChip key={f} field={f} />)}
+//           </div>
+//         }
+//       </div>
+
+//       {/* Task completed banner + undo */}
+//       {isDone && (
+//         <div style={{ padding: '8px 10px', background: 'var(--color-background-success)', border: '1px solid var(--color-border-success)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+//           <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: 4 }}>
+//             <CheckCircle2 style={{ width: 13, height: 13 }} /> Task completed
+//           </span>
+//           {(isAdmin || isClaimedByMe) && (
+//             <button onClick={() => onUndoTask(player, task)} disabled={undoing}
+//               style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--color-border-success)', background: 'var(--color-cards)', fontSize: 11, fontWeight: 700, color: 'var(--success)', cursor: undoing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+//               {undoing ? <Loader2 style={{ width: 11, height: 11, animation: 'spin 0.8s linear infinite' }} /> : <Undo2 style={{ width: 11, height: 11 }} />}
+//               Undo
+//             </button>
+//           )}
+//         </div>
+//       )}
+
+//       {/* Admin: inline assign */}
+//       {isAdmin && (
+//         <InlineAdminAssign player={player} task={task} teamMembers={teamMembers} onAssigned={onInlineAssign} assigning={assigning} />
+//       )}
+
+//       {/* Member: claim / status */}
+//       {isMember && !isDone && (
+//         <div>
+//           {isClaimedByMe ? (
+//             <div style={{ padding: '7px 10px', borderRadius: 8, background: 'var(--color-background-warning)', border: '1px solid var(--color-border-warning)', fontSize: 11, fontWeight: 600, color: 'var(--amber)', display: 'flex', alignItems: 'center', gap: 5 }}>
+//               <ClipboardList style={{ width: 11, height: 11 }} /> You're working on this task
+//             </div>
+//           ) : isClaimedByOther ? (
+//             <div style={{ padding: '7px 10px', borderRadius: 8, background: 'var(--color-background-secondary)', border: '1px solid var(--color-border)', fontSize: 11, color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
+//               <Lock style={{ width: 11, height: 11 }} /> Claimed by {assignedName || 'another member'}
+//             </div>
+//           ) : canClaim ? (
+//             <button onClick={() => onClaim(player, task)} disabled={claiming}
+//               style={{ width: '100%', padding: '9px 0', borderRadius: 9, border: 'none', cursor: claiming ? 'not-allowed' : 'pointer', background: claiming ? 'var(--color-border)' : 'linear-gradient(135deg,#10b981,#059669)', color: claiming ? 'var(--color-text-muted)' : '#fff', fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit', boxShadow: claiming ? 'none' : '0 2px 10px #10b98135' }}>
+//               {claiming ? <><Loader2 style={{ width: 12, height: 12, animation: 'spin 0.8s linear infinite' }} /> Claiming…</> : <><UserCheck style={{ width: 12, height: 12 }} /> Claim This Player</>}
+//             </button>
+//           ) : missing.length === 0 ? null : (
+//             <div style={{ padding: '7px 10px', borderRadius: 8, background: 'var(--color-background-secondary)', border: '1px solid var(--color-border)', fontSize: 11, color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
+//               <Clock style={{ width: 10, height: 10 }} /> Awaiting task assignment
+//             </div>
+//           )}
+//         </div>
+//       )}
+
+//       {/* Footer */}
+//       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid var(--color-border)', marginTop: 'auto' }}>
+//         <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>Added {new Date(player.createdAt).toLocaleDateString()}</span>
+//         {canEdit ? (
+//           <button onClick={() => onEdit(player)}
+//             style={{ fontSize: 11, fontWeight: 600, borderRadius: 6, padding: '4px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'inherit', background: 'var(--color-cards)', color: 'var(--brand)', border: '1px solid var(--color-border-info)' }}>
+//             <Edit2 style={{ width: 10, height: 10 }} /> Edit
+//           </button>
+//         ) : isMember && !isClaimedByMe && (
+//           <span style={{ fontSize: 10, color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
+//             <Lock style={{ width: 9, height: 9 }} /> Claim to edit
+//           </span>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
+
+function PlayerCard({
+  player, onEdit, onInlineAssign, onClaim, onUndoTask,
+  onMarkNA, onUnmarkNA, onMarkUnreachable,  // ← NEW props
+  userRole, task, claimingId, assigningId, undoingId,
+  teamMembers, currentUserId, markingNAId,
+}) {
   const missing = getMissingContactFields(player);
+  const naFields = getNAFields(player);
   const isCritical = missing.length >= CRITICAL_THRESHOLD;
   const isHighCritical = missing.length >= HIGH_CRITICAL_THRESHOLD;
   const isAdmin = isAdminRole(userRole);
@@ -278,23 +464,26 @@ function PlayerCard({ player, onEdit, onInlineAssign, onClaim, onUndoTask, userR
   const claiming = claimingId === player.id;
   const assigning = assigningId === player.id;
   const undoing = undoingId === player.id;
+  const markingNA = markingNAId === player.id;
 
   const isDone = ['COMPLETED', 'DONE'].includes(task?.status);
   const isAssigned = !!task && !!task.assignedToId && !task.assignToAll;
-  const assignedName = task?.assignedTo?.name || task?.assignedTo?.username;
   const isClaimedByMe = isAssigned && currentUserId && String(task.assignedToId) === String(currentUserId);
   const isClaimedByOther = isAssigned && !isClaimedByMe;
   const canEdit = isAdmin || (isMember && isClaimedByMe);
   const canClaim = isMember && !isDone && !isClaimedByOther && missing.length > 0;
+  const isUnreachable = player.status === 'UNREACHABLE';
 
-  const borderColor = isDone ? 'var(--color-border-success)'
-    : isHighCritical ? 'var(--danger)'
-      : isCritical ? '#fca5a5'
-        : 'var(--color-border)';
+  const borderColor = isUnreachable ? '#a21caf'
+    : isDone ? 'var(--color-border-success)'
+      : isHighCritical ? 'var(--danger)'
+        : isCritical ? '#fca5a5'
+          : 'var(--color-border)';
 
-  const bgColor = isDone ? 'var(--color-background-success)'
-    : isHighCritical ? 'var(--color-background-warning)'
-      : 'var(--color-cards)';
+  const bgColor = isUnreachable ? '#fdf4ff'
+    : isDone ? 'var(--color-background-success)'
+      : isHighCritical ? 'var(--color-background-warning)'
+        : 'var(--color-cards)';
 
   return (
     <div style={{ ...CARD_STYLE, border: `1.5px solid ${borderColor}`, background: bgColor, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -308,13 +497,20 @@ function PlayerCard({ player, onEdit, onInlineAssign, onClaim, onUndoTask, userR
         <TierBadge tier={player.tier} />
       </div>
 
+      {/* Unreachable banner */}
+      {isUnreachable && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: '#a21caf', color: '#fff', fontSize: 10, fontWeight: 800, alignSelf: 'flex-start' }}>
+          📡 UNREACHABLE
+        </div>
+      )}
+
       {/* Severity badge */}
-      {isHighCritical && (
+      {!isUnreachable && isHighCritical && (
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: 'var(--danger)', color: '#fff', fontSize: 10, fontWeight: 800, alignSelf: 'flex-start' }}>
           <AlertTriangle style={{ width: 10, height: 10 }} /> HIGHLY CRITICAL
         </div>
       )}
-      {isCritical && !isHighCritical && (
+      {!isUnreachable && isCritical && !isHighCritical && (
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: '#fee2e2', color: 'var(--danger)', fontSize: 10, fontWeight: 800, alignSelf: 'flex-start' }}>
           <AlertTriangle style={{ width: 10, height: 10 }} /> CRITICAL
         </div>
@@ -324,15 +520,39 @@ function PlayerCard({ player, onEdit, onInlineAssign, onClaim, onUndoTask, userR
       <div>
         <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 5 }}>
           Missing Fields ({missing.length})
+          {naFields.length > 0 && (
+            <span style={{ marginLeft: 6, color: '#94a3b8', fontWeight: 600 }}>· {naFields.length} N/A</span>
+          )}
         </div>
-        {missing.length === 0
-          ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--success)', fontWeight: 600 }}>
-              <CheckCircle style={{ width: 11, height: 11 }} /> All contact info present
-            </span>
-          : <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-              {missing.map(f => <FieldChip key={f} field={f} />)}
-            </div>
-        }
+        {missing.length === 0 && naFields.length === 0 ? (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--success)', fontWeight: 600 }}>
+            <CheckCircle style={{ width: 11, height: 11 }} /> All contact info present
+          </span>
+        ) : (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+            {/* Truly missing fields */}
+            {missing.map(f => (
+              <FieldChip key={f} field={f}
+                canEdit={canEdit}
+                onMarkNA={() => onMarkNA(player, f)}
+              />
+            ))}
+            {/* N/A fields — shown struck-through */}
+            {naFields.map(f => (
+              <FieldChip key={f} field={f}
+                isNA
+                canEdit={canEdit}
+                onUnmarkNA={() => onUnmarkNA(player, f)}
+              />
+            ))}
+          </div>
+        )}
+        {/* N/A hint */}
+        {missing.length > 0 && canEdit && (
+          <p style={{ margin: '5px 0 0', fontSize: 10, color: 'var(--color-text-muted)' }}>
+            ✕ on a chip = player has no account on that platform
+          </p>
+        )}
       </div>
 
       {/* Task completed banner + undo */}
@@ -351,13 +571,31 @@ function PlayerCard({ player, onEdit, onInlineAssign, onClaim, onUndoTask, userR
         </div>
       )}
 
-      {/* Admin: inline assign */}
+      {/* Admin: inline assign + unreachable toggle */}
       {isAdmin && (
-        <InlineAdminAssign player={player} task={task} teamMembers={teamMembers} onAssigned={onInlineAssign} assigning={assigning} />
+        <>
+          <InlineAdminAssign player={player} task={task} teamMembers={teamMembers} onAssigned={onInlineAssign} assigning={assigning} />
+
+          {/* Unreachable toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 6, borderTop: '1px dashed var(--color-border)' }}>
+            <button
+              onClick={() => onMarkUnreachable(player, !isUnreachable)}
+              style={{
+                flex: 1, padding: '7px 0', borderRadius: 8, border: `1px solid ${isUnreachable ? '#a21caf' : 'var(--color-border)'}`,
+                background: isUnreachable ? '#fdf4ff' : 'var(--color-cards)',
+                color: isUnreachable ? '#a21caf' : 'var(--color-text-muted)',
+                fontWeight: 700, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                transition: 'all .15s',
+              }}>
+              📡 {isUnreachable ? 'Mark as Reachable' : 'Mark as Unreachable'}
+            </button>
+          </div>
+        </>
       )}
 
       {/* Member: claim / status */}
-      {isMember && !isDone && (
+      {isMember && !isDone && !isUnreachable && (
         <div>
           {isClaimedByMe ? (
             <div style={{ padding: '7px 10px', borderRadius: 8, background: 'var(--color-background-warning)', border: '1px solid var(--color-border-warning)', fontSize: 11, fontWeight: 600, color: 'var(--amber)', display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -365,7 +603,7 @@ function PlayerCard({ player, onEdit, onInlineAssign, onClaim, onUndoTask, userR
             </div>
           ) : isClaimedByOther ? (
             <div style={{ padding: '7px 10px', borderRadius: 8, background: 'var(--color-background-secondary)', border: '1px solid var(--color-border)', fontSize: 11, color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Lock style={{ width: 11, height: 11 }} /> Claimed by {assignedName || 'another member'}
+              <Lock style={{ width: 11, height: 11 }} /> Claimed by {task?.assignedTo?.name || 'another member'}
             </div>
           ) : canClaim ? (
             <button onClick={() => onClaim(player, task)} disabled={claiming}
@@ -436,6 +674,8 @@ export default function MissingPlayersPage() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [refreshKey, setRefreshKey] = useState(0);
+  const [markingNAId, setMarkingNAId] = useState(null);
+
   const sseRef = useRef(null);
 
   // ── Current user ──────────────────────────────────────────────
@@ -445,10 +685,10 @@ export default function MissingPlayersPage() {
         const u = res?.data || res?.user || res;
         setUserRole(u?.role || null);
         setCurrentUserId(u?.id ? String(u.id) : null);
-      }).catch(() => {});
+      }).catch(() => { });
     api.tasks.getTeamMembers()
       .then(res => setTeamMembers(res?.data || res || []))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // ── Load players ──────────────────────────────────────────────
@@ -476,7 +716,7 @@ export default function MissingPlayersPage() {
       const map = {};
       (data?.data || []).forEach(task => { const pid = getTaskPlayerId(task); if (pid) map[pid] = task; });
       setTasks(map);
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => { loadPlayers(); loadTasks(); }, [loadPlayers, loadTasks, refreshKey]);
@@ -501,10 +741,10 @@ export default function MissingPlayersPage() {
             loadTasks();
           }
           if (type === 'player_updated') loadPlayers(true);
-        } catch {}
+        } catch { }
       };
-      es.onerror = () => {};
-    } catch {}
+      es.onerror = () => { };
+    } catch { }
     return () => sseRef.current?.close();
   }, [loadPlayers, loadTasks]);
 
@@ -558,6 +798,45 @@ export default function MissingPlayersPage() {
     } catch (e) { setError(e.message); } finally { setUndoingId(null); }
   }, []);
 
+
+  const handleMarkNA = useCallback(async (player, field) => {
+    setMarkingNAId(player.id);
+    try {
+      const current = player.noAccountOn || [];
+      if (current.includes(field)) return;
+      const updated = [...current, field];
+      await api.players.updatePlayer(player.id, { noAccountOn: updated });
+      setPlayers(prev => prev.map(p => {
+        if (p.id !== player.id) return p;
+        const updatedPlayer = { ...p, noAccountOn: updated };
+        // if no truly missing fields left, remove from list
+        if (getMissingContactFields(updatedPlayer).length === 0) return null;
+        return updatedPlayer;
+      }).filter(Boolean));
+    } catch (e) { setError(e.message); } finally { setMarkingNAId(null); }
+  }, []);
+
+  const handleUnmarkNA = useCallback(async (player, field) => {
+    setMarkingNAId(player.id);
+    try {
+      const updated = (player.noAccountOn || []).filter(f => f !== field);
+      await api.players.updatePlayer(player.id, { noAccountOn: updated });
+      setPlayers(prev => prev.map(p =>
+        p.id !== player.id ? p : { ...p, noAccountOn: updated }
+      ));
+    } catch (e) { setError(e.message); } finally { setMarkingNAId(null); }
+  }, []);
+
+  const handleMarkUnreachable = useCallback(async (player, makeUnreachable) => {
+    try {
+      const newStatus = makeUnreachable ? 'UNREACHABLE' : 'INACTIVE';
+      await api.players.updatePlayer(player.id, { status: newStatus });
+      setPlayers(prev => prev.map(p =>
+        p.id !== player.id ? p : { ...p, status: newStatus }
+      ));
+    } catch (e) { setError(e.message || 'Failed to update status'); }
+  }, []);
+
   const handleSaved = useCallback((updated) => {
     setEditTarget(null);
     setPlayers(prev => {
@@ -568,6 +847,16 @@ export default function MissingPlayersPage() {
   }, []);
 
   // ── Stats ─────────────────────────────────────────────────────
+  // const stats = {
+  //   total: players.length,
+  //   highCritical: players.filter(p => getMissingContactFields(p).length >= HIGH_CRITICAL_THRESHOLD).length,
+  //   critical: players.filter(p => getMissingContactFields(p).length >= CRITICAL_THRESHOLD).length,
+  //   misSnap: players.filter(p => getMissingContactFields(p).includes('snapchat')).length,
+  //   misPhone: players.filter(p => getMissingContactFields(p).includes('phone')).length,
+  //   misEmail: players.filter(p => getMissingContactFields(p).includes('email')).length,
+  //   unassigned: players.filter(p => !tasks[String(p.id)]).length,
+  // };
+
   const stats = {
     total: players.length,
     highCritical: players.filter(p => getMissingContactFields(p).length >= HIGH_CRITICAL_THRESHOLD).length,
@@ -576,6 +865,7 @@ export default function MissingPlayersPage() {
     misPhone: players.filter(p => getMissingContactFields(p).includes('phone')).length,
     misEmail: players.filter(p => getMissingContactFields(p).includes('email')).length,
     unassigned: players.filter(p => !tasks[String(p.id)]).length,
+    unreachable: players.filter(p => p.status === 'UNREACHABLE').length,  // ← NEW
   };
 
   const filtered = players.filter(p => {
@@ -584,26 +874,36 @@ export default function MissingPlayersPage() {
     const matchSearch = !q || p.name?.toLowerCase().includes(q) || p.username?.toLowerCase().includes(q);
     const matchFilter =
       filter === 'all' ? true :
-      filter === 'highcritical' ? missing.length >= HIGH_CRITICAL_THRESHOLD :
-      filter === 'critical' ? missing.length >= CRITICAL_THRESHOLD :
-      filter === 'unassigned' ? !tasks[String(p.id)] :
-      CONTACT_KEYS.includes(filter) ? missing.includes(filter) : true;
+        filter === 'unreachable' ? player.status === 'UNREACHABLE' :
+          filter === 'highcritical' ? missing.length >= HIGH_CRITICAL_THRESHOLD :
+            filter === 'critical' ? missing.length >= CRITICAL_THRESHOLD :
+              filter === 'unassigned' ? !tasks[String(p.id)] :
+                CONTACT_KEYS.includes(filter) ? missing.includes(filter) : true;
     return matchSearch && matchFilter;
   });
 
   const isAdmin = isAdminRole(userRole);
   const isMember = isMemberRole(userRole);
 
+  // const FILTERS = [
+  //   { id: 'all', label: 'All', count: stats.total },
+  //   { id: 'highcritical', label: '🔴 High Critical', count: stats.highCritical },
+  //   { id: 'critical', label: '🟠 Critical', count: stats.critical },
+  //   { id: 'snapchat', label: 'Snapchat', count: stats.misSnap },
+  //   { id: 'phone', label: 'Phone', count: stats.misPhone },
+  //   { id: 'email', label: 'Email', count: stats.misEmail },
+  //   { id: 'unassigned', label: 'Unassigned', count: stats.unassigned },
+  // ];
   const FILTERS = [
-    { id: 'all',         label: 'All',              count: stats.total },
-    { id: 'highcritical',label: '🔴 High Critical', count: stats.highCritical },
-    { id: 'critical',    label: '🟠 Critical',      count: stats.critical },
-    { id: 'snapchat',    label: 'Snapchat',          count: stats.misSnap },
-    { id: 'phone',       label: 'Phone',             count: stats.misPhone },
-    { id: 'email',       label: 'Email',             count: stats.misEmail },
-    { id: 'unassigned',  label: 'Unassigned',        count: stats.unassigned },
+    { id: 'all', label: 'All', count: stats.total },
+    { id: 'highcritical', label: '🔴 High Critical', count: stats.highCritical },
+    { id: 'critical', label: '🟠 Critical', count: stats.critical },
+    { id: 'unreachable', label: '📡 Unreachable', count: stats.unreachable },  // ← NEW
+    { id: 'snapchat', label: 'Snapchat', count: stats.misSnap },
+    { id: 'phone', label: 'Phone', count: stats.misPhone },
+    { id: 'email', label: 'Email', count: stats.misEmail },
+    { id: 'unassigned', label: 'Unassigned', count: stats.unassigned },
   ];
-
   // ── Shift gate (matches PlaytimePage layout) ──────────────────
   if (!shiftActive) {
     return (
@@ -633,12 +933,12 @@ export default function MissingPlayersPage() {
 
       {/* ── Stat Strip (matches PlaytimePage) ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-        <StatCard label="Total (Missing Info)"  value={stats.total}       color="#64748b" bg="#f1f5f9"  border="#cbd5e1"  icon={Users} />
-        <StatCard label="Highly Critical (3+)"  value={stats.highCritical} color="#dc2626" bg="#fff1f2"  border="#fecdd3"  icon={AlertTriangle} />
-        <StatCard label="Critical (2+ missing)" value={stats.critical}    color="#f97316" bg="#fff7ed"  border="#fed7aa"  icon={AlertCircle} />
-        <StatCard label="Missing Snapchat"       value={stats.misSnap}     color="#eab308" bg="#fefce8"  border="#fde047"  icon={Camera} />
-        <StatCard label="Missing Phone"          value={stats.misPhone}    color="#8b5cf6" bg="#faf5ff"  border="#ddd6fe"  icon={Phone} />
-        <StatCard label="Unassigned Tasks"       value={stats.unassigned}  color="#0ea5e9" bg="#f0f9ff"  border="#bae6fd"  icon={ClipboardList} />
+        <StatCard label="Total (Missing Info)" value={stats.total} color="#64748b" bg="#f1f5f9" border="#cbd5e1" icon={Users} />
+        <StatCard label="Highly Critical (3+)" value={stats.highCritical} color="#dc2626" bg="#fff1f2" border="#fecdd3" icon={AlertTriangle} />
+        <StatCard label="Critical (2+ missing)" value={stats.critical} color="#f97316" bg="#fff7ed" border="#fed7aa" icon={AlertCircle} />
+        <StatCard label="Missing Snapchat" value={stats.misSnap} color="#eab308" bg="#fefce8" border="#fde047" icon={Camera} />
+        <StatCard label="Missing Phone" value={stats.misPhone} color="#8b5cf6" bg="#faf5ff" border="#ddd6fe" icon={Phone} />
+        <StatCard label="Unassigned Tasks" value={stats.unassigned} color="#0ea5e9" bg="#f0f9ff" border="#bae6fd" icon={ClipboardList} />
       </div>
 
       {/* ── Main Card ── */}
@@ -740,6 +1040,21 @@ export default function MissingPlayersPage() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
               {filtered.map(player => (
+                // <PlayerCard
+                //   key={player.id}
+                //   player={player}
+                //   onEdit={setEditTarget}
+                //   onInlineAssign={handleInlineAssign}
+                //   onClaim={handleClaim}
+                //   onUndoTask={handleUndoTask}
+                //   userRole={userRole}
+                //   task={tasks[String(player.id)] || null}
+                //   claimingId={claimingId}
+                //   assigningId={assigningId}
+                //   undoingId={undoingId}
+                //   teamMembers={teamMembers}
+                //   currentUserId={currentUserId}
+                // />
                 <PlayerCard
                   key={player.id}
                   player={player}
@@ -747,11 +1062,15 @@ export default function MissingPlayersPage() {
                   onInlineAssign={handleInlineAssign}
                   onClaim={handleClaim}
                   onUndoTask={handleUndoTask}
+                  onMarkNA={handleMarkNA}           // ← NEW
+                  onUnmarkNA={handleUnmarkNA}       // ← NEW
+                  onMarkUnreachable={handleMarkUnreachable}  // ← NEW
                   userRole={userRole}
                   task={tasks[String(player.id)] || null}
                   claimingId={claimingId}
                   assigningId={assigningId}
                   undoingId={undoingId}
+                  markingNAId={markingNAId}         // ← NEW
                   teamMembers={teamMembers}
                   currentUserId={currentUserId}
                 />
