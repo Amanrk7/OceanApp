@@ -1475,9 +1475,9 @@ export default function PlayerDashboard() {
                                                     background: '#fff1f2', border: '1px solid #fecdd3',
                                                     borderRadius: '8px', fontSize: '12px', color: '#991b1b',
                                                 }}>
-                                                    ⚠ This will permanently remove the referral bonus eligibility record.
-                                                    Neither {player.name} nor {rb.counterpartName} will receive the bonus.
-                                                    This cannot be undone — re-record it via a new deposit if needed.
+                                                    ⚠ This will cancel <strong>{player.name}'s [B]</strong> referral bonus only.
+<strong>{rb.counterpartName} [A]</strong> (the referrer) will still be able
+to receive their bonus from the Bonus page. This cannot be undone.
                                                 </div>
                                             )}
                                         </div>
