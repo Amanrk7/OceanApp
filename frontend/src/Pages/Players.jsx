@@ -24,11 +24,21 @@ const TIER = {
     SILVER: { bg: '#eef2ff', text: '#3730a3', border: '#c7d2fe', dot: '#6366f1', label: 'Silver' },
     GOLD: { bg: '#fefce8', text: '#854d0e', border: '#fde68a', dot: '#eab308', label: 'Gold' },
 };
+// const STATUS = {
+//     ACTIVE: { bg: '#f0fdf4', text: '#15803d', border: '#86efac', dot: '#22c55e', label: 'Active' },
+//     CRITICAL: { bg: '#fefce8', text: '#854d0e', border: '#fde68a', dot: '#eab308', label: 'Critical' },
+//     HIGHLY_CRITICAL: { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa', dot: '#f97316', label: 'High Crit.' },
+//     INACTIVE: { bg: '#fef2f2', text: '#991b1b', border: '#fecaca', dot: '#ef4444', label: 'Inactive' },
+//     SUSPENDED: { bg: '#fef2f2', text: '#991b1b', border: '#fecaca', dot: '#ef4444', label: 'Suspended' },
+//     BANNED: { bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe', dot: '#8b5cf6', label: 'Banned' },
+// };
+// Add to the STATUS object:
 const STATUS = {
     ACTIVE: { bg: '#f0fdf4', text: '#15803d', border: '#86efac', dot: '#22c55e', label: 'Active' },
     CRITICAL: { bg: '#fefce8', text: '#854d0e', border: '#fde68a', dot: '#eab308', label: 'Critical' },
     HIGHLY_CRITICAL: { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa', dot: '#f97316', label: 'High Crit.' },
     INACTIVE: { bg: '#fef2f2', text: '#991b1b', border: '#fecaca', dot: '#ef4444', label: 'Inactive' },
+    UNREACHABLE: { bg: '#fdf4ff', text: '#86198f', border: '#e879f9', dot: '#a21caf', label: 'Unreachable' },  // ← ADD
     SUSPENDED: { bg: '#fef2f2', text: '#991b1b', border: '#fecaca', dot: '#ef4444', label: 'Suspended' },
     BANNED: { bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe', dot: '#8b5cf6', label: 'Banned' },
 };
@@ -223,6 +233,8 @@ export default function Players() {
                 <StatCard icon={TrendingUp} label="Active" value={statusCounts.ACTIVE ?? 0} color="#15803d" bg="#f0fdf4" border="#86efac" />
                 <StatCard icon={AlertTriangle} label="Critical" value={(statusCounts.CRITICAL ?? 0) + (statusCounts.HIGHLY_CRITICAL ?? 0)} color="#b45309" bg="#fffbeb" border="#fde68a" />
                 <StatCard icon={UserX} label="Inactive" value={statusCounts.INACTIVE ?? 0} color="#991b1b" bg="#fef2f2" border="#fecaca" />
+                <StatCard icon={UserX} label="Unreachable" value={statusCounts.UNREACHABLE ?? 0} color="#86198f" bg="#fdf4ff" border="#e879f9" />
+
             </div>
 
             {/* ── Controls bar ── */}
