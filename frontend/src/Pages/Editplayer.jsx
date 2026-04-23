@@ -173,6 +173,7 @@ export default function EditPlayer({ player, onClose, onSaved }) {
     const [friendSearch, setFriendSearch] = useState('');
     const [friendResults, setFriendResults] = useState([]);
     const [friendSearchOpen, setFriendSearchOpen] = useState(false);
+    const [currentUserRole, setCurrentUserRole] = useState(null);
     const friendSearchRef = useRef(null);
 
     // In the useEffect that initializes form from player:
