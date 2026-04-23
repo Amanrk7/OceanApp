@@ -11,9 +11,13 @@ const C = {
     border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
 };
 
+// const TIER_CASHOUT = { BRONZE: 250, SILVER: 500, GOLD: 750 };
+// const STATUS_OPTS = ['ACTIVE', 'CRITICAL', 'HIGHLY_CRITICAL', 'INACTIVE', 'UNREACHABLE'];
+// const TIER_OPTS = ['BRONZE', 'SILVER', 'GOLD'];
+// These are MODULE-LEVEL constants — no component state here
 const TIER_CASHOUT = { BRONZE: 250, SILVER: 500, GOLD: 750 };
-const STATUS_OPTS = ['ACTIVE', 'CRITICAL', 'HIGHLY_CRITICAL', 'INACTIVE', 'UNREACHABLE'];
-const TIER_OPTS = ['BRONZE', 'SILVER', 'GOLD'];
+const STATUS_OPTS  = ['ACTIVE', 'CRITICAL', 'HIGHLY_CRITICAL', 'INACTIVE', 'UNREACHABLE'];
+const TIER_OPTS    = ['BRONZE', 'SILVER', 'GOLD'];
 
 const INPUT = {
     width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`,
@@ -347,36 +351,29 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                                     </select>
                                 </Field>
                                 <Field label="Status">
-                                    {/* <select style={selectStyle} value={form.status} onChange={e => set('status', e.target.value)}>
-                                        {STATUS_OPTS.map(s => (
-                                            <option key={s} value={s}>
-                                                {s.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
-                                            </option>
-                                        ))}
-                                    </select> */}
-                                    <select
-                                        style={selectStyle}
-                                        value={form.status}
-                                        onChange={e => set('status', e.target.value)}
-                                    >
-                                        {STATUS_OPTS.map(s => {
-                                            const isUnreachable = s === 'UNREACHABLE';
-                                            const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(currentUserRole);
-                                            const disabled = isUnreachable && !isAdmin;
-                                            return (
-                                                <option key={s} value={s} disabled={disabled} style={disabled ? { color: '#94a3b8' } : {}}>
-                                                    {s.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
-                                                    {isUnreachable && !isAdmin ? ' (Admin only)' : ''}
-                                                </option>
-                                            );
-                                        })}
-                                    </select>
-                                    {form.status === 'UNREACHABLE' && (
-                                        <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#86198f' }}>
-                                            📡 Only admins can set or change this status.
-                                        </p>
-                                    )}
-                                </Field>
+    <select
+        style={selectStyle}
+        value={form.status}
+        onChange={e => set('status', e.target.value)}
+    >
+        {STATUS_OPTS.map(s => {
+            const isUnreachable = s === 'UNREACHABLE';
+            const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(currentUserRole);
+            const disabled = isUnreachable && !isAdmin;
+            return (
+                <option key={s} value={s} disabled={disabled}>
+                    {s.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                    {disabled ? ' (Admin only)' : ''}
+                </option>
+            );
+        })}
+    </select>
+    {form.status === 'UNREACHABLE' && (
+        <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#86198f' }}>
+            📡 Only admins can set or change this status.
+        </p>
+    )}
+</Field>
                                 <Field label="Cashout Limit ($)" hint="Auto-set by tier">
                                     <input style={INPUT} type="number" min="0" step="0.01"
                                         value={form.cashoutLimit} onChange={e => set('cashoutLimit', e.target.value)} />
