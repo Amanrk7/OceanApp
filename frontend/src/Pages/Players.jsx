@@ -179,16 +179,45 @@ export default function Players() {
     const [currentPage, setCurrentPage] = useState(1);
     const [editPlayer, setEditPlayer] = useState(null);
     const [deletePlayer, setDeletePlayer] = useState(null);
+    const [statusTotals, setStatusTotals] = useState({});
+
     const itemsPerPage = 10;
 
-    const loadPlayers = useCallback(async () => {
-        try {
-            setLoading(true);
-            const result = await api.players.getPlayers(currentPage, itemsPerPage, searchTerm, filterTab === 'all' ? '' : filterTab);
-            setData(result);
-        } catch (err) { console.error(err); }
-        finally { setLoading(false); }
-    }, [currentPage, searchTerm, filterTab]);
+    // const loadPlayers = useCallback(async () => {
+    //     try {
+    //         setLoading(true);
+    //         const result = await api.players.getPlayers(currentPage, itemsPerPage, searchTerm, filterTab === 'all' ? '' : filterTab);
+    //         setData(result);
+    //     } catch (err) { console.error(err); }
+    //     finally { setLoading(false); }
+    // }, [currentPage, searchTerm, filterTab]);
+    // In loadPlayers:
+const loadPlayers = useCallback(async () => {
+  try {
+    setLoading(true);
+    const result = await api.players.getPlayers(currentPage, itemsPerPage, searchTerm, filterTab === 'all' ? '' : filterTab);
+    setData(result);
+
+    // Fetch status counts (only when not filtering, to get accurate totals)
+    if (!searchTerm) {
+      const [active, critical, hc, inactive, unreachable] = await Promise.all([
+        api.players.getPlayers(1, 1, '', 'ACTIVE'),
+        api.players.getPlayers(1, 1, '', 'CRITICAL'),
+        api.players.getPlayers(1, 1, '', 'HIGHLY_CRITICAL'),
+        api.players.getPlayers(1, 1, '', 'INACTIVE'),
+        api.players.getPlayers(1, 1, '', 'UNREACHABLE'),
+      ]);
+      setStatusTotals({
+        ACTIVE: active.pagination?.total ?? 0,
+        CRITICAL: critical.pagination?.total ?? 0,
+        HIGHLY_CRITICAL: hc.pagination?.total ?? 0,
+        INACTIVE: inactive.pagination?.total ?? 0,
+        UNREACHABLE: unreachable.pagination?.total ?? 0,
+      });
+    }
+  } catch (err) { console.error(err); }
+  finally { setLoading(false); }
+}, [currentPage, searchTerm, filterTab]);
 
     useEffect(() => { loadPlayers(); }, [loadPlayers]);
 
@@ -217,6 +246,7 @@ export default function Players() {
         { id: 'CRITICAL', label: 'Critical' },
         { id: 'HIGHLY_CRITICAL', label: 'High Critical' },
         { id: 'INACTIVE', label: 'Inactive' },
+        { id: 'UNREACHABLE', label: 'Unreachable' },
     ];
 
     const statusCounts = TABS.slice(1).reduce((acc, t) => {
