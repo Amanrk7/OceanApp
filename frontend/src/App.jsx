@@ -5,6 +5,7 @@ import { AddPlayerProvider, AddPlayerContext } from "./Context/addPlayer.jsx";
 import { PlayerDashboardPlayerNameProvider } from "./Context/playerDashboardPlayerNamecontext.jsx";
 import { ShiftStatusProvider } from "./Context/membershiftStatus.jsx";
 import { CurrentUserProvider, CurrentUserContext } from "./Context/currentUser.jsx";
+import { ToastProvider } from './Context/toastContext';
 import { ThemeProvider, useTheme } from "./Context/Themecontext.jsx";
 import { App2Context, App2Provider } from "./Context/store2Switch.jsx";
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -507,7 +508,7 @@ function StoreSwitcher({ user, onSwitch }) {
   //   }
   // };
 
-const handleSwitch = async (targetStoreId) => {
+  const handleSwitch = async (targetStoreId) => {
     setError('');
     setSwitching(true);
     setOpen(false);
@@ -1242,40 +1243,44 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider>
-      <CurrentUserProvider>
-        <ShiftStatusProvider>
-          <AddPlayerProvider>
-            <PlayerDashboardPlayerNameProvider>
-              <style>{CSS}</style>
+    <ToastProvider>
 
-              {/* Store selection modal — shown before main app when multi-store */}
-              {user && showStoreSelect && !storeSelectionDone && (
-                <StoreSelectionModal user={user} onConfirm={handleStoreConfirm} />
-              )}
-              <Router>
+      <ThemeProvider>
+        <CurrentUserProvider>
+          <ShiftStatusProvider>
+            <AddPlayerProvider>
+              <PlayerDashboardPlayerNameProvider>
+                <style>{CSS}</style>
 
-                <Routes>
-                  <Route path="/" element={
-                    user
-                      ? <ShiftStartGate><AdminDashboard user={user} /></ShiftStartGate>
-                      : <LoginPage />
-                  } />
-                  <Route path="/PlayerDashboard/:playerId" element={
-                    user ? <PlayerDashboardWithSidebar user={user} /> : <LoginPage />
-                  } />
-                  <Route path="/shifts"
-                    element={user ? <ShiftsWithSidebar user={user} /> : <LoginPage />}
-                  />
-                  <Route path="/addNewPlayer" element={
-                    user ? <AddNewPlayerWithSidebar user={user} /> : <LoginPage />
-                  } />
-                </Routes>
-              </Router>
-            </PlayerDashboardPlayerNameProvider>
-          </AddPlayerProvider>
-        </ShiftStatusProvider>
-      </CurrentUserProvider>
-    </ThemeProvider>
+                {/* Store selection modal — shown before main app when multi-store */}
+                {user && showStoreSelect && !storeSelectionDone && (
+                  <StoreSelectionModal user={user} onConfirm={handleStoreConfirm} />
+                )}
+                <Router>
+
+                  <Routes>
+                    <Route path="/" element={
+                      user
+                        ? <ShiftStartGate><AdminDashboard user={user} /></ShiftStartGate>
+                        : <LoginPage />
+                    } />
+                    <Route path="/PlayerDashboard/:playerId" element={
+                      user ? <PlayerDashboardWithSidebar user={user} /> : <LoginPage />
+                    } />
+                    <Route path="/shifts"
+                      element={user ? <ShiftsWithSidebar user={user} /> : <LoginPage />}
+                    />
+                    <Route path="/addNewPlayer" element={
+                      user ? <AddNewPlayerWithSidebar user={user} /> : <LoginPage />
+                    } />
+                  </Routes>
+                </Router>
+              </PlayerDashboardPlayerNameProvider>
+            </AddPlayerProvider>
+          </ShiftStatusProvider>
+        </CurrentUserProvider>
+      </ThemeProvider>
+    </ToastProvider>
+
   );
 }
