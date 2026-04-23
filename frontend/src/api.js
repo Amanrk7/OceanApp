@@ -2,8 +2,10 @@
  * OceanBets Dashboard - Complete API Integration
  * Synced with backend for efficient real-time dashboard
  */
+import { translateError } from './Context/toastContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
 // api.js — near the top, after API_BASE_URL
 let _currentStoreId = 1;
 const storeKey = () => `s${_currentStoreId}`;
@@ -80,6 +82,26 @@ async function fetchAPI(endpoint, options = {}) {
       ...options
     });
 
+    // if (!response.ok) {
+    //   let errorMsg = `Server error (${response.status})`;
+    //   try {
+    //     const contentType = response.headers.get('content-type') || '';
+    //     if (contentType.includes('application/json')) {
+    //       const error = await response.json();
+    //       errorMsg = error.error || error.message || errorMsg;
+    //     } else {
+    //       errorMsg = (response.status === 502 || response.status === 503)
+    //         ? 'Backend is starting up — please wait a moment and try again'
+    //         : `Server error (${response.status})`;
+    //     }
+    //   } catch (_) {
+    //     window.__toastAdd?.(errorMsg, 'error');
+    //     throw new Error(errorMsg);
+    //     // .json() itself threw — body was not parseable at all
+    //   }
+    //   throw new Error(errorMsg);
+    // }
+
     if (!response.ok) {
       let errorMsg = `Server error (${response.status})`;
       try {
@@ -92,9 +114,9 @@ async function fetchAPI(endpoint, options = {}) {
             ? 'Backend is starting up — please wait a moment and try again'
             : `Server error (${response.status})`;
         }
-      } catch (_) {
-        // .json() itself threw — body was not parseable at all
-      }
+      } catch (_) { }
+      // ← Fire global toast automatically
+      window.__toastAdd?.(errorMsg, 'error');
       throw new Error(errorMsg);
     }
 
@@ -105,7 +127,10 @@ async function fetchAPI(endpoint, options = {}) {
     }
 
   } catch (error) {
-    console.error(`API Error [${endpoint}]:`, error);
+    if (!error.message?.includes('Server error')) {
+      // Network errors (no response at all)
+      window.__toastAdd?.(error.message, 'error');
+    }
     throw error;
   }
 }
@@ -353,14 +378,14 @@ export const transactionsAPI = {
   //   return data;
   // },
   getTransactions: async (page = 1, limit = 10, type = '', status = '', forceRefresh = false) => {
-  const queryString = buildQueryString({ page, limit, type, status });
-  // ✅ Include storeKey so store 1 and store 2 never share cache entries
-  const cacheKey = `${storeKey()}_transactions_${page}_${limit}_${type}_${status}`;
-  if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
-  const data = await fetchAPI(`/transactions${queryString}`);
-  cache.set(cacheKey, data, 30 * 1000);
-  return data;
-},
+    const queryString = buildQueryString({ page, limit, type, status });
+    // ✅ Include storeKey so store 1 and store 2 never share cache entries
+    const cacheKey = `${storeKey()}_transactions_${page}_${limit}_${type}_${status}`;
+    if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
+    const data = await fetchAPI(`/transactions${queryString}`);
+    cache.set(cacheKey, data, 30 * 1000);
+    return data;
+  },
 
   undoTransaction: async (transactionId) => {
     const data = await fetchAPI(`/transactions/${transactionId}/undo`, { method: 'POST' });
@@ -702,8 +727,8 @@ export const referralBonusAPI = {
     }),
   getLedger: () => fetchAPI('/referral-bonuses'),
   // ── NEW: cancel a pending referral bonus eligibility record ──
-    cancel: (rbId) =>
-        fetchAPI(`/referral-bonuses/${rbId}`, { method: 'DELETE' }),
+  cancel: (rbId) =>
+    fetchAPI(`/referral-bonuses/${rbId}`, { method: 'DELETE' }),
 };
 
 export const profitTakeoutsAPI = {
