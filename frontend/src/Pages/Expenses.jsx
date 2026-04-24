@@ -722,7 +722,7 @@ export const ExpensesPage = () => {
                     <Field label="Notes">
                         <FocusInput as="textarea" rows={2} value={editFormData.notes} onChange={e => setEditFormData({ ...editFormData, notes: e.target.value })} style={{ resize: 'none', lineHeight: '1.6' }} />
                     </Field>
-                    <AlertBanner type="error" message={editError} />
+                    {/* <AlertBanner type="error" message={editError} /> */}
                     <ModalActions
                         onCancel={() => setEditingExpense(null)}
                         submitLabel="Save Changes"
