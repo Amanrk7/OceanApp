@@ -1,4 +1,3 @@
-// pages/AdminReportPage.jsx  —  Redesigned to match audit-style shift report
 import { useState, useEffect, useCallback } from "react";
 import {
     FileText, Download, RefreshCw, Calendar, Users, TrendingUp,
@@ -7,6 +6,7 @@ import {
     DollarSign, BarChart2, Target, Wallet, Gamepad2, MessageSquare,
     ShieldCheck, AlertTriangle, ArrowLeft, Zap, Star, List
 } from "lucide-react";
+import { useToast } from '../Context/toastContext';
 import { api } from "../api";
 
 // ── Design tokens ─────────────────────────────────────────────
@@ -158,52 +158,35 @@ function CashFlowAudit({ startSnapshot, endSnapshot, transactions }) {
     const endWallets = endSnapshot.walletSnapshot ?? [];
     const allIds = [...new Set([...startWallets.map(w => w.id), ...endWallets.map(w => w.id)])];
 
-    // const rows = allIds.map(id => {
-    //     const sw = startWallets.find(w => w.id === id);
-    //     const ew = endWallets.find(w => w.id === id);
-    //     const delta = (ew?.balance ?? 0) - (sw?.balance ?? 0);
-    //     return { name: sw?.name ?? ew?.name ?? id, method: sw?.method ?? ew?.method ?? "", start: sw?.balance ?? 0, end: ew?.balance ?? 0, delta };
-    // });
-
     // 1. In the Cash Flow Audit calculation
-const rows = allIds.map(id => {
-    const sw = startWallets.find(w => w.id === id);
-    const ew = endWallets.find(w => w.id === id);
-    const delta = (ew?.balance ?? 0) - (sw?.balance ?? 0);
-    return { 
-        name: sw?.name ?? ew?.name ?? id, 
-        method: sw?.method ?? ew?.method ?? "", 
-        start: sw?.balance ?? 0, 
-        end: ew?.balance ?? 0, 
-        delta 
-    };
-});
+    const rows = allIds.map(id => {
+        const sw = startWallets.find(w => w.id === id);
+        const ew = endWallets.find(w => w.id === id);
+        const delta = (ew?.balance ?? 0) - (sw?.balance ?? 0);
+        return {
+            name: sw?.name ?? ew?.name ?? id,
+            method: sw?.method ?? ew?.method ?? "",
+            start: sw?.balance ?? 0,
+            end: ew?.balance ?? 0,
+            delta
+        };
+    });
 
-// 2. Fix the Total Revenue calculation (WHERE THE ERROR IS LIKELY)
-// Ensure 'aggr' is defined in the arguments of the reduce function
-// const totalRevenue = transactions.reduce((aggr, tx) => {
-//     const amt = tx.amount || 0;
-//     const type = (tx.type || "").toUpperCase();
-//     if (type === "DEPOSIT") return aggr + amt;
-//     if (type === "WITHDRAWAL" || type === "CASHOUT") return aggr - amt;
-//     return aggr;
-// }, 0); // <--- Ensure 0 is the initial value
+    // 'aggr' is now properly defined as the first argument
+    const totalRevenue = transactions.reduce((aggr, tx) => {
+        const amt = tx.amount || 0;
+        const type = (tx.type || "").toUpperCase();
+        if (type === "DEPOSIT") return aggr + amt;
+        if (type === "WITHDRAWAL" || type === "CASHOUT") return aggr - amt;
+        return aggr;
+    }, 0);
 
-// 'aggr' is now properly defined as the first argument
-const totalRevenue = transactions.reduce((aggr, tx) => {
-    const amt = tx.amount || 0;
-    const type = (tx.type || "").toUpperCase();
-    if (type === "DEPOSIT") return aggr + amt;
-    if (type === "WITHDRAWAL" || type === "CASHOUT") return aggr - amt;
-    return aggr;
-}, 0); 
-    
-// 3. Fix the Bonus calculation
-const totalBonuses = transactions.reduce((aggr, tx) => {
-    const type = (tx.type || "").toUpperCase();
-    if (type.includes("BONUS")) return aggr + (tx.amount || 0);
-    return aggr;
-}, 0);
+    // 3. Fix the Bonus calculation
+    const totalBonuses = transactions.reduce((aggr, tx) => {
+        const type = (tx.type || "").toUpperCase();
+        if (type.includes("BONUS")) return aggr + (tx.amount || 0);
+        return aggr;
+    }, 0);
 
     return (
         <div style={{ ...CARD, overflow: "hidden" }}>
@@ -314,101 +297,6 @@ function GamePointAudit({ startSnapshot, endSnapshot }) {
         </div>
     );
 }
-
-// ── Shift Activity Log ────────────────────────────────────────
-// function ShiftActivityLog({ transactions }) {
-//     if (!transactions?.length) return (
-//         <div style={{ ...CARD, padding: "28px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>
-//             No activity recorded for this shift
-//         </div>
-//     );
-
-//     return (
-//         <div style={{ ...CARD, overflow: "hidden" }}>
-//             <div style={{ padding: "12px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "8px" }}>
-//                 <List style={{ width: "14px", height: "14px", color: "#64748b" }} />
-//                 <span style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.4px" }}>
-//                     Shift Activity Log ({transactions.length})
-//                 </span>
-//             </div>
-//             <div style={{ overflowX: "auto" }}>
-//                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
-//                     <thead>
-//                         <tr>
-//                             {["Time", "Source", "Type", "Details", "Amount / Points"].map(h => (
-//                                 <th key={h} style={{ ...TH, textAlign: h === "Amount / Points" ? "right" : "left" }}>{h}</th>
-//                             ))}
-//                         </tr>
-//                     </thead>
-//                     <tbody>
-//                         {transactions.map(t => {
-//                             const isDeposit = t.type === "DEPOSIT";
-//                             const isCashout = t.type === "WITHDRAWAL";
-//                             const isBonus = t.type === "BONUS";
-//                             const amtColor = isDeposit ? "#16a34a" : isCashout ? "#dc2626" : isBonus ? "#c2410c" : "#475569";
-//                             const amtPrefix = isDeposit ? "+" : isCashout ? "−" : isBonus ? "−" : "";
-//                             const pts = t.gameStockAfter != null && t.gameStockBefore != null
-//                                 ? (t.gameStockAfter - t.gameStockBefore)
-//                                 : null;
-
-//                             return (
-//                                 <tr key={t.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
-//                                     <td style={{ ...TD, fontSize: "12px", color: "#64748b", whiteSpace: "nowrap" }}>
-//                                         {fmtTime(t.createdAt)}
-//                                     </td>
-//                                     <td style={{ ...TD, fontSize: "12px" }}>
-//                                         {t.user?.name || t.playerName
-//                                             ? <div>
-//                                                 <div style={{ fontWeight: "600", color: "#0f172a" }}>{t.user?.name || t.playerName}</div>
-//                                                 {t.user?.email && <div style={{ fontSize: "11px", color: "#94a3b8" }}>{t.user.email}</div>}
-//                                             </div>
-//                                             : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>System Event</span>}
-//                                     </td>
-//                                     <td style={TD}>
-//                                         <DisplayTypeBadge type={t.displayType || t.type} />
-//                                         {t.bonusType && (
-//                                             <div style={{ marginTop: "3px" }}>
-//                                                 <span style={{ fontSize: "10px", color: "#7c3aed", background: "#f5f3ff", padding: "1px 6px", borderRadius: "4px", fontWeight: "700" }}>
-//                                                     {t.bonusType.toUpperCase()}
-//                                                 </span>
-//                                             </div>
-//                                         )}
-//                                     </td>
-//                                     <td style={{ ...TD, fontSize: "12px" }}>
-//                                         <div>
-//                                             {t.gameName && <span style={{ fontWeight: "600" }}>{t.gameName}</span>}
-//                                             {t.walletMethod && (
-//                                                 <div style={{ color: "#64748b", marginTop: "1px" }}>
-//                                                     {t.walletMethod}{t.walletName ? ` · ${t.walletName}` : ""}
-//                                                 </div>
-//                                             )}
-//                                             {!t.gameName && !t.walletMethod && <span style={{ color: "#94a3b8" }}>—</span>}
-//                                         </div>
-//                                     </td>
-//                                     <td style={{ ...TD, textAlign: "right" }}>
-//                                         <div style={{ fontWeight: "800", fontSize: "14px", color: amtColor }}>
-//                                             {amtPrefix}{fmtMoney(t.amount)}
-//                                         </div>
-//                                         {pts !== null && (
-//                                             <div style={{ fontSize: "11px", fontWeight: "600", color: pts < 0 ? "#7c3aed" : "#16a34a", marginTop: "2px" }}>
-//                                                 {pts >= 0 ? "+" : ""}{pts.toFixed(0)} pts
-//                                             </div>
-//                                         )}
-//                                         {t.fee > 0 && (
-//                                             <div style={{ fontSize: "10px", color: "#f59e0b", marginTop: "2px" }}>
-//                                                 fee −{fmtMoney(t.fee)}
-//                                             </div>
-//                                         )}
-//                                     </td>
-//                                 </tr>
-//                             );
-//                         })}
-//                     </tbody>
-//                 </table>
-//             </div>
-//         </div>
-//     );
-// }
 
 // ── Full Shift Transactions Table (replaces ShiftActivityLog) ──
 function ShiftTransactionsTable({ transactions }) {
@@ -951,12 +839,8 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
                         { label: "Profit", val: fmtMoney(netProfit), color: netProfit >= 0 ? "#16a34a" : "#dc2626", bg: netProfit >= 0 ? "#f0fdf4" : "#fee2e2" },
                         { label: "Players", val: s.playersAdded ?? 0, color: "#6d28d9", bg: "#f5f3ff" },
                         { label: "Tasks", val: s.tasksCompleted ?? 0, color: "#475569", bg: "#f1f5f9" },
-                        // ...(s.totalExpenses > 0 ? [{ label: "Expenses", val: fmtMoney(s.totalExpenses), color: "#b45309", bg: "#fffbeb" }] : []),
-                        // ...(s.totalTakeouts > 0 ? [{ label: "Takeouts", val: fmtMoney(s.totalTakeouts), color: "#991b1b", bg: "#fff1f2" }] : []),
-                        // ...(aggr.expenses > 0 ? [{ label: "Expenses", val: fmtMoney(aggr.expenses), color: "#b45309", bg: "#fffbeb" }] : []),
-                        // ...(aggr.takeouts > 0 ? [{ label: "Takeouts", val: fmtMoney(aggr.takeouts), color: "#991b1b", bg: "#fff1f2" }] : []),
-            ...(s.totalExpenses > 0 ? [{ label: "Expenses", val: fmtMoney(s.totalExpenses), color: "#b45309", bg: "#fffbeb" }] : []),
-    ...(s.totalTakeouts > 0 ? [{ label: "Takeouts", val: fmtMoney(s.totalTakeouts), color: "#991b1b", bg: "#fff1f2" }] : []),
+                        ...(s.totalExpenses > 0 ? [{ label: "Expenses", val: fmtMoney(s.totalExpenses), color: "#b45309", bg: "#fffbeb" }] : []),
+                        ...(s.totalTakeouts > 0 ? [{ label: "Takeouts", val: fmtMoney(s.totalTakeouts), color: "#991b1b", bg: "#fff1f2" }] : []),
                     ].map(({ label, val, color, bg }) => (
                         <div key={label} style={{ padding: "5px 10px", borderRadius: "7px", background: bg, display: "flex", alignItems: "baseline", gap: "5px" }}>
                             <span style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" }}>{label}</span>
@@ -1222,19 +1106,6 @@ function MemberShiftSection({ team }) {
         || team.shifts[0]?.checkin?.user?.name
         || "Unassigned";
 
-    // const aggr = team.shifts.reduce((acc, s) => {
-    //     const st = s.stats || {};
-    //     acc.deposits += st.totalDeposits || 0;
-    //     acc.cashouts += st.totalCashouts || 0;
-    //     acc.bonuses += st.totalBonuses || 0;
-    //     acc.profit += st.netProfit || 0;
-    //     acc.txns += st.transactionCount || 0;
-    //     acc.tasks += st.tasksCompleted || 0;
-    //     acc.players += st.playersAdded || 0;
-    //     acc.duration += s.duration || 0;
-    //     return acc;
-    // }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, txns: 0, tasks: 0, players: 0, duration: 0 });
-
     const aggr = team.shifts.reduce((acc, s) => {
         const st = s.stats || {};
         acc.deposits += st.totalDeposits || 0;
@@ -1410,41 +1281,6 @@ function buildShiftAuditHtml(team, shift) {
         </div>`;
     }
 
-    // ── Activity Log ───────────────────────────────────────────
-    // const txns = shift.transactions || [];
-    // const activityRows = txns.map(t => {
-    //     const isD = t.type === "DEPOSIT";
-    //     const isCO = t.type === "WITHDRAWAL";
-    //     const isB = t.type === "BONUS";
-    //     const amtColor = isD ? "#16a34a" : isCO ? "#dc2626" : isB ? "#c2410c" : "#475569";
-    //     const amtSign = isD ? "+" : isCO ? "−" : isB ? "−" : "";
-    //     const typeLabel = t.displayType || (isD ? "DEPOSIT" : isCO ? "CASHOUT" : isB ? "BONUS" : t.type);
-    //     const typeBg = isD ? "#dcfce7" : isCO ? "#fee2e2" : isB ? "#fff7ed" : "#f1f5f9";
-    //     const typeClr = isD ? "#166534" : isCO ? "#991b1b" : isB ? "#c2410c" : "#475569";
-    //     const pts = t.gameStockAfter != null && t.gameStockBefore != null
-    //         ? Math.round(t.gameStockAfter - t.gameStockBefore) : null;
-    //     const srcName = t.user?.name || t.playerName || "—";
-    //     const detail = [t.gameName || t.game?.name, t.walletMethod, t.walletName].filter(Boolean).join(" · ") || "—";
-    //     return `<tr>
-    //       <td class="gray" style="white-space:nowrap">${fmtTime(t.createdAt)}</td>
-    //       <td><b>${srcName}</b></td>
-    //       <td><span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:${typeBg};color:${typeClr}">${typeLabel}</span></td>
-    //       <td class="gray" style="font-size:11px">${detail}</td>
-    //       <td class="ta-r b" style="color:${amtColor}">${amtSign}${fmtMoney(t.amount)}${t.fee > 0 ? `<br><span style="font-size:9px;color:#f59e0b">fee −${fmtMoney(t.fee)}</span>` : ""}${pts !== null ? `<br><span style="font-size:9px;color:#7c3aed">${pts >= 0 ? "+" : ""}${pts} pts</span>` : ""}</td>
-    //     </tr>`;
-    // }).join("");
-
-    // const activityHtml = `
-    // <div class="audit-section">
-    //   <div class="audit-header gray-hdr">📋 Shift Activity Log (${txns.length})</div>
-    //   ${txns.length === 0
-    //         ? `<p style="padding:16px;text-align:center;color:#94a3b8;font-style:italic">No transactions recorded</p>`
-    //         : `<table>
-    //       <thead><tr><th>Time</th><th>Source</th><th>Type</th><th>Details</th><th class="ta-r">Amount / Points</th></tr></thead>
-    //       <tbody>${activityRows}</tbody>
-    //     </table>`}
-    // </div>`;
-
     // ── Full Transactions Table (PDF) ─────────────────────────────
     const txns = shift.transactions || [];
 
@@ -1568,66 +1404,9 @@ function buildShiftAuditHtml(team, shift) {
     <tfoot><tr class="total-row"><td colspan="2"><b>Total</b></td><td class="ta-r b r">$${totalTakeAmt.toFixed(2)}</td><td></td></tr></tfoot>
   </table>
 </div>` : '';
+
     // ── Audit Verification ─────────────────────────────────────
     let auditVerHtml = "";
-    // if (endSnapshot) {
-    //     const { deposits = 0, cashouts = 0, bonuses = 0, netProfit: np = 0, walletChange = 0, gameChange = 0 } = endSnapshot;
-    //     const depFees = txns.filter(t => t.type === "DEPOSIT")
-    //         .reduce((s, t) => { const m = (t.notes || "").match(/fee:([\d.]+)/); return s + (m ? parseFloat(m[1]) : 0); }, 0);
-    //     const coFees = txns.filter(t => t.type === "WITHDRAWAL")
-    //         .reduce((s, t) => { const m = (t.notes || "").match(/fee:([\d.]+)/); return s + (m ? parseFloat(m[1]) : 0); }, 0);
-    //     const expectedW = deposits - depFees - cashouts - coFees;
-    //     const cashDisc = walletChange - expectedW;
-    //     const ptDisc = Math.round(endSnapshot.gameDiscrepancy ?? 0);
-    //     const cashOk = Math.abs(cashDisc) < 0.02;
-    //     const ptsOk = Math.abs(ptDisc) < 2;
-    //     const allOk = cashOk && ptsOk;
-    //     const statusColor = allOk ? "#16a34a" : "#dc2626";
-    //     const statusBg = allOk ? "#f0fdf4" : "#fef2f2";
-    //     const statusBorder = allOk ? "#86efac" : "#fca5a5";
-    //     const feesNote = (depFees + coFees) > 0
-    //         ? ` | Dep fees −${fmtMoney(depFees)}${coFees > 0 ? ` · CO fees −${fmtMoney(coFees)}` : ""}`
-    //         : "";
-
-    //     auditVerHtml = `
-    //     <div class="audit-section">
-    //       <div class="audit-header" style="background:${statusBg};border-bottom:1px solid ${statusBorder};color:${statusColor}">
-    //         ${allOk ? "✓" : "⚠"} Audit Verification — ${allOk ? "All Clear" : "Discrepancy Found"}
-    //       </div>
-    //       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px">
-    //         <!-- Cash Flow Check -->
-    //         <div style="border:1px solid ${cashOk ? "#86efac" : "#fca5a5"};border-radius:6px;overflow:hidden">
-    //           <div style="padding:6px 10px;background:${cashOk ? "#f0fdf4" : "#fef2f2"};font-size:10px;font-weight:700;color:${cashOk ? "#15803d" : "#991b1b"};text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid ${cashOk ? "#86efac" : "#fca5a5"}">Cash Flow Check</div>
-    //           <table style="margin:0">
-    //             <tr><td class="gray" style="font-size:10px;width:55%">Actual Change (Snapshots)</td><td class="ta-r b" style="color:${walletChange >= 0 ? "#16a34a" : "#dc2626"}">${walletChange >= 0 ? "+" : "−"}${fmtMoney(Math.abs(walletChange))}</td></tr>
-    //             <tr><td class="gray" style="font-size:10px">Expected Change (Activities)</td><td class="ta-r b" style="color:${expectedW >= 0 ? "#16a34a" : "#dc2626"}">${expectedW >= 0 ? "+" : "−"}${fmtMoney(Math.abs(expectedW))}</td></tr>
-    //             <tr style="background:#fafafa"><td class="gray" style="font-size:10px"><b>Cash Discrepancy</b></td><td class="ta-r b" style="color:${cashOk ? "#16a34a" : "#dc2626"}">${cashOk ? "$0.00" : (cashDisc >= 0 ? "+" : "−") + fmtMoney(Math.abs(cashDisc))}</td></tr>
-    //           </table>
-    //         </div>
-    //         <!-- Point Stock Check -->
-    //         <div style="border:1px solid ${ptsOk ? "#86efac" : "#fca5a5"};border-radius:6px;overflow:hidden">
-    //           <div style="padding:6px 10px;background:${ptsOk ? "#f0fdf4" : "#fef2f2"};font-size:10px;font-weight:700;color:${ptsOk ? "#15803d" : "#991b1b"};text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid ${ptsOk ? "#86efac" : "#fca5a5"}">Point Stock Check</div>
-    //           <table style="margin:0">
-    //             <tr><td class="gray" style="font-size:10px;width:55%">Actual Change (Snapshots)</td><td class="ta-r b" style="color:${gameChange <= 0 ? "#16a34a" : "#dc2626"}">${gameChange >= 0 ? "+" : ""}${Math.round(gameChange)} pts</td></tr>
-    //             <tr><td class="gray" style="font-size:10px">Expected Change (Activities)</td><td class="ta-r b">${Math.round(-(deposits + bonuses - cashouts)) >= 0 ? "+" : ""}${Math.round(-(deposits + bonuses - cashouts))} pts</td></tr>
-    //             <tr style="background:#fafafa"><td class="gray" style="font-size:10px"><b>Point Discrepancy</b></td><td class="ta-r b" style="color:${ptsOk ? "#16a34a" : "#dc2626"}">${ptsOk ? "0 pts" : (ptDisc >= 0 ? "+" : "") + ptDisc + " pts"}</td></tr>
-    //           </table>
-    //         </div>
-    //       </div>
-    //       <div style="margin:0 12px 12px;padding:10px 12px;background:${statusBg};border:1px solid ${statusBorder};border-left:4px solid ${statusColor};border-radius:6px;font-size:11px">
-    //         ${!allOk ? `<div style="font-weight:700;color:${statusColor};margin-bottom:6px">⚠ A discrepancy was found (Cash: ${fmtMoney(Math.abs(cashDisc))}; Points: ${Math.abs(ptDisc)}). Please review the activity log.</div>` : ""}
-    //         <span style="color:#475569">
-    //           Deposits <b style="color:#16a34a">${fmtMoney(deposits)}</b> &nbsp;−&nbsp;
-    //           Cashouts <b style="color:#dc2626">${fmtMoney(cashouts)}</b> &nbsp;=&nbsp;
-    //           Net Profit <b style="color:${np >= 0 ? "#16a34a" : "#dc2626"}">${fmtMoney(np)}</b> &nbsp;|&nbsp;
-    //           Bonuses <b style="color:#c2410c">${fmtMoney(bonuses)}</b>${feesNote} &nbsp;|&nbsp;
-    //           Wallet Δ <b style="color:${walletChange >= 0 ? "#16a34a" : "#dc2626"}">${walletChange >= 0 ? "+" : ""}${fmtMoney(walletChange)}</b> &nbsp;|&nbsp;
-    //           Game Δ <b style="color:#7c3aed">${gameChange >= 0 ? "+" : ""}${Math.round(gameChange)} pts</b>
-    //         </span>
-    //         <div style="color:#94a3b8;font-style:italic;margin-top:4px;font-size:10px">Verification Check: Actual Change should equal Expected Change for both Cash and Points.</div>
-    //       </div>
-    //     </div>`;
-    // }
 
     if (endSnapshot) {
         const { deposits = 0, cashouts = 0, bonuses = 0, netProfit: np = 0, walletChange = 0, gameChange = 0 } = endSnapshot;
@@ -1955,31 +1734,15 @@ function printReport(report, date) {
 // MAIN PAGE
 // ══════════════════════════════════════════════════════════════
 export default function AdminReportPage() {
+    const { add: toast } = useToast();
     const todayStr = toDateInput(new Date());
     const [selectedDate, setSelectedDate] = useState(todayStr);
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
     const [teamFilter, setTeamFilter] = useState("ALL");
 
-    // const fetchReport = useCallback(async (date, role) => {
-    //     setLoading(true);
-    //     setError("");
-    //     try {
-    //         const opts = { date };
-    //         if (team.storeLabel && team.storeLabel !== "ALL") opts.teamRole = role;
-    //         const data = await api.reports.getDailyReport(opts);
-    //         setReport(data);
-    //     } catch (e) {
-    //         setError(e.message || "Failed to load report");
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // }, []);
-    // In AdminReportPage.jsx — fix fetchReport:
     const fetchReport = useCallback(async (date, role) => {
         setLoading(true);
-        setError("");
         try {
             const opts = { date };
             // ✅ was: if (team.storeLabel && team.storeLabel !== "ALL")
@@ -1988,7 +1751,7 @@ export default function AdminReportPage() {
             const data = await api.reports.getDailyReport(opts);
             setReport(data);
         } catch (e) {
-            setError(e.message || "Failed to load report");
+            toast(e.message || "Failed to load report", "error");
         } finally {
             setLoading(false);
         }
