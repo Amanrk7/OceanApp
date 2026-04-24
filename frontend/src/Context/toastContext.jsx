@@ -106,13 +106,25 @@ let _id = 0;
 export function ToastProvider({ children }) {
     const [toasts, setToasts] = useState([]);
 
-    const add = useCallback((message, type = 'error', duration = 6000) => {
+    // const add = useCallback((message, type = 'error', duration = 6000) => {
+    //     const id = ++_id;
+    //     const friendly = type === 'error' ? translateError(message) : message;
+    //     setToasts(prev => [...prev.slice(-4), { id, message: friendly, type }]);
+    //     setTimeout(() => remove(id), duration);
+    //     return id;
+    // }, []);
+    // In toastContext.jsx
+const add = useCallback((message, type = 'error', duration = 6000) => {
+    const friendly = type === 'error' ? translateError(message) : message;
+    
+    // ✅ Don't stack duplicate messages
+    setToasts(prev => {
+        if (prev.some(t => t.message === friendly && t.type === type)) return prev;
         const id = ++_id;
-        const friendly = type === 'error' ? translateError(message) : message;
-        setToasts(prev => [...prev.slice(-4), { id, message: friendly, type }]);
         setTimeout(() => remove(id), duration);
-        return id;
-    }, []);
+        return [...prev.slice(-4), { id, message: friendly, type }];
+    });
+}, []);
 
     const remove = useCallback((id) => {
         setToasts(prev => prev.filter(t => t.id !== id));
