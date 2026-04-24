@@ -419,9 +419,13 @@ export default function AddNewPlayer({ onIssueCreated }) {
     const navigate = useNavigate();
 
     // const goToPlayers = () => { setAddPlayer(false); };
+//     const goToPlayers = () => { 
+//     setAddPlayer(false); 
+//     navigate('/?page=players');
+// };
     const goToPlayers = () => { 
-    setAddPlayer(false); 
-    navigate('/?page=players');
+    setAddPlayer(false);
+    setTimeout(() => navigate('/?page=players'), 0);
 };
     const goToDashboard = () => { setAddPlayer(false); navigate('/'); };
 
