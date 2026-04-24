@@ -421,9 +421,9 @@ export default function AddNewPlayer({ onIssueCreated }) {
     const navigate = useNavigate();
 
     const goToPlayers = () => {
-  setAddPlayer(false);
-  navigate('/?page=players');
-};
+        setAddPlayer(false);
+        navigate('/?page=players');
+    };
     const goToDashboard = () => { setAddPlayer(false); navigate('/'); };
 
     const EMPTY = {
@@ -482,7 +482,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
                 return labels[s] || s.charAt(0).toUpperCase() + s.slice(1);
             }).join(', ');
             toast(`Please fix the format for: ${names}. Clear the field to leave it blank, or correct the value.`, 'error');
-        
+
             return;
         }
 
@@ -508,11 +508,9 @@ export default function AddNewPlayer({ onIssueCreated }) {
                 sources: form.sources.filter(s => s.trim()),
             });
 
-            // setSuccess(`✓ Player "${form.name}" created successfully!`);
             toast(`Player "${form.name}" created successfully!`, 'success');
             setTimeout(() => {
                 if (onIssueCreated) onIssueCreated();
-                // setAddPlayer(false);
                 goToPlayers();
             }, 1400);
         } catch (err) {
@@ -537,7 +535,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
     ];
 
     // ── No active shift ─────────────────────────────────────────────────────────
-        if (!shiftActive) {
+    if (!shiftActive) {
         return (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <button onClick={() => navigate('/shifts')} style={{ alignSelf: "flex-start", padding: "9px 18px", background: "var(--color-background-info)", color: "var(--color-text-info)", border: "0.5px solid var(--color-border-info)", borderRadius: "var(--border-radius-md)", fontWeight: "500", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
@@ -565,7 +563,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
             <Breadcrumb onDashboardClick={goToDashboard} onPlayersClick={goToPlayers} />
 
             {/* Header */}
-            <div style={{ padding: '14px 18px', background: C.skyLt, borderLeft: `4px solid ${C.sky}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+            <div style={{ padding: '14px 18px', background: 'none', borderLeft: `4px solid ${C.sky}`, borderRadius: '8px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <IUser />
                 <div>
                     <p style={{ fontWeight: '700', margin: '0 0 2px', fontSize: '14px' }}>Add a New Player</p>
@@ -574,7 +572,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
                     </p>
                 </div>
             </div>
-{/* 
+            {/* 
             {error && (
                 <div style={{ padding: '11px 14px', background: C.redLt, border: `1px solid ${C.redBdr}`, borderRadius: '8px', color: '#991b1b', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                     <span style={{ flexShrink: 0, marginTop: '1px' }}><IAlert /></span> {error}
