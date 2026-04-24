@@ -58,8 +58,28 @@ const INPUT = {
     width: '100%', padding: '10px 12px', border: `1px solid ${C.border}`,
     borderRadius: '8px', fontSize: '14px', fontFamily: 'inherit',
     boxSizing: 'border-box', background: C.white, color: C.slate, outline: 'none',
-    transition: 'border-color .15s',
+    transition: 'border-color .15s, box-shadow .15s',
 };
+
+// ─── Field-level error styles ─────────────────────────────────────────────────
+const ERROR_INPUT = {
+    ...INPUT,
+    borderColor: C.red,
+    boxShadow: `0 0 0 3px ${C.red}18`,
+};
+
+function FieldError({ message }) {
+    if (!message) return null;
+    return (
+        <p style={{
+            margin: '4px 0 0', fontSize: '11px', color: C.red,
+            display: 'flex', alignItems: 'flex-start', gap: '4px', lineHeight: '1.4',
+        }}>
+            <span style={{ flexShrink: 0, marginTop: '1px' }}><IWarn /></span>
+            {message}
+        </p>
+    );
+}
 
 // ─── Social handle validation rules ──────────────────────────────────────────
 const SOCIAL_RULES = {
@@ -85,6 +105,22 @@ const TIER_MAP = {
     BRONZE: { bg: '#fed7aa', text: '#92400e', emoji: '🥉' },
     SILVER: { bg: '#e0e7ff', text: '#3730a3', emoji: '🥈' },
     GOLD: { bg: '#fef3c7', text: '#92400e', emoji: '🥇' },
+};
+
+// ─── Human-readable field labels for error messages ───────────────────────────
+const FIELD_LABELS = {
+    name: 'Full name',
+    username: 'Username',
+    email: 'Email address',
+    phone: 'Phone number',
+    facebook: 'Facebook',
+    telegram: 'Telegram',
+    instagram: 'Instagram',
+    x: 'X / Twitter',
+    snapchat: 'Snapchat',
+    chimeTag: 'Chime Tag',
+    cashappTag: 'Cash App Tag',
+    paypalEmail: 'PayPal Email',
 };
 
 // ─── Player search + multi-select picker ──────────────────────────────────────
@@ -143,7 +179,6 @@ function PlayerPicker({ label, hint, value, onChange, multi = true }) {
         <div>
             <label style={LABEL}>{label}</label>
 
-            {/* Selected chips */}
             {value.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
                     {value.map(p => (
@@ -164,7 +199,6 @@ function PlayerPicker({ label, hint, value, onChange, multi = true }) {
                 </div>
             )}
 
-            {/* Search input — hide when single-select and already picked */}
             {(multi || value.length === 0) && (
                 <div ref={dropRef} style={{ position: 'relative' }}>
                     <div style={{ position: 'relative' }}>
@@ -182,7 +216,6 @@ function PlayerPicker({ label, hint, value, onChange, multi = true }) {
                         )}
                     </div>
 
-                    {/* Dropdown */}
                     {open && (
                         <div style={{
                             position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 100,
@@ -239,7 +272,6 @@ function Breadcrumb({ onPlayersClick, onDashboardClick }) {
     const navigate = useNavigate();
 
     return (
-
         <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', width: 'fit-content', flexWrap: 'wrap' }}>
             {[
                 { label: 'Dashboard', onClick: () => navigate('/') },
@@ -256,16 +288,12 @@ function Breadcrumb({ onPlayersClick, onDashboardClick }) {
                     {i < arr.length - 1 && <span style={{ color: C.grayLt, fontSize: '16px', userSelect: 'none' }}>›</span>}
                 </React.Fragment>
             ))}
-
         </nav>
     );
 }
 
-
-
-
 // ─── Shared UI helpers ────────────────────────────────────────────────────────
-function Field({ label, required, hint, children }) {
+function Field({ label, required, hint, error, children }) {
     return (
         <div>
             <label style={LABEL}>
@@ -273,18 +301,21 @@ function Field({ label, required, hint, children }) {
                 {required && <span style={{ color: C.red, marginLeft: '3px' }}>*</span>}
             </label>
             {children}
-            {hint && <p style={{ margin: '4px 0 0', fontSize: '11px', color: C.grayLt, lineHeight: '1.4' }}>{hint}</p>}
+            {error
+                ? <FieldError message={error} />
+                : hint && <p style={{ margin: '4px 0 0', fontSize: '11px', color: C.grayLt, lineHeight: '1.4' }}>{hint}</p>
+            }
         </div>
     );
 }
 
-function IconInput({ IconEl, ...props }) {
+function IconInput({ IconEl, hasError, ...props }) {
     return (
         <div style={{ position: 'relative' }}>
-            <span style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: C.grayLt, display: 'flex', pointerEvents: 'none' }}>
+            <span style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: hasError ? C.red : C.grayLt, display: 'flex', pointerEvents: 'none' }}>
                 <IconEl />
             </span>
-            <input {...props} style={{ ...INPUT, paddingLeft: '36px', ...props.style }} />
+            <input {...props} style={{ ...(hasError ? ERROR_INPUT : INPUT), paddingLeft: '36px', ...props.style }} />
         </div>
     );
 }
@@ -312,17 +343,24 @@ function TierBadge({ tier }) {
 }
 
 // ─── Social / payment field with live format-validation feedback ──────────────
-function ValidatedField({ platform, label, value, onChange, placeholder }) {
+function ValidatedField({ platform, label, value, onChange, placeholder, error, onBlurValidate }) {
     const [focused, setFocused] = useState(false);
     const status = validateHandle(platform, value);
     const rule = SOCIAL_RULES[platform];
     const hasVal = value && value.trim().length > 0;
     const isAt = !['chimeTag', 'cashappTag', 'paypalEmail'].includes(platform);
 
-    const borderColor = !hasVal ? C.border
-        : status === 'valid' ? '#22c55e'
-            : status === 'invalid' ? C.red
-                : C.border;
+    // Determine border: field-level error takes priority, then format status
+    const borderColor = error ? C.red
+        : !hasVal ? C.border
+            : status === 'valid' ? '#22c55e'
+                : status === 'invalid' ? C.red
+                    : C.border;
+
+    const shadowColor = error ? C.red
+        : (status === 'valid' && hasVal) ? '#22c55e'
+            : (status === 'invalid' && hasVal) ? C.red
+                : 'transparent';
 
     const profileUrl = status === 'valid' && rule?.url ? rule.url(value.trim()) : null;
 
@@ -346,31 +384,36 @@ function ValidatedField({ platform, label, value, onChange, placeholder }) {
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     onFocus={() => setFocused(true)}
-                    onBlur={() => setFocused(false)}
+                    onBlur={() => {
+                        setFocused(false);
+                        if (onBlurValidate) onBlurValidate(platform, value);
+                    }}
                     placeholder={placeholder || (isAt ? 'handle' : 'value')}
                     style={{
                         ...INPUT,
                         paddingLeft: isAt ? '26px' : '12px',
                         paddingRight: hasVal ? '28px' : '12px',
                         borderColor,
-                        boxShadow: focused ? `0 0 0 3px ${borderColor}22` : 'none',
+                        boxShadow: focused ? `0 0 0 3px ${shadowColor}22` : error ? `0 0 0 3px ${C.red}18` : 'none',
                     }}
                 />
-                {hasVal && (
+                {hasVal && !error && (
                     <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', width: '8px', height: '8px', borderRadius: '50%', background: status === 'valid' ? '#22c55e' : C.red }} />
                 )}
             </div>
-            {hasVal && (focused || status === 'invalid') && (
+            {/* Field-level error takes priority over format hint */}
+            {error ? (
+                <FieldError message={error} />
+            ) : hasVal && (focused || status === 'invalid') ? (
                 <p style={{ margin: '4px 0 0', fontSize: '10px', color: status === 'valid' ? '#16a34a' : C.red, display: 'flex', alignItems: 'flex-start', gap: '4px', lineHeight: '1.4' }}>
                     {status === 'valid'
                         ? <><ICheck /> Format looks good</>
                         : <><IWarn /> {rule.hint}</>
                     }
                 </p>
-            )}
-            {!hasVal && focused && (
+            ) : !hasVal && focused ? (
                 <p style={{ margin: '4px 0 0', fontSize: '10px', color: C.grayLt, lineHeight: '1.4' }}>{rule?.hint}</p>
-            )}
+            ) : null}
         </div>
     );
 }
@@ -429,10 +472,8 @@ export default function AddNewPlayer({ onIssueCreated }) {
     const EMPTY = {
         name: '', username: '', email: '', phone: '',
         facebook: '', telegram: '', instagram: '', x: '', snapchat: '',
-        // payment handles
         chimeTag: '', cashappTag: '', paypalEmail: '',
         tier: 'BRONZE',
-        // player pickers — store as { id, name, username }[]
         referrals: [],
         friends: [],
         sources: [''],
@@ -440,12 +481,17 @@ export default function AddNewPlayer({ onIssueCreated }) {
 
     const [form, setForm] = useState(EMPTY);
     const [loading, setLoading] = useState(false);
-    // const [error, setError] = useState('');
-    // const [success, setSuccess] = useState('');
-
+    // ── NEW: field-level errors ──────────────────────────────────────────────
+    const [fieldErrors, setFieldErrors] = useState({});
 
     const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
-    const onChange = (e) => set(e.target.name, e.target.value);
+    const onChange = (e) => {
+        set(e.target.name, e.target.value);
+        // Clear error on change so user sees live feedback
+        if (fieldErrors[e.target.name]) {
+            setFieldErrors(p => ({ ...p, [e.target.name]: '' }));
+        }
+    };
 
     const srcs = {
         add: () => setForm(p => ({ ...p, sources: [...p.sources, ''] })),
@@ -455,13 +501,38 @@ export default function AddNewPlayer({ onIssueCreated }) {
 
     const onSocialChange = useCallback((platform, val) => {
         setForm(p => ({ ...p, [platform]: val }));
+        // Clear field error when user starts editing
+        setFieldErrors(p => ({ ...p, [platform]: '' }));
     }, []);
 
-    // Validate all handle-type fields before submit
+    // ── Blur validation for social/payment fields ────────────────────────────
+    const onSocialBlur = useCallback((platform, val) => {
+        if (!val || !val.trim()) return; // empty is OK — fields are optional
+        const status = validateHandle(platform, val);
+        if (status === 'invalid') {
+            const rule = SOCIAL_RULES[platform];
+            setFieldErrors(p => ({
+                ...p,
+                [platform]: rule?.hint || 'Invalid format',
+            }));
+        } else {
+            setFieldErrors(p => ({ ...p, [platform]: '' }));
+        }
+    }, []);
+
+    // ── Blur validation for required text fields ─────────────────────────────
+    const onRequiredBlur = useCallback((fieldName, val) => {
+        if (!val || !val.trim()) {
+            setFieldErrors(p => ({
+                ...p,
+                [fieldName]: `${FIELD_LABELS[fieldName] || fieldName} is required`,
+            }));
+        } else {
+            setFieldErrors(p => ({ ...p, [fieldName]: '' }));
+        }
+    }, []);
+
     const VALIDATED_FIELDS = ['facebook', 'telegram', 'instagram', 'x', 'snapchat', 'chimeTag', 'cashappTag', 'paypalEmail'];
-    const socialWarnings = VALIDATED_FIELDS.filter(
-        (p) => form[p] && form[p].trim() && validateHandle(p, form[p]) === 'invalid'
-    );
 
     const selectStyle = {
         ...INPUT, cursor: 'pointer', appearance: 'none',
@@ -473,16 +544,56 @@ export default function AddNewPlayer({ onIssueCreated }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!form.name.trim()) return toast('Full name is required.', 'error');
-        if (!form.username.trim()) return toast('Username is required.', 'error');
+        const newErrors = {};
+        const missingRequired = [];
 
-        if (socialWarnings.length > 0) {
-            const names = socialWarnings.map(s => {
-                const labels = { chimeTag: 'Chime Tag', cashappTag: 'Cash App Tag', paypalEmail: 'PayPal Email' };
-                return labels[s] || s.charAt(0).toUpperCase() + s.slice(1);
-            }).join(', ');
-            toast(`Please fix the format for: ${names}. Clear the field to leave it blank, or correct the value.`, 'error');
+        // Required field checks
+        if (!form.name.trim()) {
+            newErrors.name = 'Full name is required';
+            missingRequired.push('Full name');
+        }
+        if (!form.username.trim()) {
+            newErrors.username = 'Username is required';
+            missingRequired.push('Username');
+        }
 
+        // Social/payment format checks
+        const formatErrors = [];
+        VALIDATED_FIELDS.forEach(platform => {
+            if (form[platform] && form[platform].trim()) {
+                const status = validateHandle(platform, form[platform]);
+                if (status === 'invalid') {
+                    const rule = SOCIAL_RULES[platform];
+                    newErrors[platform] = rule?.hint || 'Invalid format';
+                    formatErrors.push(FIELD_LABELS[platform] || platform);
+                }
+            }
+        });
+
+        if (Object.keys(newErrors).length > 0) {
+            setFieldErrors(p => ({ ...p, ...newErrors }));
+
+            // Build a specific, helpful toast message
+            if (missingRequired.length > 0 && formatErrors.length > 0) {
+                toast(
+                    `Missing: ${missingRequired.join(', ')}. Fix format for: ${formatErrors.join(', ')}.`,
+                    'error'
+                );
+            } else if (missingRequired.length > 0) {
+                toast(
+                    missingRequired.length === 1
+                        ? `${missingRequired[0]} is required — please fill it in.`
+                        : `Required fields missing: ${missingRequired.join(' and ')}.`,
+                    'error'
+                );
+            } else if (formatErrors.length > 0) {
+                toast(
+                    formatErrors.length === 1
+                        ? `${formatErrors[0]} has an invalid format — check the hint below the field.`
+                        : `Fix format errors in: ${formatErrors.join(', ')}.`,
+                    'error'
+                );
+            }
             return;
         }
 
@@ -502,7 +613,6 @@ export default function AddNewPlayer({ onIssueCreated }) {
                 chimeTag: form.chimeTag.trim() || null,
                 cashappTag: form.cashappTag.trim() || null,
                 paypalEmail: form.paypalEmail.trim() || null,
-                // send IDs — backend resolveUsers already handles numeric IDs
                 referrals: form.referrals.map(p => String(p.id)),
                 friends: form.friends.map(p => String(p.id)),
                 sources: form.sources.filter(s => s.trim()),
@@ -514,7 +624,17 @@ export default function AddNewPlayer({ onIssueCreated }) {
                 goToPlayers();
             }, 1400);
         } catch (err) {
-            toast(err.message || 'Failed to create player. Please try again.', 'error');
+            // Check for server-side duplicate errors and highlight the right field
+            const msg = err.message || '';
+            if (msg.toLowerCase().includes('username')) {
+                setFieldErrors(p => ({ ...p, username: 'This username is already taken' }));
+                toast('Username already taken — please choose a different one.', 'error');
+            } else if (msg.toLowerCase().includes('email')) {
+                setFieldErrors(p => ({ ...p, email: 'This email is already in use' }));
+                toast('Email address is already in use by another player.', 'error');
+            } else {
+                toast(msg || 'Failed to create player. Please try again.', 'error');
+            }
         } finally {
             setLoading(false);
         }
@@ -572,17 +692,6 @@ export default function AddNewPlayer({ onIssueCreated }) {
                     </p>
                 </div>
             </div>
-            {/* 
-            {error && (
-                <div style={{ padding: '11px 14px', background: C.redLt, border: `1px solid ${C.redBdr}`, borderRadius: '8px', color: '#991b1b', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                    <span style={{ flexShrink: 0, marginTop: '1px' }}><IAlert /></span> {error}
-                </div>
-            )}
-            {success && (
-                <div style={{ padding: '11px 14px', background: C.greenLt, border: `1px solid ${C.greenBdr}`, borderRadius: '8px', color: '#166534', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <ICheck /> {success}
-                </div>
-            )} */}
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
@@ -591,23 +700,66 @@ export default function AddNewPlayer({ onIssueCreated }) {
                     <SectionHead step="1">Identity & Credentials</SectionHead>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
 
-                        <Field label="Full Name" required>
-                            <IconInput IconEl={IUser} type="text" name="name" value={form.name} onChange={onChange} placeholder="e.g. John Smith" required />
+                        <Field label="Full Name" required error={fieldErrors.name}>
+                            <IconInput
+                                IconEl={IUser}
+                                type="text"
+                                name="name"
+                                value={form.name}
+                                onChange={onChange}
+                                onBlur={() => onRequiredBlur('name', form.name)}
+                                placeholder="e.g. John Smith"
+                                hasError={!!fieldErrors.name}
+                                required
+                            />
                         </Field>
 
-                        <Field label="Username" required>
+                        <Field label="Username" required error={fieldErrors.username}>
                             <div style={{ position: 'relative' }}>
-                                <span style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', fontWeight: '700', color: C.grayLt, pointerEvents: 'none' }}>@</span>
-                                <input type="text" name="username" value={form.username} onChange={onChange} placeholder="player_handle" style={{ ...INPUT, paddingLeft: '27px' }} required />
+                                <span style={{
+                                    position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)',
+                                    fontSize: '13px', fontWeight: '700',
+                                    color: fieldErrors.username ? C.red : C.grayLt,
+                                    pointerEvents: 'none'
+                                }}>@</span>
+                                <input
+                                    type="text"
+                                    name="username"
+                                    value={form.username}
+                                    onChange={onChange}
+                                    onBlur={() => onRequiredBlur('username', form.username)}
+                                    placeholder="player_handle"
+                                    style={{
+                                        ...(fieldErrors.username ? ERROR_INPUT : INPUT),
+                                        paddingLeft: '27px'
+                                    }}
+                                    required
+                                />
                             </div>
                         </Field>
 
-                        <Field label="Email Address" hint="Optional">
-                            <IconInput IconEl={IMail} type="email" name="email" value={form.email} onChange={onChange} placeholder="player@email.com" />
+                        <Field label="Email Address" hint="Optional" error={fieldErrors.email}>
+                            <IconInput
+                                IconEl={IMail}
+                                type="email"
+                                name="email"
+                                value={form.email}
+                                onChange={onChange}
+                                placeholder="player@email.com"
+                                hasError={!!fieldErrors.email}
+                            />
                         </Field>
 
-                        <Field label="Phone Number" hint="Optional">
-                            <IconInput IconEl={IPhone} type="text" name="phone" value={form.phone} onChange={onChange} placeholder="+1 (555) 000-0000" />
+                        <Field label="Phone Number" hint="Optional" error={fieldErrors.phone}>
+                            <IconInput
+                                IconEl={IPhone}
+                                type="text"
+                                name="phone"
+                                value={form.phone}
+                                onChange={onChange}
+                                placeholder="+1 (555) 000-0000"
+                                hasError={!!fieldErrors.phone}
+                            />
                         </Field>
 
                     </div>
@@ -638,7 +790,6 @@ export default function AddNewPlayer({ onIssueCreated }) {
                         <span style={{ fontWeight: '400', fontSize: '10px', letterSpacing: 0, textTransform: 'none', color: C.grayLt, marginLeft: '6px' }}>— all optional</span>
                     </SectionHead>
 
-                    {/* Legend */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '16px', padding: '10px 14px', background: C.bg, borderRadius: '8px', border: `1px solid ${C.border}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: C.gray }}><IShield /><span>Format validated as you type</span></div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#16a34a' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />Valid format</div>
@@ -653,7 +804,9 @@ export default function AddNewPlayer({ onIssueCreated }) {
                                 label={label}
                                 value={form[key]}
                                 onChange={(val) => onSocialChange(key, val)}
+                                onBlurValidate={onSocialBlur}
                                 placeholder={ph}
+                                error={fieldErrors[key]}
                             />
                         ))}
                     </div>
@@ -666,7 +819,6 @@ export default function AddNewPlayer({ onIssueCreated }) {
                         <span style={{ fontWeight: '400', fontSize: '10px', letterSpacing: 0, textTransform: 'none', color: C.grayLt, marginLeft: '6px' }}>— all optional</span>
                     </SectionHead>
 
-                    {/* Subtle info banner */}
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '18px', padding: '10px 14px', background: C.violetLt, border: `1px solid ${C.violetBdr}`, borderRadius: '8px' }}>
                         <span style={{ color: C.violet, display: 'flex', flexShrink: 0, marginTop: '1px' }}><IWallet /></span>
                         <p style={{ margin: 0, fontSize: '12px', color: C.violet, lineHeight: '1.5' }}>
@@ -682,7 +834,9 @@ export default function AddNewPlayer({ onIssueCreated }) {
                                 label={label}
                                 value={form[key]}
                                 onChange={(val) => onSocialChange(key, val)}
+                                onBlurValidate={onSocialBlur}
                                 placeholder={ph}
+                                error={fieldErrors[key]}
                             />
                         ))}
                     </div>
@@ -697,7 +851,6 @@ export default function AddNewPlayer({ onIssueCreated }) {
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
 
-                        {/* Referral — single select */}
                         <PlayerPicker
                             label="Referred By"
                             hint="The player who referred this new player (single)"
@@ -706,7 +859,6 @@ export default function AddNewPlayer({ onIssueCreated }) {
                             multi={false}
                         />
 
-                        {/* Friends — multi select */}
                         <PlayerPicker
                             label="Friends"
                             hint="Other players this person knows (multi)"
@@ -715,7 +867,6 @@ export default function AddNewPlayer({ onIssueCreated }) {
                             multi={true}
                         />
 
-                        {/* Sources — free text list */}
                         <SourcesList
                             items={form.sources}
                             onAdd={srcs.add}
