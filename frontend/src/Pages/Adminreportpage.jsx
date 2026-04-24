@@ -951,10 +951,12 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
                         { label: "Profit", val: fmtMoney(netProfit), color: netProfit >= 0 ? "#16a34a" : "#dc2626", bg: netProfit >= 0 ? "#f0fdf4" : "#fee2e2" },
                         { label: "Players", val: s.playersAdded ?? 0, color: "#6d28d9", bg: "#f5f3ff" },
                         { label: "Tasks", val: s.tasksCompleted ?? 0, color: "#475569", bg: "#f1f5f9" },
-                        ...(s.totalExpenses > 0 ? [{ label: "Expenses", val: fmtMoney(s.totalExpenses), color: "#b45309", bg: "#fffbeb" }] : []),
-                        ...(s.totalTakeouts > 0 ? [{ label: "Takeouts", val: fmtMoney(s.totalTakeouts), color: "#991b1b", bg: "#fff1f2" }] : []),
-                        ...(aggr.expenses > 0 ? [{ label: "Expenses", val: fmtMoney(aggr.expenses), color: "#b45309", bg: "#fffbeb" }] : []),
-                        ...(aggr.takeouts > 0 ? [{ label: "Takeouts", val: fmtMoney(aggr.takeouts), color: "#991b1b", bg: "#fff1f2" }] : []),
+                        // ...(s.totalExpenses > 0 ? [{ label: "Expenses", val: fmtMoney(s.totalExpenses), color: "#b45309", bg: "#fffbeb" }] : []),
+                        // ...(s.totalTakeouts > 0 ? [{ label: "Takeouts", val: fmtMoney(s.totalTakeouts), color: "#991b1b", bg: "#fff1f2" }] : []),
+                        // ...(aggr.expenses > 0 ? [{ label: "Expenses", val: fmtMoney(aggr.expenses), color: "#b45309", bg: "#fffbeb" }] : []),
+                        // ...(aggr.takeouts > 0 ? [{ label: "Takeouts", val: fmtMoney(aggr.takeouts), color: "#991b1b", bg: "#fff1f2" }] : []),
+            ...(s.totalExpenses > 0 ? [{ label: "Expenses", val: fmtMoney(s.totalExpenses), color: "#b45309", bg: "#fffbeb" }] : []),
+    ...(s.totalTakeouts > 0 ? [{ label: "Takeouts", val: fmtMoney(s.totalTakeouts), color: "#991b1b", bg: "#fff1f2" }] : []),
                     ].map(({ label, val, color, bg }) => (
                         <div key={label} style={{ padding: "5px 10px", borderRadius: "7px", background: bg, display: "flex", alignItems: "baseline", gap: "5px" }}>
                             <span style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" }}>{label}</span>
