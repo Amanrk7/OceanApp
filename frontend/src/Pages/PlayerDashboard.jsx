@@ -442,7 +442,7 @@ function PlayerActivityStats({ player }) {
                 <span style={{ padding: '4px 10px', background: '#fff1f2', color: '#dc2626', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{cashCount30} cashout{cashCount30 !== 1 ? 's' : ''} (30d)</span>
                 <span style={{ padding: '4px 10px', background: '#faf5ff', color: '#7c3aed', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{bonCount30} bonus{bonCount30 !== 1 ? 'es' : ''} (30d)</span>
                 {/* <span style={{ fontSize: '11px', color: C.grayLt, marginLeft: 'auto' }}>★ All-time from bonus tracker &nbsp;·&nbsp; deposits/cashouts limited to 30d history</span> */}
-                <span style={{ fontSize: '11px', color: C.grayLt, marginLeft: 'auto' }}>★ All-time bonuses from bonus tracker &nbsp;·&nbsp; dep/cashout from last 200 txns</span>
+                {/* <span style={{ fontSize: '11px', color: C.grayLt, marginLeft: 'auto' }}>★ All-time bonuses from bonus tracker &nbsp;·&nbsp; dep/cashout from last 200 txns</span> */}
             </div>
         </div>
     );
