@@ -472,8 +472,6 @@ export default function AddNewPlayer({ onIssueCreated }) {
     // ── Submit ──────────────────────────────────────────────────────────────────
     const handleSubmit = async (e) => {
         e.preventDefault();
-        toast('', 'error');
-        toast(``, 'success');
 
         if (!form.name.trim()) return toast('Full name is required.', 'error');
         if (!form.username.trim()) return toast('Username is required.', 'error');
