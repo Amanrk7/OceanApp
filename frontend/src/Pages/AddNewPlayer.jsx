@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Search, X, Lock } from 'lucide-react'
 import { AddPlayerContext } from "../Context/addPlayer";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
+import { useToast } from '../Context/toastContext';
 import { api } from "../api";
 
 // ─── Inline SVG icons ─────────────────────────────────────────────────────────
@@ -416,6 +417,7 @@ function SourcesList({ items, onAdd, onChange, onRemove }) {
 export default function AddNewPlayer({ onIssueCreated }) {
     const { setAddPlayer } = useContext(AddPlayerContext);
     const { shiftActive } = useContext(ShiftStatusContext);
+    const { add: toast } = useToast();
     const navigate = useNavigate();
 
     const goToPlayers = () => {
@@ -438,8 +440,9 @@ export default function AddNewPlayer({ onIssueCreated }) {
 
     const [form, setForm] = useState(EMPTY);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+    // const [error, setError] = useState('');
+    // const [success, setSuccess] = useState('');
+
 
     const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
     const onChange = (e) => set(e.target.name, e.target.value);
@@ -469,17 +472,19 @@ export default function AddNewPlayer({ onIssueCreated }) {
     // ── Submit ──────────────────────────────────────────────────────────────────
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(''); setSuccess('');
+        toast('', 'error');
+        toast(``, 'success');
 
-        if (!form.name.trim()) return setError('Full name is required.');
-        if (!form.username.trim()) return setError('Username is required.');
+        if (!form.name.trim()) return toast('Full name is required.', 'error');
+        if (!form.username.trim()) return toast('Username is required.', 'error');
 
         if (socialWarnings.length > 0) {
             const names = socialWarnings.map(s => {
                 const labels = { chimeTag: 'Chime Tag', cashappTag: 'Cash App Tag', paypalEmail: 'PayPal Email' };
                 return labels[s] || s.charAt(0).toUpperCase() + s.slice(1);
             }).join(', ');
-            setError(`Please fix the format for: ${names}. Clear the field to leave it blank, or correct the value.`);
+            toast(`Please fix the format for: ${names}. Clear the field to leave it blank, or correct the value.`, 'error');
+        
             return;
         }
 
@@ -512,7 +517,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
                 goToPlayers();
             }, 1400);
         } catch (err) {
-            setError(err.message || 'Failed to create player. Please try again.');
+            toast(err.message || 'Failed to create player. Please try again.', 'error');
         } finally {
             setLoading(false);
         }
@@ -570,7 +575,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
                     </p>
                 </div>
             </div>
-
+{/* 
             {error && (
                 <div style={{ padding: '11px 14px', background: C.redLt, border: `1px solid ${C.redBdr}`, borderRadius: '8px', color: '#991b1b', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                     <span style={{ flexShrink: 0, marginTop: '1px' }}><IAlert /></span> {error}
@@ -580,7 +585,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
                 <div style={{ padding: '11px 14px', background: C.greenLt, border: `1px solid ${C.greenBdr}`, borderRadius: '8px', color: '#166534', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <ICheck /> {success}
                 </div>
-            )}
+            )} */}
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
