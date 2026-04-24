@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
+import { useToast } from '../Context/toastContext';
+
 import { api } from "../api";
 
 // ─── Inline SVG icons ─────────────────────────────────────────────────────────
@@ -229,6 +231,7 @@ function AddTransactionsPage() {
     const EMPTY = { txType: "deposit", amount: "", fee: "", gameId: "", walletId: "", notes: "", bonusMatch: false, bonusSpecial: false };
 
     const { shiftActive } = useContext(ShiftStatusContext);
+    const { add: toast } = useToast();
     const navigate = useNavigate();
 
     const [bonusReferral, setBonusReferral] = useState(false);
@@ -242,11 +245,8 @@ function AddTransactionsPage() {
     const [wallets, setWallets] = useState([]);
     const [ledger, setLedger] = useState([]);
     const [submitting, setSubmitting] = useState(false);
-    const [success, setSuccess] = useState("");
-    const [error, setError] = useState("");
     const [ledgerLoading, setLedgerLoading] = useState(true);
     const [undoingId, setUndoingId] = useState(null);
-    const [undoSuccess, setUndoSuccess] = useState("");
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [lastRefresh, setLastRefresh] = useState(new Date());
     const [query, setQuery] = useState("");
@@ -281,7 +281,7 @@ function AddTransactionsPage() {
             const r = await api.transactions.getTransactions(1, 50, "", "", true);
             setLedger(r?.data || []);
             setLastRefresh(new Date());
-        } catch (e) { setError("Failed to load transaction ledger"); }
+        } catch (e) { toast("Failed to load transaction ledger", "error"); }
         finally { setLedgerLoading(false); }
     }, []);
 
@@ -422,14 +422,13 @@ function AddTransactionsPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(""); setSuccess("");
-        if (!player?.id) { setError("Please select a player."); return; }
-        if (!amt) { setError("Enter a valid amount."); return; }
-        if (!form.walletId) { setError("Please select a wallet."); return; }
-        if (!form.gameId) { setError("Please select a game."); return; }
-        if (!stockOk) { setError(`Insufficient game stock — need ${stockNeeded.toFixed(2)} pts.`); return; }
-        if (cashoutOverLimit) { setError(`Cashout exceeds limit of ${fmt(cashoutLimit)}.`); return; }
-        if (feeAmt < 0 || feeAmt > amt) { setError("Fee must be between $0 and the deposit amount."); return; }
+        if (!player?.id) { toast("Please select a player.", "error"); return; }
+        if (!amt) { toast("Enter a valid amount.", "error"); return; }
+        if (!form.walletId) { toast("Please select a wallet.", "error"); return; }
+        if (!form.gameId) { toast("Please select a game.", "error"); return; }
+        if (!stockOk) { toast(`Insufficient game stock — need ${stockNeeded.toFixed(2)} pts.`, "error"); return; }
+        if (cashoutOverLimit) { toast(`Cashout exceeds limit of ${fmt(cashoutLimit)}.`, "error"); return; }
+        if (feeAmt < 0 || feeAmt > amt) { toast("Fee must be between $0 and the deposit amount.", "error"); return; }
 
         try {
             setSubmitting(true);
@@ -460,20 +459,21 @@ function AddTransactionsPage() {
                 ? "Deposit recorded successfully!"
                 : "Cashout recorded — status set to Pending.");
             if (feeAmt > 0 && isDeposit) msg += ` Wallet credited with ${fmt(amt - feeAmt)}.`;
-            setSuccess(msg);
+            toast(`${msg}`, 'success');
+
 
             setForm(EMPTY); setQuery(""); setPlayer(null);
             setMatchUsedToday(false); setBonusReferral(false); setReferralAlreadyRecorded(false);
             api.clearCache?.();
             await Promise.all([loadLedger(), loadGames(true), loadWallets()]);
         } catch (err) {
-            setError(err.message || "Transaction failed.");
+            toast(err.message || "Transaction failed.", "error");
         } finally { setSubmitting(false); }
     };
 
     const handleUndo = async (txId, playerIdFromTx) => {
         try {
-            setUndoingId(txId); setError(""); setUndoSuccess("");
+            setUndoingId(txId);
             await api.transactions.undoTransaction(String(txId).replace(/\D/g, ""));
             api.clearCache?.();
             await Promise.all([loadLedger(), loadWallets(), loadGames(true)]);
@@ -481,9 +481,9 @@ function AddTransactionsPage() {
                 try { const r = await api.players.getPlayer(player.id); const u = r?.data || player; setPlayer(u); computeEligibility(u); } catch { }
             }
             window.dispatchEvent(new CustomEvent("transactionUndone", { detail: { playerId: playerIdFromTx, txId, timestamp: new Date().toISOString() } }));
-            setUndoSuccess(`✓ Transaction #${txId} reversed. All data synced.`);
-            setTimeout(() => setUndoSuccess(""), 3000);
-        } catch (err) { setError(err.message || "Undo failed."); }
+            toast(`✓ Transaction #${txId} reversed. All data synced.`, 'success');
+
+        } catch (err) { toast(err.message || "Undo failed.", "error"); }
         finally { setUndoingId(null); }
     };
 
@@ -516,7 +516,7 @@ function AddTransactionsPage() {
                 {/* Type toggle */}
                 <div style={{ display: "flex", gap: "10px", marginBottom: "22px" }}>
                     {[{ id: "deposit", label: "Deposit", Icon: ArrowDownLeft, color: "#10b981" }, { id: "cashout", label: "Cashout", Icon: ArrowUpRight, color: "#ef4444" }].map(({ id, label, Icon, color }) => (
-                        <button key={id} type="button" onClick={() => { set("txType", id); setError(""); setSuccess(""); setUndoSuccess(""); }}
+                        <button key={id} type="button" onClick={() => { set("txType", id); }}
                             style={{ flex: 1, padding: "11px 20px", borderRadius: "10px", fontWeight: "700", fontSize: "14px", cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", border: form.txType === id ? `2px solid ${color}` : "2px solid #e2e8f0", background: form.txType === id ? `${color}14` : "#fafafa", color: form.txType === id ? color : "#64748b" }}>
                             <Icon style={{ width: "15px", height: "15px" }} /> {label}
                         </button>
@@ -542,10 +542,6 @@ function AddTransactionsPage() {
                     </div>
                 </div>
 
-                {/* Alerts */}
-                {error && <div style={{ padding: "11px 14px", marginBottom: "18px", background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "8px", color: "#991b1b", fontSize: "13px", display: "flex", gap: "8px", alignItems: "center" }}><AlertCircle style={{ width: "14px", height: "14px", flexShrink: 0 }} /> {error}</div>}
-                {success && <div style={{ padding: "11px 14px", marginBottom: "18px", background: "#dcfce7", border: "1px solid #86efac", borderRadius: "8px", color: "#166534", fontSize: "13px", display: "flex", gap: "8px", alignItems: "center" }}><CheckCircle style={{ width: "14px", height: "14px", flexShrink: 0 }} /> {success}</div>}
-                {undoSuccess && <div style={{ padding: "11px 14px", marginBottom: "18px", background: "#dcfce7", border: "1px solid #86efac", borderRadius: "8px", color: "#166534", fontSize: "13px", display: "flex", gap: "8px", alignItems: "center" }}><CheckCircle style={{ width: "14px", height: "14px", flexShrink: 0 }} /> {undoSuccess}</div>}
 
                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
@@ -893,7 +889,7 @@ function AddTransactionsPage() {
 
                     {/* Buttons */}
                     <div style={{ display: "flex", gap: "12px", paddingTop: "4px" }}>
-                        <button type="button" onClick={() => { setForm(EMPTY); setQuery(""); clearPlayer(); setError(""); setSuccess(""); setUndoSuccess(""); }} style={{ flex: 1, padding: "12px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px" }}>Clear</button>
+                        <button type="button" onClick={() => { setForm(EMPTY); setQuery(""); clearPlayer(); }} style={{ flex: 1, padding: "12px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px" }}>Clear</button>
                         <button type="submit" disabled={!canSubmit} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", fontWeight: "700", fontSize: "14px", cursor: canSubmit ? "pointer" : "not-allowed", background: canSubmit ? (isDeposit ? "#10b981" : "#f59e0b") : "#e2e8f0", color: canSubmit ? "#fff" : "#94a3b8", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px" }}>
                             {submitting ? <span>⏳ Processing…</span> : isDeposit
                                 ? <><ArrowDownLeft style={{ width: "15px", height: "15px" }} /> Record Deposit</>
