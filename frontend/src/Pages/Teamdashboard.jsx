@@ -17,6 +17,7 @@ import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { PlayerFollowupCard, BonusFollowupCard } from './FollowupTaskCards';
 import AdminTeamShiftsSection from './AdminTeamShiftsSection.jsx';
 import { useToast } from '../Context/toastContext';
+import TaskListRedesigned from "./TaskListRedesigned.jsx";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -1079,64 +1080,33 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
 
       {/* ══════════ TAB: TASKS ══════════ */}
       {activeTab === "tasks" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {/* Search + filters */}
-          <div style={{ display: "flex", gap: "7px", alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ position: "relative", flex: "1 1 160px", minWidth: "140px" }}>
-              <Search style={{ position: "absolute", left: "9px", top: "50%", transform: "translateY(-50%)", width: "12px", height: "12px", color: "var(--color-text-tertiary)", pointerEvents: "none" }} />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search tasks…"
-                style={{ ...INPUT_S, paddingLeft: "28px", paddingTop: "7px", paddingBottom: "7px" }} />
-            </div>
-            <div style={{ display: "flex", gap: "2px", background: "var(--color-background-secondary)", padding: "2px", borderRadius: "var(--border-radius-md)", border: "0.5px solid var(--color-border-tertiary)" }}>
-              {[{ k: "ALL", l: "All" }, { k: "PENDING", l: "Pending" }, { k: "IN_PROGRESS", l: "Active" }, { k: "COMPLETED", l: "Done" }].map(s => (
-                <button key={s.k} onClick={() => setStatusFilter(s.k)} style={{
-                  padding: "5px 9px", borderRadius: "6px", border: "none", fontSize: "11px", fontWeight: "500",
-                  cursor: "pointer", fontFamily: "inherit",
-                  background: statusFilter === s.k ? "var(--color-background-primary)" : "transparent",
-                  color: statusFilter === s.k ? "var(--color-text-primary)" : "var(--color-text-secondary)",
-                  boxShadow: statusFilter === s.k ? "0 0 0 0.5px var(--color-border-secondary)" : "none",
-                }}>{s.l}</button>
-              ))}
-            </div>
-            <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-              style={{ ...INPUT_S, width: "auto", minWidth: "110px", paddingTop: "7px", paddingBottom: "7px", fontSize: "12px", cursor: "pointer" }}>
-              <option value="ALL">All Types</option>
-              {Object.keys(TYPE_META).map(k => <option key={k} value={k}>{TYPE_META[k].label}</option>)}
-            </select>
-            <button onClick={loadTasks} style={{ padding: "7px 11px", background: "var(--color-background-secondary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-md)", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "var(--color-text-secondary)", fontFamily: "inherit" }}>
-              <RefreshCw style={{ width: "12px", height: "12px" }} />
-            </button>
-          </div>
-
-          {/* Task list */}
-          {loading ? (
-            <div style={{ padding: "48px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: "13px" }}>
-              <RefreshCw style={{ width: "16px", height: "16px", margin: "0 auto 8px", display: "block" }} />
-              Loading…
-            </div>
-          ) : filtered.length === 0 ? (
-            <Card style={{ padding: "48px 20px", textAlign: "center" }}>
-              <p style={{ margin: "0 0 4px", fontSize: "14px", fontWeight: "500", color: "var(--color-text-primary)" }}>
-                {search ? `No tasks matching "${search}"` : totalDone === tasks.length && tasks.length > 0 ? "All tasks complete!" : "No tasks found"}
-              </p>
-              <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-tertiary)" }}>
-                {totalDone === tasks.length && tasks.length > 0 ? "Great work this shift" : "Tasks assigned by admin will appear here"}
-              </p>
-            </Card>
-          ) : (typeFilter !== "ALL" || statusFilter !== "ALL" || search) ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              {filtered.map(t => renderTask(t))}
-            </div>
-          ) : (
-            <>
-              <TaskGroup title="Overdue — action required" tasks={filtered.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED")} color="#ef4444" defaultOpen={true} renderTask={renderTask} />
-              <TaskGroup title="In progress" tasks={filtered.filter(t => t.status === "IN_PROGRESS" && !(t.dueDate && new Date(t.dueDate) < new Date()))} color="#0ea5e9" defaultOpen={true} renderTask={renderTask} />
-              <TaskGroup title="Pending" tasks={filtered.filter(t => t.status === "PENDING")} color="var(--color-text-tertiary)" defaultOpen={true} renderTask={renderTask} />
-              <TaskGroup title="Completed" tasks={filtered.filter(t => t.status === "COMPLETED")} color="#22c55e" defaultOpen={false} renderTask={renderTask} />
-            </>
-          )}
-        </div>
+        <TaskListRedesigned
+          tasks={tasks}
+          loading={loading}
+          search={search}
+          setSearch={setSearch}
+          onStatusChange={handleStatusChange}
+          onChecklistToggle={handleChecklistToggle}
+          onProgressLog={handleProgressLog}
+          onClaimTask={handleClaimTask}
+          onInfoSubmitted={handleInfoSubmitted}
+          loadTasks={loadTasks}
+          resolvedUser={resolvedUser}
+          renderFollowup={task => {
+            // For PLAYER_FOLLOWUP / BONUS_FOLLOWUP / MISSING_INFO,
+            // return the same card JSX you use now (PlayerFollowupCard etc.)
+            // but rendered inside the expand area instead of standalone
+            switch (task.taskType) {
+              case "PLAYER_FOLLOWUP": return <PlayerFollowupCard task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onUpdated={handleInfoSubmitted} />;
+              case "BONUS_FOLLOWUP": return <BonusFollowupCard task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onUpdated={handleInfoSubmitted} />;
+              case "MISSING_INFO": return <MissingInfoTaskCard task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onInfoSubmitted={handleInfoSubmitted} />;
+              default: return null;
+            }
+          }}
+        />
       )}
+
+
 
       {/* ══════════ TAB: ANALYTICS ══════════ */}
       {activeTab === "analytics" && (
