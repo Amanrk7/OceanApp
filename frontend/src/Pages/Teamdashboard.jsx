@@ -862,30 +862,55 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
     const es     = new EventSource(sseUrl, { withCredentials: true });
     sseRef.current = es;
     es.onmessage = e => {
-      try {
-        const { type, data } = JSON.parse(e.data);
-        if (type === "task_created") {
-          setTasks(prev => {
-            const ex = prev.find(t => t.id === data.id);
-            if (ex) return prev.map(t => t.id === data.id ? data : t);
-            if (data.assignToAll || (myId && parseInt(data.assignedToId, 10) === myId)) return [data, ...prev];
-            return prev;
-          });
-        }
-        if (type === "task_updated") {
-          setTasks(prev => {
-            const ex = prev.find(t => t.id === data.id);
-            if (data.taskType === "MISSING_INFO" && data.assignedToId && myId !== null && parseInt(data.assignedToId, 10) !== myId && !data.assignToAll) return prev.filter(t => t.id !== data.id);
-            if (ex) return prev.map(t => t.id === data.id ? data : t);
-            if (myId && parseInt(data.assignedToId, 10) === myId) return [data, ...prev];
-            return prev;
-          });
-        }
-        if (type === "task_deleted") setTasks(prev => prev.filter(t => t.id !== data.id));
-      } catch (_) {}
-    };
+    try {
+      const { type, data } = JSON.parse(e.data);
+ 
+      // ── Store isolation ───────────────────────────────────
+      // The server now sends storeId in every task event.
+      // Skip events that don't belong to any store this user has access to.
+      // Admins (storeAccess = null or length === 0) receive everything.
+      const resolvedAccess = resolvedUser?.storeAccess;
+      const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(resolvedUser?.role);
+      if (
+        !isAdmin &&
+        data?.storeId &&
+        resolvedAccess?.length &&
+        !resolvedAccess.includes(data.storeId)
+      ) {
+        return; // not our store — ignore
+      }
+      // ─────────────────────────────────────────────────────
+ 
+      if (type === "task_created") {
+        setTasks(prev => {
+          const ex = prev.find(t => t.id === data.id);
+          if (ex) return prev.map(t => t.id === data.id ? data : t);
+          if (data.assignToAll || (myId && parseInt(data.assignedToId, 10) === myId)) return [data, ...prev];
+          return prev;
+        });
+      }
+      if (type === "task_updated") {
+        setTasks(prev => {
+          const ex = prev.find(t => t.id === data.id);
+          if (
+            data.taskType === "MISSING_INFO" &&
+            data.assignedToId &&
+            myId !== null &&
+            parseInt(data.assignedToId, 10) !== myId &&
+            !data.assignToAll
+          ) return prev.filter(t => t.id !== data.id);
+          if (ex) return prev.map(t => t.id === data.id ? data : t);
+          if (myId && parseInt(data.assignedToId, 10) === myId) return [data, ...prev];
+          return prev;
+        });
+      }
+      if (type === "task_deleted") setTasks(prev => prev.filter(t => t.id !== data.id));
+    } catch (_) {}
+  };
     return () => es.close();
   }, [loadTasks, myId]);
+
+  
 
   const handleChecklistToggle = useCallback(async (taskId, itemId, done) => {
     setTasks(prev => prev.map(t => t.id !== taskId ? t : { ...t, checklistItems: (t.checklistItems || []).map(i => i.id === itemId ? { ...i, done } : i) }));
