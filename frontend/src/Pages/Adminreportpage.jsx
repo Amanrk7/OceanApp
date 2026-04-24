@@ -1745,8 +1745,6 @@ export default function AdminReportPage() {
         setLoading(true);
         try {
             const opts = { date };
-            // ✅ was: if (team.storeLabel && team.storeLabel !== "ALL")
-            // `team` doesn't exist here — use the `role` param directly
             if (role && role !== "ALL") opts.teamRole = role;
             const data = await api.reports.getDailyReport(opts);
             setReport(data);
@@ -1804,13 +1802,6 @@ export default function AdminReportPage() {
                     </div>
                 </div>
             </div>
-
-            {/* Error */}
-            {error && (
-                <div style={{ padding: "11px 15px", background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "8px", color: "#991b1b", fontSize: "13px", display: "flex", gap: "8px", alignItems: "center" }}>
-                    <AlertCircle style={{ width: "14px", height: "14px", flexShrink: 0 }} /> {error}
-                </div>
-            )}
 
             {/* Loading skeleton */}
             {loading && !report && (
