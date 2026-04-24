@@ -3,6 +3,7 @@ import {
   AlertCircle, CheckCircle, RefreshCw, Plus, Search, X,
   Clock, Flag, User, Filter, Inbox,
 } from 'lucide-react';
+import { useToast } from '../Context/toastContext';
 import { api } from '../api';
 import { fmtTXDate, fmtTXTime } from '../utils/txTime';
 
@@ -78,22 +79,29 @@ function FocusInput({ as: Tag = 'input', style, ...props }) {
 function AddIssueModal({ onClose, onCreated }) {
   const [form, setForm] = useState({ title: '', description: '', playerName: '', priority: 'MEDIUM' });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(''); setSuccess('');
-    if (!form.title.trim()) { setError('Issue title is required'); return; }
-    if (!form.description.trim()) { setError('Description is required'); return; }
+    if (!form.title.trim()) {
+      toast(e.message || 'Issue title is required', "error");
+      return;
+    }
+    if (!form.description.trim()) {
+      toast('Description is required', "error");
+
+      return;
+    }
     try {
       setLoading(true);
       await api.issues.issues.createIssue({ title: form.title, description: form.description, playerName: form.playerName || null, priority: form.priority });
-      setSuccess('Issue submitted!');
+      toast('Issue submitted!', "success");
+
       setTimeout(() => onCreated?.(), 900);
-    } catch (err) { setError(err.message || 'Failed to submit'); }
+    } catch (err) {
+      toast(err.message || 'Failed to submit', "error");
+    }
     finally { setLoading(false); }
   };
 
@@ -122,16 +130,6 @@ function AddIssueModal({ onClose, onCreated }) {
 
         {/* Body */}
         <form onSubmit={handleSubmit} style={{ padding: '20px 26px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {error && (
-            <div style={{ padding: '10px 13px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#991b1b', fontSize: '13px', display: 'flex', gap: '7px', alignItems: 'center' }}>
-              <AlertCircle style={{ width: '13px', height: '13px', flexShrink: 0 }} /> {error}
-            </div>
-          )}
-          {success && (
-            <div style={{ padding: '10px 13px', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '8px', color: '#166534', fontSize: '13px', display: 'flex', gap: '7px', alignItems: 'center' }}>
-              <CheckCircle style={{ width: '13px', height: '13px', flexShrink: 0 }} /> {success}
-            </div>
-          )}
 
           <div>
             <label style={LABEL}>Issue Title <span style={{ color: '#ef4444' }}>*</span></label>
@@ -234,6 +232,7 @@ function IssueCard({ issue, onResolve, resolving }) {
 
 // ─── Main Issues page ─────────────────────────────────────────────────────────
 export default function Issues() {
+  const { add: toast } = useToast();
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterTab, setFilterTab] = useState('unresolved');
@@ -241,16 +240,16 @@ export default function Issues() {
   const [filterPriority, setFilterPriority] = useState('All');
   const [showAdd, setShowAdd] = useState(false);
   const [resolving, setResolving] = useState(null);
-  const [banner, setBanner] = useState({ type: '', msg: '' });
-
-  const showBanner = (type, msg) => { setBanner({ type, msg }); setTimeout(() => setBanner({ type: '', msg: '' }), 4000); };
 
   const load = async () => {
     try {
       setLoading(true);
       const data = await api.issues.issues.getIssues(true);
       setIssues(data.data || []);
-    } catch (e) { showBanner('error', e.message || 'Failed to load issues'); }
+    } catch (e) {
+      toast(e.message || 'Failed to load issues', "error");
+
+    }
     finally { setLoading(false); }
   };
 
@@ -261,8 +260,11 @@ export default function Issues() {
       setResolving(id);
       await api.issues.issues.resolveIssue(id);
       setIssues(prev => prev.map(i => i.id === id ? { ...i, status: 'RESOLVED' } : i));
-      showBanner('success', 'Issue marked as resolved.');
-    } catch (e) { showBanner('error', e.message || 'Failed to resolve issue'); }
+      toast('Issue marked as resolved.', "success");
+    } catch (e) {
+      toast(e.message || 'Failed to resolve issue', "error");
+
+    }
     finally { setResolving(null); }
   };
 
@@ -297,19 +299,6 @@ export default function Issues() {
         <StatCard icon={CheckCircle} label="Resolved" value={resolved} color="#10b981" bg="#f0fdf4" border="#86efac" />
         <StatCard icon={Flag} label="High Priority" value={highPri} color="#ef4444" bg="#fee2e2" border="#fca5a5" />
       </div>
-
-      {/* ── Banner ── */}
-      {banner.msg && (
-        <div style={{ padding: '11px 16px', background: banner.type === 'success' ? '#dcfce7' : '#fee2e2', border: `1px solid ${banner.type === 'success' ? '#86efac' : '#fca5a5'}`, borderRadius: '10px', color: banner.type === 'success' ? '#166634' : '#991b1b', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-            {banner.type === 'success' ? <CheckCircle style={{ width: '14px', height: '14px' }} /> : <AlertCircle style={{ width: '14px', height: '14px' }} />}
-            {banner.msg}
-          </span>
-          <button onClick={() => setBanner({ type: '', msg: '' })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', display: 'flex' }}>
-            <X style={{ width: '13px', height: '13px' }} />
-          </button>
-        </div>
-      )}
 
       {/* ── Main card ── */}
       <div style={{ ...CARD, overflow: 'hidden' }}>
@@ -417,7 +406,10 @@ export default function Issues() {
       {showAdd && (
         <AddIssueModal
           onClose={() => setShowAdd(false)}
-          onCreated={() => { setShowAdd(false); load(); showBanner('success', 'Issue submitted successfully!'); }}
+          onCreated={() => {
+            setShowAdd(false); load();
+            toast('Issue submitted successfully!', "success");
+          }}
         />
       )}
 
