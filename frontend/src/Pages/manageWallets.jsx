@@ -171,6 +171,36 @@ const ManageWalletsPage = () => {
         } finally { setLoading(false); setRefreshing(false); }
     }, []);
 
+    useEffect(() => {
+  // Listen for shared wallet updates from other stores
+  const token = localStorage.getItem('authToken');
+  if (!token) return;
+  const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
+  const url = `${API_BASE}/tasks/events?token=${encodeURIComponent(token)}`;
+  const sse = new EventSource(url, { withCredentials: true });
+
+  sse.addEventListener('message', (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'shared_wallet_updated') {
+        // Update the balance in-place without a full reload
+        setGrouped(prev => prev.map(group => ({
+          ...group,
+          subAccounts: group.subAccounts.map(w =>
+            w.id === msg.data.walletId
+              ? { ...w, balance: msg.data.balance }
+              : w
+          ),
+          totalBalance: group.subAccounts.reduce((s, w) =>
+            s + (w.id === msg.data.walletId ? msg.data.balance : (w.balance || 0)), 0
+          ),
+        })));
+      }
+    } catch { }
+  });
+
+  return () => sse.close();
+}, []);
     useEffect(() => { loadWallets(); }, [loadWallets]);
 
     const flash = (msg) => { setGlobalSuccess(msg); setTimeout(() => setGlobalSuccess(null), 3000); };
