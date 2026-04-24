@@ -764,12 +764,19 @@ function AdminDashboard({ user }) {
     return params.get('page') || 'dashboard';
   });
 
+  // useEffect(() => {
+  //   const params = new URLSearchParams(location.search);
+  //   const urlPage = params.get('page') || 'dashboard';
+  //   setPage(urlPage);
+  //   if (urlPage !== 'players') setAddPlayer(false);
+  // }, [location.search]);
+
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const urlPage = params.get('page') || 'dashboard';
-    setPage(urlPage);
-    if (urlPage !== 'players') setAddPlayer(false);
-  }, [location.search]);
+  const params = new URLSearchParams(location.search);
+  const urlPage = params.get('page') || 'dashboard';
+  setPage(urlPage);
+  setAddPlayer(false); // ← always reset, remove the conditional
+}, [location.search]);
 
   const handleLogout = async () => {
     await api.auth.logout();
