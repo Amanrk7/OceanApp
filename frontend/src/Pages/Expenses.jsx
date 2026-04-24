@@ -399,7 +399,7 @@ export const ExpensesPage = () => {
     // ── Make payment ──────────────────────────────────────────────────────────
     const handleMakePayment = async (e) => {
         e.preventDefault();
-        setPaymentError(null); setSubmitting(true);
+         setSubmitting(true);
         if (!paymentFormData.amount || !paymentFormData.walletId) {
             toast('Please enter an amount and select a payment method.', 'error');
             setSubmitting(false); return;
@@ -445,7 +445,7 @@ export const ExpensesPage = () => {
 
             {/* ── Action Buttons ── */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <button onClick={() => { setPaymentError(null); setShowPaymentModal(true); }}
+                <button onClick={() => {  setShowPaymentModal(true); }}
                     style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '10px 20px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '9px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(22,163,74,.3)' }}
                     onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
                     onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
@@ -765,7 +765,7 @@ export const ExpensesPage = () => {
                     <Field label="Notes (optional)">
                         <FocusInput as="textarea" rows={2} value={paymentFormData.notes} onChange={e => setPaymentFormData({ ...paymentFormData, notes: e.target.value })} style={{ resize: 'none', lineHeight: '1.6' }} />
                     </Field>
-                    <AlertBanner type="error" message={paymentError} />
+                    {/* <AlertBanner type="error" message={paymentError} /> */}
                     <ModalActions onCancel={() => setShowPaymentModal(false)} submitLabel="Record Payment" accent="#16a34a" loading={submitting} />
                 </form>
             </Modal>
