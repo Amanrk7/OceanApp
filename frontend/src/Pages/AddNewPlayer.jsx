@@ -508,7 +508,8 @@ export default function AddNewPlayer({ onIssueCreated }) {
                 sources: form.sources.filter(s => s.trim()),
             });
 
-            setSuccess(`✓ Player "${form.name}" created successfully!`);
+            // setSuccess(`✓ Player "${form.name}" created successfully!`);
+            toast(`Player "${form.name}" created successfully!`, 'success');
             setTimeout(() => {
                 if (onIssueCreated) onIssueCreated();
                 // setAddPlayer(false);
