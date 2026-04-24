@@ -30,12 +30,14 @@ const CARD = {
 const DIVIDER = { height: "1px", background: "#f1f5f9", margin: "20px 0" };
 
 const API = import.meta.env.VITE_API_URL ?? "";
+const getStoreId = () => parseInt(localStorage.getItem('__obStoreId') || '1', 10);
+
 function getAuthHeaders(includeContentType = false) {
-    const token = localStorage.getItem('authToken'); // ← change 'token' to match your key from Step 1
-    const headers = {};
-    if (includeContentType) headers['Content-Type'] = 'application/json';
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    return headers;
+  const token = localStorage.getItem('authToken');
+  const headers = { 'X-Store-Id': String(getStoreId()) };
+  if (includeContentType) headers['Content-Type'] = 'application/json';
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
 }
 // ── Constants ─────────────────────────────────────────────────────
 const TASK_TYPES = [
@@ -463,12 +465,14 @@ export default function AdminTaskPage() {
 
 
     function setupSSE() {
-        const token = localStorage.getItem('authToken');
-const url = token
-    ? `${API}/tasks/events?token=${encodeURIComponent(token)}`
-    : `${API}/tasks/events`;
-const sse = new EventSource(url, { withCredentials: true });
-    }
+  const token = localStorage.getItem('authToken');
+  const storeId = getStoreId();
+  const url = `${API}/tasks/events?${token ? `token=${encodeURIComponent(token)}&` : ''}storeId=${storeId}`;
+  const sse = new EventSource(url, { withCredentials: true });
+  // assign to sseRef.current so it gets closed on unmount
+  sseRef.current = sse;
+  sse.onmessage = () => loadTasks();
+}
 
     async function loadTasks() {
         setLoading(true);
