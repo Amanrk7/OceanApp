@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { api } from '../api';
 import { CurrentUserContext } from '../Context/currentUser';
+import { useToast } from '../Context/toastContext';
 
 // ─── Shared constants (mirrors PlaytimePage) ──────────────────────────────────
 const CARD = {
@@ -260,21 +261,24 @@ function GameCard({ game, isAdmin, onUpdate, onDelete, onToggleShare }) {
 
 // ─── Delete Modal (matches FreezeModal style) ─────────────────────────────────
 function DeleteModal({ game, onClose, onDeleted }) {
+  const { add: toast } = useToast();           // ← was missing
   const [adminPassword, setAdminPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const inputRef = useRef(null);
 
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 80); }, []);
 
   const handle = async () => {
-    if (!adminPassword.trim()) { setError('Admin password is required.'); return; }
-    setLoading(true); setError('');
+    if (!adminPassword.trim()) {
+      toast("Admin password is required.", "error");
+      return;
+    }
+    setLoading(true);
     try {
       await api.games.deleteGame(game.id, adminPassword);
       onDeleted(game.id);
     } catch (e) {
-      setError(e.message || 'Deletion failed — check your password.');
+      toast("Failed to delete game.", "error");
     } finally {
       setLoading(false);
     }
@@ -284,7 +288,6 @@ function DeleteModal({ game, onClose, onDeleted }) {
     <div style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
       <div style={{ ...CARD, position: 'relative', zIndex: 1, padding: '28px 30px', width: '420px', maxWidth: '94vw' }}>
-        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: '34px', height: '34px', borderRadius: '9px', background: '#fff1f2', border: '1px solid #fecdd3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -300,7 +303,6 @@ function DeleteModal({ game, onClose, onDeleted }) {
           </button>
         </div>
 
-        {/* Game info */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '14px' }}>
           <GameAvatar name={game.name} size={40} />
           <div>
@@ -311,7 +313,6 @@ function DeleteModal({ game, onClose, onDeleted }) {
           </div>
         </div>
 
-        {/* Warning */}
         <div style={{ padding: '10px 13px', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '8px', marginBottom: '18px', display: 'flex', gap: '8px' }}>
           <AlertTriangle style={{ width: '14px', height: '14px', color: '#92400e', flexShrink: 0, marginTop: '1px' }} />
           <span style={{ fontSize: '12px', color: '#92400e', fontWeight: '600' }}>
@@ -319,26 +320,19 @@ function DeleteModal({ game, onClose, onDeleted }) {
           </span>
         </div>
 
-        {/* Password */}
         <div style={{ marginBottom: '20px' }}>
           <label style={LABEL}>Admin password to confirm <span style={{ color: '#ef4444' }}>*</span></label>
           <input
             ref={inputRef}
             type="password"
             value={adminPassword}
-            onChange={e => setAdminPassword(e.target.value)}
+            onChange={e => { setAdminPassword(e.target.value); setError(''); }}
             onKeyDown={e => e.key === 'Enter' && !loading && handle()}
             placeholder="Enter admin password"
             disabled={loading}
-            style={{ ...INPUT, borderColor: error ? '#fca5a5' : '#e2e8f0' }}
+            style={{ ...INPUT, borderColor: '#e2e8f0' }}
           />
         </div>
-
-        {error && (
-          <div style={{ padding: '8px 12px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '7px', marginBottom: '14px', color: '#991b1b', fontSize: '12px' }}>
-            {error}
-          </div>
-        )}
 
         <div style={{ display: 'flex', gap: '10px' }}>
           <button onClick={onClose} disabled={loading}
@@ -358,24 +352,7 @@ function DeleteModal({ game, onClose, onDeleted }) {
             }}>
             {loading ? '⏳ Deleting…' : <><Trash2 style={{ width: '14px', height: '14px' }} /> Delete Game</>}
           </button>
-          {isAdmin && (
-            <button
-              onClick={() => onToggleShare(game)}
-              title={game.isShared ? 'Make store-private' : 'Share across all stores'}
-              style={{
-                position: 'absolute', top: '12px', right: '44px',
-                width: '26px', height: '26px', borderRadius: '7px',
-                border: `1px solid ${game.isShared ? '#bfdbfe' : '#e2e8f0'}`,
-                background: game.isShared ? '#eff6ff' : '#f8fafc',
-                color: game.isShared ? '#2563eb' : '#cbd5e1',
-                cursor: 'pointer', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: '12px', padding: 0,
-              }}
-              title={game.isShared ? '🔗 Shared — click to make private' : '🔒 Private — click to share'}
-            >
-              🔗
-            </button>
-          )}
+          {/* ← the stray isAdmin block that was here has been removed */}
         </div>
       </div>
     </div>
@@ -387,7 +364,6 @@ function NewGameModal({ onClose, onCreated }) {
   // const [form, setForm] = useState({ name: '', slug: '', pointStock: 0, status: 'HEALTHY' });
   const [form, setForm] = useState({ name: '', slug: '', pointStock: 0, status: 'HEALTHY', isShared: false });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleChange = e => {
     const { name, value } = e.target;
@@ -399,13 +375,13 @@ function NewGameModal({ onClose, onCreated }) {
   };
 
   const handleSubmit = async () => {
-    if (!form.name || !form.slug) { setError('Name and slug are required.'); return; }
-    setLoading(true); setError('');
+    if (!form.name || !form.slug) { toast('Name and slug are required.', 'error'); return; }
+    setLoading(true);
     try {
       const res = await api.games.createGame(form);
       onCreated(res.data);
     } catch (e) {
-      setError(e.message || 'Failed to create game.');
+      toast(e.message || 'Failed to create game.', 'error');
     } finally {
       setLoading(false);
     }
@@ -500,12 +476,6 @@ function NewGameModal({ onClose, onCreated }) {
           </div>
         </div>
 
-        {error && (
-          <div style={{ padding: '8px 12px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '7px', marginBottom: '14px', color: '#991b1b', fontSize: '12px' }}>
-            {error}
-          </div>
-        )}
-
         <div style={{ display: 'flex', gap: '10px' }}>
           <button onClick={onClose} disabled={loading}
             style={{ flex: 1, padding: '11px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}>
@@ -537,12 +507,12 @@ const FILTER_TABS = [
 
 export default function Games() {
   const { usr } = useContext(CurrentUserContext);
+  const { add: toast } = useToast();
+
   const isAdmin = usr?.role === 'ADMIN' || usr?.role === 'SUPER_ADMIN';
 
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('');
   const [showNewModal, setShowNewModal] = useState(false);
@@ -559,7 +529,7 @@ export default function Games() {
       setGames(res?.data || []);
       setLastRefresh(new Date());
     } catch (e) {
-      if (!silent) setError(e.message || 'Failed to load games.');
+      if (!silent) toast(e.message || 'Failed to load games.', 'error');
     } finally {
       setLoading(false);
     }
@@ -586,11 +556,6 @@ export default function Games() {
     totalStock: games.reduce((a, g) => a + (g.pointStock || 0), 0),
   };
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  const flash = (msg, isError = false) => {
-    if (isError) setError(msg); else setSuccess(msg);
-    setTimeout(() => { setError(''); setSuccess(''); }, 5000);
-  };
 
   useEffect(() => {
     // Listen for shared game updates from other stores
@@ -618,10 +583,10 @@ export default function Games() {
     setGames(prev => prev.map(g => g.id === gameId ? { ...g, pointStock: newStock, status: newStatus } : g));
     try {
       await api.games.updateGame(gameId, { pointStock: newStock, status: newStatus });
-      flash('Point stock updated successfully.');
+      toast('Stock update will reflect within a few seconds.', 'success');
     } catch (e) {
       setRefreshKey(k => k + 1);
-      flash(e.message || 'Failed to update points.', true);
+      toast(e.message || 'Failed to update points.', 'error');
       throw e;
     }
   }, []);
@@ -630,7 +595,7 @@ export default function Games() {
   const handleDeleted = useCallback((gameId) => {
     setGames(prev => prev.filter(g => g.id !== gameId));
     setDeleteTarget(null);
-    flash('Game deleted successfully.');
+    toast('Game deleted successfully.', 'success');
   }, []);
 
   const handleToggleShare = useCallback(async (game) => {
@@ -649,9 +614,9 @@ export default function Games() {
         body: JSON.stringify({ isShared: !game.isShared }),
       });
       setGames(prev => prev.map(g => g.id === game.id ? { ...g, isShared: !g.isShared } : g));
-      flash(`"${game.name}" is now ${!game.isShared ? 'shared across all stores' : 'store-private'}.`);
+      toast(`"${game.name}" is now ${!game.isShared ? 'shared across all stores' : 'store-private'}.`, 'success');
     } catch (e) {
-      flash(e.message || 'Failed to update share status.', true);
+      toast(e.message || 'Failed to update share status.', 'error');
     }
   }, []);
 
@@ -735,18 +700,6 @@ export default function Games() {
           <span style={{ fontSize: '10px', color: '#cbd5e1', flexShrink: 0 }}>{lastRefresh.toLocaleTimeString()}</span>
         </div>
 
-        {/* Alerts */}
-        {error && (
-          <div style={{ margin: '10px 18px 0', padding: '10px 14px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#991b1b', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <AlertCircle style={{ width: '14px', height: '14px', flexShrink: 0 }} /> {error}
-            <button onClick={() => setError('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#991b1b' }}><X style={{ width: '13px', height: '13px' }} /></button>
-          </div>
-        )}
-        {success && (
-          <div style={{ margin: '10px 18px 0', padding: '10px 14px', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '8px', color: '#166534', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <CheckCircle style={{ width: '14px', height: '14px', flexShrink: 0 }} /> {success}
-          </div>
-        )}
 
         {/* Content */}
         <div style={{ padding: '18px' }}>
@@ -783,7 +736,7 @@ export default function Games() {
           onCreated={newGame => {
             setGames(prev => [newGame, ...prev]);
             setShowNewModal(false);
-            flash(`"${newGame.name}" created successfully.`);
+            toast(`"${newGame.name}" created successfully.`, 'success');
           }}
         />
       )}
