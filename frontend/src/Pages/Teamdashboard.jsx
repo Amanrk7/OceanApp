@@ -16,6 +16,7 @@ import {
 import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { PlayerFollowupCard, BonusFollowupCard } from './FollowupTaskCards';
 import AdminTeamShiftsSection from './AdminTeamShiftsSection.jsx';
+import { useToast } from '../Context/toastContext';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -57,33 +58,33 @@ function fmtDue(iso) {
 // ─── Design tokens ────────────────────────────────────────────
 const PRIORITY_COLOR = { LOW: "#22c55e", MEDIUM: "#f59e0b", HIGH: "#f97316", URGENT: "#dc2626" };
 const TYPE_META = {
-  STANDARD:         { label: "Standard",        color: "#6366f1", light: "#eef2ff" },
-  DAILY_CHECKLIST:  { label: "Daily Checklist", color: "#0ea5e9", light: "#f0f9ff" },
-  PLAYER_ADDITION:  { label: "Player Addition", color: "#8b5cf6", light: "#f5f3ff" },
-  REVENUE_TARGET:   { label: "Revenue Target",  color: "#22c55e", light: "#f0fdf4" },
-  PLAYER_FOLLOWUP:  { label: "Player Followup", color: "#f97316", light: "#fff7ed" },
-  BONUS_FOLLOWUP:   { label: "Bonus Followup",  color: "#10b981", light: "#ecfdf5" },
-  MISSING_INFO:     { label: "Missing Info",    color: "#ec4899", light: "#fdf2f8" },
+  STANDARD: { label: "Standard", color: "#6366f1", light: "#eef2ff" },
+  DAILY_CHECKLIST: { label: "Daily Checklist", color: "#0ea5e9", light: "#f0f9ff" },
+  PLAYER_ADDITION: { label: "Player Addition", color: "#8b5cf6", light: "#f5f3ff" },
+  REVENUE_TARGET: { label: "Revenue Target", color: "#22c55e", light: "#f0fdf4" },
+  PLAYER_FOLLOWUP: { label: "Player Followup", color: "#f97316", light: "#fff7ed" },
+  BONUS_FOLLOWUP: { label: "Bonus Followup", color: "#10b981", light: "#ecfdf5" },
+  MISSING_INFO: { label: "Missing Info", color: "#ec4899", light: "#fdf2f8" },
 };
 const MISSING_FIELD_META = {
-  email:    { label: "Email",    placeholder: "player@email.com", type: "email"  },
-  phone:    { label: "Phone",    placeholder: "+1 234 567 8900",  type: "tel"    },
-  snapchat: { label: "Snapchat", placeholder: "@snapchat",        type: "text"   },
-  instagram:{ label: "Instagram",placeholder: "@instagram",       type: "text"   },
-  telegram: { label: "Telegram", placeholder: "@telegram",        type: "text"   },
+  email: { label: "Email", placeholder: "player@email.com", type: "email" },
+  phone: { label: "Phone", placeholder: "+1 234 567 8900", type: "tel" },
+  snapchat: { label: "Snapchat", placeholder: "@snapchat", type: "text" },
+  instagram: { label: "Instagram", placeholder: "@instagram", type: "text" },
+  telegram: { label: "Telegram", placeholder: "@telegram", type: "text" },
   assigned_member: { label: "Assign Member", placeholder: "Select…", type: "select" },
 };
 const RATING_CATEGORIES = [
-  { key: "communicationWithPlayer",  label: "Communication",      icon: "💬" },
-  { key: "loadReloadSmoothness",     label: "Load/Reload",        icon: "⚡" },
-  { key: "liveReportingToPlayers",   label: "Live Reporting",     icon: "📡" },
-  { key: "playtimeBonus",            label: "Playtime Bonus",     icon: "🎮" },
-  { key: "referralBonus",            label: "Referral Bonus",     icon: "👥" },
-  { key: "matchAndRandomBonus",      label: "Match Bonus",        icon: "🎯" },
-  { key: "playerEngagementOverall",  label: "Engagement",         icon: "🔥" },
-  { key: "reachingOutInShifts",      label: "Reach Out (Shift)",  icon: "📲" },
-  { key: "reachingOutFromOwnList",   label: "Reach Out (Own)",    icon: "📋" },
-  { key: "cashoutTiming",            label: "Cashout Timing",     icon: "⏱️" },
+  { key: "communicationWithPlayer", label: "Communication", icon: "💬" },
+  { key: "loadReloadSmoothness", label: "Load/Reload", icon: "⚡" },
+  { key: "liveReportingToPlayers", label: "Live Reporting", icon: "📡" },
+  { key: "playtimeBonus", label: "Playtime Bonus", icon: "🎮" },
+  { key: "referralBonus", label: "Referral Bonus", icon: "👥" },
+  { key: "matchAndRandomBonus", label: "Match Bonus", icon: "🎯" },
+  { key: "playerEngagementOverall", label: "Engagement", icon: "🔥" },
+  { key: "reachingOutInShifts", label: "Reach Out (Shift)", icon: "📲" },
+  { key: "reachingOutFromOwnList", label: "Reach Out (Own)", icon: "📋" },
+  { key: "cashoutTiming", label: "Cashout Timing", icon: "⏱️" },
 ];
 
 // ─── Shared input/label styles ─────────────────────────────────
@@ -190,13 +191,13 @@ function DonutRing({ pct, size = 80, stroke = 8 }) {
   const color = pct >= 75 ? "#22c55e" : pct >= 40 ? "#f59e0b" : "#f97316";
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block", flexShrink: 0 }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--color-border-tertiary)" strokeWidth={stroke} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-border-tertiary)" strokeWidth={stroke} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke}
         strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-        transform={`rotate(-90 ${size/2} ${size/2})`}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
         style={{ transition: "stroke-dashoffset 0.6s ease" }}
       />
-      <text x={size/2} y={size/2 + 4} textAnchor="middle" fontSize="14" fontWeight="500" fill="var(--color-text-primary)">{pct}%</text>
+      <text x={size / 2} y={size / 2 + 4} textAnchor="middle" fontSize="14" fontWeight="500" fill="var(--color-text-primary)">{pct}%</text>
     </svg>
   );
 }
@@ -227,7 +228,7 @@ function FinancialSection({ shifts }) {
     const days = period === "1d" ? 1 : period === "7d" ? 7 : 30;
     const map = {};
     for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0,0,0,0);
+      const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0, 0, 0, 0);
       const key = fmtDate(d.toISOString());
       map[key] = { date: key, deposits: 0, cashouts: 0, bonuses: 0, profit: 0 };
     }
@@ -235,10 +236,10 @@ function FinancialSection({ shifts }) {
       const st = s.stats || {};
       const key = fmtDate(s.startTime);
       if (map[key]) {
-        map[key].deposits  += st.totalDeposits  || 0;
-        map[key].cashouts  += st.totalCashouts  || 0;
-        map[key].bonuses   += st.totalBonuses   || 0;
-        map[key].profit    += st.netProfit      || 0;
+        map[key].deposits += st.totalDeposits || 0;
+        map[key].cashouts += st.totalCashouts || 0;
+        map[key].bonuses += st.totalBonuses || 0;
+        map[key].profit += st.netProfit || 0;
       }
     });
     return Object.values(map);
@@ -247,8 +248,8 @@ function FinancialSection({ shifts }) {
   const totals = useMemo(() => data.reduce((acc, d) => ({
     deposits: acc.deposits + d.deposits,
     cashouts: acc.cashouts + d.cashouts,
-    bonuses:  acc.bonuses  + d.bonuses,
-    profit:   acc.profit   + d.profit,
+    bonuses: acc.bonuses + d.bonuses,
+    profit: acc.profit + d.profit,
   }), { deposits: 0, cashouts: 0, bonuses: 0, profit: 0 }), [data]);
 
   const PERIODS = [{ id: "1d", label: "Today" }, { id: "7d", label: "7 days" }, { id: "30d", label: "30 days" }];
@@ -273,10 +274,10 @@ function FinancialSection({ shifts }) {
 
       {/* Summary metric cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: "8px" }}>
-        <MetricCard label="Deposits"  value={`$${totals.deposits.toFixed(0)}`}  color="#22c55e" icon={ArrowUpRight} />
-        <MetricCard label="Cashouts"  value={`$${totals.cashouts.toFixed(0)}`}  color="#ef4444" icon={ArrowDownRight} />
-        <MetricCard label="Bonuses"   value={`$${totals.bonuses.toFixed(0)}`}   color="#f59e0b" icon={Gift} />
-        <MetricCard label="Net Profit" value={`$${totals.profit.toFixed(0)}`}   color={totals.profit >= 0 ? "#22c55e" : "#ef4444"} icon={TrendingUp} />
+        <MetricCard label="Deposits" value={`$${totals.deposits.toFixed(0)}`} color="#22c55e" icon={ArrowUpRight} />
+        <MetricCard label="Cashouts" value={`$${totals.cashouts.toFixed(0)}`} color="#ef4444" icon={ArrowDownRight} />
+        <MetricCard label="Bonuses" value={`$${totals.bonuses.toFixed(0)}`} color="#f59e0b" icon={Gift} />
+        <MetricCard label="Net Profit" value={`$${totals.profit.toFixed(0)}`} color={totals.profit >= 0 ? "#22c55e" : "#ef4444"} icon={TrendingUp} />
       </div>
 
       {/* Area chart */}
@@ -286,11 +287,11 @@ function FinancialSection({ shifts }) {
           <AreaChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="gDep" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#22c55e" stopOpacity={0.15} />
+                <stop offset="5%" stopColor="#22c55e" stopOpacity={0.15} />
                 <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="gCash" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#ef4444" stopOpacity={0.12} />
+                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.12} />
                 <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
               </linearGradient>
             </defs>
@@ -298,8 +299,8 @@ function FinancialSection({ shifts }) {
             <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--color-text-tertiary)" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: "var(--color-text-tertiary)" }} axisLine={false} tickLine={false} />
             <Tooltip content={<ChartTooltip />} />
-            <Area type="monotone" dataKey="deposits" name="Deposits"  stroke="#22c55e" fill="url(#gDep)"  strokeWidth={1.5} dot={false} />
-            <Area type="monotone" dataKey="cashouts"  name="Cashouts" stroke="#ef4444" fill="url(#gCash)" strokeWidth={1.5} dot={false} />
+            <Area type="monotone" dataKey="deposits" name="Deposits" stroke="#22c55e" fill="url(#gDep)" strokeWidth={1.5} dot={false} />
+            <Area type="monotone" dataKey="cashouts" name="Cashouts" stroke="#ef4444" fill="url(#gCash)" strokeWidth={1.5} dot={false} />
           </AreaChart>
         </ResponsiveContainer>
         <div style={{ display: "flex", gap: "14px", marginTop: "8px" }}>
@@ -320,7 +321,7 @@ function FinancialSection({ shifts }) {
             <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--color-text-tertiary)" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: "var(--color-text-tertiary)" }} axisLine={false} tickLine={false} />
             <Tooltip content={<ChartTooltip />} />
-            <Bar dataKey="profit" name="Profit" radius={[3,3,0,0]}>
+            <Bar dataKey="profit" name="Profit" radius={[3, 3, 0, 0]}>
               {data.map((d, i) => <Cell key={i} fill={d.profit >= 0 ? "#22c55e" : "#ef4444"} fillOpacity={0.8} />)}
             </Bar>
           </BarChart>
@@ -480,58 +481,57 @@ function TaskTypeBadge({ taskType }) {
 }
 
 function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
+  const toast = useToast();
   const [expanded, setExpanded] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [undoing, setUndoing] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [teamMembers, setTeamMembers] = useState([]);
   const [form, setForm] = useState({});
 
   const myId = extractUserId(currentUser);
   const playerMeta = useMemo(() => { try { return JSON.parse(task.notes || "{}"); } catch { return {}; } }, [task.notes]);
   const missingFields = useMemo(() => (task.checklistItems || []).filter(i => !i.done).map(i => i.fieldKey || i.label?.toLowerCase().replace(/ /g, "_")), [task.checklistItems]);
-  const doneFields   = useMemo(() => (task.checklistItems || []).filter(i =>  i.done).map(i => i.fieldKey || i.label?.toLowerCase().replace(/ /g, "_")), [task.checklistItems]);
-  const total    = (task.checklistItems || []).length;
-  const done     = doneFields.length;
-  const pct      = total > 0 ? Math.round((done / total) * 100) : 0;
-  const isMe     = !!task.assignedToId && myId !== null && parseInt(task.assignedToId, 10) === myId;
-  const isOther  = !!task.assignedToId && !isMe;
-  const isDone   = task.status === "COMPLETED";
-  const m        = TYPE_META.MISSING_INFO;
+  const doneFields = useMemo(() => (task.checklistItems || []).filter(i => i.done).map(i => i.fieldKey || i.label?.toLowerCase().replace(/ /g, "_")), [task.checklistItems]);
+  const total = (task.checklistItems || []).length;
+  const done = doneFields.length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const isMe = !!task.assignedToId && myId !== null && parseInt(task.assignedToId, 10) === myId;
+  const isOther = !!task.assignedToId && !isMe;
+  const isDone = task.status === "COMPLETED";
+  const m = TYPE_META.MISSING_INFO;
 
   useEffect(() => {
     if (missingFields.includes("assigned_member") && isMe) {
       fetch(`${API}/team-members`, { credentials: "include", headers: getAuthHeaders() })
-        .then(r => r.json()).then(d => setTeamMembers(d.data || [])).catch(() => {});
+        .then(r => r.json()).then(d => setTeamMembers(d.data || [])).catch(() => { });
     }
   }, [isMe, missingFields]);
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const handleClaim = async () => {
-    setClaiming(true); setError("");
+    setClaiming(true);
     try {
       const res = await fetch(`${API}/tasks/${task.id}/claim`, { method: "POST", credentials: "include", headers: getAuthHeaders(true) });
       const d = await res.json(); if (!res.ok) throw new Error(d.error || "Failed"); onClaim(d.data);
-    } catch (e) { setError(e.message); } finally { setClaiming(false); }
+    } catch (e) { toast(e.message, "error"); } finally { setClaiming(false); }
   };
   const handleSubmit = async () => {
-    if (!Object.values(form).some(v => v?.trim?.())) { setError("Fill at least one field."); return; }
-    setSubmitting(true); setError("");
+    if (!Object.values(form).some(v => v?.trim?.())) { toast("Fill at least one field.", "error"); return; }
+    setSubmitting(true);
     try {
       const body = {}; missingFields.forEach(k => { if (form[k]) body[k === "assigned_member" ? "assignedMemberId" : k] = form[k]; });
       const res = await fetch(`${API}/tasks/${task.id}/submit-missing-info`, { method: "POST", credentials: "include", headers: getAuthHeaders(true), body: JSON.stringify(body) });
-      const d = await res.json(); if (!res.ok) throw new Error(d.error || "Failed"); setSuccess(true); setForm({}); onInfoSubmitted(d.data);
-    } catch (e) { setError(e.message); } finally { setSubmitting(false); }
+      const d = await res.json(); if (!res.ok) throw new Error(d.error || "Failed"); toast("Information submitted successfully.", "success"); setForm({}); onInfoSubmitted(d.data);
+    } catch (e) { toast(e.message, "error"); } finally { setSubmitting(false); }
   };
   const handleUndo = async () => {
-    setUndoing(true); setError("");
+    setUndoing(true);
     try {
       const res = await fetch(`${API}/tasks/${task.id}/undo-completion`, { method: "POST", credentials: "include", headers: getAuthHeaders(true) });
-      const d = await res.json(); if (!res.ok) throw new Error(d.error || "Failed"); setSuccess(false); onInfoSubmitted(d.data);
-    } catch (e) { setError(e.message); } finally { setUndoing(false); }
+      const d = await res.json(); if (!res.ok) throw new Error(d.error || "Failed"); toast("Task completion undone.", "success"); onInfoSubmitted(d.data);
+    } catch (e) { toast(e.message, "error"); } finally { setUndoing(false); }
   };
 
   return (
@@ -807,16 +807,16 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
   const { shiftActive } = useContext(ShiftStatusContext);
   const navigate = useNavigate();
 
-  const [tasks,        setTasks]        = useState([]);
-  const [shifts,       setShifts]       = useState([]);
-  const [ratings,      setRatings]      = useState(null);
-  const [teamRatings,  setTeamRatings]  = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [typeFilter,   setTypeFilter]   = useState("ALL");
+  const [tasks, setTasks] = useState([]);
+  const [shifts, setShifts] = useState([]);
+  const [ratings, setRatings] = useState(null);
+  const [teamRatings, setTeamRatings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [typeFilter, setTypeFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [search,       setSearch]       = useState("");
+  const [search, setSearch] = useState("");
   const [resolvedUser, setResolvedUser] = useState(null);
-  const [activeTab,    setActiveTab]    = useState("tasks"); // tasks | analytics | shifts | rating
+  const [activeTab, setActiveTab] = useState("tasks"); // tasks | analytics | shifts | rating
   const sseRef = useRef(null);
 
   useEffect(() => {
@@ -824,151 +824,152 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
     if (id !== null) setResolvedUser({ ...currentUser, id });
     else {
       fetch(`${API}/user`, { credentials: "include", headers: getAuthHeaders() })
-        .then(r => r.json()).then(data => { const u = data?.data ?? data?.user ?? data; if (u?.id) setResolvedUser(u); }).catch(() => {});
+        .then(r => r.json()).then(data => { const u = data?.data ?? data?.user ?? data; if (u?.id) setResolvedUser(u); }).catch(() => { });
     }
   }, [currentUser]);
 
   const myId = resolvedUser ? extractUserId(resolvedUser) : null;
   const targetUserId = viewingMember?.id || myId;
-  const memberRole   = viewingMember?.role || resolvedUser?.role || "";
-  const memberName   = viewingMember?.name || resolvedUser?.name || "Member";
+  const memberRole = viewingMember?.role || resolvedUser?.role || "";
+  const memberName = viewingMember?.name || resolvedUser?.name || "Member";
 
   // Load ratings + shifts
   useEffect(() => {
     if (!targetUserId) return;
     fetch(`${API}/members/${targetUserId}/ratings`, { credentials: "include", headers: getAuthHeaders() })
-      .then(r => r.ok ? r.json() : null).then(d => { if (d?.data) setRatings(d.data); }).catch(() => {});
+      .then(r => r.ok ? r.json() : null).then(d => { if (d?.data) setRatings(d.data); }).catch(() => { });
     fetch(`${API}/reports/my-shifts?role=${memberRole}&limit=30`, { credentials: "include", headers: getAuthHeaders() })
-      .then(r => r.ok ? r.json() : null).then(d => { if (d?.data) setShifts(d.data); }).catch(() => {});
+      .then(r => r.ok ? r.json() : null).then(d => { if (d?.data) setShifts(d.data); }).catch(() => { });
     if (isAdmin) {
       fetch(`${API}/members/all-ratings`, { credentials: "include", headers: getAuthHeaders() })
-        .then(r => r.ok ? r.json() : null).then(d => { if (d?.data) setTeamRatings(d.data); }).catch(() => {});
+        .then(r => r.ok ? r.json() : null).then(d => { if (d?.data) setTeamRatings(d.data); }).catch(() => { });
     }
   }, [targetUserId, isAdmin, memberRole]);
 
   const loadTasks = useCallback(async () => {
     setLoading(true);
     try {
-      const res  = await fetch(`${API}/tasks?myTasks=true`, { credentials: "include", headers: getAuthHeaders() });
+      const res = await fetch(`${API}/tasks?myTasks=true`, { credentials: "include", headers: getAuthHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
       setTasks(data.data || []);
-    } catch (_) {} finally { setLoading(false); }
+    } catch (_) { } finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
     loadTasks();
-    const token  = localStorage.getItem('authToken');
-    const sseUrl = `${API}/tasks/events${token ? `?token=${encodeURIComponent(token)}` : ''}`;
-    const es     = new EventSource(sseUrl, { withCredentials: true });
+    const token = localStorage.getItem('authToken');
+    const storeId = getStoreId();
+    const sseUrl = `${API}/tasks/events?${token ? `token=${encodeURIComponent(token)}&` : ''}storeId=${storeId}`;
+    const es = new EventSource(sseUrl, { withCredentials: true });
     sseRef.current = es;
     es.onmessage = e => {
-    try {
-      const { type, data } = JSON.parse(e.data);
- 
-      // ── Store isolation ───────────────────────────────────
-      // The server now sends storeId in every task event.
-      // Skip events that don't belong to any store this user has access to.
-      // Admins (storeAccess = null or length === 0) receive everything.
-      const resolvedAccess = resolvedUser?.storeAccess;
-      const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(resolvedUser?.role);
-      if (
-        !isAdmin &&
-        data?.storeId &&
-        resolvedAccess?.length &&
-        !resolvedAccess.includes(data.storeId)
-      ) {
-        return; // not our store — ignore
-      }
-      // ─────────────────────────────────────────────────────
- 
-      if (type === "task_created") {
-        setTasks(prev => {
-          const ex = prev.find(t => t.id === data.id);
-          if (ex) return prev.map(t => t.id === data.id ? data : t);
-          if (data.assignToAll || (myId && parseInt(data.assignedToId, 10) === myId)) return [data, ...prev];
-          return prev;
-        });
-      }
-      if (type === "task_updated") {
-        setTasks(prev => {
-          const ex = prev.find(t => t.id === data.id);
-          if (
-            data.taskType === "MISSING_INFO" &&
-            data.assignedToId &&
-            myId !== null &&
-            parseInt(data.assignedToId, 10) !== myId &&
-            !data.assignToAll
-          ) return prev.filter(t => t.id !== data.id);
-          if (ex) return prev.map(t => t.id === data.id ? data : t);
-          if (myId && parseInt(data.assignedToId, 10) === myId) return [data, ...prev];
-          return prev;
-        });
-      }
-      if (type === "task_deleted") setTasks(prev => prev.filter(t => t.id !== data.id));
-    } catch (_) {}
-  };
+      try {
+        const { type, data } = JSON.parse(e.data);
+
+        // ── Store isolation ───────────────────────────────────
+        // The server now sends storeId in every task event.
+        // Skip events that don't belong to any store this user has access to.
+        // Admins (storeAccess = null or length === 0) receive everything.
+        const resolvedAccess = resolvedUser?.storeAccess;
+        const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(resolvedUser?.role);
+        if (
+          !isAdmin &&
+          data?.storeId &&
+          resolvedAccess?.length &&
+          !resolvedAccess.includes(data.storeId)
+        ) {
+          return; // not our store — ignore
+        }
+        // ─────────────────────────────────────────────────────
+
+        if (type === "task_created") {
+          setTasks(prev => {
+            const ex = prev.find(t => t.id === data.id);
+            if (ex) return prev.map(t => t.id === data.id ? data : t);
+            if (data.assignToAll || (myId && parseInt(data.assignedToId, 10) === myId)) return [data, ...prev];
+            return prev;
+          });
+        }
+        if (type === "task_updated") {
+          setTasks(prev => {
+            const ex = prev.find(t => t.id === data.id);
+            if (
+              data.taskType === "MISSING_INFO" &&
+              data.assignedToId &&
+              myId !== null &&
+              parseInt(data.assignedToId, 10) !== myId &&
+              !data.assignToAll
+            ) return prev.filter(t => t.id !== data.id);
+            if (ex) return prev.map(t => t.id === data.id ? data : t);
+            if (myId && parseInt(data.assignedToId, 10) === myId) return [data, ...prev];
+            return prev;
+          });
+        }
+        if (type === "task_deleted") setTasks(prev => prev.filter(t => t.id !== data.id));
+      } catch (_) { }
+    };
     return () => es.close();
   }, [loadTasks, myId]);
 
-  
+
 
   const handleChecklistToggle = useCallback(async (taskId, itemId, done) => {
     setTasks(prev => prev.map(t => t.id !== taskId ? t : { ...t, checklistItems: (t.checklistItems || []).map(i => i.id === itemId ? { ...i, done } : i) }));
     try {
       const res = await fetch(`${API}/tasks/${taskId}/checklist`, { method: "PATCH", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ itemId, done }) });
-      const d   = await res.json();
+      const d = await res.json();
       if (res.ok && d.data) setTasks(prev => prev.map(t => t.id === taskId ? d.data : t));
-    } catch (_) {}
+    } catch (_) { }
   }, []);
 
   const handleStatusChange = useCallback(async (taskId, status) => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
     try {
       const res = await fetch(`${API}/tasks/${taskId}`, { method: "PATCH", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ status }) });
-      const d   = await res.json();
+      const d = await res.json();
       if (res.ok && d.data) setTasks(prev => prev.map(t => t.id === taskId ? d.data : t));
-    } catch (_) {}
+    } catch (_) { }
   }, []);
 
   const handleProgressLog = useCallback(async (taskId, value) => {
     try {
       const res = await fetch(`${API}/tasks/${taskId}/progress`, { method: "POST", headers: getAuthHeaders(true), credentials: "include", body: JSON.stringify({ value, action: "MEMBER_LOG" }) });
-      const d   = await res.json();
+      const d = await res.json();
       if (res.ok && d.data) setTasks(prev => prev.map(t => t.id === taskId ? d.data : t));
-    } catch (_) {}
+    } catch (_) { }
   }, []);
 
-  const handleClaimTask      = useCallback(u => setTasks(prev => prev.map(t => t.id === u.id ? u : t)), []);
-  const handleInfoSubmitted  = useCallback(u => setTasks(prev => prev.map(t => t.id === u.id ? u : t)), []);
+  const handleClaimTask = useCallback(u => setTasks(prev => prev.map(t => t.id === u.id ? u : t)), []);
+  const handleInfoSubmitted = useCallback(u => setTasks(prev => prev.map(t => t.id === u.id ? u : t)), []);
 
   // Stats
-  const totalDone       = tasks.filter(t => t.status === "COMPLETED").length;
+  const totalDone = tasks.filter(t => t.status === "COMPLETED").length;
   const totalInProgress = tasks.filter(t => t.status === "IN_PROGRESS").length;
-  const totalPending    = tasks.filter(t => t.status === "PENDING").length;
-  const totalOverdue    = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length;
-  const completionPct   = tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0;
-  const totalShifts     = shifts.length;
-  const issuesResolved  = shifts.reduce((s, sh) => s + (sh.stats?.issuesResolved || 0), 0);
+  const totalPending = tasks.filter(t => t.status === "PENDING").length;
+  const totalOverdue = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "COMPLETED").length;
+  const completionPct = tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0;
+  const totalShifts = shifts.length;
+  const issuesResolved = shifts.reduce((s, sh) => s + (sh.stats?.issuesResolved || 0), 0);
 
   const filtered = useMemo(() => tasks.filter(t => {
-    if (typeFilter !== "ALL"         && t.taskType !== typeFilter)                                   return false;
-    if (statusFilter === "PENDING"    && t.status !== "PENDING")                                     return false;
-    if (statusFilter === "IN_PROGRESS"&& t.status !== "IN_PROGRESS")                                 return false;
-    if (statusFilter === "COMPLETED"  && t.status !== "COMPLETED")                                   return false;
-    if (search && !t.title.toLowerCase().includes(search.toLowerCase()))                             return false;
+    if (typeFilter !== "ALL" && t.taskType !== typeFilter) return false;
+    if (statusFilter === "PENDING" && t.status !== "PENDING") return false;
+    if (statusFilter === "IN_PROGRESS" && t.status !== "IN_PROGRESS") return false;
+    if (statusFilter === "COMPLETED" && t.status !== "COMPLETED") return false;
+    if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   }), [tasks, typeFilter, statusFilter, search]);
 
   const renderTask = (task) => {
     switch (task.taskType) {
-      case "MISSING_INFO":     return <MissingInfoTaskCard   key={task.id} task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onInfoSubmitted={handleInfoSubmitted} />;
-      case "PLAYER_FOLLOWUP":  return <PlayerFollowupCard    key={task.id} task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onUpdated={handleInfoSubmitted} />;
-      case "BONUS_FOLLOWUP":   return <BonusFollowupCard     key={task.id} task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onUpdated={handleInfoSubmitted} />;
-      case "DAILY_CHECKLIST":  return <DailyChecklistCard    key={task.id} task={task} onChecklistToggle={handleChecklistToggle} currentUserId={myId} />;
-      case "PLAYER_ADDITION":  return <ProgressTaskCard      key={task.id} task={task} currentUserId={myId} onProgressLog={handleProgressLog} taskType="PLAYER_ADDITION" />;
-      case "REVENUE_TARGET":   return <ProgressTaskCard      key={task.id} task={task} currentUserId={myId} onProgressLog={handleProgressLog} taskType="REVENUE_TARGET" />;
-      default:                 return <StandardTaskCard      key={task.id} task={task} onStatusChange={handleStatusChange} onChecklistToggle={handleChecklistToggle} currentUserId={myId} />;
+      case "MISSING_INFO": return <MissingInfoTaskCard key={task.id} task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onInfoSubmitted={handleInfoSubmitted} />;
+      case "PLAYER_FOLLOWUP": return <PlayerFollowupCard key={task.id} task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onUpdated={handleInfoSubmitted} />;
+      case "BONUS_FOLLOWUP": return <BonusFollowupCard key={task.id} task={task} currentUser={resolvedUser} onClaim={handleClaimTask} onUpdated={handleInfoSubmitted} />;
+      case "DAILY_CHECKLIST": return <DailyChecklistCard key={task.id} task={task} onChecklistToggle={handleChecklistToggle} currentUserId={myId} />;
+      case "PLAYER_ADDITION": return <ProgressTaskCard key={task.id} task={task} currentUserId={myId} onProgressLog={handleProgressLog} taskType="PLAYER_ADDITION" />;
+      case "REVENUE_TARGET": return <ProgressTaskCard key={task.id} task={task} currentUserId={myId} onProgressLog={handleProgressLog} taskType="REVENUE_TARGET" />;
+      default: return <StandardTaskCard key={task.id} task={task} onStatusChange={handleStatusChange} onChecklistToggle={handleChecklistToggle} currentUserId={myId} />;
     }
   };
 
@@ -995,10 +996,10 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
   }
 
   const TABS = [
-    { id: "tasks",     label: "Tasks",     count: tasks.length },
+    { id: "tasks", label: "Tasks", count: tasks.length },
     { id: "analytics", label: "Analytics", count: null },
-    { id: "shifts",    label: "Shifts",    count: totalShifts },
-    { id: "rating",    label: "Rating",    count: null },
+    { id: "shifts", label: "Shifts", count: totalShifts },
+    { id: "rating", label: "Rating", count: null },
   ];
 
   return (
@@ -1034,12 +1035,12 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
         {/* Stat row */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(90px, 1fr))", borderTop: "none" }}>
           {[
-            { label: "Done",      value: totalDone,       color: "#22c55e" },
-            { label: "Active",    value: totalInProgress, color: "#0ea5e9" },
-            { label: "Pending",   value: totalPending,    color: "var(--color-text-tertiary)" },
-            { label: "Overdue",   value: totalOverdue,    color: totalOverdue > 0 ? "#ef4444" : "var(--color-text-tertiary)" },
-            { label: "Shifts",    value: totalShifts,     color: "#8b5cf6" },
-            { label: "Issues ✓",  value: issuesResolved,  color: "#f59e0b" },
+            { label: "Done", value: totalDone, color: "#22c55e" },
+            { label: "Active", value: totalInProgress, color: "#0ea5e9" },
+            { label: "Pending", value: totalPending, color: "var(--color-text-tertiary)" },
+            { label: "Overdue", value: totalOverdue, color: totalOverdue > 0 ? "#ef4444" : "var(--color-text-tertiary)" },
+            { label: "Shifts", value: totalShifts, color: "#8b5cf6" },
+            { label: "Issues ✓", value: issuesResolved, color: "#f59e0b" },
           ].map((s, i) => (
             <div key={s.label} style={{
               padding: "12px 14px", textAlign: "center",
@@ -1066,9 +1067,11 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
           }}>
             {tab.label}
             {tab.count != null && (
-              <span style={{ fontSize: "10px", fontWeight: "500", padding: "1px 6px", borderRadius: "999px",
+              <span style={{
+                fontSize: "10px", fontWeight: "500", padding: "1px 6px", borderRadius: "999px",
                 background: activeTab === tab.id ? "var(--color-background-secondary)" : "transparent",
-                color: "var(--color-text-tertiary)" }}>{tab.count}</span>
+                color: "var(--color-text-tertiary)"
+              }}>{tab.count}</span>
             )}
           </button>
         ))}
@@ -1175,7 +1178,7 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
               <p style={{ margin: "0 0 12px", fontSize: "11px", fontWeight: "500", color: "var(--color-text-secondary)", textTransform: "uppercase", letterSpacing: "0.4px" }}>Team ratings</p>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {teamRatings.map(m => {
-                  const sc  = m.avgRating ?? 0;
+                  const sc = m.avgRating ?? 0;
                   const col = sc >= 4 ? "#22c55e" : sc >= 3 ? "#f59e0b" : "#ef4444";
                   return (
                     <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", background: "var(--color-background-secondary)", borderRadius: "var(--border-radius-md)", border: "0.5px solid var(--color-border-tertiary)" }}>
@@ -1208,10 +1211,10 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {/* Shift summary stats */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: "8px" }}>
-            <MetricCard label="Total Shifts"  value={shifts.length} icon={Briefcase} color="#8b5cf6" />
-            <MetricCard label="Total Deposits"  value={`$${shifts.reduce((s, sh) => s + (sh.stats?.totalDeposits || 0), 0).toFixed(0)}`}  color="#22c55e" icon={ArrowUpRight} />
-            <MetricCard label="Total Cashouts"  value={`$${shifts.reduce((s, sh) => s + (sh.stats?.totalCashouts || 0), 0).toFixed(0)}`}  color="#ef4444" icon={ArrowDownRight} />
-            <MetricCard label="Avg Effort"      value={(() => { const rated = shifts.filter(s => s.checkin?.effortRating != null); return rated.length ? (rated.reduce((a, s) => a + (s.checkin?.effortRating || 0), 0) / rated.length).toFixed(1) + "/10" : "—"; })()} color="#f59e0b" icon={Zap} />
+            <MetricCard label="Total Shifts" value={shifts.length} icon={Briefcase} color="#8b5cf6" />
+            <MetricCard label="Total Deposits" value={`$${shifts.reduce((s, sh) => s + (sh.stats?.totalDeposits || 0), 0).toFixed(0)}`} color="#22c55e" icon={ArrowUpRight} />
+            <MetricCard label="Total Cashouts" value={`$${shifts.reduce((s, sh) => s + (sh.stats?.totalCashouts || 0), 0).toFixed(0)}`} color="#ef4444" icon={ArrowDownRight} />
+            <MetricCard label="Avg Effort" value={(() => { const rated = shifts.filter(s => s.checkin?.effortRating != null); return rated.length ? (rated.reduce((a, s) => a + (s.checkin?.effortRating || 0), 0) / rated.length).toFixed(1) + "/10" : "—"; })()} color="#f59e0b" icon={Zap} />
           </div>
           <ShiftLogsSection shifts={shifts} />
           {isAdmin && <AdminTeamShiftsSection />}
