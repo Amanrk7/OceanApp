@@ -1,8 +1,5 @@
-// pages/AdminTaskPage.jsx
-// ── Design matches AddTransactionsPage exactly ──────────────────
-// Task types: STANDARD | DAILY_CHECKLIST | PLAYER_ADDITION | REVENUE_TARGET
-// Tasks are admin-only to create/delete; members interact via MemberTasksSection
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useToast } from '../Context/toastContext';
 import {
     Plus, X, Trash2, CheckCircle, Clock, AlertCircle, Circle,
     BarChart2, Users, TrendingUp, List, RefreshCw, ChevronDown,
@@ -33,11 +30,11 @@ const API = import.meta.env.VITE_API_URL ?? "";
 const getStoreId = () => parseInt(localStorage.getItem('__obStoreId') || '1', 10);
 
 function getAuthHeaders(includeContentType = false) {
-  const token = localStorage.getItem('authToken');
-  const headers = { 'X-Store-Id': String(getStoreId()) };
-  if (includeContentType) headers['Content-Type'] = 'application/json';
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return headers;
+    const token = localStorage.getItem('authToken');
+    const headers = { 'X-Store-Id': String(getStoreId()) };
+    if (includeContentType) headers['Content-Type'] = 'application/json';
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
 }
 // ── Constants ─────────────────────────────────────────────────────
 const TASK_TYPES = [
@@ -432,6 +429,7 @@ function AdminTaskRow({ task, onDelete, onStatusChange, teamMembers, onRefresh }
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════
 export default function AdminTaskPage() {
+    const { add: toast } = useToast();
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [teamMembers, setTeamMembers] = useState([]);
@@ -442,8 +440,6 @@ export default function AdminTaskPage() {
     const [form, setForm] = useState(emptyForm());
     const [submitting, setSubmitting] = useState(false);
     const [formError, setFormError] = useState("");
-    const [success, setSuccess] = useState("");
-    const [error, setError] = useState("");
     const [showFollowupPanel, setShowFollowupPanel] = useState(false);
     const sseRef = useRef(null);
 
@@ -455,24 +451,15 @@ export default function AdminTaskPage() {
         return () => sseRef.current?.close();
     }, []);
 
-    useEffect(() => {
-        if (success) { const t = setTimeout(() => setSuccess(""), 4000); return () => clearTimeout(t); }
-    }, [success]);
-    useEffect(() => {
-        if (error) { const t = setTimeout(() => setError(""), 5000); return () => clearTimeout(t); }
-    }, [error]);
-
-
-
     function setupSSE() {
-  const token = localStorage.getItem('authToken');
-  const storeId = getStoreId();
-  const url = `${API}/tasks/events?${token ? `token=${encodeURIComponent(token)}&` : ''}storeId=${storeId}`;
-  const sse = new EventSource(url, { withCredentials: true });
-  // assign to sseRef.current so it gets closed on unmount
-  sseRef.current = sse;
-  sse.onmessage = () => loadTasks();
-}
+        const token = localStorage.getItem('authToken');
+        const storeId = getStoreId();
+        const url = `${API}/tasks/events?${token ? `token=${encodeURIComponent(token)}&` : ''}storeId=${storeId}`;
+        const sse = new EventSource(url, { withCredentials: true });
+        // assign to sseRef.current so it gets closed on unmount
+        sseRef.current = sse;
+        sse.onmessage = () => loadTasks();
+    }
 
     async function loadTasks() {
         setLoading(true);
@@ -482,19 +469,13 @@ export default function AdminTaskPage() {
             if (!res.ok) throw new Error(data.error || "Failed to load tasks");
             setTasks(data.data || []);
         } catch (e) {
-            setError(e.message);
+            toast(e.message, "error");
+            toast
         } finally {
             setLoading(false);
         }
     }
 
-    // async function loadMembers() {
-    //   try {
-    //     const res  = await fetch(`${API}/team-members`, { credentials: "include" });
-    //     const data = await res.json();
-    //     setTeamMembers(data.data || data || []);
-    //   } catch (_) {}
-    // }
     async function loadMembers() {
         try {
             const res = await fetch(`${API}/team-members`, { credentials: "include", headers: getAuthHeaders() });
@@ -531,7 +512,7 @@ export default function AdminTaskPage() {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to create task");
-            setSuccess(`Task "${data.data?.title || form.title}" created successfully!`);
+            toast(`Task "${data.data?.title || form.title}" created successfully!`, "success");
             setForm(emptyForm());
             setShowForm(false);
         } catch (err) {
@@ -546,9 +527,10 @@ export default function AdminTaskPage() {
         try {
             const res = await fetch(`${API}/tasks/${taskId}`, { method: "DELETE", credentials: "include", headers: getAuthHeaders() });
             if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
-            setSuccess("Task deleted.");
+            toast("Task deleted.", "success");
+            loadTasks();
         } catch (e) {
-            setError(e.message || "Failed to delete task");
+            toast(e.message || "Failed to delete task", "error");
         }
     }
 
@@ -570,10 +552,10 @@ export default function AdminTaskPage() {
         try {
             const res = await fetch(`${API}/tasks/daily-reset`, { method: "POST", credentials: "include", headers: getAuthHeaders() });
             if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
-            setSuccess("Daily checklists reset successfully.");
+            toast("Daily checklists reset successfully.", "success");
             loadTasks();
         } catch (e) {
-            setError(e.message || "Reset failed");
+            toast(e.message || "Reset failed", "error");
         }
     }
 
@@ -585,16 +567,12 @@ export default function AdminTaskPage() {
         return true;
     });
 
-    // const grouped = TASK_TYPES.reduce((acc, tt) => {
-    //     acc[tt.value] = filtered.filter(t => t.taskType === tt.value);
-    //     return acc;
-    // }, {});
-const grouped = filtered.reduce((acc, t) => {
-  const key = t.taskType || 'STANDARD';
-  if (!acc[key]) acc[key] = [];
-  acc[key].push(t);
-  return acc;
-}, {});
+    const grouped = filtered.reduce((acc, t) => {
+        const key = t.taskType || 'STANDARD';
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(t);
+        return acc;
+    }, {});
 
     const totalCompleted = tasks.filter(t => t.status === "COMPLETED").length;
     const totalPending = tasks.filter(t => t.status === "PENDING").length;
@@ -741,13 +719,13 @@ const grouped = filtered.reduce((acc, t) => {
                 Object.entries(grouped).map(([type, typeTasks]) => {
                     if (typeTasks.length === 0) return null;
                     const meta = TASK_TYPES.find(t => t.value === type) || {
-    value: type,
-    label: type.replace(/_/g, ' '),
-    icon: List,
-    color: '#64748b',
-    bg: '#f1f5f9',
-    border: '#cbd5e1',
-  };
+                        value: type,
+                        label: type.replace(/_/g, ' '),
+                        icon: List,
+                        color: '#64748b',
+                        bg: '#f1f5f9',
+                        border: '#cbd5e1',
+                    };
                     const TIcon = meta.icon;
                     return (
                         <div key={type}>
