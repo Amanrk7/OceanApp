@@ -5,6 +5,8 @@ import { fmtTX } from "../utils/txTime";
 import { useNavigate } from 'react-router-dom';
 import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
+import { useToast } from '../Context/toastContext';
+
 
 const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', flexShrink: 0 }}>
@@ -86,6 +88,7 @@ export default function BonusPage() {
     const { shiftActive } = useContext(ShiftStatusContext);
     const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
     const navigate = useNavigate();
+    const { toast } = useToast();
 
     // ── Player search state ───────────────────────────────────────────────────
     const [player, setPlayer] = useState(null);
@@ -119,8 +122,6 @@ export default function BonusPage() {
 
     // ── Submission state ──────────────────────────────────────────────────────
     const [submitting, setSubmitting] = useState(false);
-    const [success, setSuccess] = useState("");
-    const [error, setError] = useState("");
 
     const [hover, setHover] = useState(false);
     const [bonusPct, setBonusPct] = useState(50);   // configurable percentage
@@ -141,15 +142,6 @@ export default function BonusPage() {
             .finally(() => setEligLoading(false));
     }, [player?.id]);
 
-    // Auto-fill amount when a referral record is selected:
-    // useEffect(() => {
-    //     if (bonusType !== 'referral') return;
-    //     const rb = eligibleBonuses.find(e => e.id === selectedRbId);
-    //     if (rb) setAmount(rb.bonusAmount.toFixed(2));
-    //     else setAmount('');
-    // }, [selectedRbId, bonusType, eligibleBonuses]);
-
-    // Auto-fill amount based on selected record + percentage
     useEffect(() => {
         if (bonusType !== 'referral') return;
         const rb = eligibleBonuses.find(e => e.id === selectedRbId);
@@ -321,22 +313,21 @@ export default function BonusPage() {
     // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(""); setSuccess("");
+        if (!player?.id) {
+            toast("Please select a player.", "error");
 
-        if (!player?.id) { setError("Please select a player."); return; }
-        if (!selectedGameId) { setError("Please select a game."); return; }
-        if (!amt || amt <= 0) { setError("Enter a valid bonus amount."); return; }
-        if (bonusType === "other" && !customLabel.trim()) { setError("Enter a label for the custom bonus."); return; }
-        // if (bonusType === "referral" && !hasReferrer) {
-        //     setError("This player was not referred by anyone — referral bonus cannot be granted.");
-        //     return;
-        // }
+            return;
+        }
+        if (!selectedGameId) { toast("Please select a game.", "error"); return; }
+        if (!amt || amt <= 0) { toast("Enter a valid bonus amount.", "error"); return; }
+        if (bonusType === "other" && !customLabel.trim()) { toast("Enter a label for the custom bonus.", "error"); return; }
+
         if (bonusType === "referral" && eligibleBonuses.length === 0) {
-            setError("No eligible referral bonus records found for this player.");
+            toast("No eligible referral bonus records found for this player.", "error");
             return;
         }
         if (!stockOk) {
-            setError(`Insufficient game stock. ${selectedGame?.name} has ${selectedGame?.pointStock?.toFixed(0)} pts, need ${amt.toFixed(0)} pts.`);
+            toast(`Insufficient game stock. ${selectedGame?.name} has ${selectedGame?.pointStock?.toFixed(0)} pts, need ${amt.toFixed(0)} pts.`, "error");
             return;
         }
 
@@ -354,7 +345,9 @@ export default function BonusPage() {
             if (referralTarget === "referrer") {
                 // Grant to the referrer — use their ID as the player
                 const refId = referrerInfo?.id || referrerInfo;
-                if (!refId) { setError("Could not resolve referrer ID."); return; }
+                if (!refId) {
+                    toast("Could not resolve referrer ID.", "error"); return;
+                }
                 recipientPlayerId = parseInt(refId);
             } else {
                 recipientPlayerId = player.id;
@@ -370,7 +363,7 @@ export default function BonusPage() {
 
 
         if (bonusType === 'referral') {
-            if (!selectedRbId) { setError('Please select a referral bonus record.'); return; }
+            if (!selectedRbId) { toast("Please select a referral bonus record.", "error"); return; }
             try {
                 setSubmitting(true);
                 // const result = await api.referralBonuses.claim(selectedRbId, {
@@ -385,7 +378,7 @@ export default function BonusPage() {
                     amount: parseFloat(amount),   // ← custom amount
                     grantBoth,                    // ← grant mode
                 });
-                setSuccess(result.message);
+                toast(result.message, "success");
                 setAmount(''); setNotes(''); setSelectedGameId(''); setSelectedRbId(null);
                 const fresh = await api.players.getPlayer(player.id);
                 setPlayer(fresh?.data || player);
@@ -394,7 +387,7 @@ export default function BonusPage() {
                 const rb = await api.referralBonuses.getEligible(player.id);
                 setEligibleBonuses(rb?.data || []);
             } catch (err) {
-                setError(err.message || 'Failed to claim referral bonus.');
+                toast("Failed to claim referral bonus.", "error");
             } finally {
                 setSubmitting(false);
             }
@@ -422,7 +415,7 @@ export default function BonusPage() {
             } else {
                 msg = `${fmt(amt)} ${customLabel.trim()} granted to ${player.name} from ${selectedGame?.name}.`;
             }
-            setSuccess(msg);
+            toast(msg, "success");
 
             setAmount("");
             setNotes("");
@@ -435,7 +428,7 @@ export default function BonusPage() {
             setPlayer(fresh?.data || player);
             await Promise.all([loadGames(true), loadLedger()]);
         } catch (err) {
-            setError(err.message || "Failed to grant bonus. Please try again.");
+            toast("Failed to grant bonus. Please try again.", "error");
         } finally {
             setSubmitting(false);
         }
@@ -446,8 +439,6 @@ export default function BonusPage() {
         setNotes("");
         setSelectedGameId("");
         setCustomLabel("");
-        setError("");
-        setSuccess("");
         setReferralTarget("player");
         clearPlayer();
         setBonusType("streak");
