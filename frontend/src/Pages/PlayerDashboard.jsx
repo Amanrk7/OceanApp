@@ -116,12 +116,26 @@ function TxPaymentProgress({ paid, total }) {
 }
 
 // ── Helper to fetch pending milestones (reused in loadPlayer + onGranted) ────
-const BACKEND_BASE = (
+// const BACKEND_BASE = (
+//     import.meta.env.VITE_API_URL ||
+//     import.meta.env.VITE_BACKEND_URL ||
+//     import.meta.env.VITE_API_BASE_URL ||
+//     'https://oceanappbackend.onrender.com'
+// ).replace(/\/api\/?$/, '');
+
+const BACKEND_BASE = (() => {
+  const raw = (
     import.meta.env.VITE_API_URL ||
     import.meta.env.VITE_BACKEND_URL ||
     import.meta.env.VITE_API_BASE_URL ||
     'https://oceanappbackend.onrender.com'
-).replace(/\/api\/?$/, '');
+  ).trim();
+  try {
+    return new URL(raw).origin;   // strips /api, /api/, trailing slashes, spaces
+  } catch {
+    return raw.replace(/\/api\/?$/, '');
+  }
+})();
 
 async function fetchPendingMilestones(playerId) {
     const token = localStorage.getItem('authToken');
