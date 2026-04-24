@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Edit2, Plus, CheckCircle, AlertCircle, X, CreditCard, Receipt } from 'lucide-react';
+import { useToast } from '../Context/toastContext';
 import { api } from '../api';
 
 // ─── Texas (Central) timezone helper ─────────────────────────────────────────
@@ -48,13 +49,13 @@ const TD = { padding: '11px 16px', borderBottom: '1px solid #f1f5f9', fontSize: 
 // ─── Category helpers ─────────────────────────────────────────────────────────
 const DB_TO_LABEL = { POINT_RELOAD: 'Point Reload', SERVICE_FEE: 'Service Fee', OTHER: 'Other' };
 const LABEL_TO_DB = { 'Point Reload': 'POINT_RELOAD', 'Service Fee': 'SERVICE_FEE', 'Other': 'OTHER' };
-const CATEGORIES   = ['Point Reload', 'Service Fee', 'Other'];
+const CATEGORIES = ['Point Reload', 'Service Fee', 'Other'];
 
 // ─── Category badge colours ───────────────────────────────────────────────────
 const CATEGORY_BADGE = {
     POINT_RELOAD: { bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe', label: 'Point Reload' },
-    SERVICE_FEE:  { bg: '#fef3c7', text: '#b45309', border: '#fde68a', label: 'Service Fee'  },
-    OTHER:        { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0', label: 'Other'         },
+    SERVICE_FEE: { bg: '#fef3c7', text: '#b45309', border: '#fde68a', label: 'Service Fee' },
+    OTHER: { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0', label: 'Other' },
 };
 
 // ─── Focusable Input ──────────────────────────────────────────────────────────
@@ -100,9 +101,9 @@ function Modal({ isOpen, onClose, title, accent = '#2563eb', icon: Icon, childre
 // ─── StatCard ─────────────────────────────────────────────────────────────────
 function StatCard({ label, value, icon: Icon, color }) {
     const colors = {
-        blue:  { bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe' },
+        blue: { bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe' },
         green: { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0' },
-        red:   { bg: '#fff1f2', text: '#dc2626', border: '#fecaca' },
+        red: { bg: '#fff1f2', text: '#dc2626', border: '#fecaca' },
     };
     const c = colors[color] || colors.blue;
     return (
@@ -169,7 +170,7 @@ function PaymentDetailsCell({ expense }) {
     // details format: "Payment (METHOD - NAME)"
     const match = (expense.details || '').match(/Payment \((.+?)\s*-\s*(.+?)\)$/);
     const walletMethod = match?.[1]?.trim() || null;
-    const walletName   = match?.[2]?.trim() || null;
+    const walletName = match?.[2]?.trim() || null;
 
     const cat = CATEGORY_BADGE[expense.category] || CATEGORY_BADGE.OTHER;
 
@@ -200,23 +201,18 @@ function PaymentDetailsCell({ expense }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export const ExpensesPage = () => {
-    const [games,    setGames]    = useState([]);
-    const [wallets,  setWallets]  = useState([]);
+    const { add: toast } = useToast();
+    const [games, setGames] = useState([]);
+    const [wallets, setWallets] = useState([]);
     const [expenses, setExpenses] = useState([]);
-    const [loading,  setLoading]  = useState(true);
+    const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-
-    const [error,        setError]        = useState(null);
-    const [paymentError, setPaymentError] = useState(null);
-    const [editError,    setEditError]    = useState(null);
-
-    const [search,         setSearch]         = useState('');
-    const [filter,         setFilter]         = useState('');
+    const [search, setSearch] = useState('');
+    const [filter, setFilter] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All');
-
-    const [showAddModal,     setShowAddModal]     = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [editingExpense,   setEditingExpense]   = useState(null);
+    const [editingExpense, setEditingExpense] = useState(null);
 
     const [addFormData, setAddFormData] = useState({
         category: 'Point Reload', amount: '', game: '', pointsAdded: '', notes: '',
@@ -238,7 +234,7 @@ export const ExpensesPage = () => {
             setGames(data);
             return data;
         } catch (err) {
-            console.error('Failed to load games:', err);
+            toast('Failed to load games. Some features may not work.', 'error');
             return [];
         }
     };
@@ -253,15 +249,15 @@ export const ExpensesPage = () => {
                 }))
             );
             setWallets(flat);
-        } catch (err) { console.error('Failed to load wallets:', err); }
+        } catch (err) { toast('Failed to load wallets. Payment features may not work.', 'error'); }
     };
 
     const refreshExpenses = async () => {
         try {
-            setLoading(true); setError(null);
+
             const res = await api.expenses.getExpenses(true);
             setExpenses(res.data || []);
-        } catch (err) { setError(err.message || 'Failed to load expenses'); }
+        } catch (err) { toast('Failed to load expenses.', 'error'); }
         finally { setLoading(false); }
     };
 
@@ -270,14 +266,14 @@ export const ExpensesPage = () => {
     useEffect(() => { refreshExpenses(); }, []);
 
     // ── Derived stats ─────────────────────────────────────────────────────────
-    const totalExpenses = expenses.reduce((s, e) => s + (e.amount     || 0), 0);
-    const totalPaid     = expenses.reduce((s, e) => s + (e.paymentMade || 0), 0);
-    const outstanding   = totalExpenses - totalPaid;
+    const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+    const totalPaid = expenses.reduce((s, e) => s + (e.paymentMade || 0), 0);
+    const outstanding = totalExpenses - totalPaid;
 
     const gameSummary = expenses.filter(exp => exp.game).reduce((acc, exp) => {
         const name = exp.game.name;
         if (!acc[name]) acc[name] = { totalAmount: 0, totalPoints: 0 };
-        acc[name].totalAmount += exp.amount      || 0;
+        acc[name].totalAmount += exp.amount || 0;
         acc[name].totalPoints += exp.pointsAdded || 0;
         return acc;
     }, {});
@@ -290,7 +286,7 @@ export const ExpensesPage = () => {
     //   - No selectedGame → expense is recorded without a game link or stock update.
     //   - pointsAdded defaults to 0 when left blank.
     const handleAddExpense = async (e) => {
-        e.preventDefault(); setSubmitting(true); setError(null);
+        e.preventDefault(); setSubmitting(true);
 
         const selectedGame = addFormData.game
             ? games.find(g => g.name === addFormData.game)
@@ -302,21 +298,21 @@ export const ExpensesPage = () => {
 
         // If the user typed a game name but it doesn't match any known game, warn them.
         if (addFormData.game && !selectedGame) {
-            setError('The selected game was not found. Please choose from the list or leave it blank.');
+            toast('The selected game was not found. Please choose from the list or leave it blank.', 'error');
             setSubmitting(false);
             return;
         }
 
         try {
             await api.expenses.createExpense({
-                gameId:      selectedGame?.id || null,
-                details:     selectedGame
+                gameId: selectedGame?.id || null,
+                details: selectedGame
                     ? `Point Reload (${addFormData.game})`
                     : `Expense (${addFormData.category})`,
-                category:    LABEL_TO_DB[addFormData.category] || 'POINT_RELOAD',
-                amount:      parseFloat(addFormData.amount),
+                category: LABEL_TO_DB[addFormData.category] || 'POINT_RELOAD',
+                amount: parseFloat(addFormData.amount),
                 pointsAdded,
-                notes:       addFormData.notes || null,
+                notes: addFormData.notes || null,
             });
 
             // Only update game stock when a game was chosen and points were provided.
@@ -329,7 +325,7 @@ export const ExpensesPage = () => {
             await Promise.all([refreshExpenses(), refreshGames()]);
             setAddFormData({ category: 'Point Reload', amount: '', game: '', pointsAdded: '', notes: '' });
             setShowAddModal(false);
-        } catch (err) { setError(err.message || 'Failed to record expense'); }
+        } catch (err) { toast('Failed to record expense.', 'error'); }
         finally { setSubmitting(false); }
     };
 
@@ -337,54 +333,52 @@ export const ExpensesPage = () => {
     const startEdit = (expense) => {
         const isPay = isPaymentRow(expense);
         setEditingExpense(expense);
-        setEditError(null);
         setEditFormData({
-            isPayment:   isPay,
-            category:    DB_TO_LABEL[expense.category] || 'Point Reload',
-            notes:       expense.notes || '',
-            amount:      expense.amount      ? String(expense.amount)      : '',
+            isPayment: isPay,
+            category: DB_TO_LABEL[expense.category] || 'Point Reload',
+            notes: expense.notes || '',
+            amount: expense.amount ? String(expense.amount) : '',
             pointsAdded: expense.pointsAdded ? String(expense.pointsAdded) : '',
             paymentMade: expense.paymentMade ? String(expense.paymentMade) : '',
-            walletId:    '',
+            walletId: '',
         });
     };
 
     // ── Edit: save ────────────────────────────────────────────────────────────
     const handleEditExpense = async (e) => {
         e.preventDefault();
-        setEditError(null);
         setSubmitting(true);
 
         try {
-            const id         = editingExpense.id;
+            const id = editingExpense.id;
             const categoryDB = LABEL_TO_DB[editFormData.category] || editFormData.category;
 
             if (editFormData.isPayment) {
                 if (!editFormData.walletId) {
-                    setEditError('Please select the wallet used for this payment.');
+                    toast('Please select the wallet used for this payment.', 'error');
                     setSubmitting(false); return;
                 }
                 await api.expenses.updateExpense(id, {
                     paymentMade: parseFloat(editFormData.paymentMade),
-                    walletId:    editFormData.walletId,
-                    category:    categoryDB,
-                    notes:       editFormData.notes,
+                    walletId: editFormData.walletId,
+                    category: categoryDB,
+                    notes: editFormData.notes,
                 });
             } else {
-                const newPoints  = editFormData.pointsAdded ? parseInt(editFormData.pointsAdded, 10) : 0;
-                const oldPoints  = editingExpense.pointsAdded ? parseInt(editingExpense.pointsAdded, 10) : 0;
+                const newPoints = editFormData.pointsAdded ? parseInt(editFormData.pointsAdded, 10) : 0;
+                const oldPoints = editingExpense.pointsAdded ? parseInt(editingExpense.pointsAdded, 10) : 0;
                 const pointsDiff = newPoints - oldPoints;
 
                 await api.expenses.updateExpense(id, {
-                    amount:      parseFloat(editFormData.amount),
-                    category:    categoryDB,
-                    notes:       editFormData.notes,
+                    amount: parseFloat(editFormData.amount),
+                    category: categoryDB,
+                    notes: editFormData.notes,
                     pointsAdded: newPoints || undefined,
                 });
 
                 if (pointsDiff !== 0 && editingExpense.game?.id) {
                     const freshGames = await refreshGames();
-                    const linkedGame  = freshGames.find(g => g.id === editingExpense.game.id);
+                    const linkedGame = freshGames.find(g => g.id === editingExpense.game.id);
                     if (linkedGame) {
                         const newStock = linkedGame.pointStock + pointsDiff;
                         await api.games.updateGame(linkedGame.id, { pointStock: newStock });
@@ -396,7 +390,7 @@ export const ExpensesPage = () => {
             await Promise.all([refreshExpenses(), refreshWallets()]);
             setEditingExpense(null);
         } catch (err) {
-            setEditError(err.message || 'Failed to save changes');
+            toast('Failed to save changes.', 'error');
         } finally {
             setSubmitting(false);
         }
@@ -407,20 +401,20 @@ export const ExpensesPage = () => {
         e.preventDefault();
         setPaymentError(null); setSubmitting(true);
         if (!paymentFormData.amount || !paymentFormData.walletId) {
-            setPaymentError('Please enter an amount and select a payment method.');
+            toast('Please enter an amount and select a payment method.', 'error');
             setSubmitting(false); return;
         }
         try {
             await api.expenses.createPayment({
-                amount:   parseFloat(paymentFormData.amount),
+                amount: parseFloat(paymentFormData.amount),
                 walletId: paymentFormData.walletId,
                 category: LABEL_TO_DB[paymentFormData.category] || 'POINT_RELOAD',
-                notes:    paymentFormData.notes || null,
+                notes: paymentFormData.notes || null,
             });
             await Promise.all([refreshExpenses(), refreshWallets()]);
             setPaymentFormData({ amount: '', walletId: '', category: 'Point Reload', date: new Date().toISOString().split('T')[0], notes: '' });
             setShowPaymentModal(false);
-        } catch (err) { setPaymentError(err.message || 'Failed to record payment'); }
+        } catch (err) { toast('Failed to record payment.', 'error'); }
         finally { setSubmitting(false); }
     };
 
@@ -445,8 +439,8 @@ export const ExpensesPage = () => {
             {/* ── Stat Cards ── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
                 <StatCard label="Total Expense Amount" value={`$${totalExpenses.toFixed(2)}`} icon={DollarSign} color="blue" />
-                <StatCard label="Total Amount Paid"    value={`$${totalPaid.toFixed(2)}`}     icon={CheckCircle} color="green" />
-                <StatCard label="Total Outstanding"    value={`$${outstanding.toFixed(2)}`}   icon={AlertCircle} color="red" />
+                <StatCard label="Total Amount Paid" value={`$${totalPaid.toFixed(2)}`} icon={CheckCircle} color="green" />
+                <StatCard label="Total Outstanding" value={`$${outstanding.toFixed(2)}`} icon={AlertCircle} color="red" />
             </div>
 
             {/* ── Action Buttons ── */}
@@ -457,7 +451,7 @@ export const ExpensesPage = () => {
                     onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
                     <CheckCircle style={{ width: '15px', height: '15px' }} /> Make Payment
                 </button>
-                <button onClick={() => { setError(null); setShowAddModal(true); }}
+                <button onClick={() => { setShowAddModal(true); }}
                     style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '10px 20px', background: 'rgb(14, 165, 233)', color: '#fff', border: 'none', borderRadius: '9px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(37,99,235,.3)' }}
                     onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
                     onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
@@ -515,14 +509,14 @@ export const ExpensesPage = () => {
                 {/* Tabs */}
                 <div style={{ padding: '14px 28px', borderBottom: '1px solid #f1f5f9', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {TABS.map(tab => {
-                        const active   = categoryFilter === tab;
+                        const active = categoryFilter === tab;
                         const isPayTab = tab === 'Payments';
                         return (
                             <button key={tab} onClick={() => setCategoryFilter(tab)} style={{
                                 padding: '5px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', transition: 'all .15s',
                                 background: active ? (isPayTab ? '#16a34a' : 'rgb(14, 165, 233)') : 'transparent',
-                                color:      active ? '#fff' : '#64748b',
-                                border:     active ? 'none' : '1px solid #e2e8f0',
+                                color: active ? '#fff' : '#64748b',
+                                border: active ? 'none' : '1px solid #e2e8f0',
                             }}>
                                 {tab}
                             </button>
@@ -531,7 +525,7 @@ export const ExpensesPage = () => {
                 </div>
 
                 {/* Table */}
-                <div style={{ overflowX: 'auto', overflowY: 'scroll', height: '340px'}}>
+                <div style={{ overflowX: 'auto', overflowY: 'scroll', height: '340px' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                         <thead>
                             <tr style={{ background: '#f8fafc', position: 'sticky', top: 0, zIndex: 1 }}>
@@ -709,7 +703,7 @@ export const ExpensesPage = () => {
                             {editingExpense?.game && editFormData.pointsAdded !== '' && (() => {
                                 const newPts = parseInt(editFormData.pointsAdded || 0, 10);
                                 const oldPts = parseInt(editingExpense.pointsAdded || 0, 10);
-                                const diff   = newPts - oldPts;
+                                const diff = newPts - oldPts;
                                 if (diff === 0) return null;
                                 const linkedGame = games.find(g => g.id === editingExpense.game?.id);
                                 if (!linkedGame) return null;
