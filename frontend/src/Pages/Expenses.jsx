@@ -656,7 +656,7 @@ export const ExpensesPage = () => {
                     <Field label="Notes (optional)">
                         <FocusInput as="textarea" rows={2} value={addFormData.notes} onChange={e => setAddFormData({ ...addFormData, notes: e.target.value })} style={{ resize: 'none', lineHeight: '1.6' }} />
                     </Field>
-                    <AlertBanner type="error" message={error} />
+                    {/* <AlertBanner type="error" message={error} /> */}
                     <ModalActions onCancel={() => setShowAddModal(false)} submitLabel="Record Expense" accent="#2563eb" loading={submitting} />
                 </form>
             </Modal>
