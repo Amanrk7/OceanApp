@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 const ToastContext = createContext(null);
 
@@ -100,6 +100,9 @@ export function translateError(raw) {
 // ─── Toast provider ───────────────────────────────────────────
 let _id = 0;
 
+
+
+// 2. Inside ToastProvider, after the `add` definition:
 export function ToastProvider({ children }) {
     const [toasts, setToasts] = useState([]);
 
@@ -114,6 +117,13 @@ export function ToastProvider({ children }) {
     const remove = useCallback((id) => {
         setToasts(prev => prev.filter(t => t.id !== id));
     }, []);
+    // ✅ Move it here, where `add` is in scope
+    useEffect(() => {
+        window.__toastAdd = add;
+        return () => { delete window.__toastAdd; };
+    }, [add]);
+
+
 
     return (
         <ToastContext.Provider value={{ add, remove }}>
@@ -137,14 +147,10 @@ const TOAST_STYLES = {
     info: { bg: '#f0f9ff', border: '#bae6fd', accent: '#0ea5e9', title: 'Info', icon: 'i' },
 };
 
+
+
 function ToastContainer({ toasts, onDismiss }) {
     if (!toasts.length) return null;
-
-    // Inside ToastProvider, add this effect:
-    useEffect(() => {
-        window.__toastAdd = add;
-        return () => { delete window.__toastAdd; };
-    }, [add]);
     return (
         <>
             <div style={{
