@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
+import { useToast } from '../Context/toastContext';
 
 const C = {
     sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
@@ -11,13 +12,9 @@ const C = {
     border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
 };
 
-// const TIER_CASHOUT = { BRONZE: 250, SILVER: 500, GOLD: 750 };
-// const STATUS_OPTS = ['ACTIVE', 'CRITICAL', 'HIGHLY_CRITICAL', 'INACTIVE', 'UNREACHABLE'];
-// const TIER_OPTS = ['BRONZE', 'SILVER', 'GOLD'];
-// These are MODULE-LEVEL constants — no component state here
 const TIER_CASHOUT = { BRONZE: 250, SILVER: 500, GOLD: 750 };
-const STATUS_OPTS  = ['ACTIVE', 'CRITICAL', 'HIGHLY_CRITICAL', 'INACTIVE', 'UNREACHABLE'];
-const TIER_OPTS    = ['BRONZE', 'SILVER', 'GOLD'];
+const STATUS_OPTS = ['ACTIVE', 'CRITICAL', 'HIGHLY_CRITICAL', 'INACTIVE', 'UNREACHABLE'];
+const TIER_OPTS = ['BRONZE', 'SILVER', 'GOLD'];
 
 const INPUT = {
     width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`,
@@ -153,6 +150,8 @@ function PlayerSearch({ label, hint, value, onChange, exclude = [] }) {
 // EDIT PLAYER MODAL
 // ══════════════════════════════════════════════════════════════
 export default function EditPlayer({ player, onClose, onSaved }) {
+    const { add: toast } = useToast();
+
     const [form, setForm] = useState({
         name: '', email: '', phone: '', source: '',
         tier: 'BRONZE', status: 'ACTIVE',
@@ -165,8 +164,6 @@ export default function EditPlayer({ player, onClose, onSaved }) {
     });
 
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     // Add to useState initializer:
     const [referredByPlayer, setReferredByPlayer] = useState(null);
     const [friendsList, setFriendsList] = useState([]);
@@ -175,10 +172,6 @@ export default function EditPlayer({ player, onClose, onSaved }) {
     const [friendSearchOpen, setFriendSearchOpen] = useState(false);
     const [currentUserRole, setCurrentUserRole] = useState(null);
     const friendSearchRef = useRef(null);
-
-    // In the useEffect that initializes form from player:
-    // setReferredByPlayer(player.referredBy || null);
-    // setFriendsList(player.friendsList || []);
 
     useEffect(() => {
         if (!player) return;
@@ -204,7 +197,6 @@ export default function EditPlayer({ player, onClose, onSaved }) {
         });
         setReferredByPlayer(player.referredBy || null);
         setFriendsList(player.friendsList || []);
-        setError(''); setSuccess('');
     }, [player]);
 
     useEffect(() => {
@@ -234,8 +226,7 @@ export default function EditPlayer({ player, onClose, onSaved }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(''); setSuccess('');
-        if (!form.name.trim()) return setError('Name is required.');
+        if (!form.name.trim()) return toast("Name is required.", "error");
         try {
             setLoading(true);
             await api.players.updatePlayer(player.id, {
@@ -260,10 +251,10 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                 referredById: referredByPlayer?.id ?? null,
                 friendIds: friendsList.map(f => f.id),
             });
-            setSuccess('Player updated!');
+            toast('Player updated!', 'success');
             setTimeout(() => { onSaved(); onClose(); }, 700);
         } catch (err) {
-            setError(err.message || 'Failed to update player.');
+            toast(err.message || 'Failed to update player.', 'error');
         } finally {
             setLoading(false);
         }
@@ -310,16 +301,6 @@ export default function EditPlayer({ player, onClose, onSaved }) {
 
                 {/* ── Scrollable body ─────────────────────────────────────── */}
                 <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
-                    {error && (
-                        <div style={{ padding: '10px 14px', background: C.redLt, border: `1px solid ${C.redBdr}`, borderRadius: '8px', color: '#991b1b', fontSize: '13px', marginBottom: '16px' }}>
-                            {error}
-                        </div>
-                    )}
-                    {success && (
-                        <div style={{ padding: '10px 14px', background: C.greenLt, border: `1px solid ${C.greenBdr}`, borderRadius: '8px', color: '#166534', fontSize: '13px', marginBottom: '16px' }}>
-                            ✓ {success}
-                        </div>
-                    )}
 
                     <form id="edit-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
@@ -352,29 +333,29 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                                     </select>
                                 </Field>
                                 <Field label="Status">
-    <select
-        style={selectStyle}
-        value={form.status}
-        onChange={e => set('status', e.target.value)}
-    >
-        {STATUS_OPTS.map(s => {
-            const isUnreachable = s === 'UNREACHABLE';
-            const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(currentUserRole);
-            const disabled = isUnreachable && !isAdmin;
-            return (
-                <option key={s} value={s} disabled={disabled}>
-                    {s.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
-                    {disabled ? ' (Admin only)' : ''}
-                </option>
-            );
-        })}
-    </select>
-    {form.status === 'UNREACHABLE' && (
-        <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#86198f' }}>
-            📡 Only admins can set or change this status.
-        </p>
-    )}
-</Field>
+                                    <select
+                                        style={selectStyle}
+                                        value={form.status}
+                                        onChange={e => set('status', e.target.value)}
+                                    >
+                                        {STATUS_OPTS.map(s => {
+                                            const isUnreachable = s === 'UNREACHABLE';
+                                            const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(currentUserRole);
+                                            const disabled = isUnreachable && !isAdmin;
+                                            return (
+                                                <option key={s} value={s} disabled={disabled}>
+                                                    {s.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                                                    {disabled ? ' (Admin only)' : ''}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                    {form.status === 'UNREACHABLE' && (
+                                        <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#86198f' }}>
+                                            📡 Only admins can set or change this status.
+                                        </p>
+                                    )}
+                                </Field>
                                 <Field label="Cashout Limit ($)" hint="Auto-set by tier">
                                     <input style={INPUT} type="number" min="0" step="0.01"
                                         value={form.cashoutLimit} onChange={e => set('cashoutLimit', e.target.value)} />
