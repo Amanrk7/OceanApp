@@ -232,7 +232,10 @@ const loadPlayers = useCallback(async () => {
     //     loadPlayers();
     // }, [currentPage, searchTerm, filterTab]);
 
-    if (addPlayer) navigate(`/addNewPlayer`);
+    // if (addPlayer) navigate(`/addNewPlayer`);
+    useEffect(() => {
+  if (addPlayer) navigate('/addNewPlayer');
+}, [addPlayer, navigate]);
 
     const players = data?.data || [];
     const pagination = data?.pagination || { page: 1, limit: 10, total: 0, pages: 1 };
