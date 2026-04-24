@@ -758,7 +758,7 @@ export default function Games() {
                   isAdmin={isAdmin}
                   onUpdate={handleUpdate}
                   onDelete={setDeleteTarget}
-                  onToggleShare={onToggleShare}
+                  onToggleShare
                 />
               ))}
             </div>
