@@ -14,7 +14,7 @@ const ERROR_MAP = [
     { match: /player not found/i, msg: "This player no longer exists. They may have been deleted." },
     { match: /username.*already exists|email.*already in use/i, msg: "A player with that username or email already exists. Choose a different one." },
     { match: /only admins can mark.*unreachable/i, msg: "Only admins can mark a player as Unreachable." },
-    { match: /name.*required/i, msg: "Player name is required. Please fill it in." },
+    { match: /name.*required/i, msg: "Any one social field is required. Please fill it in." },
 
     // Transactions / Deposits
     { match: /insufficient.*balance/i, msg: "Not enough balance in the wallet to cover this transaction." },
