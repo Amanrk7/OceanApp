@@ -668,9 +668,6 @@ export default function AdminTaskPage() {
                 </div>
             )}
 
-            {/* ════ ALERTS ════ */}
-            {error && <Alert type="error">{error}</Alert>}
-            {success && <Alert type="success">{success}</Alert>}
 
             {/* ════ FILTERS ════ */}
             <div style={CARD}>
