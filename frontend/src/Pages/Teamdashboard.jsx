@@ -25,9 +25,10 @@ import {
 // ─── Config ───────────────────────────────────────────────────
 const API = import.meta.env.VITE_API_URL ?? "";
 
+const getStoreId = () => parseInt(localStorage.getItem('__obStoreId') || '1', 10);
 function getAuthHeaders(ct = false) {
   const token = localStorage.getItem('authToken');
-  const h = {};
+  const h = { 'X-Store-Id': String(getStoreId()) };
   if (ct) h['Content-Type'] = 'application/json';
   if (token) h['Authorization'] = `Bearer ${token}`;
   return h;
