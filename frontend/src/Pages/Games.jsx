@@ -81,7 +81,9 @@ function StatusBadge({ stock }) {
 }
 
 // ─── Game Card ────────────────────────────────────────────────────────────────
-function GameCard({ game, isAdmin, onUpdate, onDelete }) {
+// function GameCard({ game, isAdmin, onUpdate, onDelete }) {
+function GameCard({ game, isAdmin, onUpdate, onDelete, onToggleShare }) {
+
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [saving, setSaving] = useState(false);
@@ -145,6 +147,24 @@ function GameCard({ game, isAdmin, onUpdate, onDelete }) {
         <Trash2 style={{ width: '12px', height: '12px' }} />
       </button>
 
+      {isAdmin && (
+        <button
+          onClick={() => onToggleShare(game)}
+          title={game.isShared ? 'Shared — click to make store-private' : 'Private — click to share across stores'}
+          style={{
+            position: 'absolute', top: '12px', right: '44px',
+            width: '26px', height: '26px', borderRadius: '7px',
+            border: `1px solid ${game.isShared ? '#bfdbfe' : '#e2e8f0'}`,
+            background: game.isShared ? '#eff6ff' : '#f8fafc',
+            color: game.isShared ? '#2563eb' : '#cbd5e1',
+            cursor: 'pointer', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: '12px', padding: 0,
+          }}
+        >
+          🔗
+        </button>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '11px', paddingRight: '30px' }}>
         <GameAvatar name={game.name} size={40} />
@@ -154,16 +174,6 @@ function GameCard({ game, isAdmin, onUpdate, onDelete }) {
           </div>
           <div style={{ marginTop: '4px' }}>
             <StatusBadge stock={previewStock} />
-            {game.isShared && (
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: '4px',
-                padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '700',
-                background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe',
-                marginLeft: '4px',
-              }}>
-                🔗 Shared
-              </span>
-            )}
           </div>
         </div>
       </div>
@@ -758,7 +768,7 @@ export default function Games() {
                   isAdmin={isAdmin}
                   onUpdate={handleUpdate}
                   onDelete={setDeleteTarget}
-                  onToggleShare
+                  onToggleShare={handleToggleShare}
                 />
               ))}
             </div>
