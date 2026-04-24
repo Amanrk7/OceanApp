@@ -23,13 +23,13 @@ const INPUT_BASE = {
 const SKY = 'rgb(14, 165, 233)';
 
 const METHOD_META = {
-    Bitcoin:  { icon: '₿', bg: '#fff7ed', text: '#c2410c' },
-    Chime:    { icon: '◆', bg: '#f0fdf4', text: '#16a34a' },
+    Bitcoin: { icon: '₿', bg: '#fff7ed', text: '#c2410c' },
+    Chime: { icon: '◆', bg: '#f0fdf4', text: '#16a34a' },
     Litecoin: { icon: 'Ł', bg: '#f8fafc', text: '#475569' },
-    PayPal:   { icon: 'P', bg: '#eff6ff', text: '#2563eb' },
-    Venmo:    { icon: 'V', bg: '#f0f9ff', text: '#0284c7' },
-    USDT:     { icon: '₮', bg: '#f0fdfa', text: '#0d9488' },
-    Other:    { icon: '$', bg: '#faf5ff', text: '#7c3aed' },
+    PayPal: { icon: 'P', bg: '#eff6ff', text: '#2563eb' },
+    Venmo: { icon: 'V', bg: '#f0f9ff', text: '#0284c7' },
+    USDT: { icon: '₮', bg: '#f0fdfa', text: '#0d9488' },
+    Other: { icon: '$', bg: '#faf5ff', text: '#7c3aed' },
 };
 const getMeta = (method) => METHOD_META[method] || { icon: method?.[0] ?? '$', bg: '#f8fafc', text: '#475569' };
 const PAYMENT_METHODS = ['Bitcoin', 'Chime', 'Litecoin', 'PayPal', 'Venmo', 'USDT', 'Other'];
@@ -138,26 +138,26 @@ function Field({ label, children, hint }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const ManageWalletsPage = () => {
-    const [grouped, setGrouped]           = useState([]);
-    const [loading, setLoading]           = useState(true);
-    const [refreshing, setRefreshing]     = useState(false);
-    const [globalError, setGlobalError]   = useState(null);
+    const [grouped, setGrouped] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [globalError, setGlobalError] = useState(null);
     const [globalSuccess, setGlobalSuccess] = useState(null);
     const [expandedMethod, setExpandedMethod] = useState(null);
-    const [savingId, setSavingId]         = useState(null);
-    const [togglingId, setTogglingId]     = useState(null);   // wallet id being live-toggled
+    const [savingId, setSavingId] = useState(null);
+    const [togglingId, setTogglingId] = useState(null);   // wallet id being live-toggled
 
-    const [showAdd, setShowAdd]   = useState(false);
-    const [addForm, setAddForm]   = useState({ name: '', method: 'Chime', identifier: '', balance: '', isLive: true });
+    const [showAdd, setShowAdd] = useState(false);
+    const [addForm, setAddForm] = useState({ name: '', method: 'Chime', identifier: '', balance: '', isLive: true });
     const [addError, setAddError] = useState(null);
     const [addLoading, setAddLoading] = useState(false);
 
     const [editWallet, setEditWallet] = useState(null);
-    const [editForm, setEditForm]     = useState({});
-    const [editError, setEditError]   = useState(null);
+    const [editForm, setEditForm] = useState({});
+    const [editError, setEditError] = useState(null);
     const [editLoading, setEditLoading] = useState(false);
 
-    const [deleteTarget, setDeleteTarget]   = useState(null);
+    const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
     const loadWallets = useCallback(async (force = false) => {
@@ -172,35 +172,35 @@ const ManageWalletsPage = () => {
     }, []);
 
     useEffect(() => {
-  // Listen for shared wallet updates from other stores
-  const token = localStorage.getItem('authToken');
-  if (!token) return;
-  const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
-  const url = `${API_BASE}/tasks/events?token=${encodeURIComponent(token)}`;
-  const sse = new EventSource(url, { withCredentials: true });
+        // Listen for shared wallet updates from other stores
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
+        const url = `${API_BASE}/tasks/events?token=${encodeURIComponent(token)}`;
+        const sse = new EventSource(url, { withCredentials: true });
 
-  sse.addEventListener('message', (e) => {
-    try {
-      const msg = JSON.parse(e.data);
-      if (msg.type === 'shared_wallet_updated') {
-        // Update the balance in-place without a full reload
-        setGrouped(prev => prev.map(group => ({
-          ...group,
-          subAccounts: group.subAccounts.map(w =>
-            w.id === msg.data.walletId
-              ? { ...w, balance: msg.data.balance }
-              : w
-          ),
-          totalBalance: group.subAccounts.reduce((s, w) =>
-            s + (w.id === msg.data.walletId ? msg.data.balance : (w.balance || 0)), 0
-          ),
-        })));
-      }
-    } catch { }
-  });
+        sse.addEventListener('message', (e) => {
+            try {
+                const msg = JSON.parse(e.data);
+                if (msg.type === 'shared_wallet_updated') {
+                    // Update the balance in-place without a full reload
+                    setGrouped(prev => prev.map(group => ({
+                        ...group,
+                        subAccounts: group.subAccounts.map(w =>
+                            w.id === msg.data.walletId
+                                ? { ...w, balance: msg.data.balance }
+                                : w
+                        ),
+                        totalBalance: group.subAccounts.reduce((s, w) =>
+                            s + (w.id === msg.data.walletId ? msg.data.balance : (w.balance || 0)), 0
+                        ),
+                    })));
+                }
+            } catch { }
+        });
 
-  return () => sse.close();
-}, []);
+        return () => sse.close();
+    }, []);
     useEffect(() => { loadWallets(); }, [loadWallets]);
 
     const flash = (msg) => { setGlobalSuccess(msg); setTimeout(() => setGlobalSuccess(null), 3000); };
@@ -228,15 +228,15 @@ const ManageWalletsPage = () => {
     //     finally { setTogglingId(null); }
     // };
     const handleLiveToggle = async (wallet) => {
-    setTogglingId(wallet.id);
-    const newStatus = !wallet.isLive;          // ← capture BEFORE the await
-    try {
-        await api.wallets.updateWallet(wallet.id, { isLive: newStatus });
-        await loadWallets(true);
-        flash(`${wallet.name} is now ${newStatus ? 'LIVE' : 'offline'}`);  // ← use captured value
-    } catch (err) { setGlobalError(err.message || 'Failed to update wallet status'); }
-    finally { setTogglingId(null); }
-};
+        setTogglingId(wallet.id);
+        const newStatus = !wallet.isLive;          // ← capture BEFORE the await
+        try {
+            await api.wallets.updateWallet(wallet.id, { isLive: newStatus });
+            await loadWallets(true);
+            flash(`${wallet.name} is now ${newStatus ? 'LIVE' : 'offline'}`);  // ← use captured value
+        } catch (err) { setGlobalError(err.message || 'Failed to update wallet status'); }
+        finally { setTogglingId(null); }
+    };
 
     // ── add ──────────────────────────────────────────────────────────────────
     const handleAdd = async (e) => {
@@ -265,6 +265,7 @@ const ManageWalletsPage = () => {
             identifier: wallet.identifier || '',
             balance: wallet.balance?.toString() || '0',
             isLive: wallet.isLive !== false,   // default true if not set
+            isShared: wallet.isShared === true,
         });
         setEditError(null);
     };
@@ -279,6 +280,7 @@ const ManageWalletsPage = () => {
                 identifier: editForm.identifier.trim() || null,
                 balance: parseFloat(editForm.balance) || 0,
                 isLive: editForm.isLive,
+                isShared: editForm.isShared,
             });
             await loadWallets(true); setEditWallet(null); flash('Wallet updated successfully');
         } catch (err) { setEditError(err.message || 'Failed to update wallet'); }
@@ -298,9 +300,9 @@ const ManageWalletsPage = () => {
 
     // ── derived stats ─────────────────────────────────────────────────────────
     const allWallets = grouped.flatMap(g => g.subAccounts || []);
-    const totalBalance  = grouped.reduce((s, g) => s + (g.totalBalance || 0), 0);
-    const totalWallets  = allWallets.length;
-    const liveCount     = allWallets.filter(w => w.isLive !== false).length;
+    const totalBalance = grouped.reduce((s, g) => s + (g.totalBalance || 0), 0);
+    const totalWallets = allWallets.length;
+    const liveCount = allWallets.filter(w => w.isLive !== false).length;
 
     if (loading) {
         return (
@@ -329,16 +331,16 @@ const ManageWalletsPage = () => {
             </div>
 
             {/* ── Global Alerts ── */}
-            <Alert type="error"   message={globalError}   onDismiss={() => setGlobalError(null)} />
+            <Alert type="error" message={globalError} onDismiss={() => setGlobalError(null)} />
             <Alert type="success" message={globalSuccess} onDismiss={() => setGlobalSuccess(null)} />
 
             {/* ── Summary Cards ── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
                 {[
-                    { label: 'Total Balance',     value: fmt(totalBalance), icon: DollarSign, bg: '#eff6ff', iconColor: '#2563eb' },
-                    { label: 'Total Wallets',     value: totalWallets,      icon: Wallet,     bg: '#f0fdf4', iconColor: '#16a34a' },
-                    { label: 'Payment Methods',   value: grouped.length,    icon: CheckCircle,bg: '#faf5ff', iconColor: '#7c3aed' },
-                    { label: 'Live Wallets',      value: liveCount,         icon: Radio,      bg: '#f0fdf4', iconColor: '#15803d' },
+                    { label: 'Total Balance', value: fmt(totalBalance), icon: DollarSign, bg: '#eff6ff', iconColor: '#2563eb' },
+                    { label: 'Total Wallets', value: totalWallets, icon: Wallet, bg: '#f0fdf4', iconColor: '#16a34a' },
+                    { label: 'Payment Methods', value: grouped.length, icon: CheckCircle, bg: '#faf5ff', iconColor: '#7c3aed' },
+                    { label: 'Live Wallets', value: liveCount, icon: Radio, bg: '#f0fdf4', iconColor: '#15803d' },
                 ].map(({ label, value, icon: Icon, bg, iconColor }) => (
                     <div key={label} style={{ ...CARD, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: '14px' }}>
                         <div style={{ width: '44px', height: '44px', background: bg, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -364,7 +366,7 @@ const ManageWalletsPage = () => {
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {grouped.map((group) => {
-                        const meta     = getMeta(group.method);
+                        const meta = getMeta(group.method);
                         const expanded = expandedMethod === group.method;
                         const groupLive = (group.subAccounts || []).filter(w => w.isLive !== false).length;
 
@@ -556,7 +558,16 @@ const ManageWalletsPage = () => {
                                 {editForm.isLive ? 'Live — available for transactions' : 'Offline — hidden from transaction forms'}
                             </p>
                         </div>
-                        <LiveToggle isLive={editForm.isLive} loading={false} onToggle={() => setEditForm(f => ({ ...f, isLive: !f.isLive }))} />
+                        {/* <LiveToggle isLive={editForm.isLive} loading={false} onToggle={() => setEditForm(f => ({ ...f, isLive: !f.isLive }))} /> */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: editForm.isShared ? '#eff6ff' : '#f8fafc', borderRadius: '8px', border: `1px solid ${editForm.isShared ? '#bfdbfe' : '#e2e8f0'}`, transition: 'all .2s' }}>
+                            <div>
+                                <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>Share across all stores</p>
+                                <p style={{ margin: 0, fontSize: '11px', color: editForm.isShared ? '#1d4ed8' : '#94a3b8' }}>
+                                    {editForm.isShared ? 'Visible and usable by all stores' : 'This store only'}
+                                </p>
+                            </div>
+                            <LiveToggle isLive={editForm.isShared} loading={false} onToggle={() => setEditForm(f => ({ ...f, isShared: !f.isShared }))} />
+                        </div>
                     </div>
 
                     <Alert type="error" message={editError} />
