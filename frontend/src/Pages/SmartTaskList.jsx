@@ -102,8 +102,10 @@ function Bar({ pct, color }) {
 }
 
 // ─── Single compact task row ───────────────────────────────────
+// REPLACE the entire TaskRow function with this:
 function TaskRow({ task, onStatusChange, onChecklistToggle, onProgressLog, renderFollowup, compact = false }) {
   const [expanded, setExpanded] = useState(false);
+  const [logVal, setLogVal] = useState("");
   const meta = TYPE_META[task.taskType] || TYPE_META.STANDARD;
   const Icon = TYPE_ICONS[task.taskType] || ClipboardList;
   const isDone = task.status === "COMPLETED";
@@ -113,56 +115,39 @@ function TaskRow({ task, onStatusChange, onChecklistToggle, onProgressLog, rende
   const pct = task.targetValue > 0
     ? Math.min(100, Math.round(((task.currentValue ?? 0) / task.targetValue) * 100))
     : null;
-
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !isDone;
   const hasDetail = cl.length > 0 || pct !== null || ["PLAYER_FOLLOWUP","BONUS_FOLLOWUP","MISSING_INFO"].includes(task.taskType);
 
-  const [logVal, setLogVal] = useState("");
-
   return (
     <div style={{ borderBottom: "0.5px solid var(--color-border-tertiary)" }}>
-      {/* Row */}
       <div
         onClick={() => hasDetail && setExpanded(v => !v)}
         style={{
-          display: "flex", alignItems: "center", gap: 8,
-          padding: compact ? "7px 10px" : "9px 12px",
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "7px 12px",
           cursor: hasDetail ? "pointer" : "default",
-          background: expanded ? "var(--color-background-secondary)" : "transparent",
           transition: "background .1s",
         }}
-        onMouseEnter={e => { if (!expanded) e.currentTarget.style.background = "var(--color-background-secondary)"; }}
-        onMouseLeave={e => { if (!expanded) e.currentTarget.style.background = "transparent"; }}
+        onMouseEnter={e => e.currentTarget.style.background = "var(--color-background-secondary)"}
+        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
       >
-        {/* Priority accent */}
-        <div style={{
-          width: 2, height: 20, borderRadius: 1, flexShrink: 0,
-          background: isDone ? "var(--color-border-tertiary)" : (PRIORITY_COLOR[task.priority] || "#cbd5e1"),
-        }} />
-
-        {/* Complete toggle (standard only) */}
-        {isStandard && (
+        {/* Complete toggle */}
+        {isStandard ? (
           <button
             onClick={e => { e.stopPropagation(); onStatusChange?.(task.id, isDone ? "PENDING" : "COMPLETED"); }}
             style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", flexShrink: 0, color: isDone ? "#22c55e" : "var(--color-border-secondary)" }}
           >
-            {isDone
-              ? <CheckCircle style={{ width: 13, height: 13 }} />
-              : <Circle style={{ width: 13, height: 13 }} />}
+            {isDone ? <CheckCircle style={{ width: 14, height: 14 }} /> : <Circle style={{ width: 14, height: 14 }} />}
           </button>
-        )}
-
-        {/* Type icon */}
-        {!isStandard && (
-          <Icon style={{ width: 12, height: 12, color: meta.color, flexShrink: 0, opacity: 0.7 }} />
+        ) : (
+          <span style={{ width: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Icon style={{ width: 12, height: 12, color: meta.color, opacity: 0.7 }} />
+          </span>
         )}
 
         {/* Title */}
         <span style={{
-          flex: 1, minWidth: 0,
-          fontSize: compact ? 12 : 12.5,
-          fontWeight: 400,
-          lineHeight: 1.3,
+          flex: 1, minWidth: 0, fontSize: 13, fontWeight: 400, lineHeight: 1.4,
           color: isDone ? "var(--color-text-tertiary)" : "var(--color-text-primary)",
           textDecoration: isDone ? "line-through" : "none",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
@@ -170,16 +155,15 @@ function TaskRow({ task, onStatusChange, onChecklistToggle, onProgressLog, rende
           {task.title}
         </span>
 
-        {/* Right signals */}
+        {/* Metadata chips — right side */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
           {isOverdue && (
-            <span style={{ fontSize: 10, color: "#ef4444", fontWeight: 500 }}>overdue</span>
+            <span style={{ fontSize: 10, fontWeight: 500, color: "#ef4444", background: "#fef2f2", padding: "1px 6px", borderRadius: 4 }}>overdue</span>
           )}
-          {pct !== null && !isOverdue && (
-            <>
-              <Bar pct={pct} color={meta.color} />
-              <span style={{ fontSize: 11, color: "var(--color-text-tertiary)", minWidth: 28, textAlign: "right" }}>{pct}%</span>
-            </>
+          {pct !== null && (
+            <span style={{ fontSize: 11, color: pct >= 100 ? "#22c55e" : "var(--color-text-tertiary)", fontWeight: pct >= 100 ? 500 : 400, minWidth: 28, textAlign: "right" }}>
+              {pct}%
+            </span>
           )}
           {cl.length > 0 && pct === null && (
             <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>{doneItems}/{cl.length}</span>
@@ -189,37 +173,34 @@ function TaskRow({ task, onStatusChange, onChecklistToggle, onProgressLog, rende
               {new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
             </span>
           )}
+          {/* Priority dot */}
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: isDone ? "var(--color-border-tertiary)" : (PRIORITY_COLOR[task.priority] || "#cbd5e1"), flexShrink: 0 }} />
+          {hasDetail && (
+            <span style={{ color: "var(--color-text-tertiary)", display: "flex" }}>
+              {expanded ? <ChevronUp style={{ width: 11, height: 11 }} /> : <ChevronDown style={{ width: 11, height: 11 }} />}
+            </span>
+          )}
         </div>
-
-        {hasDetail && (
-          <span style={{ color: "var(--color-text-tertiary)", display: "flex", flexShrink: 0 }}>
-            {expanded
-              ? <ChevronUp style={{ width: 11, height: 11 }} />
-              : <ChevronDown style={{ width: 11, height: 11 }} />}
-          </span>
-        )}
       </div>
 
       {/* Expanded panel */}
       {expanded && (
         <div style={{
-          background: "var(--color-background-secondary)",
-          padding: "10px 14px 12px 28px",
+          padding: "8px 12px 10px 36px",
           borderTop: "0.5px solid var(--color-border-tertiary)",
+          background: "var(--color-background-secondary)",
         }}>
-          {/* Followup card */}
           {["PLAYER_FOLLOWUP","BONUS_FOLLOWUP","MISSING_INFO"].includes(task.taskType) && renderFollowup ? (
             renderFollowup(task)
           ) : (
             <>
-              {/* Checklist */}
               {cl.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: pct !== null ? 10 : 0 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: pct !== null ? 8 : 0 }}>
                   {cl.map(item => (
                     <label
                       key={item.id}
                       onClick={e => { e.stopPropagation(); onChecklistToggle?.(task.id, item.id, !item.done); }}
-                      style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "3px 0", userSelect: "none" }}
+                      style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "2px 0", userSelect: "none" }}
                     >
                       <span style={{
                         width: 13, height: 13, borderRadius: 3, flexShrink: 0,
@@ -229,51 +210,27 @@ function TaskRow({ task, onStatusChange, onChecklistToggle, onProgressLog, rende
                       }}>
                         {item.done && <Check style={{ width: 7, height: 7, color: "#fff" }} />}
                       </span>
-                      <span style={{
-                        fontSize: 12, lineHeight: 1.4,
-                        color: item.done ? "var(--color-text-tertiary)" : "var(--color-text-secondary)",
-                        textDecoration: item.done ? "line-through" : "none",
-                        flex: 1,
-                      }}>
+                      <span style={{ fontSize: 12, color: item.done ? "var(--color-text-tertiary)" : "var(--color-text-secondary)", textDecoration: item.done ? "line-through" : "none", flex: 1 }}>
                         {item.label}
                       </span>
                     </label>
                   ))}
                 </div>
               )}
-
-              {/* Progress log */}
               {pct !== null && pct < 100 && (
-                <div style={{ display: "flex", gap: 6, marginTop: 8 }} onClick={e => e.stopPropagation()}>
+                <div style={{ display: "flex", gap: 6, marginTop: 6 }} onClick={e => e.stopPropagation()}>
                   <input
-                    type="number"
-                    value={logVal}
-                    onChange={e => setLogVal(e.target.value)}
+                    type="number" value={logVal} onChange={e => setLogVal(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter" && logVal) { onProgressLog?.(task.id, parseFloat(logVal)); setLogVal(""); } }}
-                    placeholder="Amount…"
-                    style={{
-                      width: 90, padding: "4px 8px",
-                      border: "0.5px solid var(--color-border-secondary)",
-                      borderRadius: 6, fontSize: 12,
-                      background: "var(--color-background-primary)",
-                      color: "var(--color-text-primary)",
-                      fontFamily: "inherit", outline: "none",
-                    }}
+                    placeholder="Add amount…"
+                    style={{ width: 100, padding: "4px 8px", border: "0.5px solid var(--color-border-secondary)", borderRadius: 6, fontSize: 12, background: "var(--color-background-primary)", color: "var(--color-text-primary)", fontFamily: "inherit", outline: "none" }}
                   />
                   <button
                     onClick={() => { if (logVal) { onProgressLog?.(task.id, parseFloat(logVal)); setLogVal(""); } }}
                     disabled={!logVal}
-                    style={{
-                      padding: "4px 10px", borderRadius: 6, border: "none",
-                      background: logVal ? meta.color : "var(--color-background-primary)",
-                      color: logVal ? "#fff" : "var(--color-text-tertiary)",
-                      fontSize: 12, cursor: logVal ? "pointer" : "default",
-                      display: "flex", alignItems: "center", gap: 3,
-                      fontFamily: "inherit",
-                      border: logVal ? "none" : "0.5px solid var(--color-border-secondary)",
-                    }}
+                    style={{ padding: "4px 10px", borderRadius: 6, border: "0.5px solid var(--color-border-secondary)", background: logVal ? meta.color : "transparent", color: logVal ? "#fff" : "var(--color-text-tertiary)", fontSize: 12, cursor: logVal ? "pointer" : "default", fontFamily: "inherit" }}
                   >
-                    <Plus style={{ width: 9, height: 9 }} /> Log
+                    Log
                   </button>
                 </div>
               )}
@@ -286,78 +243,42 @@ function TaskRow({ task, onStatusChange, onChecklistToggle, onProgressLog, rende
 }
 
 // ─── Group row (collapsed cluster of similar tasks) ────────────
+// REPLACE the entire GroupRow function with this:
 function GroupRow({ tasks, groupKey, onStatusChange, onChecklistToggle, onProgressLog, renderFollowup }) {
   const [open, setOpen] = useState(false);
   const meta = TYPE_META[tasks[0]?.taskType] || TYPE_META.STANDARD;
   const Icon = TYPE_ICONS[tasks[0]?.taskType] || ClipboardList;
   const label = groupLabel(tasks);
   const doneCount = tasks.filter(t => t.status === "COMPLETED").length;
-  const typeName = meta.label;
-
-  let noteMeta = {};
-  try { noteMeta = JSON.parse(tasks[0]?.notes || "{}"); } catch (_) {}
 
   return (
     <div style={{ borderBottom: "0.5px solid var(--color-border-tertiary)" }}>
-      {/* Group header */}
       <div
         onClick={() => setOpen(v => !v)}
         style={{
           display: "flex", alignItems: "center", gap: 8,
-          padding: "9px 12px", cursor: "pointer",
-          background: open ? "var(--color-background-secondary)" : "transparent",
-          transition: "background .1s",
+          padding: "7px 12px", cursor: "pointer", transition: "background .1s",
         }}
-        onMouseEnter={e => { if (!open) e.currentTarget.style.background = "var(--color-background-secondary)"; }}
-        onMouseLeave={e => { if (!open) e.currentTarget.style.background = "transparent"; }}
+        onMouseEnter={e => e.currentTarget.style.background = "var(--color-background-secondary)"}
+        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
       >
-        {/* Type color strip */}
-        <div style={{ width: 2, height: 20, borderRadius: 1, background: meta.color, flexShrink: 0 }} />
         <Icon style={{ width: 12, height: 12, color: meta.color, flexShrink: 0 }} />
-
-        {/* Label */}
-        <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 12, fontWeight: 400, color: "var(--color-text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {typeName}
-          </span>
-          <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>·</span>
-          <span style={{ fontSize: 12, fontWeight: 400, color: "var(--color-text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {label}
-          </span>
-        </div>
-
-        {/* Count badge */}
+        <span style={{ fontSize: 12, color: meta.color, fontWeight: 500, flexShrink: 0 }}>{meta.label}</span>
+        <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>·</span>
+        <span style={{ fontSize: 12, color: "var(--color-text-primary)", flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
         <span style={{
-          display: "inline-flex", alignItems: "center", justifyContent: "center",
-          minWidth: 20, height: 18,
-          padding: "0 6px",
-          borderRadius: 999,
-          background: meta.color + "18",
-          color: meta.color,
-          fontSize: 11, fontWeight: 500,
-          flexShrink: 0,
+          fontSize: 11, fontWeight: 500, padding: "1px 7px", borderRadius: 999,
+          background: meta.color + "15", color: meta.color, flexShrink: 0,
         }}>
           {doneCount > 0 ? `${doneCount}/${tasks.length}` : tasks.length}
         </span>
-
-        {open
-          ? <ChevronUp style={{ width: 11, height: 11, color: "var(--color-text-tertiary)", flexShrink: 0 }} />
-          : <ChevronDown style={{ width: 11, height: 11, color: "var(--color-text-tertiary)", flexShrink: 0 }} />}
+        {open ? <ChevronUp style={{ width: 11, height: 11, color: "var(--color-text-tertiary)", flexShrink: 0 }} /> : <ChevronDown style={{ width: 11, height: 11, color: "var(--color-text-tertiary)", flexShrink: 0 }} />}
       </div>
 
-      {/* Expanded individual rows */}
       {open && (
-        <div style={{ paddingLeft: 12, borderTop: "0.5px solid var(--color-border-tertiary)", background: "var(--color-background-secondary)" }}>
+        <div style={{ paddingLeft: 22, borderTop: "0.5px solid var(--color-border-tertiary)" }}>
           {tasks.map(t => (
-            <TaskRow
-              key={t.id}
-              task={t}
-              compact
-              onStatusChange={onStatusChange}
-              onChecklistToggle={onChecklistToggle}
-              onProgressLog={onProgressLog}
-              renderFollowup={renderFollowup}
-            />
+            <TaskRow key={t.id} task={t} compact onStatusChange={onStatusChange} onChecklistToggle={onChecklistToggle} onProgressLog={onProgressLog} renderFollowup={renderFollowup} />
           ))}
         </div>
       )}
@@ -602,24 +523,24 @@ export default function SmartTaskList({
           background: "var(--color-background-primary)",
         }}>
           {/* Summary bar */}
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "7px 12px",
-            background: "var(--color-background-secondary)",
-            borderBottom: "0.5px solid var(--color-border-tertiary)",
-          }}>
-            <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>
-              {filtered.length} task{filtered.length !== 1 ? "s" : ""}
-              {groups.length > 0 && (
-                <> · <span style={{ color: "var(--color-text-secondary)" }}>{groups.length} group{groups.length !== 1 ? "s" : ""}</span> ({groups.reduce((s, g) => s + g.items.length, 0)} similar)</>
-              )}
-            </span>
-            {totalPages > 1 && (
-              <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>
-                Page {page} of {totalPages}
-              </span>
-            )}
-          </div>
+          {/* // REPLACE the summary bar div with this cleaner version: */}
+<div style={{
+  display: "flex", alignItems: "center", justifyContent: "space-between",
+  padding: "6px 12px",
+  borderBottom: "0.5px solid var(--color-border-tertiary)",
+}}>
+  <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>
+    {filtered.length} task{filtered.length !== 1 ? "s" : ""}
+    {groups.length > 0 && (
+      <> · <span style={{ color: "var(--color-text-secondary)" }}>{groups.length} grouped</span></>
+    )}
+  </span>
+  {totalPages > 1 && (
+    <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>
+      {page} / {totalPages}
+    </span>
+  )}
+</div>
 
           {/* Items */}
           {pageItems.map((item, i) =>
