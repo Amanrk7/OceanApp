@@ -85,7 +85,8 @@ const BONUS_TYPES = [
 // MAIN BONUS PAGE
 // ═════════════════════════════════════════════════════════════════════════════
 export default function BonusPage() {
-    const { shiftActive } = useContext(ShiftStatusContext);
+    // const { shiftActive } = useContext(ShiftStatusContext);
+    const { shiftActive, shiftLoading } = useContext(ShiftStatusContext);
     const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
     const navigate = useNavigate();
     const { toast } = useToast();
@@ -457,6 +458,44 @@ export default function BonusPage() {
     };
 
     // ── Shift guard ───────────────────────────────────────────────────────────
+if (shiftLoading) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div
+        style={{
+          padding: "60px 24px",
+          textAlign: "center",
+          background: "var(--color-background-primary)",
+          borderRadius: "var(--border-radius-lg)",
+          border: "0.5px solid var(--color-border-tertiary)",
+        }}
+      >
+        <div
+          style={{
+            width: "32px",
+            height: "32px",
+            border: "3px solid var(--color-border-tertiary)",
+            borderTopColor: "#0ea5e9",
+            borderRadius: "50%",
+            margin: "0 auto 12px",
+            animation: "spin 0.8s linear infinite",
+          }}
+        />
+        <p
+          style={{
+            margin: 0,
+            fontSize: "13px",
+            color: "var(--color-text-tertiary)",
+          }}
+        >
+          Checking shift status…
+        </p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    </div>
+  );
+}
+    
     if (!shiftActive) {
         return (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
