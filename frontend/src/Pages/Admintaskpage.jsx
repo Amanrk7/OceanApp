@@ -160,11 +160,13 @@ function StatusBadge({ status }) {
 }
 
 // ── Admin Task Row ────────────────────────────────────────────────
+// REPLACE the entire AdminTaskRow function with this:
 function AdminTaskRow({ task, onDelete, onStatusChange, teamMembers, onRefresh }) {
     const [expanded, setExpanded] = useState(false);
     const [logValue, setLogValue] = useState("");
     const [logMemberId, setLogMemberId] = useState("");
     const [logging, setLogging] = useState(false);
+    const [hovered, setHovered] = useState(false);
 
     const meta = TASK_TYPES.find(t => t.value === task.taskType) || TASK_TYPES[0];
     const Icon = meta.icon;
@@ -175,187 +177,150 @@ function AdminTaskRow({ task, onDelete, onStatusChange, teamMembers, onRefresh }
         : null;
     const checklist = task.checklistItems || [];
     const doneItems = checklist.filter(i => i.done).length;
-    const checklistPct = checklist.length > 0
-        ? Math.round((doneItems / checklist.length) * 100)
-        : null;
-
     const subTasks = task.subTasks || [];
     const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !isCompleted;
+    const priorityColor = PRIORITY_COLORS[task.priority]?.text || "#64748b";
 
     async function handleLogProgress() {
         if (!logValue || parseFloat(logValue) <= 0) return;
         setLogging(true);
         try {
-
             await fetch(`${API}/tasks/${task.id}/progress`, {
-                method: "POST",
-                headers: getAuthHeaders(true),
-                credentials: "include",
+                method: "POST", headers: getAuthHeaders(true), credentials: "include",
                 body: JSON.stringify({ value: parseFloat(logValue), memberId: logMemberId || undefined, action: "ADMIN_LOG" }),
-
             });
-            setLogValue("");
-            onRefresh();
+            setLogValue(""); onRefresh();
         } catch (_) { }
         setLogging(false);
     }
 
     return (
-        <div style={{
-            border: `1px solid ${isCompleted ? "#86efac" : isOverdue ? "#fca5a5" : "#e2e8f0"}`,
-            borderLeft: `4px solid ${PRIORITY_COLORS[task.priority]?.text || "#64748b"}`,
-            borderRadius: "12px",
-            background: isCompleted ? "#fafffe" : "#fff",
-            overflow: "hidden",
-            transition: "box-shadow .15s",
-        }}>
-            {/* ── Row summary ── */}
-            <div style={{ padding: "14px 16px", display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
-                {/* Status toggle */}
+        <div
+            style={{ borderBottom: "0.5px solid var(--color-border-tertiary)" }}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+        >
+            {/* Main row */}
+            <div
+                style={{
+                    display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
+                    background: hovered ? "var(--color-background-secondary)" : "transparent",
+                    transition: "background .1s",
+                }}
+            >
+                {/* Completion toggle */}
                 <button
                     onClick={() => onStatusChange(task.id, isCompleted ? "PENDING" : "COMPLETED")}
-                    style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}
-                    title="Toggle complete"
+                    style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0, display: "flex", color: isCompleted ? "#22c55e" : "var(--color-border-secondary)" }}
                 >
-                    {isCompleted
-                        ? <CheckCircle style={{ width: "20px", height: "20px", color: "#22c55e" }} />
-                        : <Circle style={{ width: "20px", height: "20px", color: "#cbd5e1" }} />}
+                    {isCompleted ? <CheckCircle style={{ width: 15, height: 15 }} /> : <Circle style={{ width: 15, height: 15 }} />}
                 </button>
 
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                        <span style={{ fontSize: "14px", fontWeight: "700", color: isCompleted ? "#94a3b8" : "#0f172a", textDecoration: isCompleted ? "line-through" : "none" }}>
-                            {task.title}
-                        </span>
-                        <TypeBadge taskType={task.taskType} />
-                        <PriorityBadge priority={task.priority} />
-                        {task.assignToAll && (
-                            <span style={{ padding: "2px 8px", borderRadius: "5px", fontSize: "10px", fontWeight: "700", background: "#f5f3ff", color: "#7c3aed" }}>All Members</span>
-                        )}
-                        {task.isDaily && (
-                            <span style={{ padding: "2px 8px", borderRadius: "5px", fontSize: "10px", fontWeight: "700", background: "#eff6ff", color: "#2563eb" }}>Daily</span>
-                        )}
-                        {isOverdue && (
-                            <span style={{ padding: "2px 8px", borderRadius: "5px", fontSize: "10px", fontWeight: "700", background: "#fee2e2", color: "#991b1b" }}>⚠ Overdue</span>
-                        )}
-                    </div>
-                    <div style={{ display: "flex", gap: "10px", marginTop: "4px", alignItems: "center", flexWrap: "wrap" }}>
-                        {task.assignedTo && (
-                            <span style={{ fontSize: "12px", color: "#64748b" }}>→ {task.assignedTo.name}</span>
-                        )}
-                        {task.dueDate && (
-                            <span style={{ fontSize: "11px", color: isOverdue ? "#dc2626" : "#94a3b8", display: "flex", alignItems: "center", gap: "3px" }}>
-                                <Calendar style={{ width: "10px", height: "10px" }} />
-                                {new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                            </span>
-                        )}
-                    </div>
-                </div>
+                {/* Type icon */}
+                <span style={{ width: 18, height: 18, borderRadius: 4, background: meta.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Icon style={{ width: 10, height: 10, color: meta.color }} />
+                </span>
 
-                {/* Progress indicators */}
-                <div style={{ display: "flex", gap: "12px", alignItems: "center", flexShrink: 0 }}>
+                {/* Title */}
+                <span style={{
+                    flex: 1, minWidth: 0, fontSize: 13, fontWeight: 400,
+                    color: isCompleted ? "var(--color-text-tertiary)" : "var(--color-text-primary)",
+                    textDecoration: isCompleted ? "line-through" : "none",
+                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                }}>
+                    {task.title}
+                </span>
+
+                {/* Right metadata — always visible */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    {isOverdue && <span style={{ fontSize: 10, fontWeight: 500, color: "#ef4444", background: "#fef2f2", padding: "1px 6px", borderRadius: 4 }}>overdue</span>}
+                    {task.assignToAll && <span style={{ fontSize: 10, color: "#7c3aed", background: "#f5f3ff", padding: "1px 6px", borderRadius: 4, fontWeight: 500 }}>all</span>}
+                    {task.isDaily && <span style={{ fontSize: 10, color: "#2563eb", background: "#eff6ff", padding: "1px 6px", borderRadius: 4, fontWeight: 500 }}>daily</span>}
+                    {task.assignedTo && <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>{task.assignedTo.name}</span>}
                     {pct !== null && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: "80px" }}>
-                            <ProgressBar pct={pct} color={meta.color} />
-                            <span style={{ fontSize: "12px", fontWeight: "700", color: pct >= 100 ? "#22c55e" : "#0f172a", whiteSpace: "nowrap" }}>
-                                {pct}%
-                            </span>
-                        </div>
+                        <span style={{ fontSize: 11, color: pct >= 100 ? "#22c55e" : "var(--color-text-tertiary)", fontWeight: pct >= 100 ? 500 : 400, minWidth: 32, textAlign: "right" }}>{pct}%</span>
                     )}
-                    {checklistPct !== null && (
-                        <span style={{ fontSize: "12px", color: "#64748b", whiteSpace: "nowrap" }}>
-                            {doneItems}/{checklist.length} ✓
+                    {checklist.length > 0 && pct === null && (
+                        <span style={{ fontSize: 11, color: "var(--color-text-tertiary)" }}>{doneItems}/{checklist.length}</span>
+                    )}
+                    {task.dueDate && (
+                        <span style={{ fontSize: 11, color: isOverdue ? "#ef4444" : "var(--color-text-tertiary)" }}>
+                            {new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                         </span>
                     )}
-                    <StatusBadge status={task.status} />
-                </div>
+                    {/* Priority dot */}
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: priorityColor, flexShrink: 0 }} />
 
-                {/* Actions */}
-                <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
-                    <button onClick={() => setExpanded(v => !v)} style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: "7px", cursor: "pointer", padding: "5px 8px", color: "#64748b", display: "flex", alignItems: "center" }}>
-                        {expanded ? <ChevronUp style={{ width: "14px", height: "14px" }} /> : <ChevronDown style={{ width: "14px", height: "14px" }} />}
-                    </button>
-                    <button
-                        onClick={() => onDelete(task.id)}
-                        style={{ background: "none", border: "1px solid #fca5a5", borderRadius: "7px", cursor: "pointer", padding: "5px 8px", color: "#ef4444", display: "flex", alignItems: "center" }}
-                        onMouseEnter={e => { e.currentTarget.style.background = "#fee2e2"; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
-                    >
-                        <Trash2 style={{ width: "13px", height: "13px" }} />
-                    </button>
+                    {/* Actions — visible on hover */}
+                    <div style={{ display: "flex", gap: 3, opacity: hovered ? 1 : 0, transition: "opacity .1s" }}>
+                        <button
+                            onClick={() => setExpanded(v => !v)}
+                            style={{ background: "none", border: "0.5px solid var(--color-border-tertiary)", borderRadius: 5, cursor: "pointer", padding: "2px 6px", color: "var(--color-text-tertiary)", display: "flex", alignItems: "center" }}
+                        >
+                            {expanded ? <ChevronUp style={{ width: 11, height: 11 }} /> : <ChevronDown style={{ width: 11, height: 11 }} />}
+                        </button>
+                        <button
+                            onClick={() => onDelete(task.id)}
+                            style={{ background: "none", border: "0.5px solid var(--color-border-tertiary)", borderRadius: 5, cursor: "pointer", padding: "2px 6px", color: "#ef4444", display: "flex", alignItems: "center" }}
+                        >
+                            <Trash2 style={{ width: 11, height: 11 }} />
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* ── Expanded detail ── */}
+            {/* Expanded details */}
             {expanded && (
-                <div style={{ borderTop: "1px solid #f1f5f9", padding: "16px", background: "#fafbfc", display: "flex", flexDirection: "column", gap: "14px" }}>
+                <div style={{ padding: "10px 12px 12px 55px", borderTop: "0.5px solid var(--color-border-tertiary)", background: "var(--color-background-secondary)", display: "flex", flexDirection: "column", gap: 10 }}>
                     {task.description && (
-                        <p style={{ fontSize: "13px", color: "#64748b", margin: 0, lineHeight: "1.6" }}>{task.description}</p>
+                        <p style={{ fontSize: 12, color: "var(--color-text-secondary)", margin: 0, lineHeight: 1.6 }}>{task.description}</p>
                     )}
 
-                    {/* Progress detail for PLAYER_ADDITION / REVENUE_TARGET */}
+                    {/* Progress */}
                     {pct !== null && (
-                        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px 16px" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                                <span style={{ fontSize: "12px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.4px" }}>
-                                    {task.taskType === "REVENUE_TARGET" ? "Revenue Progress" : "Player Addition Progress"}
-                                </span>
-                                <span style={{ fontSize: "13px", fontWeight: "800", color: pct >= 100 ? "#22c55e" : meta.color }}>
-                                    {task.taskType === "REVENUE_TARGET"
-                                        ? `$${(task.currentValue ?? 0).toFixed(2)} / $${task.targetValue}`
-                                        : `${task.currentValue ?? 0} / ${task.targetValue} players`}
-                                </span>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--color-text-tertiary)" }}>
+                                <span>{task.taskType === "REVENUE_TARGET" ? `$${(task.currentValue ?? 0).toFixed(0)} / $${task.targetValue}` : `${task.currentValue ?? 0} / ${task.targetValue}`}</span>
+                                <span style={{ fontWeight: 500, color: pct >= 100 ? "#22c55e" : "var(--color-text-secondary)" }}>{pct}%</span>
                             </div>
-                            <ProgressBar pct={pct} color={meta.color} />
+                            <div style={{ height: 3, background: "var(--color-border-tertiary)", borderRadius: 2, overflow: "hidden" }}>
+                                <div style={{ height: "100%", width: `${pct}%`, background: pct >= 100 ? "#22c55e" : meta.color, borderRadius: 2, transition: "width .3s" }} />
+                            </div>
 
-                            {/* Sub-tasks by member */}
+                            {/* Sub-tasks */}
                             {subTasks.length > 0 && (
-                                <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                                    <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>Member Allocations</div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 4 }}>
                                     {subTasks.map(st => {
                                         const sPct = st.targetValue > 0 ? Math.min(100, Math.round(((st.currentValue ?? 0) / st.targetValue) * 100)) : 0;
                                         return (
-                                            <div key={st.id} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                                <span style={{ fontSize: "12px", fontWeight: "600", color: "#0f172a", minWidth: "120px" }}>
-                                                    {st.assignedTo?.name || "Unassigned"}
-                                                </span>
-                                                <div style={{ flex: 1 }}>
-                                                    <ProgressBar pct={sPct} color={meta.color} />
+                                            <div key={st.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11 }}>
+                                                <span style={{ color: "var(--color-text-secondary)", minWidth: 100, fontWeight: 400 }}>{st.assignedTo?.name || "—"}</span>
+                                                <div style={{ flex: 1, height: 3, background: "var(--color-border-tertiary)", borderRadius: 2, overflow: "hidden" }}>
+                                                    <div style={{ height: "100%", width: `${sPct}%`, background: sPct >= 100 ? "#22c55e" : meta.color, borderRadius: 2 }} />
                                                 </div>
-                                                <span style={{ fontSize: "12px", fontWeight: "700", color: sPct >= 100 ? "#22c55e" : "#0f172a", whiteSpace: "nowrap", minWidth: "80px", textAlign: "right" }}>
-                                                    {task.taskType === "REVENUE_TARGET"
-                                                        ? `$${(st.currentValue ?? 0).toFixed(2)} / $${st.targetValue}`
-                                                        : `${st.currentValue ?? 0} / ${st.targetValue}`}
+                                                <span style={{ color: "var(--color-text-tertiary)", minWidth: 48, textAlign: "right" }}>
+                                                    {task.taskType === "REVENUE_TARGET" ? `$${(st.currentValue ?? 0).toFixed(0)}/$${st.targetValue}` : `${st.currentValue ?? 0}/${st.targetValue}`}
                                                 </span>
-                                                {st.status === "COMPLETED" && <CheckCircle style={{ width: "13px", height: "13px", color: "#22c55e", flexShrink: 0 }} />}
+                                                {st.status === "COMPLETED" && <CheckCircle style={{ width: 11, height: 11, color: "#22c55e", flexShrink: 0 }} />}
                                             </div>
                                         );
                                     })}
                                 </div>
                             )}
 
-                            {/* Admin progress log */}
-                            <div style={{ marginTop: "12px", display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                                <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", width: "100%" }}>Log Progress (Admin)</div>
-                                <select value={logMemberId} onChange={e => setLogMemberId(e.target.value)} style={{ ...SELECT, maxWidth: "160px", fontSize: "12px", padding: "7px 10px" }}>
+                            {/* Progress log input */}
+                            <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}>
+                                <select value={logMemberId} onChange={e => setLogMemberId(e.target.value)} style={{ padding: "4px 8px", border: "0.5px solid var(--color-border-secondary)", borderRadius: 6, fontSize: 11, background: "var(--color-background-primary)", color: "var(--color-text-secondary)", fontFamily: "inherit", outline: "none", maxWidth: 130 }}>
                                     <option value="">Any member</option>
                                     {teamMembers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                                 </select>
-                                <div style={{ position: "relative", flex: 1, maxWidth: "120px" }}>
-                                    <ChevronDown style={{ position: "absolute", right: "8px", top: "50%", transform: "translateY(-50%)", width: "12px", height: "12px", color: "#94a3b8", pointerEvents: "none" }} />
-                                    <input
-                                        type="number" min="0.01" step="any"
-                                        placeholder={task.taskType === "REVENUE_TARGET" ? "$ amount" : "# players"}
-                                        value={logValue}
-                                        onChange={e => setLogValue(e.target.value)}
-                                        style={{ ...INPUT, fontSize: "12px", padding: "7px 10px" }}
-                                    />
-                                </div>
+                                <input
+                                    type="number" min="0.01" step="any" placeholder="Amount…" value={logValue} onChange={e => setLogValue(e.target.value)}
+                                    style={{ width: 90, padding: "4px 8px", border: "0.5px solid var(--color-border-secondary)", borderRadius: 6, fontSize: 11, background: "var(--color-background-primary)", color: "var(--color-text-primary)", fontFamily: "inherit", outline: "none" }}
+                                />
                                 <button
-                                    onClick={handleLogProgress}
-                                    disabled={logging || !logValue}
-                                    style={{ padding: "7px 14px", background: logging ? "#e2e8f0" : meta.color, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "700", fontSize: "12px", cursor: logging || !logValue ? "not-allowed" : "pointer" }}
+                                    onClick={handleLogProgress} disabled={logging || !logValue}
+                                    style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: logValue ? meta.color : "var(--color-background-secondary)", color: logValue ? "#fff" : "var(--color-text-tertiary)", fontSize: 11, cursor: logValue ? "pointer" : "default", fontFamily: "inherit" }}
                                 >
                                     {logging ? "…" : "+ Log"}
                                 </button>
@@ -365,59 +330,33 @@ function AdminTaskRow({ task, onDelete, onStatusChange, teamMembers, onRefresh }
 
                     {/* Checklist */}
                     {checklist.length > 0 && (
-                        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px 16px" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                                <span style={{ fontSize: "12px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.4px" }}>
-                                    Checklist
-                                </span>
-                                <span style={{ fontSize: "12px", fontWeight: "700", color: doneItems === checklist.length ? "#22c55e" : "#64748b" }}>
-                                    {doneItems}/{checklist.length} done
-                                </span>
-                            </div>
-                            <ProgressBar pct={checklistPct} color="#0ea5e9" />
-                            <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "5px" }}>
-                                {checklist.map(item => (
-                                    <div key={item.id} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
-                                        {item.done
-                                            ? <CheckCircle style={{ width: "13px", height: "13px", color: "#22c55e", flexShrink: 0 }} />
-                                            : <Circle style={{ width: "13px", height: "13px", color: "#cbd5e1", flexShrink: 0 }} />}
-                                        <span style={{ color: item.done ? "#94a3b8" : "#0f172a", textDecoration: item.done ? "line-through" : "none", flex: 1 }}>{item.label}</span>
-                                        {item.doneBy && <span style={{ fontSize: "10px", color: "#94a3b8" }}>by {item.doneBy}</span>}
-                                        {item.required && !item.done && <span style={{ color: "#ef4444", fontSize: "10px" }}>*req</span>}
-                                    </div>
-                                ))}
-                            </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                            {checklist.map(item => (
+                                <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                                    {item.done ? <CheckCircle style={{ width: 12, height: 12, color: "#22c55e", flexShrink: 0 }} /> : <Circle style={{ width: 12, height: 12, color: "var(--color-border-secondary)", flexShrink: 0 }} />}
+                                    <span style={{ color: item.done ? "var(--color-text-tertiary)" : "var(--color-text-secondary)", textDecoration: item.done ? "line-through" : "none", flex: 1 }}>{item.label}</span>
+                                    {item.doneBy && <span style={{ fontSize: 10, color: "var(--color-text-tertiary)" }}>{item.doneBy}</span>}
+                                </div>
+                            ))}
                         </div>
                     )}
 
-                    {/* Activity Log */}
+                    {/* Activity log */}
                     {task.progressLogs?.length > 0 && (
-                        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px 16px" }}>
-                            <div style={{ fontSize: "12px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "10px" }}>Activity Log</div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                                {task.progressLogs.slice(0, 8).map((log, i) => (
-                                    <div key={i} style={{ display: "flex", gap: "8px", fontSize: "12px", alignItems: "center" }}>
-                                        <Zap style={{ width: "10px", height: "10px", color: "#8b5cf6", flexShrink: 0 }} />
-                                        <span style={{ fontWeight: "600", color: "#0f172a" }}>{log.user?.name || "Admin"}</span>
-                                        <span style={{ color: "#64748b", flex: 1 }}>{log.action?.replace(/_/g, " ").toLowerCase()}</span>
-                                        {log.value > 0 && (
-                                            <span style={{ fontWeight: "700", color: "#22c55e" }}>
-                                                +{task.taskType === "REVENUE_TARGET" ? `$${log.value}` : log.value}
-                                            </span>
-                                        )}
-                                        <span style={{ color: "#cbd5e1", flexShrink: 0 }}>
-                                            {new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 3, paddingTop: 6, borderTop: "0.5px solid var(--color-border-tertiary)" }}>
+                            {task.progressLogs.slice(0, 5).map((log, i) => (
+                                <div key={i} style={{ display: "flex", gap: 8, fontSize: 11, alignItems: "center", color: "var(--color-text-tertiary)" }}>
+                                    <span style={{ fontWeight: 500, color: "var(--color-text-secondary)" }}>{log.user?.name || "Admin"}</span>
+                                    <span style={{ flex: 1 }}>{log.action?.replace(/_/g, " ").toLowerCase()}</span>
+                                    {log.value > 0 && <span style={{ color: "#22c55e", fontWeight: 500 }}>+{task.taskType === "REVENUE_TARGET" ? `$${log.value}` : log.value}</span>}
+                                    <span>{new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                                </div>
+                            ))}
                         </div>
                     )}
 
                     {task.notes && (
-                        <div style={{ padding: "10px 14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "8px", fontSize: "12px", color: "#92400e" }}>
-                            <span style={{ fontWeight: "700" }}>Admin Note: </span>{task.notes}
-                        </div>
+                        <p style={{ fontSize: 11, color: "var(--color-text-tertiary)", margin: 0, fontStyle: "italic" }}>Note: {task.notes}</p>
                     )}
                 </div>
             )}
@@ -713,41 +652,37 @@ export default function AdminTaskPage() {
                     <p style={{ color: "#94a3b8", fontSize: "13px", margin: 0 }}>Create a new task or adjust your filters.</p>
                 </div>
             ) : (
-                Object.entries(grouped).map(([type, typeTasks]) => {
-                    if (typeTasks.length === 0) return null;
-                    const meta = TASK_TYPES.find(t => t.value === type) || {
-                        value: type,
-                        label: type.replace(/_/g, ' '),
-                        icon: List,
-                        color: '#64748b',
-                        bg: '#f1f5f9',
-                        border: '#cbd5e1',
-                    };
-                    const TIcon = meta.icon;
-                    return (
-                        <div key={type}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
-                                <div style={{ width: "28px", height: "28px", borderRadius: "7px", background: meta.bg, border: `1px solid ${meta.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                    <TIcon style={{ width: "13px", height: "13px", color: meta.color }} />
+                // REPLACE the Object.entries(grouped).map(...) return block's outer div with:
+                <div style={{
+                    border: "0.5px solid var(--color-border-tertiary)",
+                    borderRadius: "var(--border-radius-lg)",
+                    overflow: "hidden",
+                    background: "var(--color-background-primary)",
+                }}>
+                    {Object.entries(grouped).map(([type, typeTasks], sectionIdx) => {
+                        if (!typeTasks.length) return null;
+                        const meta = TASK_TYPES.find(t => t.value === type) || { value: type, label: type.replace(/_/g, ' '), icon: List, color: '#64748b', bg: '#f1f5f9', border: '#cbd5e1' };
+                        const TIcon = meta.icon;
+                        return (
+                            <div key={type}>
+                                {/* Section header */}
+                                <div style={{
+                                    display: "flex", alignItems: "center", gap: 7, padding: "8px 12px",
+                                    background: "var(--color-background-secondary)",
+                                    borderTop: sectionIdx > 0 ? "0.5px solid var(--color-border-tertiary)" : "none",
+                                }}>
+                                    <TIcon style={{ width: 11, height: 11, color: meta.color }} />
+                                    <span style={{ fontSize: 11, fontWeight: 500, color: meta.color }}>{meta.label}</span>
+                                    <span style={{ fontSize: 11, color: "var(--color-text-tertiary)", marginLeft: 2 }}>({typeTasks.length})</span>
                                 </div>
-                                <span style={{ fontSize: "13px", fontWeight: "700" }}>{meta.label}</span>
-                                <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: "600" }}>({typeTasks.length})</span>
-                            </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                {/* Task rows */}
                                 {typeTasks.map(task => (
-                                    <AdminTaskRow
-                                        key={task.id}
-                                        task={task}
-                                        onDelete={handleDelete}
-                                        onStatusChange={handleStatusChange}
-                                        teamMembers={teamMembers}
-                                        onRefresh={loadTasks}
-                                    />
+                                    <AdminTaskRow key={task.id} task={task} onDelete={handleDelete} onStatusChange={handleStatusChange} teamMembers={teamMembers} onRefresh={loadTasks} />
                                 ))}
                             </div>
-                        </div>
-                    );
-                })
+                        );
+                    })}
+                </div>
             )}
 
             {/* ════ CREATE TASK MODAL ════ */}
