@@ -17,7 +17,7 @@ import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { PlayerFollowupCard, BonusFollowupCard } from './FollowupTaskCards';
 import AdminTeamShiftsSection from './AdminTeamShiftsSection.jsx';
 import { useToast } from '../Context/toastContext';
-import TaskListRedesigned from "./TaskListRedesigned.jsx";
+import SmartTaskList from "./SmartTaskList.jsx";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -1118,7 +1118,7 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
 
       {/* ══════════ TAB: TASKS ══════════ */}
       {activeTab === "tasks" && (
-        <TaskListRedesigned
+        <SmartTaskList
           tasks={tasks}
           loading={loading}
           search={search}
