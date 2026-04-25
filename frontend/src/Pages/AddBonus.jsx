@@ -546,17 +546,7 @@ if (shiftLoading) {
                     </div>
                 </div>
 
-                {/* Alerts */}
-                {error && (
-                    <div style={{ padding: "11px 14px", marginBottom: "18px", background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "8px", color: "#991b1b", fontSize: "13px", display: "flex", gap: "8px", alignItems: "center" }}>
-                        <AlertCircle style={{ width: "14px", height: "14px", flexShrink: 0 }} /> {error}
-                    </div>
-                )}
-                {success && (
-                    <div style={{ padding: "11px 14px", marginBottom: "18px", background: "#dcfce7", border: "1px solid #86efac", borderRadius: "8px", color: "#166534", fontSize: "13px", display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                        <CheckCircle style={{ width: "14px", height: "14px", flexShrink: 0, marginTop: "1px" }} /> {success}
-                    </div>
-                )}
+                
 
                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
 
