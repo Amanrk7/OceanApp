@@ -2363,29 +2363,7 @@ export const ShiftsPage = () => {
                 <span>{pendingTasks} pending</span>
               </div>
             </div>
-
-
-            {/* Filter bar — simplified */}
-            <div style={{ padding: '8px 16px', borderBottom: '1px solid #f1f5f9', background: 'var(--color-background-secondary)', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ position: 'relative', flex: '1 1 160px', minWidth: '130px' }}>
-                <Search size={12} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-tertiary)', pointerEvents: 'none' }} />
-                <input
-                  value={taskSearch} onChange={e => setTaskSearch(e.target.value)}
-                  placeholder="Filter tasks…"
-                  style={{ width: '100%', paddingLeft: 28, paddingRight: 10, paddingTop: 6, paddingBottom: 6, border: '0.5px solid var(--color-border-secondary)', borderRadius: 7, fontSize: 12, fontFamily: 'inherit', background: 'var(--color-background-primary)', color: 'var(--color-text-primary)', outline: 'none', boxSizing: 'border-box' }}
-                />
-              </div>
-            </div>
-
-            {/* Task list */}
-
-            <div style={{ padding: '10px 16px 16px' }}>
-              {/* <TaskGroupList
-                tasks={tasks}
-                taskSearch={taskSearch}
-                taskType={taskType}
-                taskStatus={taskStatus}
-              /> */}
+            <div style={{ padding: '10px 16px 16px' }}
               <SmartTaskList tasks={tasks} variant="shifts" pageSize={20} />
             </div>
           </div>
