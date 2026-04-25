@@ -350,7 +350,6 @@ function ValidatedField({ platform, label, value, onChange, placeholder, error, 
     const hasVal = value && value.trim().length > 0;
     const isAt = !['chimeTag', 'cashappTag', 'paypalEmail'].includes(platform);
 
-    // Determine border: field-level error takes priority, then format status
     const borderColor = error ? C.red
         : !hasVal ? C.border
             : status === 'valid' ? '#22c55e'
@@ -401,7 +400,6 @@ function ValidatedField({ platform, label, value, onChange, placeholder, error, 
                     <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', width: '8px', height: '8px', borderRadius: '50%', background: status === 'valid' ? '#22c55e' : C.red }} />
                 )}
             </div>
-            {/* Field-level error takes priority over format hint */}
             {error ? (
                 <FieldError message={error} />
             ) : hasVal && (focused || status === 'invalid') ? (
@@ -459,7 +457,8 @@ function SourcesList({ items, onAdd, onChange, onRemove }) {
 // ═══════════════════════════════════════════════════════════════
 export default function AddNewPlayer({ onIssueCreated }) {
     const { setAddPlayer } = useContext(AddPlayerContext);
-    const { shiftActive } = useContext(ShiftStatusContext);
+    // ── Pull shiftLoading so we don't flash the locked screen while checking ──
+    const { shiftActive, shiftLoading } = useContext(ShiftStatusContext);
     const { add: toast } = useToast();
     const navigate = useNavigate();
 
@@ -481,13 +480,11 @@ export default function AddNewPlayer({ onIssueCreated }) {
 
     const [form, setForm] = useState(EMPTY);
     const [loading, setLoading] = useState(false);
-    // ── NEW: field-level errors ──────────────────────────────────────────────
     const [fieldErrors, setFieldErrors] = useState({});
 
     const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
     const onChange = (e) => {
         set(e.target.name, e.target.value);
-        // Clear error on change so user sees live feedback
         if (fieldErrors[e.target.name]) {
             setFieldErrors(p => ({ ...p, [e.target.name]: '' }));
         }
@@ -501,32 +498,23 @@ export default function AddNewPlayer({ onIssueCreated }) {
 
     const onSocialChange = useCallback((platform, val) => {
         setForm(p => ({ ...p, [platform]: val }));
-        // Clear field error when user starts editing
         setFieldErrors(p => ({ ...p, [platform]: '' }));
     }, []);
 
-    // ── Blur validation for social/payment fields ────────────────────────────
     const onSocialBlur = useCallback((platform, val) => {
-        if (!val || !val.trim()) return; // empty is OK — fields are optional
+        if (!val || !val.trim()) return;
         const status = validateHandle(platform, val);
         if (status === 'invalid') {
             const rule = SOCIAL_RULES[platform];
-            setFieldErrors(p => ({
-                ...p,
-                [platform]: rule?.hint || 'Invalid format',
-            }));
+            setFieldErrors(p => ({ ...p, [platform]: rule?.hint || 'Invalid format' }));
         } else {
             setFieldErrors(p => ({ ...p, [platform]: '' }));
         }
     }, []);
 
-    // ── Blur validation for required text fields ─────────────────────────────
     const onRequiredBlur = useCallback((fieldName, val) => {
         if (!val || !val.trim()) {
-            setFieldErrors(p => ({
-                ...p,
-                [fieldName]: `${FIELD_LABELS[fieldName] || fieldName} is required`,
-            }));
+            setFieldErrors(p => ({ ...p, [fieldName]: `${FIELD_LABELS[fieldName] || fieldName} is required` }));
         } else {
             setFieldErrors(p => ({ ...p, [fieldName]: '' }));
         }
@@ -540,14 +528,12 @@ export default function AddNewPlayer({ onIssueCreated }) {
         backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: '32px',
     };
 
-    // ── Submit ──────────────────────────────────────────────────────────────────
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         const newErrors = {};
         const missingRequired = [];
 
-        // Required field checks
         if (!form.name.trim()) {
             newErrors.name = 'Full name is required';
             missingRequired.push('Full name');
@@ -557,7 +543,6 @@ export default function AddNewPlayer({ onIssueCreated }) {
             missingRequired.push('Username');
         }
 
-        // Social/payment format checks
         const formatErrors = [];
         VALIDATED_FIELDS.forEach(platform => {
             if (form[platform] && form[platform].trim()) {
@@ -572,27 +557,12 @@ export default function AddNewPlayer({ onIssueCreated }) {
 
         if (Object.keys(newErrors).length > 0) {
             setFieldErrors(p => ({ ...p, ...newErrors }));
-
-            // Build a specific, helpful toast message
             if (missingRequired.length > 0 && formatErrors.length > 0) {
-                toast(
-                    `Missing: ${missingRequired.join(', ')}. Fix format for: ${formatErrors.join(', ')}.`,
-                    'error'
-                );
+                toast(`Missing: ${missingRequired.join(', ')}. Fix format for: ${formatErrors.join(', ')}.`, 'error');
             } else if (missingRequired.length > 0) {
-                toast(
-                    missingRequired.length === 1
-                        ? `${missingRequired[0]} is required — please fill it in.`
-                        : `Required fields missing: ${missingRequired.join(' and ')}.`,
-                    'error'
-                );
+                toast(missingRequired.length === 1 ? `${missingRequired[0]} is required — please fill it in.` : `Required fields missing: ${missingRequired.join(' and ')}.`, 'error');
             } else if (formatErrors.length > 0) {
-                toast(
-                    formatErrors.length === 1
-                        ? `${formatErrors[0]} has an invalid format — check the hint below the field.`
-                        : `Fix format errors in: ${formatErrors.join(', ')}.`,
-                    'error'
-                );
+                toast(formatErrors.length === 1 ? `${formatErrors[0]} has an invalid format — check the hint below the field.` : `Fix format errors in: ${formatErrors.join(', ')}.`, 'error');
             }
             return;
         }
@@ -624,7 +594,6 @@ export default function AddNewPlayer({ onIssueCreated }) {
                 goToPlayers();
             }, 1400);
         } catch (err) {
-            // Check for server-side duplicate errors and highlight the right field
             const msg = err.message || '';
             if (msg.toLowerCase().includes('username')) {
                 setFieldErrors(p => ({ ...p, username: 'This username is already taken' }));
@@ -654,6 +623,32 @@ export default function AddNewPlayer({ onIssueCreated }) {
         { key: 'paypalEmail', label: 'PayPal Email', ph: 'email@paypal.com' },
     ];
 
+    // ── While the provider is still fetching shift status, show a neutral skeleton
+    // instead of the locked screen — avoids the false-locked flash on page load.
+    if (shiftLoading) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{
+                    padding: '60px 24px', textAlign: 'center',
+                    background: 'var(--color-background-primary)',
+                    borderRadius: 'var(--border-radius-lg)',
+                    border: '0.5px solid var(--color-border-tertiary)',
+                }}>
+                    <div style={{
+                        width: '32px', height: '32px',
+                        border: '3px solid var(--color-border-tertiary)',
+                        borderTopColor: '#0ea5e9',
+                        borderRadius: '50%',
+                        margin: '0 auto 12px',
+                        animation: 'spin 0.8s linear infinite',
+                    }} />
+                    <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-tertiary)' }}>Checking shift status…</p>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                </div>
+            </div>
+        );
+    }
+
     // ── No active shift ─────────────────────────────────────────────────────────
     if (!shiftActive) {
         return (
@@ -663,7 +658,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
                 </button>
                 <Card style={{ padding: "14px 16px", borderLeft: "3px solid var(--color-border-warning)", background: "var(--color-background-warning)" }}>
                     <p style={{ fontWeight: "500", color: "var(--color-text-warning)", margin: "0 0 2px", fontSize: "13px" }}>Shift required</p>
-                    <p style={{ color: "var(--color-text-warning)", margin: 0, fontSize: "12px" }}>You must have an active shift to grant bonuses and view tasks.</p>
+                    <p style={{ color: "var(--color-text-warning)", margin: 0, fontSize: "12px" }}>You must have an active shift to add players.</p>
                 </Card>
                 <Card style={{ padding: "60px 24px", textAlign: "center" }}>
                     <div style={{ width: "48px", height: "48px", background: "var(--color-background-secondary)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
@@ -729,10 +724,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
                                     onChange={onChange}
                                     onBlur={() => onRequiredBlur('username', form.username)}
                                     placeholder="player_handle"
-                                    style={{
-                                        ...(fieldErrors.username ? ERROR_INPUT : INPUT),
-                                        paddingLeft: '27px'
-                                    }}
+                                    style={{ ...(fieldErrors.username ? ERROR_INPUT : INPUT), paddingLeft: '27px' }}
                                     required
                                 />
                             </div>
