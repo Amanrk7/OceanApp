@@ -2363,9 +2363,9 @@ export const ShiftsPage = () => {
                 <span>{pendingTasks} pending</span>
               </div>
             </div>
-            <div style={{ padding: '10px 16px 16px' }}
-              <SmartTaskList tasks={tasks} variant="shifts" pageSize={20} />
-            </div>
+            <div style={{ padding: '10px 16px 16px' }}>
+  <SmartTaskList tasks={tasks} variant="shifts" pageSize={20} />
+</div>
           </div>
         )}
 
