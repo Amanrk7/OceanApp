@@ -19,6 +19,7 @@ import { ShiftStatusContext } from '../Context/membershiftStatus.jsx';
 import { CurrentUserContext } from '../Context/currentUser.jsx';
 import { api } from '../api';
 import ShiftRatingModal from './ShiftRatingModal.jsx';
+import SmartTaskList from './SmartTaskList.jsx';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 // const fj = async (path, opts = {}) => {
@@ -2528,12 +2529,13 @@ export const ShiftsPage = () => {
             {/* Task list */}
 
             <div style={{ padding: '10px 16px 16px' }}>
-              <TaskGroupList
+              {/* <TaskGroupList
                 tasks={tasks}
                 taskSearch={taskSearch}
                 taskType={taskType}
                 taskStatus={taskStatus}
-              />
+              /> */}
+              <SmartTaskList tasks={tasks} variant="shifts" pageSize={20} />
             </div>
           </div>
         )}
