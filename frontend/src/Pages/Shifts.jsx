@@ -2046,6 +2046,7 @@ ${effortReason || improvements || shift.checkin?.workSummary ? `<h2>Member Feedb
 // TASK TYPE META (mirroring MemberTasksSection)
 // ═══════════════════════════════════════════════════════════════
 
+
 // ═══════════════════════════════════════════════════════════════
 // MAIN ShiftsPage
 // ═══════════════════════════════════════════════════════════════
@@ -2363,45 +2364,6 @@ export const ShiftsPage = () => {
               </div>
             </div>
 
-            {/* Filter bar */}
-            {/* <div style={{ padding: '12px 24px', borderBottom: '1px solid #f1f5f9', background: '#fafafa', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-              {/* Search */}
-            <div style={{ position: 'relative', flex: '1 1 180px', minWidth: '150px' }}>
-              <Search size={13} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
-              <input
-                value={taskSearch}
-                onChange={e => setTaskSearch(e.target.value)}
-                placeholder="Search tasks…"
-                style={{ width: '100%', paddingLeft: '30px', paddingRight: taskSearch ? '30px' : '12px', paddingTop: '7px', paddingBottom: '7px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px', fontFamily: 'inherit', background: '#fff', color: '#0f172a', outline: 'none', boxSizing: 'border-box' }}
-              />
-              {taskSearch && (
-                <button onClick={() => setTaskSearch('')} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#94a3b8', display: 'flex' }}>
-                  <X size={13} />
-                </button>
-              )}
-            </div>
-
-            {/* Status tabs */}
-            <div style={{ display: 'flex', gap: '3px', background: '#f1f5f9', borderRadius: '8px', padding: '3px' }}>
-              {[['ALL', 'All'], ['PENDING', 'Pending'], ['IN_PROGRESS', 'Active']].map(([key, label]) => (
-                <button key={key} onClick={() => setTaskStatus(key)} style={{
-                  padding: '4px 10px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: '700',
-                  cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
-                  background: taskStatus === key ? '#0ea5e9' : 'transparent',
-                  color: taskStatus === key ? '#fff' : '#64748b', transition: 'all .12s',
-                }}>{label}</button>
-              ))}
-            </div>
-
-            {/* Type filter */}
-            <div style={{ position: 'relative' }}>
-              <select value={taskType} onChange={e => setTaskType(e.target.value)} style={{ padding: '7px 28px 7px 10px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', fontSize: '12px', color: '#0f172a', fontFamily: 'inherit', cursor: 'pointer', appearance: 'none', outline: 'none' }}>
-                <option value="ALL">All Types</option>
-                {Object.entries(TASK_TYPE_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
-              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
-            </div>
-            {/* </div> */}
 
             {/* Filter bar — simplified */}
             <div style={{ padding: '8px 16px', borderBottom: '1px solid #f1f5f9', background: 'var(--color-background-secondary)', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
