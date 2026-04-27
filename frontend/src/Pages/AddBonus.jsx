@@ -89,7 +89,8 @@ export default function BonusPage() {
     const { shiftActive, shiftLoading } = useContext(ShiftStatusContext);
     const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
     const navigate = useNavigate();
-    const { toast } = useToast();
+    // const { toast } = useToast();
+    const { add: toast } = useToast();
 
     // ── Player search state ───────────────────────────────────────────────────
     const [player, setPlayer] = useState(null);
