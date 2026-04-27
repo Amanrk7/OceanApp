@@ -817,7 +817,7 @@ function AdminDashboard({ user }) {
       <Sidebar user={user} activePage={page} onNavigate={handleNavigate} onLogout={handleLogout} />
       <main className="ob-main">
         <div className="ob-container">
-          <PendingTransactionsBanner currentPage={page} onNavigate={handleNavigate} />
+          {/* <PendingTransactionsBanner currentPage={page} onNavigate={handleNavigate} /> */}
           <div className="ob-header">
             <h1>
               {page.charAt(0).toUpperCase() + page.slice(1).replace(/([A-Z])/g, ' $1')}
