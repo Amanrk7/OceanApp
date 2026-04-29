@@ -481,9 +481,141 @@ function TaskTypeBadge({ taskType }) {
   return <Badge label={m.label} color={m.color} light={m.light} />;
 }
 
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ImprovedTaskCards.jsx
+// Drop-in replacements for the four task card components + shared pieces.
+// Paste these into MemberTasksSection.jsx, replacing the originals.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Shared helpers (already in MemberTasksSection – skip if already present) ──
+// fmtTime, fmtDate, fmtDue, PRIORITY_COLOR, TYPE_META, INPUT_S, LBL_S
+// Card, Badge, PriorityDot, ProgressBar, StarRating, DonutRing
+// (keep all of those unchanged)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW COMPONENT: ClaimableTaskShell
+// A polished, low-noise wrapper for any task that is "open to claim".
+// Used inside MissingInfoTaskCard only, but can be reused.
+// ─────────────────────────────────────────────────────────────────────────────
+function ClaimableTaskShell({ task, m, onClaim, claiming, children }) {
+  const [peek, setPeek] = useState(false);
+
+  return (
+    <div
+      style={{
+        borderRadius: "var(--border-radius-lg)",
+        border: `1px dashed ${m.color}55`,
+        background: `linear-gradient(135deg, ${m.light} 0%, var(--color-background-primary) 100%)`,
+        overflow: "hidden",
+        transition: "box-shadow .2s",
+        boxShadow: peek ? `0 0 0 2px ${m.color}22` : "none",
+      }}
+      onMouseEnter={() => setPeek(true)}
+      onMouseLeave={() => setPeek(false)}
+    >
+      {/* Top strip — type indicator */}
+      <div
+        style={{
+          height: "3px",
+          background: `linear-gradient(90deg, ${m.color} 0%, ${m.color}44 100%)`,
+        }}
+      />
+
+      <div style={{ padding: "12px 14px", display: "flex", gap: "10px", alignItems: "center" }}>
+        {/* Icon */}
+        <div
+          style={{
+            width: "34px", height: "34px", borderRadius: "10px", flexShrink: 0,
+            background: m.light, border: `1px solid ${m.color}30`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
+          <ClipboardList style={{ width: "14px", height: "14px", color: m.color }} />
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginBottom: "3px" }}>
+            <PriorityDot priority={task.priority} />
+            <span style={{ fontSize: "13px", fontWeight: "500", color: "var(--color-text-primary)" }}>
+              {task.title}
+            </span>
+            <TaskTypeBadge taskType="MISSING_INFO" />
+          </div>
+          {task.description && (
+            <p style={{ margin: 0, fontSize: "11px", color: "var(--color-text-secondary)", lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "280px" }}>
+              {task.description}
+            </p>
+          )}
+        </div>
+
+        {/* "Open" pill + claim button */}
+        <div style={{ display: "flex", alignItems: "center", gap: "7px", flexShrink: 0 }}>
+          <span
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "4px",
+              padding: "3px 9px", borderRadius: "999px", fontSize: "10px", fontWeight: "600",
+              background: `${m.color}15`, color: m.color,
+              border: `1px solid ${m.color}30`, letterSpacing: "0.2px",
+            }}
+          >
+            <span
+              style={{
+                width: "5px", height: "5px", borderRadius: "50%",
+                background: m.color,
+                animation: "taskPulse 2s ease-in-out infinite",
+              }}
+            />
+            Open
+          </span>
+          <button
+            onClick={onClaim}
+            disabled={claiming}
+            style={{
+              display: "flex", alignItems: "center", gap: "5px",
+              padding: "6px 13px", borderRadius: "8px", border: "none",
+              background: claiming ? "var(--color-background-secondary)" : m.color,
+              color: claiming ? "var(--color-text-tertiary)" : "#fff",
+              fontWeight: "600", fontSize: "12px", cursor: claiming ? "not-allowed" : "pointer",
+              fontFamily: "inherit", transition: "opacity .15s, transform .1s",
+              transform: peek && !claiming ? "scale(1.02)" : "scale(1)",
+            }}
+          >
+            {claiming
+              ? <><RefreshCw style={{ width: "10px", height: "10px" }} /> Claiming…</>
+              : <><UserCheck style={{ width: "10px", height: "10px" }} /> Claim</>}
+          </button>
+        </div>
+      </div>
+
+      {/* Expandable preview — shows checklist fields without being intrusive */}
+      {children && (
+        <div style={{ padding: "0 14px 12px" }}>
+          {children}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes taskPulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(0.8); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REPLACEMENT: MissingInfoTaskCard
+// • Unclaimed → elegant ClaimableTaskShell (collapsed, inviting)
+// • Claimed by me → expanded form (unchanged logic, cleaner layout)
+// • Claimed by other → subtle "locked" state
+// • Done → success state with undo
+// ─────────────────────────────────────────────────────────────────────────────
 function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
   const toast = useToast();
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [undoing, setUndoing] = useState(false);
@@ -492,8 +624,14 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
 
   const myId = extractUserId(currentUser);
   const playerMeta = useMemo(() => { try { return JSON.parse(task.notes || "{}"); } catch { return {}; } }, [task.notes]);
-  const missingFields = useMemo(() => (task.checklistItems || []).filter(i => !i.done).map(i => i.fieldKey || i.label?.toLowerCase().replace(/ /g, "_")), [task.checklistItems]);
-  const doneFields = useMemo(() => (task.checklistItems || []).filter(i => i.done).map(i => i.fieldKey || i.label?.toLowerCase().replace(/ /g, "_")), [task.checklistItems]);
+  const missingFields = useMemo(() =>
+    (task.checklistItems || []).filter(i => !i.done).map(i => i.fieldKey || i.label?.toLowerCase().replace(/ /g, "_")),
+    [task.checklistItems]
+  );
+  const doneFields = useMemo(() =>
+    (task.checklistItems || []).filter(i => i.done).map(i => i.fieldKey || i.label?.toLowerCase().replace(/ /g, "_")),
+    [task.checklistItems]
+  );
   const total = (task.checklistItems || []).length;
   const done = doneFields.length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -515,120 +653,232 @@ function MissingInfoTaskCard({ task, currentUser, onClaim, onInfoSubmitted }) {
     setClaiming(true);
     try {
       const res = await fetch(`${API}/tasks/${task.id}/claim`, { method: "POST", credentials: "include", headers: getAuthHeaders(true) });
-      const d = await res.json(); if (!res.ok) throw new Error(d.error || "Failed"); onClaim(d.data);
-    } catch (e) { toast(e.message, "error"); } finally { setClaiming(false); }
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "Failed");
+      onClaim(d.data);
+    } catch (e) { toast(e.message, "error"); }
+    finally { setClaiming(false); }
   };
+
   const handleSubmit = async () => {
     if (!Object.values(form).some(v => v?.trim?.())) { toast("Fill at least one field.", "error"); return; }
     setSubmitting(true);
     try {
-      const body = {}; missingFields.forEach(k => { if (form[k]) body[k === "assigned_member" ? "assignedMemberId" : k] = form[k]; });
+      const body = {};
+      missingFields.forEach(k => { if (form[k]) body[k === "assigned_member" ? "assignedMemberId" : k] = form[k]; });
       const res = await fetch(`${API}/tasks/${task.id}/submit-missing-info`, { method: "POST", credentials: "include", headers: getAuthHeaders(true), body: JSON.stringify(body) });
-      const d = await res.json(); if (!res.ok) throw new Error(d.error || "Failed"); toast("Information submitted successfully.", "success"); setForm({}); onInfoSubmitted(d.data);
-    } catch (e) { toast(e.message, "error"); } finally { setSubmitting(false); }
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "Failed");
+      toast("Information submitted successfully.", "success");
+      setForm({});
+      onInfoSubmitted(d.data);
+    } catch (e) { toast(e.message, "error"); }
+    finally { setSubmitting(false); }
   };
+
   const handleUndo = async () => {
     setUndoing(true);
     try {
       const res = await fetch(`${API}/tasks/${task.id}/undo-completion`, { method: "POST", credentials: "include", headers: getAuthHeaders(true) });
-      const d = await res.json(); if (!res.ok) throw new Error(d.error || "Failed"); toast("Task completion undone.", "success"); onInfoSubmitted(d.data);
-    } catch (e) { toast(e.message, "error"); } finally { setUndoing(false); }
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "Failed");
+      toast("Task completion undone.", "success");
+      onInfoSubmitted(d.data);
+    } catch (e) { toast(e.message, "error"); }
+    finally { setUndoing(false); }
   };
 
+  // ── 1. DONE state ───────────────────────────────────────────────────────
+  if (isDone) {
+    return (
+      <Card accent="#22c55e" style={{ opacity: 0.85 }}>
+        <div style={{ padding: "12px 14px", display: "flex", gap: "10px", alignItems: "center" }}>
+          <div style={{ width: "32px", height: "32px", borderRadius: "9px", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <CheckCircle style={{ width: "14px", height: "14px", color: "#22c55e" }} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <span style={{ fontSize: "13px", fontWeight: "500", color: "var(--color-text-primary)", display: "block" }}>{task.title}</span>
+            <span style={{ fontSize: "11px", color: "#22c55e" }}>
+              ✓ All info collected{playerMeta.username ? ` · @${playerMeta.username}` : ""}
+            </span>
+          </div>
+          {(isMe || !task.assignedToId) && (
+            <button
+              onClick={handleUndo}
+              disabled={undoing}
+              style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "5px 10px", borderRadius: "var(--border-radius-md)", border: "0.5px solid var(--color-border-secondary)", background: "none", color: "var(--color-text-secondary)", fontSize: "11px", cursor: "pointer", fontFamily: "inherit" }}
+            >
+              <Undo2 style={{ width: "10px", height: "10px" }} />
+              {undoing ? "…" : "Undo"}
+            </button>
+          )}
+        </div>
+      </Card>
+    );
+  }
+
+  // ── 2. CLAIMED BY SOMEONE ELSE ─────────────────────────────────────────
+  if (isOther) {
+    return (
+      <Card style={{ opacity: 0.65 }}>
+        <div style={{ padding: "11px 14px", display: "flex", gap: "9px", alignItems: "center" }}>
+          <Lock style={{ width: "13px", height: "13px", color: "var(--color-text-tertiary)", flexShrink: 0 }} />
+          <span style={{ fontSize: "13px", color: "var(--color-text-primary)", flex: 1 }}>{task.title}</span>
+          <span style={{ fontSize: "11px", color: "var(--color-text-tertiary)", display: "flex", alignItems: "center", gap: "4px" }}>
+            <User style={{ width: "10px", height: "10px" }} />
+            {task.assignedTo?.name || "Someone"} is working on this
+          </span>
+        </div>
+      </Card>
+    );
+  }
+
+  // ── 3. UNCLAIMED — use the new ClaimableTaskShell ─────────────────────
+  if (!task.assignedToId) {
+    return (
+      <ClaimableTaskShell task={task} m={m} onClaim={handleClaim} claiming={claiming}>
+        {/* Optional: show a compact field preview so members know what's needed */}
+        {missingFields.length > 0 && (
+          <div style={{ display: "flex", gap: "5px", flexWrap: "wrap", marginTop: "2px" }}>
+            <span style={{ fontSize: "10px", color: "var(--color-text-tertiary)" }}>Needs:</span>
+            {missingFields.slice(0, 4).map(k => (
+              <span key={k} style={{ fontSize: "10px", padding: "1px 7px", borderRadius: "999px", background: `${m.color}12`, color: m.color, border: `1px solid ${m.color}25` }}>
+                {MISSING_FIELD_META[k]?.label || k}
+              </span>
+            ))}
+            {missingFields.length > 4 && (
+              <span style={{ fontSize: "10px", color: "var(--color-text-tertiary)" }}>+{missingFields.length - 4} more</span>
+            )}
+          </div>
+        )}
+      </ClaimableTaskShell>
+    );
+  }
+
+  // ── 4. CLAIMED BY ME — full form, clean layout ─────────────────────────
   return (
-    <Card accent={isDone ? "#22c55e" : m.color} style={{ overflow: "hidden", opacity: isDone ? 0.85 : 1 }}>
+    <Card accent={m.color} style={{ overflow: "hidden" }}>
+      {/* Header */}
       <div style={{ padding: "12px 14px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
-        <div style={{ width: "32px", height: "32px", borderRadius: "9px", flexShrink: 0, background: isDone ? "#f0fdf4" : m.light, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <ClipboardList style={{ width: "14px", height: "14px", color: isDone ? "#22c55e" : m.color }} />
+        <div style={{ width: "32px", height: "32px", borderRadius: "9px", flexShrink: 0, background: m.light, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <ClipboardList style={{ width: "14px", height: "14px", color: m.color }} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap", marginBottom: "5px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap", marginBottom: "4px" }}>
             <PriorityDot priority={task.priority} />
             <span style={{ fontSize: "13px", fontWeight: "500", color: "var(--color-text-primary)" }}>{task.title}</span>
             <TaskTypeBadge taskType="MISSING_INFO" />
+            <span style={{ fontSize: "10px", padding: "1px 7px", borderRadius: "999px", background: "#fff3e0", color: "#f97316", border: "1px solid #fed7aa", fontWeight: "600" }}>
+              <Lock style={{ width: "8px", height: "8px", display: "inline", marginRight: "2px" }} />
+              Yours
+            </span>
           </div>
+          {/* Progress */}
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            <div style={{ flex: 1, maxWidth: "90px" }}><ProgressBar pct={pct} color={m.color} /></div>
-            <span style={{ fontSize: "11px", color: isDone ? "#22c55e" : "var(--color-text-tertiary)" }}>{done}/{total}</span>
-            {!isDone && !isOther && (
-              <span style={{ fontSize: "10px", color: isMe ? "#ea580c" : m.color, fontWeight: "500", display: "flex", alignItems: "center", gap: "2px" }}>
-                {isMe ? <><Lock style={{ width: "9px", height: "9px" }} /> You</> : <><Unlock style={{ width: "9px", height: "9px" }} /> Open</>}
-              </span>
-            )}
+            <div style={{ flex: 1, maxWidth: "100px" }}><ProgressBar pct={pct} color={m.color} /></div>
+            <span style={{ fontSize: "11px", color: "var(--color-text-tertiary)" }}>{done}/{total} fields</span>
           </div>
         </div>
-        {!isOther && !isDone && (
-          <button onClick={() => setExpanded(v => !v)} style={{ background: "none", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "7px", cursor: "pointer", padding: "4px", color: "var(--color-text-tertiary)", display: "flex" }}>
-            {expanded ? <ChevronUp style={{ width: "12px", height: "12px" }} /> : <ChevronDown style={{ width: "12px", height: "12px" }} />}
-          </button>
-        )}
+        <button
+          onClick={() => setExpanded(v => !v)}
+          style={{ background: "none", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "7px", cursor: "pointer", padding: "4px", color: "var(--color-text-tertiary)", display: "flex" }}
+        >
+          {expanded ? <ChevronUp style={{ width: "12px", height: "12px" }} /> : <ChevronDown style={{ width: "12px", height: "12px" }} />}
+        </button>
       </div>
 
-      {expanded && !isDone && !isOther && (
-        <div style={{ padding: "0 14px 13px", display: "flex", flexDirection: "column", gap: "9px" }}>
-          {task.description && <p style={{ fontSize: "12px", color: "var(--color-text-secondary)", margin: 0, lineHeight: 1.5 }}>{task.description}</p>}
-          {!task.assignedToId && (
-            <button onClick={handleClaim} disabled={claiming} style={{ padding: "8px", borderRadius: "var(--border-radius-md)", border: "none", background: claiming ? "var(--color-background-secondary)" : m.color, color: claiming ? "var(--color-text-tertiary)" : "#fff", fontWeight: "500", fontSize: "12px", cursor: claiming ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", fontFamily: "inherit" }}>
-              {claiming ? <><RefreshCw style={{ width: "11px", height: "11px" }} />Claiming…</> : <><UserCheck style={{ width: "11px", height: "11px" }} />Claim Task</>}
-            </button>
+      {/* Form fields */}
+      {expanded && (
+        <div style={{ padding: "0 14px 14px", display: "flex", flexDirection: "column", gap: "10px", borderTop: "0.5px solid var(--color-border-tertiary)" }}>
+          {task.description && (
+            <p style={{ fontSize: "12px", color: "var(--color-text-secondary)", margin: "10px 0 0", lineHeight: 1.5 }}>{task.description}</p>
           )}
-          {isMe && missingFields.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {missingFields.map(k => {
-                const fm = MISSING_FIELD_META[k]; if (!fm) return null;
-                return k === "assigned_member" ? (
-                  <div key={k}><label style={LBL_S}>{fm.label}</label>
-                    <select value={form[k] || ""} onChange={set(k)} style={INPUT_S}>
-                      <option value="">{fm.placeholder}</option>
-                      {teamMembers.map(tm => <option key={tm.id} value={tm.id}>{tm.name} ({tm.role})</option>)}
-                    </select></div>
-                ) : (
-                  <div key={k}><label style={LBL_S}>{fm.label}</label>
-                    <input type={fm.type} value={form[k] || ""} onChange={set(k)} placeholder={fm.placeholder} style={INPUT_S} /></div>
-                );
-              })}
-              {success && <span style={{ fontSize: "11px", color: "#22c55e" }}>✓ Submitted!</span>}
-              <button onClick={handleSubmit} disabled={submitting || success} style={{ padding: "8px", borderRadius: "var(--border-radius-md)", border: "none", background: submitting || success ? "var(--color-background-secondary)" : m.color, color: submitting || success ? "var(--color-text-tertiary)" : "#fff", fontWeight: "500", fontSize: "12px", cursor: submitting || success ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
-                {submitting ? <><RefreshCw style={{ width: "11px", height: "11px" }} />Submitting…</> : <><Check style={{ width: "11px", height: "11px" }} />Submit</>}
-              </button>
+
+          {/* Already-done fields */}
+          {doneFields.length > 0 && (
+            <div style={{ display: "flex", gap: "5px", flexWrap: "wrap", paddingTop: "6px" }}>
+              {doneFields.map(k => (
+                <span key={k} style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "999px", background: "#f0fdf4", color: "#22c55e", border: "1px solid #bbf7d0", display: "flex", alignItems: "center", gap: "3px" }}>
+                  <Check style={{ width: "8px", height: "8px" }} />
+                  {MISSING_FIELD_META[k]?.label || k}
+                </span>
+              ))}
             </div>
           )}
-          {error && <span style={{ fontSize: "11px", color: "#ef4444" }}>{error}</span>}
-        </div>
-      )}
 
-      {isDone && (
-        <div style={{ padding: "0 14px 12px", display: "flex", flexDirection: "column", gap: "6px" }}>
-          <span style={{ fontSize: "12px", color: "#22c55e" }}>✓ All info collected for @{playerMeta.username}</span>
-          {(isMe || !task.assignedToId) && (
-            <button onClick={handleUndo} disabled={undoing} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "5px 10px", borderRadius: "var(--border-radius-md)", border: "0.5px solid var(--color-border-secondary)", background: "none", color: "var(--color-text-secondary)", fontSize: "11px", cursor: "pointer", fontFamily: "inherit", width: "fit-content" }}>
-              <Undo2 style={{ width: "10px", height: "10px" }} />Undo
-            </button>
-          )}
-          {error && <span style={{ fontSize: "11px", color: "#ef4444" }}>{error}</span>}
-        </div>
-      )}
-      {isOther && !isDone && (
-        <div style={{ padding: "0 14px 12px" }}>
-          <span style={{ fontSize: "11px", color: "var(--color-text-tertiary)", display: "flex", alignItems: "center", gap: "4px" }}>
-            <Lock style={{ width: "10px", height: "10px" }} />{task.assignedTo?.name} is working on this
-          </span>
+          {/* Missing fields form */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "2px" }}>
+            {missingFields.map(k => {
+              const fm = MISSING_FIELD_META[k];
+              if (!fm) return null;
+              return k === "assigned_member" ? (
+                <div key={k}>
+                  <label style={LBL_S}>{fm.label}</label>
+                  <select value={form[k] || ""} onChange={set(k)} style={INPUT_S}>
+                    <option value="">{fm.placeholder}</option>
+                    {teamMembers.map(tm => <option key={tm.id} value={tm.id}>{tm.name} ({tm.role})</option>)}
+                  </select>
+                </div>
+              ) : (
+                <div key={k}>
+                  <label style={LBL_S}>{fm.label}</label>
+                  <input type={fm.type} value={form[k] || ""} onChange={set(k)} placeholder={fm.placeholder} style={INPUT_S} />
+                </div>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            style={{
+              padding: "9px", borderRadius: "var(--border-radius-md)", border: "none",
+              background: submitting ? "var(--color-background-secondary)" : m.color,
+              color: submitting ? "var(--color-text-tertiary)" : "#fff",
+              fontWeight: "600", fontSize: "12px",
+              cursor: submitting ? "not-allowed" : "pointer",
+              fontFamily: "inherit",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+            }}
+          >
+            {submitting
+              ? <><RefreshCw style={{ width: "11px", height: "11px" }} />Submitting…</>
+              : <><Check style={{ width: "11px", height: "11px" }} />Submit Info</>}
+          </button>
         </div>
       )}
     </Card>
   );
 }
 
-function DailyChecklistCard({ task, onChecklistToggle }) {
-  const [expanded, setExpanded] = useState(true); const [toggling, setToggling] = useState(null);
-  const cl = task.checklistItems || []; const done = cl.filter(i => i.done).length;
+// ─────────────────────────────────────────────────────────────────────────────
+// REPLACEMENT: DailyChecklistCard
+// Adds: notes display, metadata row, completion % legend, hover states
+// ─────────────────────────────────────────────────────────────────────────────
+function DailyChecklistCard({ task, onChecklistToggle, currentUserId }) {
+  const [expanded, setExpanded] = useState(true);
+  const [toggling, setToggling] = useState(null);
+
+  const cl = task.checklistItems || [];
+  const done = cl.filter(i => i.done).length;
+  const required = cl.filter(i => i.required);
+  const requiredDone = required.filter(i => i.done).length;
   const pct = cl.length > 0 ? Math.round((done / cl.length) * 100) : 0;
   const allDone = done === cl.length && cl.length > 0;
+  const allRequiredDone = requiredDone === required.length;
   const m = TYPE_META.DAILY_CHECKLIST;
-  async function toggle(item) { setToggling(item.id); await onChecklistToggle(task.id, item.id, !item.done); setToggling(null); }
+
+  async function toggle(item) {
+    setToggling(item.id);
+    await onChecklistToggle(task.id, item.id, !item.done);
+    setToggling(null);
+  }
+
+  const due = fmtDue(task.dueDate);
 
   return (
     <Card accent={allDone ? "#22c55e" : m.color}>
+      {/* Header */}
       <div style={{ padding: "12px 14px", display: "flex", gap: "10px", alignItems: "center" }}>
         <DonutRing pct={pct} size={44} stroke={5} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -638,76 +888,86 @@ function DailyChecklistCard({ task, onChecklistToggle }) {
             <TaskTypeBadge taskType="DAILY_CHECKLIST" />
             {task.isDaily && <Badge label="Daily" color="#2563eb" light="#eff6ff" />}
           </div>
-          <span style={{ fontSize: "11px", color: allDone ? "#22c55e" : "var(--color-text-tertiary)" }}>{done}/{cl.length} complete</span>
+          {/* Status line */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "11px", color: allDone ? "#22c55e" : "var(--color-text-tertiary)" }}>
+              {done}/{cl.length} complete
+            </span>
+            {required.length > 0 && !allDone && (
+              <span style={{ fontSize: "10px", padding: "1px 6px", borderRadius: "4px", background: allRequiredDone ? "#f0fdf4" : "#fef2f2", color: allRequiredDone ? "#22c55e" : "#ef4444", fontWeight: "500" }}>
+                {requiredDone}/{required.length} required
+              </span>
+            )}
+            {due && (
+              <span style={{ fontSize: "10px", color: due.isOverdue ? "#ef4444" : "var(--color-text-tertiary)" }}>
+                · {due.label}
+              </span>
+            )}
+          </div>
         </div>
-        <button onClick={() => setExpanded(v => !v)} style={{ background: "none", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "7px", cursor: "pointer", padding: "4px", color: "var(--color-text-tertiary)", display: "flex" }}>
+        <button
+          onClick={() => setExpanded(v => !v)}
+          style={{ background: "none", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "7px", cursor: "pointer", padding: "4px", color: "var(--color-text-tertiary)", display: "flex" }}
+        >
           {expanded ? <ChevronUp style={{ width: "12px", height: "12px" }} /> : <ChevronDown style={{ width: "12px", height: "12px" }} />}
         </button>
       </div>
 
+      {/* Checklist items */}
       {expanded && (
         <div style={{ padding: "0 14px 13px", display: "flex", flexDirection: "column", gap: "4px" }}>
-          {cl.map(item => (
-            <div key={item.id} onClick={() => !toggling && toggle(item)} style={{
-              display: "flex", alignItems: "center", gap: "9px", cursor: "pointer",
-              padding: "8px 10px", borderRadius: "var(--border-radius-md)",
-              background: item.done ? "var(--color-background-success)" : "var(--color-background-secondary)",
-              border: `0.5px solid ${item.done ? "var(--color-border-success)" : "var(--color-border-tertiary)"}`,
-            }}>
-              <div style={{ width: "17px", height: "17px", borderRadius: "5px", border: `1.5px solid ${item.done ? "#22c55e" : "var(--color-border-secondary)"}`, background: item.done ? "#22c55e" : "var(--color-background-primary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                {item.done && <Check style={{ width: "9px", height: "9px", color: "#fff" }} />}
-                {toggling === item.id && <RefreshCw style={{ width: "8px", height: "8px", color: "var(--color-text-tertiary)" }} />}
+          {/* Group: pending first, done at bottom */}
+          {[...cl].sort((a, b) => Number(a.done) - Number(b.done)).map(item => {
+            const isToggling = toggling === item.id;
+            return (
+              <div
+                key={item.id}
+                onClick={() => !toggling && toggle(item)}
+                style={{
+                  display: "flex", alignItems: "center", gap: "9px", cursor: "pointer",
+                  padding: "8px 10px", borderRadius: "var(--border-radius-md)",
+                  background: item.done ? "var(--color-background-success)" : "var(--color-background-secondary)",
+                  border: `0.5px solid ${item.done ? "var(--color-border-success)" : "var(--color-border-tertiary)"}`,
+                  transition: "all .12s",
+                  opacity: isToggling ? 0.6 : 1,
+                }}
+              >
+                <div
+                  style={{
+                    width: "17px", height: "17px", borderRadius: "5px", flexShrink: 0,
+                    border: `1.5px solid ${item.done ? "#22c55e" : "var(--color-border-secondary)"}`,
+                    background: item.done ? "#22c55e" : "var(--color-background-primary)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "all .12s",
+                  }}
+                >
+                  {item.done && !isToggling && <Check style={{ width: "9px", height: "9px", color: "#fff" }} />}
+                  {isToggling && <RefreshCw style={{ width: "8px", height: "8px", color: "var(--color-text-tertiary)" }} />}
+                </div>
+                <span
+                  style={{
+                    flex: 1, fontSize: "12px",
+                    color: item.done ? "var(--color-text-tertiary)" : "var(--color-text-primary)",
+                    textDecoration: item.done ? "line-through" : "none",
+                  }}
+                >
+                  {item.label}
+                </span>
+                {item.required && !item.done && (
+                  <span style={{ fontSize: "10px", color: "#ef4444", fontWeight: "600" }}>*req</span>
+                )}
+                {item.done && item.doneBy && (
+                  <span style={{ fontSize: "10px", color: "var(--color-text-tertiary)" }}>{item.doneBy}</span>
+                )}
               </div>
-              <span style={{ flex: 1, fontSize: "12px", color: item.done ? "var(--color-text-tertiary)" : "var(--color-text-primary)", textDecoration: item.done ? "line-through" : "none" }}>{item.label}</span>
-              {item.required && !item.done && <span style={{ fontSize: "10px", color: "#ef4444" }}>*</span>}
-            </div>
-          ))}
-        </div>
-      )}
-    </Card>
-  );
-}
+            );
+          })}
 
-function ProgressTaskCard({ task, currentUserId, onProgressLog, taskType }) {
-  const [logVal, setLogVal] = useState(""); const [logging, setLogging] = useState(false);
-  const [ok, setOk] = useState(false); const [expanded, setExpanded] = useState(true);
-  const pct = task.targetValue > 0 ? Math.min(100, Math.round(((task.currentValue ?? 0) / task.targetValue) * 100)) : 0;
-  const m = TYPE_META[taskType] || TYPE_META.STANDARD;
-  const isRevenue = taskType === "REVENUE_TARGET";
-  async function log() {
-    if (!logVal || parseFloat(logVal) <= 0) return; setLogging(true);
-    await onProgressLog(task.id, parseFloat(logVal)); setLogVal(""); setLogging(false); setOk(true);
-    setTimeout(() => setOk(false), 2000);
-  }
-
-  return (
-    <Card accent={pct >= 100 ? "#22c55e" : m.color}>
-      <div style={{ padding: "12px 14px", display: "flex", gap: "10px", alignItems: "center" }}>
-        <DonutRing pct={pct} size={44} stroke={5} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap", marginBottom: "3px" }}>
-            <PriorityDot priority={task.priority} />
-            <span style={{ fontSize: "13px", fontWeight: "500", color: "var(--color-text-primary)" }}>{task.title}</span>
-            <TaskTypeBadge taskType={taskType} />
-          </div>
-          <span style={{ fontSize: "11px", color: pct >= 100 ? "#22c55e" : "var(--color-text-tertiary)" }}>
-            {isRevenue ? `$${(task.currentValue ?? 0).toFixed(0)}` : task.currentValue ?? 0} / {isRevenue ? `$${task.targetValue}` : task.targetValue}
-          </span>
-        </div>
-        <button onClick={() => setExpanded(v => !v)} style={{ background: "none", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "7px", cursor: "pointer", padding: "4px", color: "var(--color-text-tertiary)", display: "flex" }}>
-          {expanded ? <ChevronUp style={{ width: "12px", height: "12px" }} /> : <ChevronDown style={{ width: "12px", height: "12px" }} />}
-        </button>
-      </div>
-
-      {expanded && (
-        <div style={{ padding: "0 14px 13px", display: "flex", flexDirection: "column", gap: "8px" }}>
-          {pct < 100 && (
-            <div style={{ display: "flex", gap: "6px" }}>
-              <input type="number" min={isRevenue ? "0.01" : "1"} step={isRevenue ? "0.01" : "1"} value={logVal} onChange={e => setLogVal(e.target.value)}
-                placeholder={isRevenue ? "Amount…" : "Count…"} style={{ ...INPUT_S, flex: 1 }} onKeyDown={e => e.key === "Enter" && log()} />
-              <button onClick={log} disabled={logging || !logVal} style={{ padding: "8px 13px", background: logging ? "var(--color-background-secondary)" : m.color, color: logging ? "var(--color-text-tertiary)" : "#fff", border: "none", borderRadius: "var(--border-radius-md)", fontWeight: "500", fontSize: "12px", cursor: logging || !logVal ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: "3px" }}>
-                {ok ? "✓" : <Plus style={{ width: "11px", height: "11px" }} />}
-              </button>
+          {/* Notes */}
+          {task.notes && (
+            <div style={{ marginTop: "6px", padding: "8px 10px", background: "var(--color-background-secondary)", borderRadius: "var(--border-radius-md)", borderLeft: `2px solid ${m.color}60` }}>
+              <span style={{ fontSize: "10px", fontWeight: "600", color: "var(--color-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.4px", display: "block", marginBottom: "2px" }}>Note</span>
+              <p style={{ margin: 0, fontSize: "11px", color: "var(--color-text-secondary)", lineHeight: 1.5 }}>{task.notes}</p>
             </div>
           )}
         </div>
@@ -716,54 +976,400 @@ function ProgressTaskCard({ task, currentUserId, onProgressLog, taskType }) {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// REPLACEMENT: ProgressTaskCard (PLAYER_ADDITION + REVENUE_TARGET)
+// Adds: sub-tasks breakdown, progress logs, allocation table, notes
+// ─────────────────────────────────────────────────────────────────────────────
+function ProgressTaskCard({ task, currentUserId, onProgressLog, taskType }) {
+  const [logVal, setLogVal] = useState("");
+  const [logging, setLogging] = useState(false);
+  const [ok, setOk] = useState(false);
+  const [expanded, setExpanded] = useState(true);
+
+  const pct = task.targetValue > 0
+    ? Math.min(100, Math.round(((task.currentValue ?? 0) / task.targetValue) * 100))
+    : 0;
+  const m = TYPE_META[taskType] || TYPE_META.STANDARD;
+  const isRevenue = taskType === "REVENUE_TARGET";
+  const subTasks = task.subTasks || [];
+  const progressLogs = task.progressLogs || [];
+  const due = fmtDue(task.dueDate);
+
+  function fmt(val) {
+    return isRevenue ? `$${(val ?? 0).toFixed(0)}` : String(val ?? 0);
+  }
+
+  async function log() {
+    if (!logVal || parseFloat(logVal) <= 0) return;
+    setLogging(true);
+    await onProgressLog(task.id, parseFloat(logVal));
+    setLogVal("");
+    setLogging(false);
+    setOk(true);
+    setTimeout(() => setOk(false), 2000);
+  }
+
+  return (
+    <Card accent={pct >= 100 ? "#22c55e" : m.color}>
+      {/* Header */}
+      <div style={{ padding: "12px 14px", display: "flex", gap: "10px", alignItems: "center" }}>
+        <DonutRing pct={pct} size={44} stroke={5} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap", marginBottom: "3px" }}>
+            <PriorityDot priority={task.priority} />
+            <span style={{ fontSize: "13px", fontWeight: "500", color: "var(--color-text-primary)" }}>{task.title}</span>
+            <TaskTypeBadge taskType={taskType} />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "11px", color: pct >= 100 ? "#22c55e" : "var(--color-text-tertiary)", fontWeight: pct >= 100 ? "600" : "400" }}>
+              {fmt(task.currentValue)} / {fmt(task.targetValue)}
+            </span>
+            {due && (
+              <span style={{ fontSize: "10px", color: due.isOverdue ? "#ef4444" : "var(--color-text-tertiary)" }}>
+                · {due.label}
+              </span>
+            )}
+            {subTasks.length > 0 && (
+              <span style={{ fontSize: "10px", color: "var(--color-text-tertiary)" }}>
+                · {subTasks.length} members
+              </span>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={() => setExpanded(v => !v)}
+          style={{ background: "none", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "7px", cursor: "pointer", padding: "4px", color: "var(--color-text-tertiary)", display: "flex" }}
+        >
+          {expanded ? <ChevronUp style={{ width: "12px", height: "12px" }} /> : <ChevronDown style={{ width: "12px", height: "12px" }} />}
+        </button>
+      </div>
+
+      {/* Body */}
+      {expanded && (
+        <div style={{ padding: "0 14px 14px", display: "flex", flexDirection: "column", gap: "10px", borderTop: "0.5px solid var(--color-border-tertiary)" }}>
+
+          {/* Wide progress bar */}
+          <div style={{ paddingTop: "10px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--color-text-tertiary)", marginBottom: "5px" }}>
+              <span>Progress</span>
+              <span style={{ fontWeight: "600", color: pct >= 100 ? "#22c55e" : "var(--color-text-secondary)" }}>{pct}%</span>
+            </div>
+            <ProgressBar pct={pct} color={m.color} height={6} />
+          </div>
+
+          {/* Sub-tasks (member allocations) */}
+          {subTasks.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+              <span style={{ ...LBL_S }}>Member Allocations</span>
+              {subTasks.map(st => {
+                const sPct = st.targetValue > 0
+                  ? Math.min(100, Math.round(((st.currentValue ?? 0) / st.targetValue) * 100))
+                  : 0;
+                const isMine = currentUserId && parseInt(st.assignedToId, 10) === currentUserId;
+                return (
+                  <div
+                    key={st.id}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "8px",
+                      padding: "7px 10px", borderRadius: "var(--border-radius-md)",
+                      background: isMine ? `${m.color}08` : "var(--color-background-secondary)",
+                      border: `0.5px solid ${isMine ? m.color + "30" : "var(--color-border-tertiary)"}`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "22px", height: "22px", borderRadius: "50%",
+                        background: isMine ? `${m.color}20` : "var(--color-background-primary)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "9px", fontWeight: "600",
+                        color: isMine ? m.color : "var(--color-text-tertiary)",
+                        border: `0.5px solid ${isMine ? m.color + "40" : "var(--color-border-tertiary)"}`,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {(st.assignedTo?.name || "?")[0]?.toUpperCase()}
+                    </div>
+                    <span style={{ fontSize: "11px", color: isMine ? "var(--color-text-primary)" : "var(--color-text-secondary)", minWidth: "80px", fontWeight: isMine ? "500" : "400" }}>
+                      {st.assignedTo?.name || "—"}
+                      {isMine && <span style={{ fontSize: "9px", color: m.color, marginLeft: "4px" }}>(you)</span>}
+                    </span>
+                    <div style={{ flex: 1 }}>
+                      <ProgressBar pct={sPct} color={sPct >= 100 ? "#22c55e" : m.color} height={3} />
+                    </div>
+                    <span style={{ fontSize: "11px", color: "var(--color-text-tertiary)", minWidth: "64px", textAlign: "right" }}>
+                      {fmt(st.currentValue)}/{fmt(st.targetValue)}
+                    </span>
+                    {st.status === "COMPLETED" && (
+                      <CheckCircle style={{ width: "11px", height: "11px", color: "#22c55e", flexShrink: 0 }} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Log progress input */}
+          {pct < 100 && (
+            <div style={{ display: "flex", gap: "6px" }}>
+              <input
+                type="number"
+                min={isRevenue ? "0.01" : "1"}
+                step={isRevenue ? "0.01" : "1"}
+                value={logVal}
+                onChange={e => setLogVal(e.target.value)}
+                placeholder={isRevenue ? "Add amount…" : "Add count…"}
+                style={{ ...INPUT_S, flex: 1 }}
+                onKeyDown={e => e.key === "Enter" && log()}
+              />
+              <button
+                onClick={log}
+                disabled={logging || !logVal}
+                style={{
+                  padding: "8px 14px", border: "none", borderRadius: "var(--border-radius-md)",
+                  background: ok ? "#22c55e" : (logging || !logVal) ? "var(--color-background-secondary)" : m.color,
+                  color: (logging || !logVal) ? "var(--color-text-tertiary)" : "#fff",
+                  fontWeight: "600", fontSize: "12px",
+                  cursor: (logging || !logVal) ? "not-allowed" : "pointer",
+                  fontFamily: "inherit",
+                  display: "flex", alignItems: "center", gap: "3px",
+                  transition: "background .2s",
+                  minWidth: "60px", justifyContent: "center",
+                }}
+              >
+                {ok ? "✓" : logging ? "…" : <><Plus style={{ width: "11px", height: "11px" }} />Log</>}
+              </button>
+            </div>
+          )}
+
+          {/* Progress logs */}
+          {progressLogs.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+              <span style={{ ...LBL_S, marginBottom: "6px" }}>Recent Activity</span>
+              <div style={{ borderRadius: "var(--border-radius-md)", overflow: "hidden", border: "0.5px solid var(--color-border-tertiary)" }}>
+                {progressLogs.slice(0, 5).map((log, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex", gap: "8px", fontSize: "11px", alignItems: "center",
+                      padding: "7px 10px",
+                      borderBottom: i < Math.min(progressLogs.length, 5) - 1 ? "0.5px solid var(--color-border-tertiary)" : "none",
+                      background: i % 2 === 0 ? "var(--color-background-secondary)" : "var(--color-background-primary)",
+                    }}
+                  >
+                    <div style={{ width: "18px", height: "18px", borderRadius: "50%", background: `${m.color}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "8px", fontWeight: "600", color: m.color, flexShrink: 0 }}>
+                      {(log.user?.name || "A")[0]?.toUpperCase()}
+                    </div>
+                    <span style={{ fontWeight: "500", color: "var(--color-text-secondary)", flex: 1 }}>
+                      {log.user?.name || "Admin"}
+                    </span>
+                    <span style={{ color: "var(--color-text-tertiary)", flex: 2, fontSize: "10px" }}>
+                      {log.action?.replace(/_/g, " ").toLowerCase()}
+                    </span>
+                    {log.value > 0 && (
+                      <span style={{ color: "#22c55e", fontWeight: "600", minWidth: "40px", textAlign: "right" }}>
+                        +{isRevenue ? `$${log.value}` : log.value}
+                      </span>
+                    )}
+                    <span style={{ color: "var(--color-text-tertiary)", fontSize: "10px", minWidth: "40px", textAlign: "right" }}>
+                      {new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Notes */}
+          {task.notes && (
+            <div style={{ padding: "8px 10px", background: "var(--color-background-secondary)", borderRadius: "var(--border-radius-md)", borderLeft: `2px solid ${m.color}60` }}>
+              <span style={{ fontSize: "10px", fontWeight: "600", color: "var(--color-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.4px", display: "block", marginBottom: "2px" }}>Admin Note</span>
+              <p style={{ margin: 0, fontSize: "11px", color: "var(--color-text-secondary)", lineHeight: 1.5, fontStyle: "italic" }}>{task.notes}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REPLACEMENT: StandardTaskCard
+// Adds: progress logs, description, notes, due-date clarity, richer metadata
+// ─────────────────────────────────────────────────────────────────────────────
 function StandardTaskCard({ task, onStatusChange, onChecklistToggle }) {
-  const [expanded, setExpanded] = useState(false); const [toggling, setToggling] = useState(null);
+  const [expanded, setExpanded] = useState(false);
+  const [toggling, setToggling] = useState(null);
+
   const isDone = task.status === "COMPLETED";
   const cl = task.checklistItems || [];
   const done = cl.filter(i => i.done).length;
+  const progressLogs = task.progressLogs || [];
   const due = fmtDue(task.dueDate);
+  const clPct = cl.length > 0 ? Math.round((done / cl.length) * 100) : null;
+  const hasDetail = cl.length > 0 || !!task.description || !!task.notes || progressLogs.length > 0;
 
-  async function toggle(item) { setToggling(item.id); await onChecklistToggle(task.id, item.id, !item.done); setToggling(null); }
+  async function toggle(item) {
+    setToggling(item.id);
+    await onChecklistToggle(task.id, item.id, !item.done);
+    setToggling(null);
+  }
 
   return (
     <Card accent={isDone ? "#22c55e" : PRIORITY_COLOR[task.priority]} style={{ opacity: isDone ? 0.75 : 1 }}>
+      {/* Header row */}
       <div style={{ padding: "11px 14px", display: "flex", gap: "9px", alignItems: "center" }}>
-        <button onClick={() => onStatusChange(task.id, isDone ? "PENDING" : "COMPLETED")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0, display: "flex" }}>
+        {/* Complete toggle */}
+        <button
+          onClick={() => onStatusChange(task.id, isDone ? "PENDING" : "COMPLETED")}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0, display: "flex" }}
+        >
           {isDone
             ? <CheckCircle style={{ width: "17px", height: "17px", color: "#22c55e" }} />
             : <Circle style={{ width: "17px", height: "17px", color: "var(--color-text-tertiary)" }} />}
         </button>
+
         <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Title + badges */}
           <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap" }}>
             <PriorityDot priority={task.priority} />
-            <span style={{ fontSize: "13px", fontWeight: "500", color: isDone ? "var(--color-text-tertiary)" : "var(--color-text-primary)", textDecoration: isDone ? "line-through" : "none" }}>{task.title}</span>
+            <span
+              style={{
+                fontSize: "13px", fontWeight: "500",
+                color: isDone ? "var(--color-text-tertiary)" : "var(--color-text-primary)",
+                textDecoration: isDone ? "line-through" : "none",
+              }}
+            >
+              {task.title}
+            </span>
             <TaskTypeBadge taskType="STANDARD" />
             {due?.isOverdue && !isDone && <Badge label="Overdue" color="#dc2626" light="#fef2f2" />}
           </div>
-          {cl.length > 0 && !isDone && <span style={{ fontSize: "11px", color: "var(--color-text-tertiary)", marginTop: "2px" }}>{done}/{cl.length} items</span>}
+
+          {/* Sub-info row */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "3px" }}>
+            {cl.length > 0 && !isDone && clPct !== null && (
+              <>
+                <div style={{ width: "50px" }}><ProgressBar pct={clPct} color={PRIORITY_COLOR[task.priority] || "#0ea5e9"} height={2} /></div>
+                <span style={{ fontSize: "10px", color: "var(--color-text-tertiary)" }}>{done}/{cl.length}</span>
+              </>
+            )}
+            {due && (
+              <span style={{ fontSize: "10px", color: due.isOverdue ? "#ef4444" : "var(--color-text-tertiary)" }}>
+                {due.isOverdue ? "⚠ " : ""}{due.label}
+              </span>
+            )}
+            {task.assignedTo && !task.assignToAll && (
+              <span style={{ fontSize: "10px", color: "var(--color-text-tertiary)", display: "flex", alignItems: "center", gap: "3px" }}>
+                <User style={{ width: "9px", height: "9px" }} />
+                {task.assignedTo.name}
+              </span>
+            )}
+          </div>
         </div>
-        {due && <span style={{ fontSize: "11px", color: due.isOverdue ? "#dc2626" : "var(--color-text-tertiary)", whiteSpace: "nowrap" }}>{due.label}</span>}
-        {cl.length > 0 && (
-          <button onClick={() => setExpanded(v => !v)} style={{ background: "none", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "6px", cursor: "pointer", padding: "4px", color: "var(--color-text-tertiary)", display: "flex" }}>
+
+        {hasDetail && (
+          <button
+            onClick={() => setExpanded(v => !v)}
+            style={{ background: "none", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "6px", cursor: "pointer", padding: "4px", color: "var(--color-text-tertiary)", display: "flex" }}
+          >
             {expanded ? <ChevronUp style={{ width: "11px", height: "11px" }} /> : <ChevronDown style={{ width: "11px", height: "11px" }} />}
           </button>
         )}
       </div>
 
-      {expanded && cl.length > 0 && (
-        <div style={{ padding: "0 14px 11px", display: "flex", flexDirection: "column", gap: "3px" }}>
-          {cl.map(item => (
-            <div key={item.id} onClick={() => !toggling && toggle(item)} style={{
-              display: "flex", alignItems: "center", gap: "8px", cursor: "pointer",
-              padding: "7px 9px", borderRadius: "var(--border-radius-md)",
-              background: item.done ? "var(--color-background-success)" : "var(--color-background-secondary)",
-            }}>
-              <div style={{ width: "15px", height: "15px", borderRadius: "4px", border: `1.5px solid ${item.done ? "#22c55e" : "var(--color-border-secondary)"}`, background: item.done ? "#22c55e" : "var(--color-background-primary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                {item.done && <Check style={{ width: "8px", height: "8px", color: "#fff" }} />}
-              </div>
-              <span style={{ flex: 1, fontSize: "12px", color: item.done ? "var(--color-text-tertiary)" : "var(--color-text-primary)", textDecoration: item.done ? "line-through" : "none" }}>{item.label}</span>
+      {/* Expanded body */}
+      {expanded && (
+        <div style={{ padding: "0 14px 12px", display: "flex", flexDirection: "column", gap: "10px", borderTop: "0.5px solid var(--color-border-tertiary)" }}>
+
+          {/* Description */}
+          {task.description && (
+            <p style={{ margin: "10px 0 0", fontSize: "12px", color: "var(--color-text-secondary)", lineHeight: 1.6 }}>
+              {task.description}
+            </p>
+          )}
+
+          {/* Checklist */}
+          {cl.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+              {cl.map(item => (
+                <div
+                  key={item.id}
+                  onClick={() => !toggling && toggle(item)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "8px", cursor: "pointer",
+                    padding: "7px 9px", borderRadius: "var(--border-radius-md)",
+                    background: item.done ? "var(--color-background-success)" : "var(--color-background-secondary)",
+                    border: `0.5px solid ${item.done ? "var(--color-border-success)" : "var(--color-border-tertiary)"}`,
+                    transition: "all .1s",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "15px", height: "15px", borderRadius: "4px",
+                      border: `1.5px solid ${item.done ? "#22c55e" : "var(--color-border-secondary)"}`,
+                      background: item.done ? "#22c55e" : "var(--color-background-primary)",
+                      display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                    }}
+                  >
+                    {item.done && <Check style={{ width: "8px", height: "8px", color: "#fff" }} />}
+                    {toggling === item.id && <RefreshCw style={{ width: "7px", height: "7px", color: "var(--color-text-tertiary)" }} />}
+                  </div>
+                  <span
+                    style={{
+                      flex: 1, fontSize: "12px",
+                      color: item.done ? "var(--color-text-tertiary)" : "var(--color-text-primary)",
+                      textDecoration: item.done ? "line-through" : "none",
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                  {item.required && !item.done && (
+                    <span style={{ fontSize: "10px", color: "#ef4444", fontWeight: "600" }}>*</span>
+                  )}
+                  {item.done && item.doneBy && (
+                    <span style={{ fontSize: "10px", color: "var(--color-text-tertiary)" }}>{item.doneBy}</span>
+                  )}
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+
+          {/* Progress logs */}
+          {progressLogs.length > 0 && (
+            <div>
+              <span style={{ ...LBL_S, marginBottom: "6px", display: "block" }}>Activity</span>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                {progressLogs.slice(0, 4).map((log, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex", gap: "7px", fontSize: "11px", alignItems: "center",
+                      padding: "5px 8px", borderRadius: "6px",
+                      background: "var(--color-background-secondary)",
+                    }}
+                  >
+                    <span style={{ fontWeight: "500", color: "var(--color-text-secondary)" }}>
+                      {log.user?.name || "Admin"}
+                    </span>
+                    <span style={{ flex: 1, color: "var(--color-text-tertiary)", fontSize: "10px" }}>
+                      {log.action?.replace(/_/g, " ").toLowerCase()}
+                    </span>
+                    <span style={{ fontSize: "10px", color: "var(--color-text-tertiary)" }}>
+                      {new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Notes */}
+          {task.notes && (
+            <div style={{ padding: "8px 10px", background: "var(--color-background-secondary)", borderRadius: "var(--border-radius-md)", borderLeft: `2px solid ${PRIORITY_COLOR[task.priority] || "#0ea5e9"}60` }}>
+              <span style={{ fontSize: "10px", fontWeight: "600", color: "var(--color-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.4px", display: "block", marginBottom: "2px" }}>Note</span>
+              <p style={{ margin: 0, fontSize: "11px", color: "var(--color-text-secondary)", lineHeight: 1.5, fontStyle: "italic" }}>{task.notes}</p>
+            </div>
+          )}
         </div>
       )}
     </Card>
@@ -977,42 +1583,42 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
 
   // ── Shift guard ────────────────────────────────────────────
   if (shiftLoading) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <div
-        style={{
-          padding: "60px 24px",
-          textAlign: "center",
-          background: "var(--color-background-primary)",
-          borderRadius: "var(--border-radius-lg)",
-          border: "0.5px solid var(--color-border-tertiary)",
-        }}
-      >
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <div
           style={{
-            width: "32px",
-            height: "32px",
-            border: "3px solid var(--color-border-tertiary)",
-            borderTopColor: "#0ea5e9",
-            borderRadius: "50%",
-            margin: "0 auto 12px",
-            animation: "spin 0.8s linear infinite",
-          }}
-        />
-        <p
-          style={{
-            margin: 0,
-            fontSize: "13px",
-            color: "var(--color-text-tertiary)",
+            padding: "60px 24px",
+            textAlign: "center",
+            background: "var(--color-background-primary)",
+            borderRadius: "var(--border-radius-lg)",
+            border: "0.5px solid var(--color-border-tertiary)",
           }}
         >
-          Checking shift status…
-        </p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <div
+            style={{
+              width: "32px",
+              height: "32px",
+              border: "3px solid var(--color-border-tertiary)",
+              borderTopColor: "#0ea5e9",
+              borderRadius: "50%",
+              margin: "0 auto 12px",
+              animation: "spin 0.8s linear infinite",
+            }}
+          />
+          <p
+            style={{
+              margin: 0,
+              fontSize: "13px",
+              color: "var(--color-text-tertiary)",
+            }}
+          >
+            Checking shift status…
+          </p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
   if (!shiftActive) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
