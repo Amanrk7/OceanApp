@@ -273,7 +273,7 @@ function LedgerRow({ tx, undoingId, onUndo }) {
 
     return (
         <tr className="ledger-row" style={{ borderBottom: `1px solid ${T.border}`, opacity: tx.status === "CANCELLED" ? 0.5 : 1 }}>
-            <td style={{ padding: "11px 14px", color: T.accent, fontWeight: "700", fontSize: "12px", whiteSpace: "nowrap", fontFamily: T.fontMono }}>
+            <td style={{ padding: "11px 14px", color: '#0ea5e9', fontWeight: "700", fontSize: "12px", whiteSpace: "nowrap", fontFamily: T.fontMono }}>
                 #{tx.id}
             </td>
             <td style={{ padding: "11px 14px" }}>
@@ -296,7 +296,7 @@ function LedgerRow({ tx, undoingId, onUndo }) {
                     {displayType}
                 </span>
             </td>
-            <td style={{ padding: "11px 14px", fontWeight: "700", fontSize: "13px", color: positive ? T.deposit : T.cashout, whiteSpace: "nowrap", fontFamily: T.fontMono }}>
+            <td style={{ padding: "11px 14px", fontWeight: "700", fontSize: "13px", color: positive ? '#10b981' : T.cashout, whiteSpace: "nowrap", fontFamily: T.fontMono }}>
                 {positive ? "+" : "−"}{fmt(tx.amount)}
             </td>
             <td style={{ padding: "11px 14px", whiteSpace: "nowrap", fontFamily: T.fontMono }}>
@@ -306,7 +306,7 @@ function LedgerRow({ tx, undoingId, onUndo }) {
             </td>
             <td style={{ padding: "11px 14px", whiteSpace: "nowrap" }}>
                 {["Deposit", "deposit"].includes(tx.type)
-                    ? <span style={{ fontWeight: "700", fontSize: "13px", color: T.accent, fontFamily: T.fontMono }}>{fmt((parseFloat(tx.amount) || 0) - (parseFloat(tx.fee) || 0))}</span>
+                    ? <span style={{ fontWeight: "700", fontSize: "13px", color: '#0ea5e9', fontFamily: T.fontMono }}>{fmt((parseFloat(tx.amount) || 0) - (parseFloat(tx.fee) || 0))}</span>
                     : isCashoutRow
                         ? <div style={{ minWidth: "110px" }}>
                             <div style={{ fontSize: "11px", color: T.textTertiary, marginBottom: "4px", fontFamily: T.fontMono }}>{fmt(paidAmount)} / {fmt(totalAmount)}</div>
@@ -976,7 +976,7 @@ function AddTransactionsPage() {
                                 <ChevronDown style={{ position: "absolute", right: "11px", top: "50%", transform: "translateY(-50%)", width: "13px", height: "13px", color: T.textTertiary, pointerEvents: "none" }} />
                             </div>
                             {selWallet && amt > 0 && (
-                                <p style={{ fontSize: "11.5px", marginTop: "5px", fontWeight: "600", color: T.deposit, fontFamily: T.fontMono }}>
+                                <p style={{ fontSize: "11.5px", marginTop: "5px", fontWeight: "600", color: '#10b981', fontFamily: T.fontMono }}>
                                     {isDeposit
                                         ? `${fmt(selWallet.balance)} → ${fmt(selWallet.balance + amt - feeAmt)}`
                                         : `${fmt(selWallet.balance)} → ${fmt(selWallet.balance - amt - feeAmt)}`}
@@ -1065,7 +1065,7 @@ function AddTransactionsPage() {
                                             <SummaryRow label="Deposit amount" value={fmt(amt)} />
                                             <SummaryRow
                                                 label="👤 Player receives" value={fmt(amt)}
-                                                valueColor={T.deposit} bg={T.depositSurface} border={T.depositBorder} accent
+                                                valueColor={'#10b981'} bg={T.depositSurface} border={T.depositBorder} accent
                                             />
                                             <SummaryRow
                                                 label={<span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
@@ -1073,15 +1073,15 @@ function AddTransactionsPage() {
                                                     {feeAmt > 0 && <span style={{ fontWeight: "400", fontSize: "11px", color: T.textTertiary }}>(deposit − fee)</span>}
                                                 </span>}
                                                 value={fmt(amt - feeAmt)}
-                                                valueColor={T.accent} bg={T.accentSurface} border={T.accentBorder} accent
+                                                valueColor={'#0ea5e9'} bg={T.accentSurface} border={T.accentBorder} accent
                                             />
                                             {feeAmt > 0 && <SummaryRow label="Fee" value={fmt(feeAmt)} valueColor={T.warn} />}
-                                            {matchAmt > 0 && <SummaryRow label="Match bonus (50%)" value={`+${fmt(matchAmt)}`} valueColor="#3b82f6" />}
+                                            {matchAmt > 0 && <SummaryRow label="Match bonus (50%)" value={`+${fmt(matchAmt)}`} valueColor="#0ea5e9" />}
                                             {specialAmt > 0 && <SummaryRow label="Special bonus (20%)" value={`+${fmt(specialAmt)}`} valueColor={T.bonus} />}
                                             <div style={{ height: "1px", background: T.border, margin: "4px 0" }} />
                                             <SummaryRow
                                                 label="Total to player's balance" value={fmt(amt + totalBonus)}
-                                                valueColor={T.deposit} bg={T.depositSurface} border={T.depositBorder} accent
+                                                valueColor={'#10b981'} bg={T.depositSurface} border={T.depositBorder} accent
                                             />
                                             {selGame && stockNeeded > 0 && (
                                                 <div style={{ fontSize: "11px", color: T.textTertiary, marginTop: "2px" }}>
