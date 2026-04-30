@@ -177,8 +177,11 @@ export default function Attendance() {
               {loading ? (
                 <tr>
                   <td colSpan={5} style={{ padding: '60px', textAlign: 'center', color: C.grayLt }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    {/* <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                       <div style={{ width: '16px', height: '16px', border: `2px solid ${C.border}`, borderTopColor: activeCfg.color, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                    </div> */}
+                    <div style={{ padding: "40px 0", display: 'inline-flex', alignItems: 'center', gap: '8px', color: "var(--color-text-tertiary)", fontSize: 13 }}>
+                      <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "smartSpin .8s linear infinite" }} />
                       Loading players…
                     </div>
                   </td>
@@ -284,7 +287,7 @@ export default function Attendance() {
       </div>
 
       <style>{`
-                @keyframes spin  { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes smartSpin  { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
             `}</style>
     </div>
