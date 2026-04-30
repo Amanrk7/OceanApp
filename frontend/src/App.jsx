@@ -1268,7 +1268,8 @@ export default function App() {
                   <Routes>
                     <Route path="/" element={
                       user
-                        ? <ShiftStartGate><AdminDashboard user={user} /></ShiftStartGate>
+                        // ? <ShiftStartGate><AdminDashboard user={user} /></ShiftStartGate>
+                      ? <AdminDashboard user={user} />
                         : <LoginPage />
                     } />
                     <Route path="/PlayerDashboard/:playerId" element={
