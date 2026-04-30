@@ -5,6 +5,9 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
+import {
+    RefreshCw
+} from "lucide-react";
 import { fmtTXTime } from '../utils/txTime';
 import EditPlayer from './Editplayer';
 import PendingBonusesCard from './PendingBonusesCard';
@@ -124,17 +127,17 @@ function TxPaymentProgress({ paid, total }) {
 // ).replace(/\/api\/?$/, '');
 
 const BACKEND_BASE = (() => {
-  const raw = (
-    import.meta.env.VITE_API_URL ||
-    import.meta.env.VITE_BACKEND_URL ||
-    import.meta.env.VITE_API_BASE_URL ||
-    'https://oceanappbackend.onrender.com'
-  ).trim();
-  try {
-    return new URL(raw).origin;   // strips /api, /api/, trailing slashes, spaces
-  } catch {
-    return raw.replace(/\/api\/?$/, '');
-  }
+    const raw = (
+        import.meta.env.VITE_API_URL ||
+        import.meta.env.VITE_BACKEND_URL ||
+        import.meta.env.VITE_API_BASE_URL ||
+        'https://oceanappbackend.onrender.com'
+    ).trim();
+    try {
+        return new URL(raw).origin;   // strips /api, /api/, trailing slashes, spaces
+    } catch {
+        return raw.replace(/\/api\/?$/, '');
+    }
 })();
 
 async function fetchPendingMilestones(playerId) {
@@ -805,11 +808,15 @@ export default function PlayerDashboard() {
     }, [loadPlayer]);
 
     if (loading) return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px' }}>
-            <div style={{ textAlign: 'center' }}>
-                <div style={{ width: '40px', height: '40px', border: `4px solid ${C.border}`, borderTopColor: C.sky, borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
-                <p style={{ color: C.gray, fontSize: '14px' }}>Loading player dashboard…</p>
-            </div>
+        // <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px' }}>
+        //     <div style={{ textAlign: 'center' }}>
+        //         <div style={{ width: '40px', height: '40px', border: `4px solid ${C.border}`, borderTopColor: C.sky, borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
+        //         <p style={{ color: C.gray, fontSize: '14px' }}>Loading player dashboard…</p>
+        //     </div>
+        // </div>
+        <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
+            <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "spin .8s linear infinite" }} />
+            Loading player dashboard…
         </div>
     );
 
@@ -1009,82 +1016,7 @@ export default function PlayerDashboard() {
             />
 
             {/* ── ELIGIBLE REFERRAL BONUSES ── */}
-            {/* {(player.referredBy || eligLoading || eligibleBonuses.length > 0) && (
-                <div style={{ ...card({ padding: '20px 24px' }), border: eligibleBonuses.length > 0 ? '1.5px solid #86efac' : `1px solid ${C.border}` }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${eligibleBonuses.length > 0 ? '#d1fae5' : C.border}` }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: eligibleBonuses.length > 0 ? '#16a34a' : C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>🎯 Referral Bonuses</p>
-                            {eligibleBonuses.length > 0 && <span style={{ padding: '1px 8px', background: '#dcfce7', color: '#16a34a', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>{eligibleBonuses.length} pending</span>}
-                            {!eligLoading && eligibleBonuses.length === 0 && player.referredBy && <span style={{ padding: '1px 8px', background: '#f1f5f9', color: C.gray, borderRadius: '10px', fontSize: '11px', fontWeight: '600' }}>none pending</span>}
-                        </div>
-                        <button onClick={() => navigate(`/?page=addBonus`)}
-                            style={{ padding: '6px 14px', background: eligibleBonuses.length > 0 ? '#f0fdf4' : C.bg, border: `1px solid ${eligibleBonuses.length > 0 ? '#86efac' : C.border}`, borderRadius: '8px', color: eligibleBonuses.length > 0 ? '#16a34a' : C.gray, fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
-                            {eligibleBonuses.length > 0 ? 'Grant on Bonus page →' : 'Bonus page →'}
-                        </button>
-                    </div>
 
-                    {player.referredBy && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', padding: '8px 12px', background: '#f8fafc', borderRadius: '8px', border: `1px solid ${C.border}` }}>
-                            <span style={{ fontSize: '13px' }}>👤</span>
-                            <span style={{ fontSize: '12px', color: C.gray }}>Referred by</span>
-                            <span onClick={() => navigate(`/playerDashboard/${player.referredBy.id}`)}
-                                style={{ fontWeight: '700', fontSize: '12px', color: C.sky, cursor: 'pointer', textDecoration: 'underline' }}>
-                                {player.referredBy.name || `ID ${player.referredBy.id}`}
-                            </span>
-                            <span style={{ fontSize: '11px', color: C.grayLt }}>@{player.referredBy.username}</span>
-                        </div>
-                    )}
-
-                    {eligLoading && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 0', color: C.grayLt, fontSize: '13px' }}>
-                            <div style={{ width: '14px', height: '14px', border: `2px solid ${C.border}`, borderTopColor: C.sky, borderRadius: '50%', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
-                            Checking for eligible bonuses…
-                        </div>
-                    )}
-
-                    {!eligLoading && eligibleBonuses.length === 0 && (
-                        <div style={{ padding: '14px 16px', background: '#f8fafc', borderRadius: '10px', border: `1px solid ${C.border}`, textAlign: 'center' }}>
-                            <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: '600', color: C.gray }}>No pending referral bonuses</p>
-                            <p style={{ margin: 0, fontSize: '12px', color: C.grayLt, lineHeight: '1.5' }}>
-                                {player.referredBy ? 'When a deposit with referral eligibility is recorded, bonuses will appear here.' : 'This player was not referred by anyone.'}
-                            </p>
-                        </div>
-                    )}
-
-                    {!eligLoading && eligibleBonuses.length > 0 && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {eligibleBonuses.map(rb => {
-                                const isBside = rb.side === 'referred';
-                                const label = isBside
-                                    ? `${player.name} was referred by ${rb.counterpartName} — eligible for $${rb.bonusAmount.toFixed(2)}`
-                                    : `${player.name} referred ${rb.counterpartName} — eligible for $${rb.bonusAmount.toFixed(2)}`;
-                                const sub = `Based on ${fmt(rb.depositAmount)} deposit · recorded ${new Date(rb.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-                                return (
-                                    <div key={rb.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px', flexWrap: 'wrap', gap: '10px' }}>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontWeight: '700', fontSize: '13px', color: '#166534' }}>{isBside ? '🙋 Player bonus (B)' : '👤 Referrer bonus (A)'} — {label}</div>
-                                            <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '4px' }}>{sub}</div>
-                                            <div style={{ marginTop: '6px' }}>
-                                                <button onClick={() => navigate(`/?page=addBonus`)}
-                                                    style={{ padding: '4px 12px', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '6px', color: '#166634', fontWeight: '700', fontSize: '11px', cursor: 'pointer' }}>
-                                                    Grant from Bonus page →
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                                            <div style={{ fontSize: '22px', fontWeight: '900', color: '#16a34a' }}>+${rb.bonusAmount.toFixed(2)}</div>
-                                            <div style={{ fontSize: '10px', color: '#4ade80', marginTop: '2px' }}>{isBside ? 'for this player' : 'for this player (as referrer)'}</div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            <div style={{ padding: '10px 14px', background: '#bbf7d030', border: '1px solid #d1fae5', borderRadius: '8px', fontSize: '12px', color: '#166634', lineHeight: '1.6' }}>
-                                💡 Go to the <strong>Bonus page</strong>, search for this player, and use the Referral Bonus section to grant each record. A-side and B-side are granted separately.
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )} */}
 
 
             {(bonusesAsReferrer.length > 0 || player.referredBy || (eligLoading && (player.referralsList?.length > 0 || player.referredBy))) && (
@@ -1490,8 +1422,8 @@ export default function PlayerDashboard() {
                                                     borderRadius: '8px', fontSize: '12px', color: '#991b1b',
                                                 }}>
                                                     ⚠ This will cancel <strong>{player.name}'s [B]</strong> referral bonus only.
-<strong>{rb.counterpartName} [A]</strong> (the referrer) will still be able
-to receive their bonus from the Bonus page. This cannot be undone.
+                                                    <strong>{rb.counterpartName} [A]</strong> (the referrer) will still be able
+                                                    to receive their bonus from the Bonus page. This cannot be undone.
                                                 </div>
                                             )}
                                         </div>
