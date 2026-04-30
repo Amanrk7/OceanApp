@@ -399,7 +399,7 @@ export const ExpensesPage = () => {
     // ── Make payment ──────────────────────────────────────────────────────────
     const handleMakePayment = async (e) => {
         e.preventDefault();
-         setSubmitting(true);
+        setSubmitting(true);
         if (!paymentFormData.amount || !paymentFormData.walletId) {
             toast('Please enter an amount and select a payment method.', 'error');
             setSubmitting(false); return;
@@ -445,7 +445,7 @@ export const ExpensesPage = () => {
 
             {/* ── Action Buttons ── */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <button onClick={() => {  setShowPaymentModal(true); }}
+                <button onClick={() => { setShowPaymentModal(true); }}
                     style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '10px 20px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '9px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(22,163,74,.3)' }}
                     onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
                     onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
@@ -538,7 +538,12 @@ export const ExpensesPage = () => {
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Loading…</td></tr>
+                                <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+                                    <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
+                                        <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "spin .8s linear infinite" }} />
+                                        Loading…
+                                    </div>
+                                </td></tr>
                             ) : filteredExpenses.length === 0 ? (
                                 <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>No records found</td></tr>
                             ) : filteredExpenses.map((expense) => {
