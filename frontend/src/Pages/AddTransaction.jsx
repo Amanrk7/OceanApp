@@ -12,7 +12,7 @@ import { api } from "../api";
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const T = {
     // Typography
-    fontMono: "'DM Mono', 'Fira Code', monospace",
+    fontMono: " ",
     fontSans: "'DM Sans', -apple-system, sans-serif",
 
     // Surfaces
