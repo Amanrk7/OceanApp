@@ -1805,8 +1805,9 @@ export default function AdminReportPage() {
 
             {/* Loading skeleton */}
             {loading && !report && (
-                <div style={{ ...CARD, padding: "80px", textAlign: "center", color: "#94a3b8", fontSize: "14px" }}>
-                    <div style={{ width: "26px", height: "26px", borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#0f172a", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+
+                <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
+                    <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "spin .8s linear infinite" }} />
                     Generating report…
                 </div>
             )}
