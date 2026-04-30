@@ -704,9 +704,13 @@ export default function Games() {
         {/* Content */}
         <div style={{ padding: '18px' }}>
           {loading ? (
-            <div style={{ padding: '60px', textAlign: 'center' }}>
-              <div style={{ width: '30px', height: '30px', borderRadius: '50%', border: '3px solid #e2e8f0', borderTopColor: '#0ea5e9', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
-              <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>Loading games…</p>
+            // <div style={{ padding: '60px', textAlign: 'center' }}>
+            //   <div style={{ width: '30px', height: '30px', borderRadius: '50%', border: '3px solid #e2e8f0', borderTopColor: '#0ea5e9', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+            //   <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>Loading games…</p>
+            // </div>
+            <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
+              <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "smartSpin .8s linear infinite" }} />
+              Loading games…
             </div>
           ) : games.length === 0 ? (
             <div style={{ padding: '60px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
@@ -749,7 +753,7 @@ export default function Games() {
       )}
 
       <style>{`
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes smartSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                 ::-webkit-scrollbar { width: 5px; height: 5px; }
                 ::-webkit-scrollbar-track { background: #f8fafc; }
                 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
