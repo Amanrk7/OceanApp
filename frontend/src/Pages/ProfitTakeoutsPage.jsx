@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DollarSign, Plus, Edit2, Trash2, X, AlertCircle, TrendingDown, User, Calendar, CreditCard, RefreshCw, Download } from 'lucide-react';
 import { api } from '../api';
+import { useToast } from '../Context/toastContext';
+
 
 // ─── Style constants (match existing pages) ───────────────────────────────────
 const CARD = {
@@ -260,8 +262,7 @@ function TakeoutForm({ initial, wallets, onSubmit, onCancel, loading, error }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ProfitTakeoutsPage() {
-    import { useToast } from '../Context/toastContext';
-
+    const { add: toast } = useToast();
     const [records, setRecords] = useState([]);
     const [wallets, setWallets] = useState([]);
     const [loading, setLoading] = useState(true);
