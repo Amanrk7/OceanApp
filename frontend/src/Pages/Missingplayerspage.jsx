@@ -1016,7 +1016,8 @@ export default function MissingPlayersPage() {
 
           <button onClick={() => setRefreshKey(k => k + 1)} disabled={loading}
             style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 10px', border: '1px solid var(--color-border)', borderRadius: 8, background: 'var(--color-cards)', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 600, flexShrink: 0, fontFamily: 'inherit' }}>
-            <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "smartSpin .8s linear infinite" }} />
+            {/* <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "smartSpin .8s linear infinite" }} /> */}
+            <RefreshCw style={{ width: 11, height: 11 }} />
             Refresh
           </button>
 
@@ -1100,7 +1101,8 @@ export default function MissingPlayersPage() {
       {/* Toast notifications — replaces raw error banner */}
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      {/* <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style> */}
+      <style>{`@keyframes smartSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
