@@ -644,9 +644,9 @@ export default function AdminTaskPage() {
 
             {/* ════ TASK LIST ════ */}
             {loading ? (
-                <div style={{ ...CARD, textAlign: "center", padding: "60px" }}>
-                    <div style={{ width: "28px", height: "28px", borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#7c3aed", animation: "spin 0.8s linear infinite", margin: "0 auto 14px" }} />
-                    <p style={{ color: "#94a3b8", fontSize: "14px", margin: 0 }}>Loading tasks…</p>
+                <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
+                    <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "spin .8s linear infinite" }} />
+                    Loading tasks…
                 </div>
             ) : filtered.length === 0 ? (
                 <div style={{ ...CARD, textAlign: "center", padding: "60px" }}>
