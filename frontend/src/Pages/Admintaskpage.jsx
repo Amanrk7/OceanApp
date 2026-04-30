@@ -275,7 +275,7 @@ function AdminTaskRow({ task, onDelete, onStatusChange, teamMembers, onRefresh, 
                                     <option value="">Any member</option>
                                     {teamMembers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                                 </select>
-                                <input type="number" min="0.01" step="any" placeholder="Amount…" value={logValue} onChange={e => setLogValue(e.target.value)}
+                                <input type="number" min="0.01" step="any" placeholder="Count" value={logValue} onChange={e => setLogValue(e.target.value)}
                                     style={{ width: 90, padding: "4px 8px", border: "0.5px solid var(--color-border-secondary)", borderRadius: 6, fontSize: 11, background: "var(--color-background-primary)", color: "var(--color-text-primary)", fontFamily: "inherit", outline: "none" }} />
                                 <button onClick={handleLogProgress} disabled={logging || !logValue}
                                     style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: logValue ? meta.color : "var(--color-background-secondary)", color: logValue ? "#fff" : "var(--color-text-tertiary)", fontSize: 11, cursor: logValue ? "pointer" : "default", fontFamily: "inherit" }}>
