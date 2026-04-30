@@ -459,44 +459,44 @@ export default function BonusPage() {
     };
 
     // ── Shift guard ───────────────────────────────────────────────────────────
-if (shiftLoading) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <div
-        style={{
-          padding: "60px 24px",
-          textAlign: "center",
-          background: "var(--color-background-primary)",
-          borderRadius: "var(--border-radius-lg)",
-          border: "0.5px solid var(--color-border-tertiary)",
-        }}
-      >
-        <div
-          style={{
-            width: "32px",
-            height: "32px",
-            border: "3px solid var(--color-border-tertiary)",
-            borderTopColor: "#0ea5e9",
-            borderRadius: "50%",
-            margin: "0 auto 12px",
-            animation: "spin 0.8s linear infinite",
-          }}
-        />
-        <p
-          style={{
-            margin: 0,
-            fontSize: "13px",
-            color: "var(--color-text-tertiary)",
-          }}
-        >
-          Checking shift status…
-        </p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    </div>
-  );
-}
-    
+    if (shiftLoading) {
+        return (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div
+                    style={{
+                        padding: "60px 24px",
+                        textAlign: "center",
+                        background: "var(--color-background-primary)",
+                        borderRadius: "var(--border-radius-lg)",
+                        border: "0.5px solid var(--color-border-tertiary)",
+                    }}
+                >
+                    <div
+                        style={{
+                            width: "32px",
+                            height: "32px",
+                            border: "3px solid var(--color-border-tertiary)",
+                            borderTopColor: "#0ea5e9",
+                            borderRadius: "50%",
+                            margin: "0 auto 12px",
+                            animation: "spin 0.8s linear infinite",
+                        }}
+                    />
+                    <p
+                        style={{
+                            margin: 0,
+                            fontSize: "13px",
+                            color: "var(--color-text-tertiary)",
+                        }}
+                    >
+                        Checking shift status…
+                    </p>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                </div>
+            </div>
+        );
+    }
+
     if (!shiftActive) {
         return (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -547,7 +547,7 @@ if (shiftLoading) {
                     </div>
                 </div>
 
-                
+
 
                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
 
@@ -608,41 +608,6 @@ if (shiftLoading) {
 
                             {/* Selected player info strip */}
                             {player && !eligLoading && (
-                                // <div style={{ marginTop: "10px", padding: "12px 14px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                                //     <div style={{ flex: 1, minWidth: 0 }}>
-                                //         <div style={{ fontWeight: "700", fontSize: "14px", color: "#0f172a" }}>{player.name}</div>
-                                //         <div style={{ fontSize: "12px", color: "#64748b", marginTop: "1px" }}>
-                                //             ID {player.id} · Balance: <strong style={{ color: "#10b981" }}>{fmt(player.balance)}</strong>
-                                //         </div>
-                                //     </div>
-                                //     <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, flexWrap: "wrap" }}>
-                                //         {/* Streak badge */}
-                                //         {streak > 0 ? (
-                                //             <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "20px", fontSize: "13px", fontWeight: "700", color: "#92400e" }}>
-                                //                 🔥 {streak}-day streak
-                                //                 <span style={{ fontWeight: "500", color: "#b45309", fontSize: "11px" }}>= {fmt(streak * 1.0)} bonus</span>
-                                //             </span>
-                                //         ) : (
-                                //             <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#94a3b8" }}>
-                                //                 🔥 No active streak
-                                //             </span>
-                                //         )}
-                                //         {/* Referrer badge */}
-                                //         {hasReferrer && (
-                                //             <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166534" }}>
-                                //                 👤 Referred by {referrerInfo?.name || `ID ${referrerInfo?.id || referrerInfo}`}
-                                //             </span>
-                                //         )}
-                                //         {!hasReferrer && (
-                                //             <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#94a3b8" }}>
-                                //                 👤 No referrer
-                                //             </span>
-                                //         )}
-                                //         <span style={{ padding: "5px 12px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "rgb(14, 165, 233)" }}>
-                                //             {player.tier}
-                                //         </span>
-                                //     </div>
-                                // </div>
 
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, flexWrap: "wrap", marginTop: "8px" }}>
 
@@ -756,62 +721,7 @@ if (shiftLoading) {
                             })}
                         </div>
 
-                        {/* ── Referral target selector ── */}
-                        {/* ── Referral Bonus: eligible records picker ── */}
-                        {/* {bonusType === 'referral' && player && (
-                            <div style={{ marginTop: '12px', padding: '14px 16px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px' }}>
-                                <div style={{ fontWeight: '700', fontSize: '13px', color: '#166534', marginBottom: '10px' }}>
-                                    👤 Select Referral Bonus Record
-                                </div>
 
-                                {eligLoading && (
-                                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>Loading eligible records…</div>
-                                )}
-
-                                {!eligLoading && eligibleBonuses.length === 0 && (
-                                    <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '12px', color: '#92400e' }}>
-                                        ⚠ No unclaimed referral bonus eligibility found for {player.name}.
-                                        Record it first by toggling "Referral Bonus Eligibility" during their deposit on the Transactions page.
-                                    </div>
-                                )}
-
-                                {!eligLoading && eligibleBonuses.length > 0 && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                        {eligibleBonuses.map(rb => {
-                                            const isSelected = selectedRbId === rb.id;
-                                            const isBside = rb.side === 'referred';   // B = the player we searched
-                                            const sideLabel = isBside
-                                                ? `${player.name} was referred by ${rb.counterpartName}`
-                                                : `${player.name} referred ${rb.counterpartName}`;
-                                            return (
-                                                <div key={rb.id} onClick={() => { setSelectedRbId(rb.id); setReferralSide(rb.side); }}
-                                                    style={{ padding: '12px 14px', borderRadius: '8px', cursor: 'pointer', border: `2px solid ${isSelected ? '#16a34a' : '#d1fae5'}`, background: isSelected ? '#dcfce7' : '#f0fdf4', transition: 'all .15s' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                        <div>
-                                                            <div style={{ fontWeight: '700', fontSize: '12px', color: '#14532d' }}>
-                                                                {isBside ? '🙋 Player bonus (B side)' : '👤 Referrer bonus (A side)'}
-                                                            </div>
-                                                            <div style={{ fontSize: '11px', color: '#166534', marginTop: '2px' }}>{sideLabel}</div>
-                                                            <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '4px' }}>
-                                                                Deposit was <strong>${rb.depositAmount.toFixed(2)}</strong> → bonus = <strong>${rb.bonusAmount.toFixed(2)}</strong>
-                                                            </div>
-                                                        </div>
-                                                        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
-                                                            <div style={{ fontSize: '18px', fontWeight: '900', color: '#16a34a' }}>${rb.bonusAmount.toFixed(2)}</div>
-                                                            {isSelected && <CheckCircle style={{ width: '14px', height: '14px', color: '#16a34a', marginTop: '4px' }} />}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-
-                                <div style={{ marginTop: '10px', fontSize: '12px', color: '#166534', lineHeight: '1.6', padding: '8px 12px', background: '#bbf7d030', borderRadius: '6px', border: '1px solid #d1fae5' }}>
-                                    💡 Amount is auto-filled from the deposit record. Game stock deducted <strong>1×</strong> per claim. Grant A and B separately — each is its own record.
-                                </div>
-                            </div>
-                        )} */}
 
                         {bonusType === 'referral' && player && (
                             <div style={{ marginTop: '12px', padding: '14px 16px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px' }}>
@@ -1157,7 +1067,11 @@ if (shiftLoading) {
                 </div>
 
                 {ledgerLoading ? (
-                    <div style={{ padding: "48px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>Loading bonus history…</div>
+
+                    <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
+                        <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "spin .8s linear infinite" }} />
+                        Loading bonus history…
+                    </div>
                 ) : ledger.length === 0 ? (
                     <div style={{ padding: "48px", textAlign: "center" }}>
                         <Gift style={{ width: "36px", height: "36px", margin: "0 auto 10px", display: "block", color: "#e2e8f0" }} />
