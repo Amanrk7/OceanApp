@@ -1,11 +1,3 @@
-/**
- * MissingPlayersPage.jsx — fixed version
- * Fixes:
- *  1. getMissingContactFields was removed but still referenced → restored
- *  2. `player.status` typo in filter → `p.status`
- *  3. Raw JS errors replaced with user-friendly toast notifications
- */
-
 import { useState, useEffect, useRef, useCallback, useContext } from "react";
 import {
   AlertTriangle, Search, RefreshCw,
@@ -53,11 +45,11 @@ const SELECT_STYLE = {
 
 // ─── Helpers ────────────────────────────────────────────────────
 const CONTACT_FIELD_META = {
-  email:     { icon: Mail,      label: 'Email',     color: '#3b82f6', bg: '#eff6ff' },
-  phone:     { icon: Phone,     label: 'Phone',     color: '#8b5cf6', bg: '#f5f3ff' },
-  snapchat:  { icon: Camera,    label: 'Snapchat',  color: '#eab308', bg: '#fefce8' },
+  email: { icon: Mail, label: 'Email', color: '#3b82f6', bg: '#eff6ff' },
+  phone: { icon: Phone, label: 'Phone', color: '#8b5cf6', bg: '#f5f3ff' },
+  snapchat: { icon: Camera, label: 'Snapchat', color: '#eab308', bg: '#fefce8' },
   instagram: { icon: Instagram, label: 'Instagram', color: '#ec4899', bg: '#fdf2f8' },
-  telegram:  { icon: Send,      label: 'Telegram',  color: '#0ea5e9', bg: '#f0f9ff' },
+  telegram: { icon: Send, label: 'Telegram', color: '#0ea5e9', bg: '#f0f9ff' },
 };
 const CONTACT_KEYS = Object.keys(CONTACT_FIELD_META);
 
@@ -143,13 +135,13 @@ function ToastContainer({ toasts, onDismiss }) {
           padding: '12px 14px',
           background: t.type === 'error' ? '#fef2f2'
             : t.type === 'success' ? '#f0fdf4'
-            : '#fffbeb',
+              : '#fffbeb',
           border: `1.5px solid ${t.type === 'error' ? '#fca5a5'
             : t.type === 'success' ? '#86efac'
-            : '#fde68a'}`,
+              : '#fde68a'}`,
           borderLeft: `4px solid ${t.type === 'error' ? '#ef4444'
             : t.type === 'success' ? '#22c55e'
-            : '#f59e0b'}`,
+              : '#f59e0b'}`,
           borderRadius: 10,
           boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
           animation: 'slideInRight 0.2s ease',
@@ -158,8 +150,8 @@ function ToastContainer({ toasts, onDismiss }) {
             {t.type === 'error'
               ? <AlertCircle style={{ width: 16, height: 16, color: '#ef4444' }} />
               : t.type === 'success'
-              ? <CheckCircle2 style={{ width: 16, height: 16, color: '#22c55e' }} />
-              : <AlertTriangle style={{ width: 16, height: 16, color: '#f59e0b' }} />
+                ? <CheckCircle2 style={{ width: 16, height: 16, color: '#22c55e' }} />
+                : <AlertTriangle style={{ width: 16, height: 16, color: '#f59e0b' }} />
             }
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -167,12 +159,12 @@ function ToastContainer({ toasts, onDismiss }) {
               fontSize: 13, fontWeight: 700,
               color: t.type === 'error' ? '#dc2626'
                 : t.type === 'success' ? '#16a34a'
-                : '#92400e',
+                  : '#92400e',
               marginBottom: 2,
             }}>
               {t.type === 'error' ? 'Action Failed'
                 : t.type === 'success' ? 'Done!'
-                : 'Heads Up'}
+                  : 'Heads Up'}
             </div>
             <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.4 }}>{t.message}</div>
           </div>
@@ -224,7 +216,7 @@ function Avatar({ name, size = 36 }) {
 
 function TierBadge({ tier }) {
   const map = {
-    GOLD:   { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
+    GOLD: { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
     SILVER: { bg: '#e0e7ff', color: '#3730a3', border: '#c7d2fe' },
     BRONZE: { bg: '#fed7aa', color: '#9a3412', border: '#fdba74' },
   };
@@ -358,12 +350,12 @@ function EditModal({ player, onClose, onSaved, onError }) {
   };
 
   const FIELDS = [
-    { key: 'name',      label: 'Full Name',  type: 'text',  required: true },
-    { key: 'email',     label: 'Email',      type: 'email' },
-    { key: 'phone',     label: 'Phone',      type: 'text'  },
-    { key: 'telegram',  label: 'Telegram',   type: 'text'  },
-    { key: 'instagram', label: 'Instagram',  type: 'text'  },
-    { key: 'snapchat',  label: 'Snapchat',   type: 'text'  },
+    { key: 'name', label: 'Full Name', type: 'text', required: true },
+    { key: 'email', label: 'Email', type: 'email' },
+    { key: 'phone', label: 'Phone', type: 'text' },
+    { key: 'telegram', label: 'Telegram', type: 'text' },
+    { key: 'instagram', label: 'Instagram', type: 'text' },
+    { key: 'snapchat', label: 'Snapchat', type: 'text' },
   ];
 
   return (
@@ -445,14 +437,14 @@ function PlayerCard({
 
   const borderColor = isUnreachable ? '#a21caf'
     : isDone ? 'var(--color-border-success)'
-    : isHighCritical ? 'var(--danger)'
-    : isCritical ? '#fca5a5'
-    : 'var(--color-border)';
+      : isHighCritical ? 'var(--danger)'
+        : isCritical ? '#fca5a5'
+          : 'var(--color-border)';
 
   const bgColor = isUnreachable ? '#fdf4ff'
     : isDone ? 'var(--color-background-success)'
-    : isHighCritical ? 'var(--color-background-warning)'
-    : 'var(--color-cards)';
+      : isHighCritical ? 'var(--color-background-warning)'
+        : 'var(--color-cards)';
 
   return (
     <div style={{ ...CARD_STYLE, border: `1.5px solid ${borderColor}`, background: bgColor, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -619,22 +611,22 @@ export default function MissingPlayersPage() {
   const navigate = useNavigate();
   const { toasts, addToast, dismiss } = useToast();
 
-  const [players, setPlayers]           = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [search, setSearch]             = useState('');
-  const [filter, setFilter]             = useState('all');
-  const [editTarget, setEditTarget]     = useState(null);
-  const [tasks, setTasks]               = useState({});
-  const [teamMembers, setTeamMembers]   = useState([]);
-  const [userRole, setUserRole]         = useState(null);
+  const [players, setPlayers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [editTarget, setEditTarget] = useState(null);
+  const [tasks, setTasks] = useState({});
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [userRole, setUserRole] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [claimingId, setClaimingId]     = useState(null);
-  const [assigningId, setAssigningId]   = useState(null);
-  const [undoingId, setUndoingId]       = useState(null);
-  const [markingNAId, setMarkingNAId]   = useState(null);
-  const [autoRefresh, setAutoRefresh]   = useState(true);
-  const [lastRefresh, setLastRefresh]   = useState(new Date());
-  const [refreshKey, setRefreshKey]     = useState(0);
+  const [claimingId, setClaimingId] = useState(null);
+  const [assigningId, setAssigningId] = useState(null);
+  const [undoingId, setUndoingId] = useState(null);
+  const [markingNAId, setMarkingNAId] = useState(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const sseRef = useRef(null);
 
@@ -646,11 +638,11 @@ export default function MissingPlayersPage() {
         setUserRole(u?.role || null);
         setCurrentUserId(u?.id ? String(u.id) : null);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     api.tasks.getTeamMembers()
       .then(res => setTeamMembers(res?.data || res || []))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // ── Load players ──────────────────────────────────────────────
@@ -683,7 +675,7 @@ export default function MissingPlayersPage() {
         if (pid) map[pid] = task;
       });
       setTasks(map);
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => { loadPlayers(); loadTasks(); }, [loadPlayers, loadTasks, refreshKey]);
@@ -717,10 +709,10 @@ export default function MissingPlayersPage() {
             loadTasks();
           }
           if (type === 'player_updated') loadPlayers(true);
-        } catch {}
+        } catch { }
       };
-      es.onerror = () => {};
-    } catch {}
+      es.onerror = () => { };
+    } catch { }
     return () => sseRef.current?.close();
   }, [loadPlayers, loadTasks]);
 
@@ -858,13 +850,13 @@ export default function MissingPlayersPage() {
 
   // ── Stats ─────────────────────────────────────────────────────
   const stats = {
-    total:       players.length,
+    total: players.length,
     highCritical: players.filter(p => getMissingContactFields(p).length >= HIGH_CRITICAL_THRESHOLD).length,
-    critical:    players.filter(p => getMissingContactFields(p).length >= CRITICAL_THRESHOLD).length,
-    misSnap:     players.filter(p => getMissingContactFields(p).includes('snapchat')).length,
-    misPhone:    players.filter(p => getMissingContactFields(p).includes('phone')).length,
-    misEmail:    players.filter(p => getMissingContactFields(p).includes('email')).length,
-    unassigned:  players.filter(p => !tasks[String(p.id)]).length,
+    critical: players.filter(p => getMissingContactFields(p).length >= CRITICAL_THRESHOLD).length,
+    misSnap: players.filter(p => getMissingContactFields(p).includes('snapchat')).length,
+    misPhone: players.filter(p => getMissingContactFields(p).includes('phone')).length,
+    misEmail: players.filter(p => getMissingContactFields(p).includes('email')).length,
+    unassigned: players.filter(p => !tasks[String(p.id)]).length,
     unreachable: players.filter(p => p.status === 'UNREACHABLE').length,
   };
 
@@ -874,68 +866,68 @@ export default function MissingPlayersPage() {
     const q = search.toLowerCase();
     const matchSearch = !q || p.name?.toLowerCase().includes(q) || p.username?.toLowerCase().includes(q);
     const matchFilter =
-      filter === 'all'          ? true :
-      filter === 'unreachable'  ? p.status === 'UNREACHABLE' :
-      filter === 'highcritical' ? missing.length >= HIGH_CRITICAL_THRESHOLD :
-      filter === 'critical'     ? missing.length >= CRITICAL_THRESHOLD :
-      filter === 'unassigned'   ? !tasks[String(p.id)] :
-      CONTACT_KEYS.includes(filter) ? missing.includes(filter) : true;
+      filter === 'all' ? true :
+        filter === 'unreachable' ? p.status === 'UNREACHABLE' :
+          filter === 'highcritical' ? missing.length >= HIGH_CRITICAL_THRESHOLD :
+            filter === 'critical' ? missing.length >= CRITICAL_THRESHOLD :
+              filter === 'unassigned' ? !tasks[String(p.id)] :
+                CONTACT_KEYS.includes(filter) ? missing.includes(filter) : true;
     return matchSearch && matchFilter;
   });
 
-  const isAdmin  = isAdminRole(userRole);
+  const isAdmin = isAdminRole(userRole);
   const isMember = isMemberRole(userRole);
 
   const FILTERS = [
-    { id: 'all',          label: 'All',              count: stats.total },
+    { id: 'all', label: 'All', count: stats.total },
     { id: 'highcritical', label: '🔴 High Critical', count: stats.highCritical },
-    { id: 'critical',     label: '🟠 Critical',      count: stats.critical },
-    { id: 'unreachable',  label: '📡 Unreachable',   count: stats.unreachable },
-    { id: 'snapchat',     label: 'Snapchat',          count: stats.misSnap },
-    { id: 'phone',        label: 'Phone',             count: stats.misPhone },
-    { id: 'email',        label: 'Email',             count: stats.misEmail },
-    { id: 'unassigned',   label: 'Unassigned',        count: stats.unassigned },
+    { id: 'critical', label: '🟠 Critical', count: stats.critical },
+    { id: 'unreachable', label: '📡 Unreachable', count: stats.unreachable },
+    { id: 'snapchat', label: 'Snapchat', count: stats.misSnap },
+    { id: 'phone', label: 'Phone', count: stats.misPhone },
+    { id: 'email', label: 'Email', count: stats.misEmail },
+    { id: 'unassigned', label: 'Unassigned', count: stats.unassigned },
   ];
 
   // ── Shift gate ────────────────────────────────────────────────
-  
-if (shiftLoading) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <div
-        style={{
-          padding: "60px 24px",
-          textAlign: "center",
-          background: "var(--color-background-primary)",
-          borderRadius: "var(--border-radius-lg)",
-          border: "0.5px solid var(--color-border-tertiary)",
-        }}
-      >
+
+  if (shiftLoading) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <div
           style={{
-            width: "32px",
-            height: "32px",
-            border: "3px solid var(--color-border-tertiary)",
-            borderTopColor: "#0ea5e9",
-            borderRadius: "50%",
-            margin: "0 auto 12px",
-            animation: "spin 0.8s linear infinite",
-          }}
-        />
-        <p
-          style={{
-            margin: 0,
-            fontSize: "13px",
-            color: "var(--color-text-tertiary)",
+            padding: "60px 24px",
+            textAlign: "center",
+            background: "var(--color-background-primary)",
+            borderRadius: "var(--border-radius-lg)",
+            border: "0.5px solid var(--color-border-tertiary)",
           }}
         >
-          Checking shift status…
-        </p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <div
+            style={{
+              width: "32px",
+              height: "32px",
+              border: "3px solid var(--color-border-tertiary)",
+              borderTopColor: "#0ea5e9",
+              borderRadius: "50%",
+              margin: "0 auto 12px",
+              animation: "spin 0.8s linear infinite",
+            }}
+          />
+          <p
+            style={{
+              margin: 0,
+              fontSize: "13px",
+              color: "var(--color-text-tertiary)",
+            }}
+          >
+            Checking shift status…
+          </p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
   if (!shiftActive) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -965,12 +957,12 @@ if (shiftLoading) {
 
       {/* ── Stat Strip ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-        <StatCard label="Total (Missing Info)" value={stats.total}       color="#64748b" bg="#f1f5f9" border="#cbd5e1" icon={Users} />
+        <StatCard label="Total (Missing Info)" value={stats.total} color="#64748b" bg="#f1f5f9" border="#cbd5e1" icon={Users} />
         <StatCard label="Highly Critical (3+)" value={stats.highCritical} color="#dc2626" bg="#fff1f2" border="#fecdd3" icon={AlertTriangle} />
-        <StatCard label="Critical (2+ missing)" value={stats.critical}   color="#f97316" bg="#fff7ed" border="#fed7aa" icon={AlertCircle} />
-        <StatCard label="Missing Snapchat"      value={stats.misSnap}    color="#eab308" bg="#fefce8" border="#fde047" icon={Camera} />
-        <StatCard label="Missing Phone"         value={stats.misPhone}   color="#8b5cf6" bg="#faf5ff" border="#ddd6fe" icon={Phone} />
-        <StatCard label="Unassigned Tasks"      value={stats.unassigned} color="#0ea5e9" bg="#f0f9ff" border="#bae6fd" icon={ClipboardList} />
+        <StatCard label="Critical (2+ missing)" value={stats.critical} color="#f97316" bg="#fff7ed" border="#fed7aa" icon={AlertCircle} />
+        <StatCard label="Missing Snapchat" value={stats.misSnap} color="#eab308" bg="#fefce8" border="#fde047" icon={Camera} />
+        <StatCard label="Missing Phone" value={stats.misPhone} color="#8b5cf6" bg="#faf5ff" border="#ddd6fe" icon={Phone} />
+        <StatCard label="Unassigned Tasks" value={stats.unassigned} color="#0ea5e9" bg="#f0f9ff" border="#bae6fd" icon={ClipboardList} />
       </div>
 
       {/* ── Main Card ── */}
@@ -1024,7 +1016,8 @@ if (shiftLoading) {
 
           <button onClick={() => setRefreshKey(k => k + 1)} disabled={loading}
             style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 10px', border: '1px solid var(--color-border)', borderRadius: 8, background: 'var(--color-cards)', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: 12, fontWeight: 600, flexShrink: 0, fontFamily: 'inherit' }}>
-            <RefreshCw style={{ width: 12, height: 12, animation: loading ? 'spin 1s linear infinite' : 'none' }} /> Refresh
+            <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "smartSpin .8s linear infinite" }} />
+            Refresh
           </button>
 
           <span style={{ fontSize: 10, color: 'var(--color-text-muted)', flexShrink: 0 }}>
@@ -1054,8 +1047,10 @@ if (shiftLoading) {
         <div style={{ padding: 18 }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid var(--color-border)', borderTopColor: 'var(--danger)', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
-              <p style={{ color: 'var(--color-text-muted)', fontSize: 13, margin: 0 }}>Loading players…</p>
+              {/* <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid var(--color-border)', borderTopColor: 'var(--danger)', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} /> */}
+              <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "smartSpin .8s linear infinite" }} />
+              Loading players…
+              {/* <p style={{ color: 'var(--color-text-muted)', fontSize: 13, margin: 0 }}></p> */}
             </div>
           ) : filtered.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-text-muted)', fontSize: 14 }}>
