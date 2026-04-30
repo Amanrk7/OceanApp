@@ -1,61 +1,126 @@
 import { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { useNavigate } from 'react-router-dom';
 import {
-    CheckCircle, AlertCircle, Search, X, RefreshCw, ChevronDown,
+    CheckCircle, Search, X, RefreshCw, ChevronDown,
     ArrowDownLeft, ArrowUpRight, Zap, Gift, Star, Wallet, Clock, Users, Lock
 } from "lucide-react";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
 import { useToast } from '../Context/toastContext';
-
 import { api } from "../api";
 
-// ─── Inline SVG icons ─────────────────────────────────────────────────────────
-const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', flexShrink: 0 }}>
-        {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
-    </svg>
-);
-const IAlert = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} />;
-const ILock = () => <Ico d={['M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z', 'M7 11V7a5 5 0 0110 0v4']} />;
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+const T = {
+    // Typography
+    fontMono: "'DM Mono', 'Fira Code', monospace",
+    fontSans: "'DM Sans', -apple-system, sans-serif",
 
-function Card({ children, style = {}, accent }) {
-    return (
-        <div style={{
-            background: "var(--color-background-primary)",
-            borderRadius: "var(--border-radius-lg)",
-            border: "0.5px solid var(--color-border-tertiary)",
-            ...(accent ? { borderLeft: `3px solid ${accent}` } : {}),
-            ...style,
-        }}>
-            {children}
-        </div>
-    );
-}
-const C = {
-    sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
-    green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
-    red: '#dc2626', redLt: '#fff1f2', redBdr: '#fecdd3',
-    amber: '#d97706', amberLt: '#fffbeb', amberBdr: '#fcd34d',
-    violet: '#7c3aed', violetLt: '#f5f3ff', violetBdr: '#ddd6fe',
-    slate: '#0f172a', gray: '#64748b', grayLt: '#94a3b8',
-    border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
+    // Surfaces
+    bg: "#fafaf9",
+    surface: "#ffffff",
+    surfaceSubtle: "#f5f5f4",
+    surfaceHover: "#f9f9f8",
+
+    // Borders
+    border: "#e7e5e4",
+    borderStrong: "#d6d3d1",
+
+    // Text
+    textPrimary: "#1c1917",
+    textSecondary: "#57534e",
+    textTertiary: "#a8a29e",
+    textInverse: "#ffffff",
+
+    // Accent — slate-indigo
+    accent: "#4f46e5",
+    accentHover: "#4338ca",
+    accentSurface: "#eef2ff",
+    accentBorder: "#c7d2fe",
+
+    // Semantic
+    deposit: "#059669",
+    depositSurface: "#ecfdf5",
+    depositBorder: "#6ee7b7",
+
+    cashout: "#dc2626",
+    cashoutSurface: "#fef2f2",
+    cashoutBorder: "#fca5a5",
+
+    bonus: "#7c3aed",
+    bonusSurface: "#f5f3ff",
+    bonusBorder: "#ddd6fe",
+
+    warn: "#d97706",
+    warnSurface: "#fffbeb",
+    warnBorder: "#fde68a",
+
+    // Shadows
+    shadowSm: "0 1px 3px rgba(28,25,23,.06), 0 1px 2px rgba(28,25,23,.04)",
+    shadowMd: "0 4px 16px rgba(28,25,23,.08), 0 1px 4px rgba(28,25,23,.04)",
+    shadowLg: "0 12px 40px rgba(28,25,23,.1), 0 2px 8px rgba(28,25,23,.05)",
+
+    // Radii
+    radiusSm: "6px",
+    radiusMd: "10px",
+    radiusLg: "14px",
+    radiusXl: "18px",
+    radiusFull: "9999px",
 };
-const LABEL = {
-    display: "block", fontSize: "11px", fontWeight: "700",
-    color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px",
+
+// ─── Shared style objects ──────────────────────────────────────────────────────
+const S = {
+    label: {
+        display: "block",
+        fontSize: "11px",
+        fontWeight: "600",
+        color: T.textTertiary,
+        textTransform: "uppercase",
+        letterSpacing: "0.7px",
+        marginBottom: "7px",
+        fontFamily: T.fontSans,
+    },
+    input: {
+        width: "100%",
+        padding: "10px 14px",
+        border: `1.5px solid ${T.border}`,
+        borderRadius: T.radiusMd,
+        fontSize: "14px",
+        fontFamily: T.fontSans,
+        boxSizing: "border-box",
+        background: T.surface,
+        color: T.textPrimary,
+        outline: "none",
+        transition: "border-color .15s, box-shadow .15s",
+    },
+    select: {
+        width: "100%",
+        padding: "10px 36px 10px 14px",
+        border: `1.5px solid ${T.border}`,
+        borderRadius: T.radiusMd,
+        fontSize: "14px",
+        fontFamily: T.fontSans,
+        boxSizing: "border-box",
+        background: T.surface,
+        color: T.textPrimary,
+        outline: "none",
+        appearance: "none",
+        cursor: "pointer",
+        transition: "border-color .15s, box-shadow .15s",
+    },
+    card: {
+        background: T.surface,
+        borderRadius: T.radiusXl,
+        border: `1px solid ${T.border}`,
+        boxShadow: T.shadowMd,
+    },
+    divider: {
+        height: "1px",
+        background: T.border,
+        margin: "24px 0",
+        opacity: 0.7,
+    },
 };
-const INPUT = {
-    width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0",
-    borderRadius: "8px", fontSize: "14px", fontFamily: "inherit",
-    boxSizing: "border-box", background: "#fff", color: "#0f172a", outline: "none",
-};
-const SELECT = { ...INPUT, paddingRight: "32px", appearance: "none", cursor: "pointer" };
-const CARD = {
-    background: "#fff", borderRadius: "14px", border: "1px solid #e2e8f0",
-    boxShadow: "0 2px 12px rgba(15,23,42,.07)", padding: "28px 32px",
-};
-const DIVIDER = { height: "1px", background: "#f1f5f9", margin: "20px 0" };
+
 const fmt = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
 
 function formatDate(raw) {
@@ -66,6 +131,47 @@ function formatDate(raw) {
         + " · " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 }
 
+// ─── Pill / Badge ──────────────────────────────────────────────────────────────
+function Pill({ children, color = T.textTertiary, bg = T.surfaceSubtle, border = T.border, icon }) {
+    return (
+        <span style={{
+            display: "inline-flex", alignItems: "center", gap: "5px",
+            padding: "3px 10px",
+            background: bg, border: `1px solid ${border}`, borderRadius: T.radiusFull,
+            fontSize: "11.5px", fontWeight: "600", color,
+            fontFamily: T.fontSans, whiteSpace: "nowrap",
+        }}>
+            {icon && icon}
+            {children}
+        </span>
+    );
+}
+
+// ─── Toggle ───────────────────────────────────────────────────────────────────
+function Toggle({ on, onClick, color = T.accent, disabled }) {
+    return (
+        <div
+            onClick={() => !disabled && onClick(!on)}
+            style={{
+                width: "38px", height: "22px", borderRadius: T.radiusFull,
+                background: on && !disabled ? color : T.border,
+                cursor: disabled ? "not-allowed" : "pointer",
+                position: "relative", transition: "background .2s", flexShrink: 0,
+                opacity: disabled ? 0.45 : 1,
+            }}
+        >
+            <div style={{
+                width: "16px", height: "16px", borderRadius: "50%", background: "#fff",
+                position: "absolute", top: "3px",
+                left: on && !disabled ? "19px" : "3px",
+                transition: "left .2s",
+                boxShadow: "0 1px 4px rgba(0,0,0,.18)",
+            }} />
+        </div>
+    );
+}
+
+// ─── BonusToggle ──────────────────────────────────────────────────────────────
 const DEPOSIT_BONUSES = [
     {
         id: "match", label: "Match Bonus", icon: Gift,
@@ -75,39 +181,60 @@ const DEPOSIT_BONUSES = [
     },
     {
         id: "special", label: "Special / Promo Bonus", icon: Star,
-        color: { bg: "#faf5ff", border: "#e9d5ff", dot: "#a855f7", text: "#6b21a8" },
+        color: { bg: "#fdf4ff", border: "#e9d5ff", dot: "#a855f7", text: "#6b21a8" },
         subtitle: "20% of deposit — for promotions or special occasions",
         calc: (amt) => amt * 0.2,
     },
 ];
 
-function BonusToggle({ bonus, amount, player, enabled, onToggle, eligible = true, disabledReason = "" }) {
+function BonusToggle({ bonus, amount, enabled, onToggle, eligible = true, disabledReason = "" }) {
     const { icon: Icon, label, subtitle, color, calc } = bonus;
     const bonusAmt = calc(amount);
     const canEnable = eligible && amount > 0;
+    const active = enabled && canEnable;
+
     return (
-        <div style={{ border: `1px solid ${enabled && canEnable ? color.border : "#e2e8f0"}`, borderRadius: "10px", padding: "13px 16px", background: enabled && canEnable ? color.bg : "#fafafa", opacity: eligible ? 1 : 0.55, transition: "all .15s" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div className="bonus-card" style={{
+            border: `1.5px solid ${active ? color.border : T.border}`,
+            borderRadius: T.radiusLg,
+            padding: "14px 16px",
+            background: active ? color.bg : T.surfaceSubtle,
+            opacity: eligible ? 1 : 0.5,
+            transition: "all .2s",
+        }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
                 <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", flex: 1 }}>
-                    <div style={{ width: "34px", height: "34px", borderRadius: "9px", flexShrink: 0, background: enabled && canEnable ? color.bg : "#f1f5f9", border: `1px solid ${enabled && canEnable ? color.border : "#e2e8f0"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <Icon style={{ width: "15px", height: "15px", color: enabled && canEnable ? color.dot : "#94a3b8" }} />
+                    <div style={{
+                        width: "36px", height: "36px", borderRadius: T.radiusMd, flexShrink: 0,
+                        background: active ? color.bg : T.surface,
+                        border: `1.5px solid ${active ? color.border : T.border}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "all .2s",
+                    }}>
+                        <Icon style={{ width: "15px", height: "15px", color: active ? color.dot : T.textTertiary }} />
                     </div>
                     <div>
-                        <div style={{ fontWeight: "700", fontSize: "13px", color: "#0f172a" }}>{label}</div>
-                        <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px", lineHeight: "1.4" }}>{!eligible ? disabledReason : subtitle}</div>
-                        {enabled && canEnable && (
-                            <span style={{ display: "inline-block", marginTop: "6px", padding: "3px 10px", borderRadius: "20px", fontSize: "12px", fontWeight: "700", background: color.bg, border: `1px solid ${color.border}`, color: color.text }}>+{fmt(bonusAmt)} bonus</span>
+                        <div style={{ fontWeight: "600", fontSize: "13px", color: T.textPrimary, fontFamily: T.fontSans }}>{label}</div>
+                        <div style={{ fontSize: "12px", color: T.textSecondary, marginTop: "2px", lineHeight: "1.5" }}>
+                            {!eligible ? disabledReason : subtitle}
+                        </div>
+                        {active && (
+                            <Pill
+                                bg={color.bg} border={color.border} color={color.text}
+                                style={{ marginTop: "7px" }}
+                            >
+                                +{fmt(bonusAmt)} bonus
+                            </Pill>
                         )}
                     </div>
                 </div>
-                <div onClick={() => canEnable && onToggle(!enabled)} style={{ width: "40px", height: "23px", borderRadius: "12px", flexShrink: 0, marginTop: "2px", background: enabled && canEnable ? color.dot : "#cbd5e1", cursor: canEnable ? "pointer" : "not-allowed", position: "relative", transition: "background .2s" }}>
-                    <div style={{ width: "17px", height: "17px", borderRadius: "50%", background: "#fff", position: "absolute", top: "3px", left: enabled && canEnable ? "20px" : "3px", transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
-                </div>
+                <Toggle on={active} onClick={onToggle} color={color.dot} disabled={!canEnable} />
             </div>
         </div>
     );
 }
 
+// ─── Ledger Row ────────────────────────────────────────────────────────────────
 function LedgerRow({ tx, undoingId, onUndo }) {
     const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
     const navigate = useNavigate();
@@ -124,13 +251,13 @@ function LedgerRow({ tx, undoingId, onUndo }) {
     };
 
     let displayType = tx.type;
-    let typeColor = { bg: "#f1f5f9", text: "#475569" };
-    if (["Deposit", "deposit"].includes(tx.type)) { displayType = "Deposit"; typeColor = { bg: "#dcfce7", text: "#166534" }; }
-    else if (isCashoutRow) { displayType = "Cashout"; typeColor = { bg: "#fee2e2", text: "#991b1b" }; }
+    let typeColor = { bg: T.surfaceSubtle, text: T.textSecondary };
+    if (["Deposit", "deposit"].includes(tx.type)) { displayType = "Deposit"; typeColor = { bg: T.depositSurface, text: T.deposit }; }
+    else if (isCashoutRow) { displayType = "Cashout"; typeColor = { bg: T.cashoutSurface, text: T.cashout }; }
     else if (tx.bonusType === "match") { displayType = "Match Bonus"; typeColor = { bg: "#eff6ff", text: "#0369a1" }; }
-    else if (tx.bonusType === "special") { displayType = "Special Bonus"; typeColor = { bg: "#faf5ff", text: "#6b21a8" }; }
-    else if (tx.bonusType === "streak") { displayType = "Streak Bonus"; typeColor = { bg: "#fffbeb", text: "#92400e" }; }
-    else if (tx.bonusType === "referral") { displayType = "Referral Bonus"; typeColor = { bg: "#f0fdf4", text: "#166634" }; }
+    else if (tx.bonusType === "special") { displayType = "Special Bonus"; typeColor = { bg: T.bonusSurface, text: T.bonus }; }
+    else if (tx.bonusType === "streak") { displayType = "Streak Bonus"; typeColor = { bg: T.warnSurface, text: "#92400e" }; }
+    else if (tx.bonusType === "referral") { displayType = "Referral Bonus"; typeColor = { bg: T.depositSurface, text: T.deposit }; }
 
     const isPending = tx.status === "PENDING";
     const paidAmount = parseFloat(tx.paidAmount) || 0;
@@ -138,89 +265,166 @@ function LedgerRow({ tx, undoingId, onUndo }) {
     const isPartial = isCashoutRow && isPending && paidAmount > 0 && paidAmount < totalAmount;
     const statusLabel = isPartial ? "PARTIAL" : tx.status;
     const statusColor =
-        statusLabel === "COMPLETED" ? { bg: "#dcfce7", text: "#166534" } :
-            statusLabel === "PARTIAL" ? { bg: "#fef3c7", text: "#d97706" } :
-                statusLabel === "PENDING" ? { bg: "#fef3c7", text: "#92400e" } :
-                    statusLabel === "CANCELLED" ? { bg: "#fee2e2", text: "#991b1b" } :
-                        { bg: "#f1f5f9", text: "#475569" };
+        statusLabel === "COMPLETED" ? { bg: T.depositSurface, text: T.deposit } :
+            statusLabel === "PARTIAL" ? { bg: T.warnSurface, text: T.warn } :
+                statusLabel === "PENDING" ? { bg: T.warnSurface, text: "#92400e" } :
+                    statusLabel === "CANCELLED" ? { bg: T.cashoutSurface, text: T.cashout } :
+                        { bg: T.surfaceSubtle, text: T.textSecondary };
 
     return (
-        <tr onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={e => e.currentTarget.style.background = "transparent"} style={{ borderBottom: "1px solid #f1f5f9", opacity: tx.status === "CANCELLED" ? 0.6 : 1 }}>
-            <td style={{ padding: "10px 12px", color: "#0ea5e9", fontWeight: "700", fontSize: "12px", whiteSpace: "nowrap" }}>#{tx.id}</td>
-            <td style={{ padding: "10px 12px" }}>
-                <div onClick={() => handleView(tx.playerName ? { id: tx.playerId, name: tx.playerName } : null)}
-                    onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-                    style={{ fontWeight: "600", fontSize: "13px", whiteSpace: "nowrap", cursor: "pointer", color: hover ? "rgb(14, 165, 233)" : "#0f172a" }}>{tx.playerName || "—"}</div>
-                {tx.email && <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "1px", maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.email}</div>}
+        <tr className="ledger-row" style={{ borderBottom: `1px solid ${T.border}`, opacity: tx.status === "CANCELLED" ? 0.5 : 1 }}>
+            <td style={{ padding: "11px 14px", color: T.accent, fontWeight: "700", fontSize: "12px", whiteSpace: "nowrap", fontFamily: T.fontMono }}>
+                #{tx.id}
             </td>
-            <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
-                <span style={{ display: "inline-block", padding: "3px 9px", background: typeColor.bg, color: typeColor.text, borderRadius: "6px", fontSize: "11px", fontWeight: "700" }}>{displayType}</span>
+            <td style={{ padding: "11px 14px" }}>
+                <div
+                    onClick={() => handleView(tx.playerName ? { id: tx.playerId, name: tx.playerName } : null)}
+                    onMouseEnter={() => setHover(true)}
+                    onMouseLeave={() => setHover(false)}
+                    style={{ fontWeight: "600", fontSize: "13px", whiteSpace: "nowrap", cursor: "pointer", color: hover ? T.accent : T.textPrimary, transition: "color .15s" }}
+                >
+                    {tx.playerName || "—"}
+                </div>
+                {tx.email && (
+                    <div style={{ fontSize: "11px", color: T.textTertiary, marginTop: "1px", maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {tx.email}
+                    </div>
+                )}
             </td>
-            <td style={{ padding: "10px 12px", fontWeight: "700", fontSize: "14px", color: positive ? "#10b981" : "#ef4444", whiteSpace: "nowrap" }}>
+            <td style={{ padding: "11px 14px", whiteSpace: "nowrap" }}>
+                <span style={{ display: "inline-block", padding: "3px 9px", background: typeColor.bg, color: typeColor.text, borderRadius: T.radiusFull, fontSize: "11px", fontWeight: "700" }}>
+                    {displayType}
+                </span>
+            </td>
+            <td style={{ padding: "11px 14px", fontWeight: "700", fontSize: "13px", color: positive ? T.deposit : T.cashout, whiteSpace: "nowrap", fontFamily: T.fontMono }}>
                 {positive ? "+" : "−"}{fmt(tx.amount)}
             </td>
-            <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
+            <td style={{ padding: "11px 14px", whiteSpace: "nowrap", fontFamily: T.fontMono }}>
                 {tx.fee != null && tx.fee > 0
-                    ? <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "12px" }}>−{fmt(tx.fee)}</span>
-                    : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>}
+                    ? <span style={{ color: T.warn, fontWeight: "600", fontSize: "12px" }}>−{fmt(tx.fee)}</span>
+                    : <span style={{ color: T.border, fontSize: "12px" }}>—</span>}
             </td>
-            <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
+            <td style={{ padding: "11px 14px", whiteSpace: "nowrap" }}>
                 {["Deposit", "deposit"].includes(tx.type)
-                    ? <span style={{ fontWeight: "700", fontSize: "13px", color: "#0ea5e9" }}>{fmt((parseFloat(tx.amount) || 0) - (parseFloat(tx.fee) || 0))}</span>
+                    ? <span style={{ fontWeight: "700", fontSize: "13px", color: T.accent, fontFamily: T.fontMono }}>{fmt((parseFloat(tx.amount) || 0) - (parseFloat(tx.fee) || 0))}</span>
                     : isCashoutRow
                         ? <div style={{ minWidth: "110px" }}>
-                            <div style={{ fontSize: "11px", color: "#64748b", marginBottom: "3px" }}>{fmt(paidAmount)} / {fmt(totalAmount)}</div>
-                            <div style={{ height: "5px", background: "#fee2e2", borderRadius: "99px", overflow: "hidden" }}>
-                                <div style={{ height: "100%", width: `${totalAmount > 0 ? Math.min((paidAmount / totalAmount) * 100, 100) : 0}%`, background: paidAmount >= totalAmount ? "#10b981" : "#f59e0b", borderRadius: "99px" }} />
+                            <div style={{ fontSize: "11px", color: T.textTertiary, marginBottom: "4px", fontFamily: T.fontMono }}>{fmt(paidAmount)} / {fmt(totalAmount)}</div>
+                            <div style={{ height: "4px", background: T.cashoutSurface, borderRadius: T.radiusFull, overflow: "hidden" }}>
+                                <div style={{
+                                    height: "100%",
+                                    width: `${totalAmount > 0 ? Math.min((paidAmount / totalAmount) * 100, 100) : 0}%`,
+                                    background: paidAmount >= totalAmount ? T.deposit : T.warn,
+                                    borderRadius: T.radiusFull,
+                                    transition: "width .3s",
+                                }} />
                             </div>
                         </div>
-                        : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>}
+                        : <span style={{ color: T.border, fontSize: "12px" }}>—</span>}
             </td>
-            <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
-                {tx.gameName ? <span style={{ display: "inline-block", padding: "2px 8px", background: "#f1f5f9", borderRadius: "5px", fontSize: "11px", fontWeight: "500", color: "#475569" }}>{tx.gameName}</span> : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>}
+            <td style={{ padding: "11px 14px", whiteSpace: "nowrap" }}>
+                {tx.gameName
+                    ? <span style={{ display: "inline-block", padding: "3px 9px", background: T.surfaceSubtle, borderRadius: T.radiusSm, fontSize: "11px", fontWeight: "500", color: T.textSecondary, border: `1px solid ${T.border}` }}>
+                        {tx.gameName}
+                    </span>
+                    : <span style={{ color: T.border, fontSize: "12px" }}>—</span>}
             </td>
-            <td style={{ padding: "10px 12px" }}>
+            <td style={{ padding: "11px 14px" }}>
                 {(tx.walletMethod || tx.walletName)
                     ? <div>
-                        <div style={{ fontSize: "12px", fontWeight: "600", color: "#0f172a", whiteSpace: "nowrap" }}>{tx.walletMethod || "—"}</div>
-                        <div style={{ fontSize: "11px", color: "#94a3b8", whiteSpace: "nowrap" }}>{tx.walletName || ""}</div>
+                        <div style={{ fontSize: "12px", fontWeight: "600", color: T.textPrimary, whiteSpace: "nowrap" }}>{tx.walletMethod || "—"}</div>
+                        <div style={{ fontSize: "11px", color: T.textTertiary, whiteSpace: "nowrap" }}>{tx.walletName || ""}</div>
                     </div>
-                    : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>}
+                    : <span style={{ color: T.border, fontSize: "12px" }}>—</span>}
             </td>
-            <td style={{ padding: "10px 12px", fontSize: "12px", whiteSpace: "nowrap" }}>
+            <td style={{ padding: "11px 14px", fontSize: "12px", whiteSpace: "nowrap" }}>
                 {tx.gameStockBefore != null && tx.gameStockAfter != null && (() => {
                     const stockBefore = parseFloat(tx.gameStockBefore);
                     const stockAfter = parseFloat(tx.gameStockAfter);
                     const isUp = stockAfter >= stockBefore;
                     return (
                         <div>
-                            <div style={{ fontSize: "10px", color: "#94a3b8", marginBottom: "1px" }}>Game Points</div>
-                            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                                <span style={{ color: "#94a3b8" }}>{stockBefore.toFixed(0)}</span>
-                                <span style={{ color: "#94a3b8", margin: "0 2px" }}>→</span>
-                                <span style={{ color: isUp ? "#22c55e" : "#ef4444", fontWeight: "700" }}>{stockAfter.toFixed(0)}</span>
+                            <div style={{ fontSize: "10px", color: T.textTertiary, marginBottom: "2px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Points</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "5px", fontFamily: T.fontMono }}>
+                                <span style={{ color: T.textTertiary }}>{stockBefore.toFixed(0)}</span>
+                                <span style={{ color: T.border }}>→</span>
+                                <span style={{ color: isUp ? T.deposit : T.cashout, fontWeight: "700" }}>{stockAfter.toFixed(0)}</span>
                             </div>
                         </div>
                     );
                 })()}
-                {tx.gameStockBefore == null && <span style={{ color: "#cbd5e1" }}>—</span>}
+                {tx.gameStockBefore == null && <span style={{ color: T.border }}>—</span>}
             </td>
-            <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
-                <span style={{ display: "inline-block", padding: "3px 9px", borderRadius: "6px", fontSize: "11px", fontWeight: "700", background: statusColor.bg, color: statusColor.text }}>{statusLabel}</span>
+            <td style={{ padding: "11px 14px", whiteSpace: "nowrap" }}>
+                <span style={{
+                    display: "inline-block", padding: "3px 9px",
+                    borderRadius: T.radiusFull, fontSize: "11px", fontWeight: "700",
+                    background: statusColor.bg, color: statusColor.text,
+                }}>
+                    {statusLabel}
+                </span>
             </td>
-            <td style={{ padding: "10px 12px", color: "#94a3b8", fontSize: "11px", whiteSpace: "nowrap" }}>{formatDate(tx.timestamp ?? tx.createdAt)}</td>
-            <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
+            <td style={{ padding: "11px 14px", color: T.textTertiary, fontSize: "11px", whiteSpace: "nowrap", fontFamily: T.fontMono }}>
+                {formatDate(tx.timestamp ?? tx.createdAt)}
+            </td>
+            <td style={{ padding: "11px 14px", whiteSpace: "nowrap" }}>
                 {canUndo && !isUndoing && (
-                    <button onClick={() => onUndo(tx.id, tx.playerId)}
-                        style={{ background: "none", border: "1px solid #e2e8f0", color: "#64748b", cursor: "pointer", fontWeight: "600", fontSize: "12px", borderRadius: "6px", padding: "4px 10px", display: "inline-flex", alignItems: "center", gap: "4px" }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = "#ef4444"; e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.background = "#fff5f5"; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.color = "#64748b"; e.currentTarget.style.background = "none"; }}>
+                    <button
+                        className="undo-btn"
+                        onClick={() => onUndo(tx.id, tx.playerId)}
+                        style={{
+                            background: "none", border: `1px solid ${T.border}`,
+                            color: T.textSecondary, cursor: "pointer",
+                            fontWeight: "600", fontSize: "12px",
+                            borderRadius: T.radiusMd, padding: "4px 11px",
+                            display: "inline-flex", alignItems: "center", gap: "4px",
+                            transition: "all .15s", fontFamily: T.fontSans,
+                        }}
+                    >
                         ↩ Undo
                     </button>
                 )}
-                {isUndoing && <span style={{ fontSize: "11px", color: "#94a3b8" }}>Reversing…</span>}
+                {isUndoing && <span style={{ fontSize: "11px", color: T.textTertiary }}>Reversing…</span>}
             </td>
         </tr>
+    );
+}
+
+// ─── Section Header ────────────────────────────────────────────────────────────
+function SectionHeader({ icon: Icon, label, iconColor }) {
+    return (
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+            <div style={{
+                width: "28px", height: "28px", borderRadius: T.radiusMd,
+                background: T.surfaceSubtle, border: `1px solid ${T.border}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+                <Icon style={{ width: "13px", height: "13px", color: iconColor || T.textSecondary }} />
+            </div>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: T.textPrimary, letterSpacing: "-0.1px" }}>
+                {label}
+            </span>
+        </div>
+    );
+}
+
+// ─── Summary Row ──────────────────────────────────────────────────────────────
+function SummaryRow({ label, value, valueColor, bg, border, accent }) {
+    return (
+        <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: accent ? "10px 14px" : "6px 0",
+            background: bg || "transparent",
+            borderRadius: accent ? T.radiusMd : 0,
+            border: border ? `1px solid ${border}` : "none",
+        }}>
+            <span style={{ fontSize: "13px", color: accent ? T.textPrimary : T.textSecondary, fontWeight: accent ? "600" : "400" }}>
+                {label}
+            </span>
+            <span style={{ fontSize: accent ? "16px" : "13px", fontWeight: accent ? "800" : "700", color: valueColor || T.textPrimary, fontFamily: T.fontMono }}>
+                {value}
+            </span>
+        </div>
     );
 }
 
@@ -230,7 +434,6 @@ function LedgerRow({ tx, undoingId, onUndo }) {
 function AddTransactionsPage() {
     const EMPTY = { txType: "deposit", amount: "", fee: "", gameId: "", walletId: "", notes: "", bonusMatch: false, bonusSpecial: false };
 
-    // const { shiftActive } = useContext(ShiftStatusContext);
     const { shiftActive, shiftLoading } = useContext(ShiftStatusContext);
     const { add: toast } = useToast();
     const navigate = useNavigate();
@@ -312,7 +515,6 @@ function AddTransactionsPage() {
         if (usedMatchToday) setForm(f => ({ ...f, bonusMatch: false }));
     };
 
-
     const checkReferralStatus = async (fullPlayer) => {
         if (!fullPlayer?.id || !fullPlayer?.referredBy) {
             setReferralAlreadyRecorded(false);
@@ -334,7 +536,6 @@ function AddTransactionsPage() {
         }
     };
 
-    // ── FIX: moved checkReferralStatus INSIDE try block, after fp is defined ──
     const selectPlayer = async (p) => {
         setQuery(p.name); setShowDrop(false); setResults([]);
         setPlayer(null); setMatchUsedToday(false); setReferralAlreadyRecorded(false);
@@ -346,14 +547,13 @@ function AddTransactionsPage() {
             const fp = r?.data || p;
             setPlayer(fp);
             computeEligibility(fp);
-            await checkReferralStatus(fp);  // ← fp is now defined
+            await checkReferralStatus(fp);
         } catch {
             setPlayer(p);
         } finally {
             setEligLoading(false);
         }
     };
-
 
     const clearPlayer = () => {
         setPlayer(null); setQuery(""); setMatchUsedToday(false); setBonusReferral(false);
@@ -377,9 +577,7 @@ function AddTransactionsPage() {
     const specialAmt = (form.bonusSpecial && amt > 0) ? amt * 0.2 : 0;
     const totalBonus = matchAmt + specialAmt;
     const stockNeeded = isDeposit ? amt + matchAmt + specialAmt : amt;
-    // const stockOk = !selGame || stockNeeded <= selGame.pointStock;
     const stockOk = !selGame || !isDeposit || stockNeeded <= selGame.pointStock;
-
 
     const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     const todayCashoutTotal = (!isDeposit && player)
@@ -389,7 +587,6 @@ function AddTransactionsPage() {
         : 0;
     const cashoutOverLimit = !isDeposit && !streakWaived && cashoutLimit > 0 && (todayCashoutTotal + amt) > cashoutLimit;
 
-    // Referral info derived values
     const playerHasReferrer = !!(player?.referredBy);
     const referrerName = player?.referredBy?.name || (player?.referredBy ? `ID ${player.referredBy}` : null);
     const referralBonusAmt = amt > 0 ? parseFloat((amt / 2).toFixed(2)) : 0;
@@ -440,7 +637,6 @@ function AddTransactionsPage() {
             if (feeAmt > 0 && isDeposit) msg += ` Wallet credited with ${fmt(amt - feeAmt)}.`;
             toast(`${msg}`, 'success');
 
-
             setForm(EMPTY); setQuery(""); setPlayer(null);
             setMatchUsedToday(false); setBonusReferral(false); setReferralAlreadyRecorded(false);
             api.clearCache?.();
@@ -461,95 +657,126 @@ function AddTransactionsPage() {
             }
             window.dispatchEvent(new CustomEvent("transactionUndone", { detail: { playerId: playerIdFromTx, txId, timestamp: new Date().toISOString() } }));
             toast(`✓ Transaction #${txId} reversed. All data synced.`, 'success');
-
         } catch (err) { toast(err.message || "Undo failed.", "error"); }
         finally { setUndoingId(null); }
     };
 
+    // ── Shift loading/locked states ───────────────────────────────────────────
     if (shiftLoading) {
         return (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <div
-                    style={{
-                        padding: "60px 24px",
-                        textAlign: "center",
-                        background: "var(--color-background-primary)",
-                        borderRadius: "var(--border-radius-lg)",
-                        border: "0.5px solid var(--color-border-tertiary)",
-                    }}
-                >
-                    <div
-                        style={{
-                            width: "32px",
-                            height: "32px",
-                            border: "3px solid var(--color-border-tertiary)",
-                            borderTopColor: "#0ea5e9",
-                            borderRadius: "50%",
-                            margin: "0 auto 12px",
-                            animation: "spin 0.8s linear infinite",
-                        }}
-                    />
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: "13px",
-                            color: "var(--color-text-tertiary)",
-                        }}
-                    >
-                        Checking shift status…
-                    </p>
-                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", fontFamily: T.fontSans }}>
+                <div style={{ ...S.card, padding: "72px 24px", textAlign: "center" }}>
+                    <div style={{
+                        width: "32px", height: "32px",
+                        border: `2.5px solid ${T.border}`,
+                        borderTopColor: T.accent,
+                        borderRadius: "50%",
+                        margin: "0 auto 16px",
+                        animation: "spin 0.8s linear infinite",
+                    }} />
+                    <p style={{ margin: 0, fontSize: "13px", color: T.textTertiary }}>Checking shift status…</p>
                 </div>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
         );
     }
+
     if (!shiftActive) {
         return (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <button onClick={() => navigate('/shifts')} style={{ alignSelf: "flex-start", padding: "9px 18px", background: "var(--color-background-info)", color: "var(--color-text-info)", border: "0.5px solid var(--color-border-info)", borderRadius: "var(--border-radius-md)", fontWeight: "500", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px", fontFamily: T.fontSans }}>
+                <button
+                    onClick={() => navigate('/shifts')}
+                    style={{
+                        alignSelf: "flex-start", padding: "9px 18px",
+                        background: T.accentSurface, color: T.accent,
+                        border: `1px solid ${T.accentBorder}`,
+                        borderRadius: T.radiusMd, fontWeight: "600",
+                        cursor: "pointer", fontSize: "13px", fontFamily: T.fontSans,
+                    }}
+                >
                     Start Shift
                 </button>
-                <Card style={{ padding: "14px 16px", borderLeft: "3px solid var(--color-border-warning)", background: "var(--color-background-warning)" }}>
-                    <p style={{ fontWeight: "500", color: "var(--color-text-warning)", margin: "0 0 2px", fontSize: "13px" }}>Shift required</p>
-                    <p style={{ color: "var(--color-text-warning)", margin: 0, fontSize: "12px" }}>You must have an active shift to grant bonuses and view tasks.</p>
-                </Card>
-                <Card style={{ padding: "60px 24px", textAlign: "center" }}>
-                    <div style={{ width: "48px", height: "48px", background: "var(--color-background-secondary)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
-                        <Lock style={{ width: "20px", height: "20px", color: "var(--color-text-tertiary)" }} />
+                <div style={{
+                    padding: "12px 16px", borderRadius: T.radiusMd,
+                    borderLeft: `3px solid ${T.warn}`,
+                    background: T.warnSurface, border: `1px solid ${T.warnBorder}`,
+                }}>
+                    <p style={{ fontWeight: "600", color: T.warn, margin: "0 0 2px", fontSize: "13px" }}>Shift required</p>
+                    <p style={{ color: "#92400e", margin: 0, fontSize: "12px" }}>You must have an active shift to record transactions.</p>
+                </div>
+                <div style={{ ...S.card, padding: "72px 24px", textAlign: "center" }}>
+                    <div style={{
+                        width: "44px", height: "44px", background: T.surfaceSubtle,
+                        borderRadius: T.radiusLg, border: `1px solid ${T.border}`,
+                        display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px",
+                    }}>
+                        <Lock style={{ width: "18px", height: "18px", color: T.textTertiary }} />
                     </div>
-                    <p style={{ margin: "0 0 4px", fontSize: "14px", fontWeight: "500", color: "var(--color-text-primary)" }}>Dashboard locked</p>
-                    <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-tertiary)" }}>Go to Shifts and start your shift first.</p>
-                </Card>
+                    <p style={{ margin: "0 0 4px", fontSize: "14px", fontWeight: "600", color: T.textPrimary }}>Dashboard locked</p>
+                    <p style={{ margin: 0, fontSize: "12px", color: T.textTertiary }}>Start your shift first to unlock transactions.</p>
+                </div>
             </div>
         );
     }
 
+    // ─── Main render ──────────────────────────────────────────────────────────
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: "28px", maxWidth: "inherit" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px", fontFamily: T.fontSans }}>
 
-            {/* ════ FORM CARD ════ */}
-            <div style={CARD}>
-                {/* Type toggle */}
-                <div style={{ display: "flex", gap: "10px", marginBottom: "22px" }}>
-                    {[{ id: "deposit", label: "Deposit", Icon: ArrowDownLeft, color: "#10b981" }, { id: "cashout", label: "Cashout", Icon: ArrowUpRight, color: "#ef4444" }].map(({ id, label, Icon, color }) => (
-                        <button key={id} type="button" onClick={() => { set("txType", id); }}
-                            style={{ flex: 1, padding: "11px 20px", borderRadius: "10px", fontWeight: "700", fontSize: "14px", cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", border: form.txType === id ? `2px solid ${color}` : "2px solid #e2e8f0", background: form.txType === id ? `${color}14` : "#fafafa", color: form.txType === id ? color : "#64748b" }}>
-                            <Icon style={{ width: "15px", height: "15px" }} /> {label}
-                        </button>
-                    ))}
+            {/* ═══ FORM CARD ═══ */}
+            <div style={{ ...S.card, padding: "28px 32px" }}>
+
+                {/* ── Type Toggle ── */}
+                <div style={{
+                    display: "inline-flex", background: T.surfaceSubtle, borderRadius: T.radiusLg,
+                    padding: "4px", border: `1px solid ${T.border}`, marginBottom: "28px",
+                    gap: "2px",
+                }}>
+                    {[
+                        { id: "deposit", label: "Deposit", Icon: ArrowDownLeft, color: T.deposit },
+                        { id: "cashout", label: "Cashout", Icon: ArrowUpRight, color: T.cashout },
+                    ].map(({ id, label, Icon, color }) => {
+                        const active = form.txType === id;
+                        return (
+                            <button
+                                key={id}
+                                type="button"
+                                onClick={() => set("txType", id)}
+                                style={{
+                                    padding: "9px 22px", borderRadius: T.radiusMd,
+                                    fontWeight: "600", fontSize: "13.5px", cursor: "pointer",
+                                    border: "none", transition: "all .2s",
+                                    display: "flex", alignItems: "center", gap: "7px",
+                                    background: active ? T.surface : "transparent",
+                                    color: active ? color : T.textTertiary,
+                                    boxShadow: active ? T.shadowSm : "none",
+                                    fontFamily: T.fontSans,
+                                }}
+                            >
+                                <Icon style={{ width: "14px", height: "14px" }} />
+                                {label}
+                            </button>
+                        );
+                    })}
                 </div>
 
-                {/* Info banner */}
-                <div style={{ marginBottom: "22px", padding: "14px 16px", background: isDeposit ? "#f0fdf4" : "#fffbeb", borderLeft: `4px solid ${isDeposit ? "#22c55e" : "#f59e0b"}`, borderRadius: "8px", display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                {/* ── Context Banner ── */}
+                <div style={{
+                    marginBottom: "28px", padding: "14px 18px",
+                    background: isDeposit ? T.depositSurface : T.warnSurface,
+                    border: `1px solid ${isDeposit ? T.depositBorder : T.warnBorder}`,
+                    borderRadius: T.radiusLg,
+                    display: "flex", gap: "12px", alignItems: "flex-start",
+                }}>
                     {isDeposit
-                        ? <ArrowDownLeft style={{ width: "17px", height: "17px", color: "#16a34a", flexShrink: 0, marginTop: "1px" }} />
-                        : <Clock style={{ width: "17px", height: "17px", color: "#d97706", flexShrink: 0, marginTop: "1px" }} />
+                        ? <ArrowDownLeft style={{ width: "16px", height: "16px", color: T.deposit, flexShrink: 0, marginTop: "1px" }} />
+                        : <Clock style={{ width: "16px", height: "16px", color: T.warn, flexShrink: 0, marginTop: "1px" }} />
                     }
                     <div>
-                        <p style={{ fontWeight: "700", color: isDeposit ? "#14532d" : "#92400e", margin: "0 0 2px", fontSize: "14px" }}>
+                        <p style={{ fontWeight: "700", color: isDeposit ? T.deposit : "#92400e", margin: "0 0 3px", fontSize: "13px" }}>
                             {isDeposit ? "Record a Deposit" : "Record a Cashout — starts as Pending"}
                         </p>
-                        <p style={{ color: isDeposit ? "#166634" : "#92400e", margin: 0, fontSize: "12px", lineHeight: "1.5" }}>
+                        <p style={{ color: isDeposit ? "#047857" : "#92400e", margin: 0, fontSize: "12px", lineHeight: "1.6" }}>
                             {isDeposit
                                 ? "Player receives the full deposit amount. The wallet is credited with (deposit − fee). Game stock deducted for full deposit + bonuses."
                                 : "Cashout is saved as PENDING. Go to the Transactions page to approve it (full or partial payments). Balance is deducted at approval."
@@ -558,164 +785,219 @@ function AddTransactionsPage() {
                     </div>
                 </div>
 
+                <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
 
-                <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-
-                    {/* Player search */}
+                    {/* ── Player Search ── */}
                     <div>
-                        <label style={LABEL}>Player * — search by name, username, email or phone</label>
+                        <label style={S.label}>Player * — search by name, username, email or phone</label>
                         <div ref={dropRef} style={{ position: "relative" }}>
                             <div style={{ position: "relative" }}>
-                                <Search style={{ position: "absolute", left: "11px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
-                                <input type="text" placeholder="Type at least 2 characters…" value={query} onChange={e => { setQuery(e.target.value); if (player) clearPlayer(); }} style={{ ...INPUT, paddingLeft: "34px", paddingRight: player ? "36px" : "12px" }} />
-                                {(player || query) && <button type="button" onClick={clearPlayer} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex" }}><X style={{ width: "14px", height: "14px" }} /></button>}
+                                <Search style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: T.textTertiary, pointerEvents: "none" }} />
+                                <input
+                                    type="text"
+                                    placeholder="Type at least 2 characters…"
+                                    value={query}
+                                    onChange={e => { setQuery(e.target.value); if (player) clearPlayer(); }}
+                                    className="atx-input"
+                                    style={{ ...S.input, paddingLeft: "38px", paddingRight: player ? "36px" : "14px" }}
+                                />
+                                {(player || query) && (
+                                    <button type="button" onClick={clearPlayer} style={{ position: "absolute", right: "11px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: T.textTertiary, display: "flex", padding: "2px" }}>
+                                        <X style={{ width: "13px", height: "13px" }} />
+                                    </button>
+                                )}
                             </div>
-                            {searching && <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 60, background: "#fff", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "12px 16px", color: "#94a3b8", fontSize: "13px", boxShadow: "0 4px 12px rgba(0,0,0,.08)" }}>Searching…</div>}
+
+                            {/* Dropdown */}
+                            {searching && (
+                                <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 60, background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusLg, padding: "14px 16px", color: T.textTertiary, fontSize: "13px", boxShadow: T.shadowLg }}>
+                                    Searching…
+                                </div>
+                            )}
                             {showDrop && !searching && (
-                                <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 60, background: "#fff", border: "1px solid #e2e8f0", borderRadius: "10px", boxShadow: "0 8px 24px rgba(15,23,42,.12)", overflow: "hidden", maxHeight: "260px", overflowY: "auto" }}>
-                                    {results.length === 0 ? <div style={{ padding: "14px 16px", color: "#94a3b8", fontSize: "13px" }}>No players found</div> :
-                                        results.map(p => (
-                                            <div key={p.id} onClick={() => selectPlayer(p)} style={{ padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" }} onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                                <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 60, background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.radiusLg, boxShadow: T.shadowLg, overflow: "hidden", maxHeight: "260px", overflowY: "auto" }}>
+                                    {results.length === 0
+                                        ? <div style={{ padding: "16px", color: T.textTertiary, fontSize: "13px" }}>No players found</div>
+                                        : results.map(p => (
+                                            <div
+                                                key={p.id}
+                                                onClick={() => selectPlayer(p)}
+                                                className="dropdown-item"
+                                                style={{ padding: "11px 16px", cursor: "pointer", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                                            >
                                                 <div>
-                                                    <div style={{ fontWeight: "600", fontSize: "13px", color: "#0f172a" }}>{p.name}</div>
-                                                    <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "1px" }}>{p.email}{p.phone ? ` · ${p.phone}` : ""}</div>
+                                                    <div style={{ fontWeight: "600", fontSize: "13px", color: T.textPrimary }}>{p.name}</div>
+                                                    <div style={{ fontSize: "11px", color: T.textTertiary, marginTop: "1px" }}>{p.email}{p.phone ? ` · ${p.phone}` : ""}</div>
                                                 </div>
                                                 <div style={{ textAlign: "right", flexShrink: 0, marginLeft: "12px" }}>
-                                                    <div style={{ fontWeight: "700", fontSize: "13px", color: "#10b981" }}>{fmt(p.balance)}</div>
-                                                    <span style={{ fontSize: "10px", padding: "1px 6px", borderRadius: "4px", fontWeight: "700", display: "inline-block", marginTop: "2px", background: p.tier === "GOLD" ? "#fef3c7" : p.tier === "SILVER" ? "#e0e7ff" : "#fed7aa", color: p.tier === "GOLD" ? "#92400e" : p.tier === "SILVER" ? "#3730a3" : "#9a3412" }}>{p.tier}</span>
+                                                    <div style={{ fontWeight: "700", fontSize: "13px", color: T.deposit, fontFamily: T.fontMono }}>{fmt(p.balance)}</div>
+                                                    <span style={{
+                                                        fontSize: "10px", padding: "2px 7px", borderRadius: T.radiusFull,
+                                                        fontWeight: "700", display: "inline-block", marginTop: "2px",
+                                                        background: p.tier === "GOLD" ? "#fef3c7" : p.tier === "SILVER" ? "#e0e7ff" : "#fed7aa",
+                                                        color: p.tier === "GOLD" ? "#92400e" : p.tier === "SILVER" ? "#3730a3" : "#9a3412",
+                                                    }}>
+                                                        {p.tier}
+                                                    </span>
                                                 </div>
                                             </div>
                                         ))}
                                 </div>
                             )}
-                            {eligLoading && <div style={{ marginTop: "6px", fontSize: "12px", color: "#94a3b8" }}>Loading player data…</div>}
 
+                            {eligLoading && (
+                                <div style={{ marginTop: "8px", fontSize: "12px", color: T.textTertiary, display: "flex", alignItems: "center", gap: "6px" }}>
+                                    <div style={{ width: "12px", height: "12px", border: `2px solid ${T.border}`, borderTopColor: T.accent, borderRadius: "50%", animation: "spin .7s linear infinite" }} />
+                                    Loading player data…
+                                </div>
+                            )}
 
+                            {/* Player Badges */}
                             {player && !eligLoading && (
-                                <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
-
-                                    {/* ── Player badges row ── */}
-                                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166534" }}>
-                                            <CheckCircle style={{ width: "11px", height: "11px" }} />
-                                            {player.name}
-                                            <span style={{ fontWeight: "400", color: "#4ade80" }}>· ID {player.id}</span>
-                                        </span>
-                                        <span style={{ padding: "4px 10px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#1d4ed8" }}>
-                                            Balance: {fmt(player.balance)}
-                                        </span>
-                                        {streak > 0 && (
-                                            <span style={{ padding: "4px 10px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#92400e" }}>
-                                                🔥 {streak}-day streak
-                                            </span>
-                                        )}
-                                        {matchUsedToday && (
-                                            <span style={{ padding: "4px 10px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#92400e" }}>
-                                                ⚠ Match bonus used today
-                                            </span>
-                                        )}
-                                        {!isDeposit && cashoutLimit > 0 && !streakWaived && (
-                                            <span style={{ padding: "4px 10px", background: cashoutOverLimit ? "#fee2e2" : "#fef2f2", border: `1px solid ${cashoutOverLimit ? "#fca5a5" : "#fecaca"}`, borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#991b1b" }}>
-                                                Daily limit: {fmt(cashoutLimit - todayCashoutTotal)} remaining (of {fmt(cashoutLimit)})
-                                            </span>
-                                        )}
-                                        {!isDeposit && streakWaived && (
-                                            <span style={{ padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166634" }}>
-                                                ✓ Limit waived (30-day streak)
-                                            </span>
-                                        )}
-                                        {/* Match bonus eligibility */}
-                                        {isDeposit && (
-                                            matchUsedToday ? (
-                                                <span style={{ padding: "4px 10px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "#92400e" }}>
-                                                    ⚠ Match used today
-                                                </span>
-                                            ) : (
-                                                <span style={{ padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "#166634" }}>
-                                                    ✓ Match available
-                                                </span>
-                                            )
-                                        )}
-
-                                        {/* Referral bonus eligibility */}
-                                        {isDeposit && playerHasReferrer && (
-                                            referralCheckLoading ? (
-                                                <span style={{ padding: "4px 10px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", color: "#94a3b8" }}>
-                                                    Checking referral…
-                                                </span>
-                                            ) : eligibleBonuses.length > 0 ? (
-                                                <span style={{ padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "#166634" }}>
+                                <div style={{ marginTop: "10px", display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
+                                    <Pill bg={T.depositSurface} border={T.depositBorder} color={T.deposit} icon={<CheckCircle style={{ width: "11px", height: "11px" }} />}>
+                                        {player.name} · ID {player.id}
+                                    </Pill>
+                                    <Pill bg={T.accentSurface} border={T.accentBorder} color={T.accent}>
+                                        Balance: {fmt(player.balance)}
+                                    </Pill>
+                                    {streak > 0 && (
+                                        <Pill bg={T.warnSurface} border={T.warnBorder} color={T.warn}>
+                                            🔥 {streak}-day streak
+                                        </Pill>
+                                    )}
+                                    {!isDeposit && cashoutLimit > 0 && !streakWaived && (
+                                        <Pill
+                                            bg={cashoutOverLimit ? T.cashoutSurface : T.surfaceSubtle}
+                                            border={cashoutOverLimit ? T.cashoutBorder : T.border}
+                                            color={cashoutOverLimit ? T.cashout : T.textSecondary}
+                                        >
+                                            Daily limit: {fmt(cashoutLimit - todayCashoutTotal)} remaining
+                                        </Pill>
+                                    )}
+                                    {!isDeposit && streakWaived && (
+                                        <Pill bg={T.depositSurface} border={T.depositBorder} color={T.deposit}>
+                                            ✓ Limit waived (30-day streak)
+                                        </Pill>
+                                    )}
+                                    {isDeposit && (
+                                        matchUsedToday
+                                            ? <Pill bg={T.warnSurface} border={T.warnBorder} color={T.warn}>⚠ Match used today</Pill>
+                                            : <Pill bg={T.depositSurface} border={T.depositBorder} color={T.deposit}>✓ Match available</Pill>
+                                    )}
+                                    {isDeposit && playerHasReferrer && (
+                                        referralCheckLoading
+                                            ? <Pill>Checking referral…</Pill>
+                                            : eligibleBonuses.length > 0
+                                                ? <Pill bg={T.depositSurface} border={T.depositBorder} color={T.deposit}>
                                                     👥 {eligibleBonuses.length} referral pending · ${eligibleBonuses.reduce((s, b) => s + b.bonusAmount, 0).toFixed(2)}
-                                                </span>
-                                            ) : referralAlreadyRecorded ? (
-                                                <span style={{ padding: "4px 10px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "#92400e" }}>
-                                                    ⚠ Referral recorded
-                                                </span>
-                                            ) : (
-                                                <span style={{ padding: "4px 10px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#64748b" }}>
-                                                    👥 Referral not yet recorded
-                                                </span>
-                                            )
-                                        )}
-                                    </div>
-
-
+                                                </Pill>
+                                                : referralAlreadyRecorded
+                                                    ? <Pill bg={T.warnSurface} border={T.warnBorder} color={T.warn}>⚠ Referral recorded</Pill>
+                                                    : <Pill>👥 Referral not yet recorded</Pill>
+                                    )}
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Amount + Fee + Wallet */}
+                    {/* ── Amount / Fee / Wallet ── */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
                         <div>
-                            <label style={LABEL}>{isDeposit ? "Deposit Amount ($) *" : `Cashout Amount ($) *${!streakWaived && cashoutLimit > 0 ? ` — Limit: ${fmt(cashoutLimit)}` : ""}`}</label>
-                            <input type="number" placeholder="0.00" min="0.01" step="0.01" value={form.amount} onChange={e => set("amount", e.target.value)} style={{ ...INPUT, borderColor: cashoutOverLimit ? "#fca5a5" : "#e2e8f0" }} />
-                            {cashoutOverLimit && <p style={{ color: "#ef4444", fontSize: "11px", marginTop: "4px" }}>⚠ Exceeds cashout limit of {fmt(cashoutLimit)}</p>}
+                            <label style={S.label}>
+                                {isDeposit ? "Deposit Amount ($) *" : `Cashout Amount ($) *`}
+                                {!isDeposit && !streakWaived && cashoutLimit > 0 && (
+                                    <span style={{ fontWeight: "400", textTransform: "none", letterSpacing: 0, marginLeft: "4px", color: T.warn }}>
+                                        limit {fmt(cashoutLimit)}
+                                    </span>
+                                )}
+                            </label>
+                            <input
+                                type="number"
+                                placeholder="0.00"
+                                min="0.01"
+                                step="0.01"
+                                value={form.amount}
+                                onChange={e => set("amount", e.target.value)}
+                                className="atx-input"
+                                style={{ ...S.input, borderColor: cashoutOverLimit ? T.cashoutBorder : S.input.borderColor, fontFamily: T.fontMono }}
+                            />
+                            {cashoutOverLimit && (
+                                <p style={{ color: T.cashout, fontSize: "11px", marginTop: "5px", fontWeight: "600" }}>
+                                    ⚠ Exceeds cashout limit of {fmt(cashoutLimit)}
+                                </p>
+                            )}
                         </div>
 
                         <div>
-                            <label style={LABEL}>Fee ($) <span style={{ fontWeight: 400, fontSize: "10px", color: "#f59e0b" }}>optional</span></label>
-                            <input type="number" placeholder="0.00" min="0" step="0.01" value={form.fee} onChange={e => set("fee", e.target.value)} style={{ ...INPUT, borderColor: feeAmt > 0 ? "#f59e0b" : "#e2e8f0" }} />
+                            <label style={S.label}>
+                                Fee ($)
+                                <span style={{ fontWeight: "400", textTransform: "none", letterSpacing: 0, marginLeft: "4px", color: T.textTertiary }}>optional</span>
+                            </label>
+                            <input
+                                type="number"
+                                placeholder="0.00"
+                                min="0"
+                                step="0.01"
+                                value={form.fee}
+                                onChange={e => set("fee", e.target.value)}
+                                className="atx-input"
+                                style={{ ...S.input, borderColor: feeAmt > 0 ? T.warnBorder : S.input.borderColor, fontFamily: T.fontMono }}
+                            />
                             {amt > 0 && (
-                                <p style={{ fontSize: "11px", marginTop: "4px", fontWeight: "600", color: feeAmt > 0 ? "#92400e" : "#94a3b8" }}>
+                                <p style={{ fontSize: "11.5px", marginTop: "5px", fontWeight: "500", color: feeAmt > 0 ? T.warn : T.textTertiary }}>
                                     {feeAmt > 0
                                         ? isDeposit
-                                            ? `Wallet gets: ${fmt(amt - feeAmt)} (${fmt(amt)} − ${fmt(feeAmt)} fee)`
-                                            : `Wallet pays: ${fmt(amt + feeAmt)} (${fmt(amt)} + ${fmt(feeAmt)} fee)`
-                                        : isDeposit ? "No fee — wallet gets full deposit" : "No fee — wallet pays exact amount"}
+                                            ? `Wallet gets ${fmt(amt - feeAmt)}`
+                                            : `Wallet pays ${fmt(amt + feeAmt)}`
+                                        : isDeposit ? "Wallet gets full deposit" : "Wallet pays exact amount"}
                                 </p>
                             )}
                         </div>
 
                         <div>
-                            <label style={LABEL}>{isDeposit ? "Wallet * (receives deposit − fee)" : "Deduct From Wallet *"}</label>
+                            <label style={S.label}>
+                                {isDeposit ? "Wallet * (receives deposit − fee)" : "Deduct From Wallet *"}
+                            </label>
                             <div style={{ position: "relative" }}>
-                                <select value={form.walletId} onChange={e => set("walletId", e.target.value)} style={SELECT}>
+                                <select
+                                    value={form.walletId}
+                                    onChange={e => set("walletId", e.target.value)}
+                                    className="atx-select"
+                                    style={S.select}
+                                >
                                     <option value="">— Select wallet —</option>
-                                    {wallets.map(w => <option key={w.id} value={w.id} disabled={!isDeposit && w.balance < amt}>{w.label}{!isDeposit && w.balance < amt ? " — INSUFFICIENT" : ""}</option>)}
+                                    {wallets.map(w => (
+                                        <option key={w.id} value={w.id} disabled={!isDeposit && w.balance < amt}>
+                                            {w.label}{!isDeposit && w.balance < amt ? " — INSUFFICIENT" : ""}
+                                        </option>
+                                    ))}
                                 </select>
-                                <ChevronDown style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
+                                <ChevronDown style={{ position: "absolute", right: "11px", top: "50%", transform: "translateY(-50%)", width: "13px", height: "13px", color: T.textTertiary, pointerEvents: "none" }} />
                             </div>
-                            {selWallet && amt > 0 && isDeposit && (
-                                <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: "#22c55e" }}>
-                                    ✓ {fmt(selWallet.balance)} → {fmt(selWallet.balance + amt - feeAmt)}
-                                    {feeAmt > 0 && <span style={{ fontWeight: "400", color: "#94a3b8", fontSize: "11px" }}> (deposit − fee)</span>}
-                                </p>
-                            )}
-                            {selWallet && amt > 0 && !isDeposit && (
-                                <p style={{ fontSize: "12px", marginTop: "4px", fontWeight: "600", color: "#22c55e" }}>
-                                    ✓ {fmt(selWallet.balance)} → {fmt(selWallet.balance - amt - feeAmt)}
-                                    {feeAmt > 0 && <span style={{ fontWeight: "400", color: "#94a3b8", fontSize: "11px" }}> (cashout + fee)</span>}
+                            {selWallet && amt > 0 && (
+                                <p style={{ fontSize: "11.5px", marginTop: "5px", fontWeight: "600", color: T.deposit, fontFamily: T.fontMono }}>
+                                    {isDeposit
+                                        ? `${fmt(selWallet.balance)} → ${fmt(selWallet.balance + amt - feeAmt)}`
+                                        : `${fmt(selWallet.balance)} → ${fmt(selWallet.balance - amt - feeAmt)}`}
                                 </p>
                             )}
                         </div>
                     </div>
 
-                    {/* Game selector */}
+                    {/* ── Game Selector ── */}
                     <div>
-                        <label style={LABEL}>Game <span style={{ color: "#ef4444" }}>*</span> required for all transactions</label>
+                        <label style={S.label}>
+                            Game <span style={{ color: T.cashout }}>*</span>
+                            <span style={{ fontWeight: "400", textTransform: "none", letterSpacing: 0, marginLeft: "4px", color: T.textTertiary }}>required for all transactions</span>
+                        </label>
                         <div style={{ position: "relative" }}>
-                            <select value={form.gameId} onChange={e => set("gameId", e.target.value)} style={{ ...SELECT, borderColor: !form.gameId ? "#fca5a5" : "#e2e8f0" }}>
+                            <select
+                                value={form.gameId}
+                                onChange={e => set("gameId", e.target.value)}
+                                className="atx-select"
+                                style={{ ...S.select, borderColor: !form.gameId ? "#fca5a5" : T.border }}
+                            >
                                 <option value="">— Select a game —</option>
                                 {games.map(g => {
                                     const isDeficit = g.pointStock <= 0;
@@ -724,72 +1006,88 @@ function AddTransactionsPage() {
                                         <option key={g.id} value={g.id} disabled={disableForDeposit}>
                                             {g.name}  ({(g.pointStock ?? 0).toFixed(0)} pts)
                                             {isDeficit ? (isDeposit ? " — EMPTY" : " — 0 pts (will refill)") : ""}
-
                                         </option>
                                     );
                                 })}
                             </select>
-                            <ChevronDown style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
+                            <ChevronDown style={{ position: "absolute", right: "11px", top: "50%", transform: "translateY(-50%)", width: "13px", height: "13px", color: T.textTertiary, pointerEvents: "none" }} />
                         </div>
                         {selGame && (
-                            <div style={{ marginTop: "8px", padding: "10px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: "500", background: !stockOk ? "#fee2e2" : "#f0fdf4", border: `1px solid ${!stockOk ? "#fca5a5" : "#86efac"}`, color: !stockOk ? "#991b1b" : "#166634" }}>
+                            <div style={{
+                                marginTop: "8px", padding: "10px 14px", borderRadius: T.radiusMd,
+                                fontSize: "12px", fontWeight: "500",
+                                background: !stockOk ? T.cashoutSurface : T.depositSurface,
+                                border: `1px solid ${!stockOk ? T.cashoutBorder : T.depositBorder}`,
+                                color: !stockOk ? T.cashout : T.deposit,
+                                fontFamily: T.fontMono,
+                            }}>
                                 {isDeposit
                                     ? (!stockOk
                                         ? `⚠ Insufficient — ${selGame.name} has ${selGame.pointStock.toFixed(2)} pts, need ${stockNeeded.toFixed(2)}`
-                                        : `✓ ${selGame.name}: ${selGame.pointStock.toFixed(2)} pts → ${(selGame.pointStock - stockNeeded).toFixed(2)} pts after`)
-                                    : `✓ ${selGame.name}: ${selGame.pointStock.toFixed(2)} pts → ${(selGame.pointStock + stockNeeded).toFixed(2)} pts after`
+                                        : `✓ ${selGame.name}: ${selGame.pointStock.toFixed(2)} → ${(selGame.pointStock - stockNeeded).toFixed(2)} pts after`)
+                                    : `✓ ${selGame.name}: ${selGame.pointStock.toFixed(2)} → ${(selGame.pointStock + stockNeeded).toFixed(2)} pts after`
                                 }
                             </div>
                         )}
                     </div>
 
-                    {/* Bonus section — deposits only */}
+                    {/* ── Bonuses — deposit only ── */}
                     {isDeposit && (
                         <>
-                            <div style={DIVIDER} />
+                            <div style={S.divider} />
                             <div>
-                                <div style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a", display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-                                    <Zap style={{ width: "15px", height: "15px", color: "#f59e0b" }} /> Deposit Bonuses
-                                </div>
-                                <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 14px" }}>
-                                    Match bonus: once per day · Referral bonuses: toggle below to record eligibility, then grant from Bonus page.
+                                <SectionHeader icon={Zap} label="Deposit Bonuses" iconColor={T.warn} />
+                                <p style={{ fontSize: "12px", color: T.textTertiary, margin: "0 0 14px", lineHeight: "1.6" }}>
+                                    Match bonus: once per day · Referral bonuses: toggle below to record eligibility, then grant from the Bonus page.
                                 </p>
                                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                                    <BonusToggle bonus={DEPOSIT_BONUSES[0]} amount={amt} player={player} enabled={form.bonusMatch} onToggle={v => set("bonusMatch", v)} eligible={!matchUsedToday} disabledReason="Match bonus already used today for this player" />
-                                    <BonusToggle bonus={DEPOSIT_BONUSES[1]} amount={amt} player={player} enabled={form.bonusSpecial} onToggle={v => set("bonusSpecial", v)} />
+                                    <BonusToggle
+                                        bonus={DEPOSIT_BONUSES[0]} amount={amt} enabled={form.bonusMatch}
+                                        onToggle={v => set("bonusMatch", v)}
+                                        eligible={!matchUsedToday}
+                                        disabledReason="Match bonus already used today for this player"
+                                    />
+                                    <BonusToggle
+                                        bonus={DEPOSIT_BONUSES[1]} amount={amt} enabled={form.bonusSpecial}
+                                        onToggle={v => set("bonusSpecial", v)}
+                                    />
                                 </div>
 
-                                {/* Transaction summary */}
+                                {/* Transaction Summary */}
                                 {amt > 0 && (
-                                    <div style={{ marginTop: "14px", borderRadius: "10px", border: "1px solid #e2e8f0", overflow: "hidden" }}>
-                                        <div style={{ background: "#f8fafc", padding: "9px 16px", borderBottom: "1px solid #e2e8f0" }}>
-                                            <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px" }}>Transaction Summary</span>
+                                    <div style={{ marginTop: "16px", borderRadius: T.radiusLg, border: `1px solid ${T.border}`, overflow: "hidden" }}>
+                                        <div style={{ background: T.surfaceSubtle, padding: "10px 16px", borderBottom: `1px solid ${T.border}` }}>
+                                            <span style={{ fontSize: "11px", fontWeight: "700", color: T.textTertiary, textTransform: "uppercase", letterSpacing: "0.7px" }}>
+                                                Transaction Summary
+                                            </span>
                                         </div>
-                                        <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-                                                <span style={{ color: "#64748b" }}>Deposit amount</span>
-                                                <span style={{ fontWeight: "700", color: "#0f172a" }}>{fmt(amt)}</span>
-                                            </div>
-                                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", padding: "8px 12px", background: "#f0fdf4", borderRadius: "8px", border: "1px solid #86efac" }}>
-                                                <span style={{ color: "#166534", fontWeight: "600" }}>👤 Player receives</span>
-                                                <span style={{ fontWeight: "800", color: "#10b981" }}>{fmt(amt)}</span>
-                                            </div>
-                                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", padding: "8px 12px", background: "#f0f9ff", borderRadius: "8px", border: "1px solid #bae6fd" }}>
-                                                <span style={{ color: "#0369a1", fontWeight: "600", display: "flex", alignItems: "center", gap: "5px" }}>
-                                                    <Wallet style={{ width: "12px", height: "12px" }} /> Wallet credited
-                                                    {feeAmt > 0 && <span style={{ fontWeight: "400", fontSize: "11px", color: "#64748b" }}>(deposit − fee)</span>}
-                                                </span>
-                                                <span style={{ fontWeight: "800", color: "#0369a1" }}>{fmt(amt - feeAmt)}</span>
-                                            </div>
-                                            {feeAmt > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#94a3b8", paddingLeft: "4px" }}><span>Fee</span><span style={{ color: "#f59e0b", fontWeight: "600" }}>{fmt(feeAmt)}</span></div>}
-                                            {matchAmt > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}><span style={{ color: "#64748b" }}>Match bonus (50%)</span><span style={{ fontWeight: "700", color: "#3b82f6" }}>+ {fmt(matchAmt)}</span></div>}
-                                            {specialAmt > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}><span style={{ color: "#64748b" }}>Special bonus (20%)</span><span style={{ fontWeight: "700", color: "#a855f7" }}>+ {fmt(specialAmt)}</span></div>}
-                                            <div style={{ height: "1px", background: "#e2e8f0", margin: "2px 0" }} />
-                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                                <span style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a" }}>Total to player's balance</span>
-                                                <span style={{ fontSize: "17px", fontWeight: "800", color: "#10b981" }}>{fmt(amt + totalBonus)}</span>
-                                            </div>
-                                            {selGame && stockNeeded > 0 && <div style={{ fontSize: "11px", color: "#94a3b8" }}>Game stock deduction: {fmt(stockNeeded)} pts from {selGame.name}</div>}
+                                        <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                                            <SummaryRow label="Deposit amount" value={fmt(amt)} />
+                                            <SummaryRow
+                                                label="👤 Player receives" value={fmt(amt)}
+                                                valueColor={T.deposit} bg={T.depositSurface} border={T.depositBorder} accent
+                                            />
+                                            <SummaryRow
+                                                label={<span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                                                    <Wallet style={{ width: "11px", height: "11px" }} /> Wallet credited
+                                                    {feeAmt > 0 && <span style={{ fontWeight: "400", fontSize: "11px", color: T.textTertiary }}>(deposit − fee)</span>}
+                                                </span>}
+                                                value={fmt(amt - feeAmt)}
+                                                valueColor={T.accent} bg={T.accentSurface} border={T.accentBorder} accent
+                                            />
+                                            {feeAmt > 0 && <SummaryRow label="Fee" value={fmt(feeAmt)} valueColor={T.warn} />}
+                                            {matchAmt > 0 && <SummaryRow label="Match bonus (50%)" value={`+${fmt(matchAmt)}`} valueColor="#3b82f6" />}
+                                            {specialAmt > 0 && <SummaryRow label="Special bonus (20%)" value={`+${fmt(specialAmt)}`} valueColor={T.bonus} />}
+                                            <div style={{ height: "1px", background: T.border, margin: "4px 0" }} />
+                                            <SummaryRow
+                                                label="Total to player's balance" value={fmt(amt + totalBonus)}
+                                                valueColor={T.deposit} bg={T.depositSurface} border={T.depositBorder} accent
+                                            />
+                                            {selGame && stockNeeded > 0 && (
+                                                <div style={{ fontSize: "11px", color: T.textTertiary, marginTop: "2px" }}>
+                                                    Game stock deduction: {fmt(stockNeeded)} pts from {selGame.name}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -797,135 +1095,261 @@ function AddTransactionsPage() {
                         </>
                     )}
 
-                    {/* ── Referral Bonus Eligibility Toggle — only shown when player has a referrer ── */}
+                    {/* ── Referral Toggle ── */}
                     {isDeposit && player && playerHasReferrer && (
                         <div style={{
-                            border: `1px solid ${referralAlreadyRecorded ? "#fde68a" : bonusReferral ? "#86efac" : "#e2e8f0"}`,
-                            borderRadius: "10px", padding: "13px 16px",
-                            background: referralAlreadyRecorded ? "#fffbeb" : bonusReferral ? "#f0fdf4" : "#fafafa",
-                            transition: "all .15s",
+                            border: `1.5px solid ${referralAlreadyRecorded ? T.warnBorder : bonusReferral ? T.depositBorder : T.border}`,
+                            borderRadius: T.radiusLg, padding: "14px 16px",
+                            background: referralAlreadyRecorded ? T.warnSurface : bonusReferral ? T.depositSurface : T.surfaceSubtle,
+                            transition: "all .2s",
                             opacity: referralAlreadyRecorded ? 0.75 : 1,
                         }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
                                 <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", flex: 1 }}>
-                                    <div style={{ width: "34px", height: "34px", borderRadius: "9px", flexShrink: 0, background: bonusReferral && !referralAlreadyRecorded ? "#dcfce7" : "#f1f5f9", border: `1px solid ${bonusReferral && !referralAlreadyRecorded ? "#86efac" : "#e2e8f0"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                        <Users style={{ width: "15px", height: "15px", color: bonusReferral && !referralAlreadyRecorded ? "#16a34a" : "#94a3b8" }} />
+                                    <div style={{
+                                        width: "36px", height: "36px", borderRadius: T.radiusMd, flexShrink: 0,
+                                        background: bonusReferral && !referralAlreadyRecorded ? T.depositSurface : T.surface,
+                                        border: `1.5px solid ${bonusReferral && !referralAlreadyRecorded ? T.depositBorder : T.border}`,
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                    }}>
+                                        <Users style={{ width: "15px", height: "15px", color: bonusReferral && !referralAlreadyRecorded ? T.deposit : T.textTertiary }} />
                                     </div>
                                     <div>
-                                        <div style={{ fontWeight: "700", fontSize: "13px", color: "#0f172a" }}>Record Referral Bonus Eligibility</div>
+                                        <div style={{ fontWeight: "600", fontSize: "13px", color: T.textPrimary }}>Record Referral Bonus Eligibility</div>
                                         {referralAlreadyRecorded
-                                            ? <div style={{ fontSize: "11px", color: "#d97706", marginTop: "2px", fontWeight: "600" }}>
+                                            ? <div style={{ fontSize: "12px", color: T.warn, marginTop: "3px", fontWeight: "600" }}>
                                                 ⚠ Already recorded — grant the pending bonus from the Bonus page
                                             </div>
-                                            : <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px", lineHeight: "1.5" }}>
-                                                Records <strong>${amt > 0 ? referralBonusAmt.toFixed(2) : "x÷2"}</strong> eligibility for{" "}
-                                                <strong>{player?.name}</strong> and referrer <strong>{referrerName}</strong>.
-                                                No game deduction now — grant is done separately on the Bonus page.
+                                            : <div style={{ fontSize: "12px", color: T.textSecondary, marginTop: "3px", lineHeight: "1.5" }}>
+                                                Records <strong style={{ color: T.textPrimary }}>${amt > 0 ? referralBonusAmt.toFixed(2) : "x÷2"}</strong> eligibility for{" "}
+                                                <strong style={{ color: T.textPrimary }}>{player?.name}</strong> and referrer{" "}
+                                                <strong style={{ color: T.textPrimary }}>{referrerName}</strong>.
+                                                No game deduction now — grant is done separately.
                                             </div>
                                         }
                                         {bonusReferral && !referralAlreadyRecorded && amt > 0 && (
-                                            <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
-                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 10px", borderRadius: "20px", fontSize: "12px", fontWeight: "700", background: "#dcfce7", border: "1px solid #86efac", color: "#166534" }}>
+                                            <div style={{ display: "flex", gap: "7px", marginTop: "9px", flexWrap: "wrap" }}>
+                                                <Pill bg={T.depositSurface} border={T.depositBorder} color={T.deposit}>
                                                     👤 {player?.name}: +${referralBonusAmt.toFixed(2)}
-                                                </span>
-                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 10px", borderRadius: "20px", fontSize: "12px", fontWeight: "700", background: "#dcfce7", border: "1px solid #86efac", color: "#166534" }}>
+                                                </Pill>
+                                                <Pill bg={T.depositSurface} border={T.depositBorder} color={T.deposit}>
                                                     👤 {referrerName}: +${referralBonusAmt.toFixed(2)}
-                                                </span>
+                                                </Pill>
                                             </div>
                                         )}
                                     </div>
                                 </div>
-                                <div
+                                <Toggle
+                                    on={bonusReferral && !referralAlreadyRecorded}
                                     onClick={() => !referralAlreadyRecorded && amt > 0 && setBonusReferral(v => !v)}
-                                    style={{ width: "40px", height: "23px", borderRadius: "12px", flexShrink: 0, marginTop: "2px", background: bonusReferral && !referralAlreadyRecorded ? "#16a34a" : "#cbd5e1", cursor: (referralAlreadyRecorded || amt <= 0) ? "not-allowed" : "pointer", position: "relative", transition: "background .2s", opacity: referralAlreadyRecorded ? 0.5 : 1 }}>
-                                    <div style={{ width: "17px", height: "17px", borderRadius: "50%", background: "#fff", position: "absolute", top: "3px", left: bonusReferral && !referralAlreadyRecorded ? "20px" : "3px", transition: "left .2s", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
-                                </div>
+                                    color={T.deposit}
+                                    disabled={referralAlreadyRecorded || amt <= 0}
+                                />
                             </div>
                         </div>
                     )}
 
-                    {/* Notes */}
+                    {/* ── Notes ── */}
                     <div>
-                        <label style={LABEL}>Notes (optional)</label>
-                        <textarea placeholder="Add any notes…" rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} style={{ ...INPUT, resize: "none", lineHeight: "1.6" }} />
+                        <label style={S.label}>
+                            Notes
+                            <span style={{ fontWeight: "400", textTransform: "none", letterSpacing: 0, marginLeft: "4px", color: T.textTertiary }}>optional</span>
+                        </label>
+                        <textarea
+                            placeholder="Add any notes…"
+                            rows={2}
+                            value={form.notes}
+                            onChange={e => set("notes", e.target.value)}
+                            className="atx-input"
+                            style={{ ...S.input, resize: "none", lineHeight: "1.6" }}
+                        />
                     </div>
 
-                    {/* Buttons */}
+                    {/* ── Action Buttons ── */}
                     <div style={{ display: "flex", gap: "12px", paddingTop: "4px" }}>
-                        <button type="button" onClick={() => { setForm(EMPTY); setQuery(""); clearPlayer(); }} style={{ flex: 1, padding: "12px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px" }}>Clear</button>
-                        <button type="submit" disabled={!canSubmit} style={{ flex: 1, padding: "12px", border: "none", borderRadius: "8px", fontWeight: "700", fontSize: "14px", cursor: canSubmit ? "pointer" : "not-allowed", background: canSubmit ? (isDeposit ? "#10b981" : "#f59e0b") : "#e2e8f0", color: canSubmit ? "#fff" : "#94a3b8", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px" }}>
-                            {submitting ? <span>⏳ Processing…</span> : isDeposit
-                                ? <><ArrowDownLeft style={{ width: "15px", height: "15px" }} /> Record Deposit</>
-                                : <><Clock style={{ width: "15px", height: "15px" }} /> Record Cashout (→ Pending)</>
+                        <button
+                            type="button"
+                            onClick={() => { setForm(EMPTY); setQuery(""); clearPlayer(); }}
+                            style={{
+                                flex: "0 0 auto", padding: "11px 22px",
+                                background: T.surface,
+                                border: `1.5px solid ${T.border}`,
+                                borderRadius: T.radiusMd, fontWeight: "600",
+                                cursor: "pointer", fontSize: "13.5px",
+                                color: T.textSecondary, fontFamily: T.fontSans,
+                                transition: "all .15s",
+                            }}
+                        >
+                            Clear
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={!canSubmit}
+                            style={{
+                                flex: 1, padding: "11px 22px", border: "none",
+                                borderRadius: T.radiusMd, fontWeight: "700",
+                                fontSize: "13.5px",
+                                cursor: canSubmit ? "pointer" : "not-allowed",
+                                background: canSubmit
+                                    ? isDeposit ? T.deposit : T.warn
+                                    : T.surfaceSubtle,
+                                color: canSubmit ? T.textInverse : T.textTertiary,
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
+                                transition: "all .2s", fontFamily: T.fontSans,
+                                boxShadow: canSubmit ? (isDeposit ? "0 2px 8px rgba(5,150,105,.3)" : "0 2px 8px rgba(217,119,6,.3)") : "none",
+                            }}
+                        >
+                            {submitting
+                                ? <><div style={{ width: "14px", height: "14px", border: "2px solid rgba(255,255,255,.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin .7s linear infinite" }} /> Processing…</>
+                                : isDeposit
+                                    ? <><ArrowDownLeft style={{ width: "14px", height: "14px" }} /> Record Deposit</>
+                                    : <><Clock style={{ width: "14px", height: "14px" }} /> Record Cashout (→ Pending)</>
                             }
                         </button>
                     </div>
                 </form>
             </div>
 
-            {/* ════ TRANSACTION LEDGER ════ */}
-            <div style={{ ...CARD, padding: 0, overflow: "hidden" }}>
-                <div style={{ padding: "16px 20px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+            {/* ═══ LEDGER ═══ */}
+            <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
+
+                {/* Ledger Header */}
+                <div style={{
+                    padding: "16px 24px", borderBottom: `1px solid ${T.border}`,
+                    display: "flex", justifyContent: "space-between",
+                    alignItems: "center", flexWrap: "wrap", gap: "12px",
+                }}>
                     <div>
-                        <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: "#0f172a" }}>Recent Transactions</h3>
-                        <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#94a3b8" }}>Deposits complete immediately · Cashouts start as Pending — approve via Transactions page</p>
+                        <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: T.textPrimary, letterSpacing: "-0.2px" }}>
+                            Recent Transactions
+                        </h3>
+                        <p style={{ margin: "3px 0 0", fontSize: "12px", color: T.textTertiary }}>
+                            Deposits complete immediately · Cashouts start as Pending
+                        </p>
                     </div>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                        <div onClick={() => setAutoRefresh(!autoRefresh)} style={{ padding: "6px 12px", borderRadius: "8px", border: "1px solid #e2e8f0", background: autoRefresh ? "#dcfce7" : "#fff", color: autoRefresh ? "#166634" : "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}>
-                            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: autoRefresh ? "#22c55e" : "#cbd5e1" }} />Auto {autoRefresh ? "ON" : "OFF"}
+                        <div
+                            onClick={() => setAutoRefresh(!autoRefresh)}
+                            style={{
+                                padding: "6px 12px", borderRadius: T.radiusMd,
+                                border: `1px solid ${autoRefresh ? T.depositBorder : T.border}`,
+                                background: autoRefresh ? T.depositSurface : T.surface,
+                                color: autoRefresh ? T.deposit : T.textSecondary,
+                                fontSize: "12px", fontWeight: "600", cursor: "pointer",
+                                display: "flex", alignItems: "center", gap: "6px",
+                                transition: "all .15s",
+                            }}
+                        >
+                            <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: autoRefresh ? T.deposit : T.border, transition: "background .2s" }} />
+                            Auto {autoRefresh ? "ON" : "OFF"}
                         </div>
-                        <button onClick={() => loadLedger()} disabled={ledgerLoading} style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "7px 12px", cursor: "pointer", color: "#64748b", display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: "600" }}>
-                            <RefreshCw style={{ width: "13px", height: "13px", animation: ledgerLoading ? "spin 1s linear infinite" : "none" }} /> Refresh
+                        <button
+                            onClick={() => loadLedger()}
+                            disabled={ledgerLoading}
+                            style={{
+                                background: T.surface, border: `1px solid ${T.border}`,
+                                borderRadius: T.radiusMd, padding: "6px 12px",
+                                cursor: "pointer", color: T.textSecondary,
+                                display: "flex", alignItems: "center", gap: "5px",
+                                fontSize: "12px", fontWeight: "600", fontFamily: T.fontSans,
+                                transition: "all .15s",
+                            }}
+                        >
+                            <RefreshCw style={{ width: "12px", height: "12px", animation: ledgerLoading ? "spin 1s linear infinite" : "none" }} />
+                            Refresh
                         </button>
-                        <span style={{ fontSize: "11px", color: "#94a3b8" }}>{lastRefresh.toLocaleTimeString()}</span>
+                        <span style={{ fontSize: "11px", color: T.textTertiary, fontFamily: T.fontMono }}>
+                            {lastRefresh.toLocaleTimeString()}
+                        </span>
                     </div>
                 </div>
 
+                {/* Ledger Body */}
                 {ledgerLoading ? (
-                    <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
-                        <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "spin .8s linear infinite" }} />
-                        Loading transactions history…
+                    <div style={{ padding: "52px 0", textAlign: "center", color: T.textTertiary, fontSize: "13px" }}>
+                        <RefreshCw style={{ width: "14px", height: "14px", margin: "0 auto 10px", display: "block", animation: "spin .8s linear infinite" }} />
+                        Loading transaction history…
                     </div>
                 ) : ledger.length === 0 ? (
-                    <div style={{ padding: "48px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No transactions yet</div>
+                    <div style={{ padding: "52px", textAlign: "center", color: T.textTertiary, fontSize: "13px" }}>
+                        No transactions yet
+                    </div>
                 ) : (
                     <div style={{ width: "100%", overflowX: "auto", overflowY: "auto", maxHeight: "560px" }}>
                         <table style={{ width: "100%", minWidth: "900px", borderCollapse: "collapse", fontSize: "13px" }}>
                             <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
-                                <tr style={{ background: "#f8fafc" }}>
+                                <tr style={{ background: T.surfaceSubtle }}>
                                     {[
                                         { label: "ID", w: "60px" }, { label: "Player", w: "150px" }, { label: "Type", w: "120px" },
                                         { label: "Amount", w: "100px" }, { label: "Fee", w: "80px" }, { label: "Received / Paid", w: "130px" },
                                         { label: "Game", w: "110px" }, { label: "Wallet", w: "130px" }, { label: "Before → After", w: "155px" },
                                         { label: "Status", w: "95px" }, { label: "Date", w: "155px" }, { label: "", w: "80px" },
                                     ].map(col => (
-                                        <th key={col.label} style={{ textAlign: "left", padding: "10px 12px", fontWeight: "700", color: "#64748b", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.4px", borderBottom: "2px solid #e2e8f0", whiteSpace: "nowrap", width: col.w, minWidth: col.w, background: "#f8fafc" }}>
+                                        <th key={col.label} style={{
+                                            textAlign: "left", padding: "10px 14px",
+                                            fontWeight: "700", color: T.textTertiary,
+                                            fontSize: "10.5px", textTransform: "uppercase",
+                                            letterSpacing: "0.6px",
+                                            borderBottom: `2px solid ${T.border}`,
+                                            whiteSpace: "nowrap", width: col.w, minWidth: col.w,
+                                            background: T.surfaceSubtle,
+                                        }}>
                                             {col.label}
                                         </th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody>
-                                {ledger.map((tx, i) => <LedgerRow key={tx.id ?? i} tx={tx} undoingId={undoingId} onUndo={handleUndo} />)}
+                                {ledger.map((tx, i) => (
+                                    <LedgerRow key={tx.id ?? i} tx={tx} undoingId={undoingId} onUndo={handleUndo} />
+                                ))}
                             </tbody>
                         </table>
                     </div>
                 )}
 
                 {!ledgerLoading && ledger.length > 0 && (
-                    <div style={{ padding: "10px 20px", borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: "12px", color: "#94a3b8" }}>Showing {ledger.length} transaction{ledger.length !== 1 ? "s" : ""}</span>
-                        <span style={{ fontSize: "11px", color: "#cbd5e1" }}>← scroll horizontally to see all columns</span>
+                    <div style={{
+                        padding: "10px 24px", borderTop: `1px solid ${T.border}`,
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                    }}>
+                        <span style={{ fontSize: "12px", color: T.textTertiary }}>
+                            Showing {ledger.length} transaction{ledger.length !== 1 ? "s" : ""}
+                        </span>
+                        <span style={{ fontSize: "11px", color: T.border }}>← scroll horizontally to see all columns</span>
                     </div>
                 )}
             </div>
 
+            {/* ─── Global Styles ─── */}
             <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap');
+
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                ::-webkit-scrollbar { width: 6px; height: 6px; }
-                ::-webkit-scrollbar-track { background: #f8fafc; }
-                ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-                ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+                @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+                .atx-input:focus, .atx-select:focus {
+                    border-color: ${T.accent} !important;
+                    box-shadow: 0 0 0 3px ${T.accentSurface};
+                }
+                .atx-input::placeholder { color: ${T.textTertiary}; }
+
+                .dropdown-item:hover { background: ${T.surfaceHover} !important; }
+
+                .ledger-row:hover td { background: ${T.surfaceHover} !important; }
+
+                .undo-btn:hover {
+                    border-color: ${T.cashout} !important;
+                    color: ${T.cashout} !important;
+                    background: ${T.cashoutSurface} !important;
+                }
+
+                .bonus-card { transition: all .2s ease; }
+
+                ::-webkit-scrollbar { width: 5px; height: 5px; }
+                ::-webkit-scrollbar-track { background: transparent; }
+                ::-webkit-scrollbar-thumb { background: ${T.border}; border-radius: 4px; }
+                ::-webkit-scrollbar-thumb:hover { background: ${T.borderStrong}; }
             `}</style>
         </div>
     );
