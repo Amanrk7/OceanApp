@@ -520,7 +520,7 @@ export function AdminFollowupPanel({ teamMembers = [], onTaskUpdated }) {
           { id: 'player', label: `Player Followup (${summary?.playerFollowup?.total ?? 0})` },
           { id: 'bonus',  label: `Bonus Followup (${summary?.bonusFollowup?.total ?? 0})` },
         ].map(tab => (
-          <button key={tab.id} onClick={() => setActiveSection(tab.id)} style={{ padding: '8px 16px', border: 'none', fontFamily: 'inherit', fontSize: '12px', fontWeight: '600', cursor: 'pointer', background: activeSection === tab.id ? C.white : 'transparent', color: activeSection === tab.id ? C.slate : C.grayLt, borderBottom: `2px solid ${activeSection === tab.id ? C.slate : 'transparent'}` }}>
+          <button key={tab.id} onClick={() => setActiveSection(tab.id)} style={{ padding: '8px 16px', border: 'none', fontFamily: 'inherit', fontSize: '12px', fontWeight: '600', cursor: 'pointer', background: activeSection === tab.id ? C.white : 'transparent', color: activeSection === tab.id ? '#0ea5e9' : C.grayLt, borderBottom: `2px solid ${activeSection === tab.id ? '#0ea5e9' : 'transparent'}` }}>
             {tab.label}
           </button>
         ))}
