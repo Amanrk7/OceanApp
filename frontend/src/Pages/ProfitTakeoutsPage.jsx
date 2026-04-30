@@ -201,18 +201,6 @@ function TakeoutForm({ initial, wallets, onSubmit, onCancel, loading, error }) {
         }))
     );
 
-    // const loadWallets = useCallback(async () => {
-    //     try {
-    //         const r = await api.wallets.getGroupedWallets(true);
-    //         const flat = (r?.data || []).flatMap(g =>
-    //             g.subAccounts
-    //                 .filter(s => s.isLive !== false)
-    //                 .map(s => ({ ...s, label: `${g.method} — ${s.name}  (${fmt(s.balance)})`, methodName: g.method, methodId: g.id }))
-    //         );
-    //         setWallets(flat);
-    //     } catch (e) { console.error(e); }
-    // }, []);
-
     return (
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -252,7 +240,7 @@ function TakeoutForm({ initial, wallets, onSubmit, onCancel, loading, error }) {
                 <FocusInput as="textarea" rows={2} placeholder="Reason, purpose, context…" value={form.notes} onChange={handleChange('notes')} style={{ resize: 'none', lineHeight: '1.6' }} />
             </div>
 
-            {error && <AlertBanner type="error" message={error} />}
+
 
             <div style={{ display: 'flex', gap: '10px', paddingTop: '4px', borderTop: '1px solid #f1f5f9', marginTop: '4px' }}>
                 <button type="button" onClick={onCancel}
@@ -272,6 +260,8 @@ function TakeoutForm({ initial, wallets, onSubmit, onCancel, loading, error }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ProfitTakeoutsPage() {
+    import { useToast } from '../Context/toastContext';
+
     const [records, setRecords] = useState([]);
     const [wallets, setWallets] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -305,7 +295,8 @@ export default function ProfitTakeoutsPage() {
             setRecords(res.data || []);
             setWallets(wRes.data || []);
         } catch (err) {
-            showBanner('error', err.message || 'Failed to load records');
+            toast(err.message || 'Failed to load records', "error");
+
         } finally {
             setLoading(false);
         }
@@ -386,8 +377,13 @@ export default function ProfitTakeoutsPage() {
             await api.profitTakeouts.remove(deleteRecord.id);
             await load();
             setDeleteRecord(null);
-            showBanner('success', 'Record deleted.');
-        } catch (err) { showBanner('error', err.message || 'Delete failed'); }
+            toast('Record deleted.', "success");
+
+        } catch (err) {
+            toast(err.message || 'Delete failed', "error");
+
+
+        }
         finally { setDeletingId(null); }
     };
 
@@ -529,8 +525,13 @@ export default function ProfitTakeoutsPage() {
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={7} style={{ padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
-                                    <div style={{ width: '28px', height: '28px', border: '3px solid #e2e8f0', borderTopColor: '#dc2626', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 10px' }} />
-                                    Loading records…
+                                    {/* <div style={{ width: '28px', height: '28px', border: '3px solid #e2e8f0', borderTopColor: '#dc2626', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 10px' }} />
+                                    Loading records… */}
+
+                                    <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
+                                        <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "smartSpin .8s linear infinite" }} />
+                                        Loading records…
+                                    </div>
                                 </td></tr>
                             ) : filtered.length === 0 ? (
                                 <tr><td colSpan={7} style={{ padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
