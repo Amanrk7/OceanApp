@@ -1,16 +1,13 @@
 // components/FollowupTaskCards.jsx
-// Handles PLAYER_FOLLOWUP and BONUS_FOLLOWUP task cards for members AND admin.
-// Drop into MemberTasksSection.jsx and AdminTaskPage.jsx.
+// Elegant redesign — refined luxury-fintech aesthetic.
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
     CheckCircle, Circle, ChevronDown, ChevronUp,
     UserCheck, Lock, Unlock, RefreshCw, Check, Undo2,
-    AlertTriangle, Clock, DollarSign, TrendingUp, Users, Gift,
-    User, X, ChevronRight,
+    Gift, User, X, ArrowRight, Zap, TrendingUp,
 } from 'lucide-react';
 import { useToast } from '../Context/toastContext';
-
 
 const API = import.meta.env.VITE_API_URL ?? '';
 
@@ -30,87 +27,145 @@ function extractUserId(currentUser) {
     return isNaN(n) ? null : n;
 }
 
-const C = {
-    border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
-    gray: '#64748b', grayLt: '#94a3b8', slate: '#0f172a',
-    sky: '#0ea5e9', skyLt: '#f0f9ff',
-    green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
-    red: '#dc2626', redLt: '#fff1f2', redBdr: '#fecdd3',
-    amber: '#d97706', amberLt: '#fffbeb', amberBdr: '#fcd34d',
-    orange: '#ea580c', orangeLt: '#fff7ed', orangeBdr: '#fed7aa',
-    violet: '#7c3aed', violetLt: '#f5f3ff', violetBdr: '#ddd6fe',
+// ── Design System ────────────────────────────────────────────────────────────
+const DS = {
+    // Neutrals
+    ink: '#0d1117',
+    inkMid: '#374151',
+    inkSoft: '#6b7280',
+    inkFaint: '#9ca3af',
+    rule: '#e5e7eb',
+    ruleFaint: '#f3f4f6',
+    surface: '#ffffff',
+    surfaceAlt: '#f9fafb',
+
+    // Semantic
+    emerald: { base: '#059669', light: '#ecfdf5', border: '#6ee7b7', text: '#065f46' },
+    amber:   { base: '#d97706', light: '#fffbeb', border: '#fcd34d', text: '#92400e' },
+    rose:    { base: '#e11d48', light: '#fff1f2', border: '#fda4af', text: '#9f1239' },
+    sky:     { base: '#0284c7', light: '#f0f9ff', border: '#7dd3fc', text: '#0c4a6e' },
+    violet:  { base: '#7c3aed', light: '#f5f3ff', border: '#c4b5fd', text: '#4c1d95' },
+    orange:  { base: '#ea580c', light: '#fff7ed', border: '#fdba74', text: '#7c2d12' },
+
+    radius: { sm: '6px', md: '10px', lg: '14px', xl: '18px', pill: '999px' },
+    shadow: {
+        xs: '0 1px 2px rgba(0,0,0,.05)',
+        sm: '0 1px 8px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.04)',
+        md: '0 4px 24px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04)',
+        lg: '0 12px 48px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.05)',
+    },
+    font: { xs: '11px', sm: '12px', base: '13px', md: '14px', lg: '16px', xl: '20px' },
+    weight: { normal: 400, medium: 500, semibold: 600, bold: 700, black: 800 },
 };
 
-const CARD = {
-    background: C.white, borderRadius: '14px',
-    border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)',
-};
-const INPUT = {
-    width: '100%', padding: '10px 12px', border: `1px solid ${C.border}`,
-    borderRadius: '8px', fontSize: '13px', fontFamily: 'inherit',
-    boxSizing: 'border-box', background: C.white, color: C.slate, outline: 'none',
-};
+// ── Shared Primitives ────────────────────────────────────────────────────────
 
-function ProgressBar({ pct, color, thin }) {
+function Tag({ children, color, size = 'sm' }) {
+    const pad = size === 'xs' ? '2px 7px' : '3px 9px';
     return (
-        <div style={{ height: thin ? '5px' : '8px', background: '#e2e8f0', borderRadius: '999px', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, background: pct >= 100 ? C.green : color, borderRadius: '999px', transition: 'width .3s' }} />
+        <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '4px',
+            padding: pad, borderRadius: DS.radius.pill,
+            background: color.light, color: color.text,
+            border: `1px solid ${color.border}`,
+            fontSize: DS.font.xs, fontWeight: DS.weight.semibold,
+            letterSpacing: '0.02em', whiteSpace: 'nowrap',
+        }}>
+            {children}
+        </span>
+    );
+}
+
+function Pill({ label, color }) {
+    return (
+        <span style={{
+            display: 'inline-block', padding: '2px 8px', borderRadius: DS.radius.pill,
+            background: color.light, color: color.base,
+            fontSize: DS.font.xs, fontWeight: DS.weight.bold, letterSpacing: '0.03em',
+        }}>
+            {label}
+        </span>
+    );
+}
+
+function ProgressRing({ pct, color, size = 36 }) {
+    const r = (size - 4) / 2;
+    const circ = 2 * Math.PI * r;
+    const offset = circ - (pct / 100) * circ;
+    return (
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
+            <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={DS.ruleFaint} strokeWidth="3" />
+            <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={pct >= 100 ? DS.emerald.base : color} strokeWidth="3"
+                strokeDasharray={circ} strokeDashoffset={offset}
+                strokeLinecap="round" style={{ transition: 'stroke-dashoffset .4s ease' }} />
+        </svg>
+    );
+}
+
+function SlimBar({ pct, color }) {
+    return (
+        <div style={{ height: '3px', background: DS.ruleFaint, borderRadius: DS.radius.pill, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, background: pct >= 100 ? DS.emerald.base : color, borderRadius: DS.radius.pill, transition: 'width .4s ease' }} />
         </div>
     );
 }
 
-// ── Category chip ─────────────────────────────────────────────────────────────
-function CategoryChip({ category }) {
-    const cfg = category === 'HIGHLY_CRITICAL'
-        ? { label: 'Highly Critical', bg: '#fffbeb', text: '#b45309', border: '#fde68a', emoji: '🟡' }
-        : { label: 'Inactive', bg: '#fee2e2', text: '#991b1b', border: '#fca5a5', emoji: '🔴' };
+function ActionButton({ onClick, disabled, loading, children, variant = 'primary', color }) {
+    const variants = {
+        primary: { bg: color?.base || DS.sky.base, text: '#fff', border: 'none', shadow: `0 2px 8px ${(color?.base || DS.sky.base)}30` },
+        ghost:   { bg: 'transparent', text: DS.inkSoft, border: `1px solid ${DS.rule}`, shadow: 'none' },
+        soft:    { bg: color?.light || DS.sky.light, text: color?.text || DS.sky.text, border: `1px solid ${color?.border || DS.sky.border}`, shadow: 'none' },
+    };
+    const v = variants[variant];
     return (
-        <span style={{ padding: '2px 8px', borderRadius: '5px', fontSize: '10px', fontWeight: '700', background: cfg.bg, color: cfg.text, border: `1px solid ${cfg.border}` }}>
-            {cfg.emoji} {cfg.label}
-        </span>
+        <button
+            onClick={onClick}
+            disabled={disabled || loading}
+            style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                padding: '9px 16px', borderRadius: DS.radius.md,
+                border: v.border, background: disabled ? DS.ruleFaint : v.bg,
+                color: disabled ? DS.inkFaint : v.text,
+                fontSize: DS.font.sm, fontWeight: DS.weight.semibold,
+                cursor: disabled || loading ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit', transition: 'all .15s ease',
+                boxShadow: disabled ? 'none' : v.shadow,
+                letterSpacing: '0.01em',
+            }}
+        >
+            {loading
+                ? <><RefreshCw style={{ width: '12px', height: '12px', animation: 'followupSpin 0.8s linear infinite' }} /> Working…</>
+                : children
+            }
+        </button>
     );
 }
 
-// ── Bonus type chip ───────────────────────────────────────────────────────────
-function BonusTypeChip({ bonusType }) {
-    const cfg = {
-        streak: { label: 'Streak Bonus', bg: '#fffbeb', text: '#b45309', emoji: '🔥' },
-        referral: { label: 'Referral Bonus', bg: '#f0fdf4', text: '#166534', emoji: '👥' },
-        match: { label: 'Match Bonus', bg: '#eff6ff', text: '#1d4ed8', emoji: '💰' },
-    }[bonusType] || { label: 'Bonus', bg: '#f1f5f9', text: '#475569', emoji: '🎁' };
-    return (
-        <span style={{ padding: '2px 8px', borderRadius: '5px', fontSize: '10px', fontWeight: '700', background: cfg.bg, color: cfg.text }}>
-            {cfg.emoji} {cfg.label}
-        </span>
-    );
-}
-
-// ── Claim status row ─────────────────────────────────────────────────────────
-function ClaimStatus({ task, myId }) {
+function ClaimBadge({ task, myId }) {
     const isClaimedByMe = !!task.assignedToId && myId !== null && parseInt(task.assignedToId, 10) === myId;
     const isClaimedByOther = !!task.assignedToId && !isClaimedByMe;
     const isCompleted = task.status === 'COMPLETED';
 
     if (isCompleted)
-        return <span style={{ fontSize: '11px', fontWeight: '600', color: C.green, display: 'flex', alignItems: 'center', gap: '4px' }}><CheckCircle style={{ width: '11px', height: '11px' }} /> Completed</span>;
+        return <Tag color={DS.emerald}><CheckCircle style={{ width: '9px', height: '9px' }} /> Complete</Tag>;
     if (isClaimedByMe)
-        return <span style={{ fontSize: '11px', fontWeight: '600', color: C.orange, display: 'flex', alignItems: 'center', gap: '4px' }}><Lock style={{ width: '10px', height: '10px' }} /> Claimed by you</span>;
+        return <Tag color={DS.orange}><Lock style={{ width: '9px', height: '9px' }} /> Yours</Tag>;
     if (isClaimedByOther)
-        return <span style={{ fontSize: '11px', fontWeight: '600', color: C.gray, display: 'flex', alignItems: 'center', gap: '4px' }}><Lock style={{ width: '10px', height: '10px' }} /> Claimed by {task.assignedTo?.name || 'another member'}</span>;
-    return <span style={{ fontSize: '11px', fontWeight: '600', color: C.orange, display: 'flex', alignItems: 'center', gap: '4px' }}><Unlock style={{ width: '10px', height: '10px' }} /> Open to claim</span>;
+        return <Tag color={{ light: DS.surfaceAlt, border: DS.rule, text: DS.inkSoft }}><Lock style={{ width: '9px', height: '9px' }} /> {task.assignedTo?.name || 'Claimed'}</Tag>;
+    return <Tag color={DS.sky}><Unlock style={{ width: '9px', height: '9px' }} /> Open</Tag>;
 }
 
 // ═══════════════════════════════════════════════════════════════
-// PLAYER FOLLOWUP CARD (for members)
+// PLAYER FOLLOWUP CARD
 // ═══════════════════════════════════════════════════════════════
 export function PlayerFollowupCard({ task, currentUser, onClaim, onUpdated }) {
     const { add: toast } = useToast();
-
     const [expanded, setExpanded] = useState(true);
     const [claiming, setClaiming] = useState(false);
     const [resolving, setResolving] = useState(false);
     const [undoing, setUndoing] = useState(false);
     const [outcome, setOutcome] = useState('');
+    const [focusedOutcome, setFocusedOutcome] = useState(false);
 
     const myId = extractUserId(currentUser);
     const meta = useMemo(() => { try { return JSON.parse(task.notes || '{}'); } catch { return {}; } }, [task.notes]);
@@ -123,15 +178,16 @@ export function PlayerFollowupCard({ task, currentUser, onClaim, onUpdated }) {
     const isCompleted = task.status === 'COMPLETED';
     const isHC = meta.category === 'HIGHLY_CRITICAL';
 
+    const accent = isCompleted ? DS.emerald : isHC ? DS.amber : DS.rose;
+
     const handleClaim = async () => {
         setClaiming(true);
         try {
             const res = await fetch(`${API}/tasks/${task.id}/claim`, { method: 'POST', credentials: 'include', headers: getAuthHeaders(true) });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to claim');
-            onClaim(data.data);
-            toast('Task claimed successfully.', 'success');
-        } catch (err) { toast('Failed to claim task.', 'error'); }
+            if (!res.ok) throw new Error(data.error || 'Failed');
+            onClaim(data.data); toast('Task claimed.', 'success');
+        } catch { toast('Could not claim task.', 'error'); }
         finally { setClaiming(false); }
     };
 
@@ -141,10 +197,9 @@ export function PlayerFollowupCard({ task, currentUser, onClaim, onUpdated }) {
             const completedItems = [...checklist.filter(i => i.done).map(i => i.fieldKey || i.id), fieldKey].filter(Boolean);
             const res = await fetch(`${API}/tasks/${task.id}/resolve-followup`, { method: 'POST', credentials: 'include', headers: getAuthHeaders(true), body: JSON.stringify({ outcome, completedItems }) });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to resolve');
-            setOutcome('');
-            onUpdated(data.data);
-        } catch (err) { toast('Failed to resolve task.', 'error'); }
+            if (!res.ok) throw new Error(data.error);
+            setOutcome(''); onUpdated(data.data);
+        } catch { toast('Could not resolve step.', 'error'); }
         finally { setResolving(false); }
     };
 
@@ -153,125 +208,191 @@ export function PlayerFollowupCard({ task, currentUser, onClaim, onUpdated }) {
         try {
             const res = await fetch(`${API}/tasks/${task.id}/undo-completion`, { method: 'POST', credentials: 'include', headers: getAuthHeaders(true) });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to undo');
+            if (!res.ok) throw new Error(data.error);
             onUpdated(data.data);
-        } catch (err) { toast('Failed to undo task.', 'error'); }
+        } catch { toast('Could not undo.', 'error'); }
         finally { setUndoing(false); }
     };
 
-    const borderColor = isCompleted ? C.greenBdr : isHC ? C.amberBdr : C.redBdr;
-    const borderLeft = isCompleted ? C.green : isHC ? C.amber : C.red;
-
     return (
-        <div style={{ ...CARD, overflow: 'hidden', border: `1px solid ${borderColor}`, borderLeft: `4px solid ${borderLeft}`, opacity: isCompleted ? 0.85 : 1 }}>
-            {/* Header */}
-            <div style={{ padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0, background: isCompleted ? '#dcfce7' : isHC ? '#fffbeb' : '#fee2e2', border: `1px solid ${isCompleted ? C.greenBdr : isHC ? C.amberBdr : C.redBdr}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px' }}>
-                    {isCompleted ? '✅' : isHC ? '🟡' : '🔴'}
+        <div style={{
+            background: DS.surface, borderRadius: DS.radius.xl,
+            border: `1px solid ${DS.rule}`,
+            borderLeft: `3px solid ${accent.base}`,
+            boxShadow: DS.shadow.sm,
+            overflow: 'hidden', opacity: isCompleted ? 0.75 : 1,
+            transition: 'box-shadow .2s, opacity .2s',
+        }}>
+            {/* ── Header ── */}
+            <div style={{ padding: '16px 18px', display: 'flex', gap: '14px', alignItems: 'center' }}>
+                {/* Progress ring */}
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <ProgressRing pct={pct} color={accent.base} size={40} />
+                    <span style={{
+                        position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '9px', fontWeight: DS.weight.bold, color: accent.base, lineHeight: 1,
+                    }}>
+                        {isCompleted ? '✓' : `${pct}%`}
+                    </span>
                 </div>
+
+                {/* Player info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: '700', color: C.slate }}>{meta.playerName || 'Player'}</span>
-                        <span style={{ fontSize: '12px', color: C.grayLt }}>@{meta.username}</span>
-                        <CategoryChip category={meta.category} />
-                        {meta.tier && <span style={{ padding: '2px 7px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', background: '#fef3c7', color: '#92400e' }}>{meta.tier}</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '3px' }}>
+                        <span style={{ fontSize: DS.font.md, fontWeight: DS.weight.bold, color: DS.ink, letterSpacing: '-0.01em' }}>
+                            {meta.playerName || 'Player'}
+                        </span>
+                        <span style={{ fontSize: DS.font.sm, color: DS.inkFaint, fontWeight: DS.weight.medium }}>
+                            @{meta.username}
+                        </span>
+                        <Pill label={isHC ? 'High Priority' : 'Inactive'} color={accent} />
+                        {meta.tier && <Pill label={meta.tier} color={DS.amber} />}
                     </div>
-                    <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: C.grayLt, flexWrap: 'wrap', marginBottom: '4px' }}>
-                        <span>Last deposit: <strong style={{ color: C.slate }}>{meta.lastDepositDate || 'Never'}</strong></span>
-                        <span>Balance: <strong style={{ color: C.green }}>${parseFloat(meta.balance || 0).toFixed(2)}</strong></span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <div style={{ flex: 1, maxWidth: '140px' }}><ProgressBar pct={pct} color={isHC ? C.amber : C.red} thin /></div>
-                        <span style={{ fontSize: '11px', fontWeight: '700', color: isCompleted ? C.green : C.gray }}>{doneCount}/{checklist.length} steps</span>
-                        <ClaimStatus task={task} myId={myId} />
+                    <div style={{ display: 'flex', gap: '14px', fontSize: DS.font.sm, color: DS.inkSoft }}>
+                        <span>Last deposit <span style={{ color: DS.inkMid, fontWeight: DS.weight.medium }}>{meta.lastDepositDate || '—'}</span></span>
+                        <span>Balance <span style={{ color: DS.emerald.base, fontWeight: DS.weight.semibold }}>${parseFloat(meta.balance || 0).toFixed(2)}</span></span>
                     </div>
                 </div>
-                {!isClaimedByOther && !isCompleted && (
-                    <button onClick={() => setExpanded(v => !v)} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: '7px', cursor: 'pointer', padding: '6px', color: C.gray, display: 'flex', flexShrink: 0 }}>
-                        {expanded ? <ChevronUp style={{ width: '14px', height: '14px' }} /> : <ChevronDown style={{ width: '14px', height: '14px' }} />}
-                    </button>
-                )}
+
+                {/* Right side */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    <ClaimBadge task={task} myId={myId} />
+                    {!isClaimedByOther && !isCompleted && (
+                        <button
+                            onClick={() => setExpanded(v => !v)}
+                            style={{
+                                width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                border: `1px solid ${DS.rule}`, borderRadius: DS.radius.md,
+                                background: DS.surface, cursor: 'pointer', color: DS.inkFaint,
+                                transition: 'all .15s',
+                            }}
+                        >
+                            {expanded ? <ChevronUp style={{ width: '13px', height: '13px' }} /> : <ChevronDown style={{ width: '13px', height: '13px' }} />}
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {/* Body: open / claimable */}
+            {/* ── Expandable Body ── */}
             {expanded && !isCompleted && !isClaimedByOther && (
-                <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ borderTop: `1px solid ${DS.ruleFaint}`, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-                    {/* Claim */}
+                    {/* Unclaimed CTA */}
                     {!task.assignedToId && (
-                        <div style={{ padding: '14px', background: C.orangeLt, border: `1px solid ${C.orangeBdr}`, borderRadius: '10px' }}>
-                            <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#9a3412', lineHeight: '1.5' }}>
-                                <strong>Unclaimed.</strong> Claim to reach out to <strong>@{meta.username}</strong> and get them back to depositing.
-                            </p>
-                            <button onClick={handleClaim} disabled={claiming} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: claiming ? '#e2e8f0' : C.orange, color: claiming ? C.grayLt : '#fff', fontWeight: '700', fontSize: '13px', cursor: claiming ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'inherit' }}>
-                                {claiming ? <><RefreshCw style={{ width: '13px', height: '13px', animation: 'spin 0.8s linear infinite' }} /> Claiming…</> : <><UserCheck style={{ width: '13px', height: '13px' }} /> Claim This Player</>}
-                            </button>
+                        <div style={{
+                            padding: '14px 16px', borderRadius: DS.radius.lg,
+                            background: accent.light, border: `1px solid ${accent.border}`,
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px',
+                        }}>
+                            <div>
+                                <p style={{ margin: 0, fontSize: DS.font.sm, fontWeight: DS.weight.semibold, color: accent.text }}>
+                                    This player needs a follow-up
+                                </p>
+                                <p style={{ margin: '2px 0 0', fontSize: DS.font.xs, color: accent.base, opacity: 0.8 }}>
+                                    Claim to assign this to yourself
+                                </p>
+                            </div>
+                            <ActionButton onClick={handleClaim} loading={claiming} color={accent}>
+                                <UserCheck style={{ width: '12px', height: '12px' }} /> Claim
+                            </ActionButton>
                         </div>
                     )}
 
-                    {/* Checklist + resolve for claimer */}
+                    {/* Checklist for claimer */}
                     {isClaimedByMe && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <div style={{ padding: '12px 14px', background: '#fafafa', border: `1px solid ${C.border}`, borderRadius: '10px' }}>
-                                <div style={{ fontSize: '11px', fontWeight: '700', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '8px' }}>Followup Steps</div>
+                        <>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <div style={{ fontSize: DS.font.xs, fontWeight: DS.weight.semibold, color: DS.inkFaint, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>
+                                    Steps · {doneCount} of {checklist.length}
+                                </div>
                                 {checklist.map(item => (
-                                    <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '7px', background: item.done ? '#f0fdf4' : '#fafafa', border: `1px solid ${item.done ? C.greenBdr : C.border}`, marginBottom: '5px' }}>
-                                        <div style={{ width: '18px', height: '18px', borderRadius: '5px', border: `2px solid ${item.done ? C.green : '#cbd5e1'}`, background: item.done ? C.green : C.white, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                            {item.done && <Check style={{ width: '10px', height: '10px', color: C.white }} />}
+                                    <div key={item.id} style={{
+                                        display: 'flex', alignItems: 'center', gap: '12px',
+                                        padding: '10px 12px', borderRadius: DS.radius.md,
+                                        background: item.done ? DS.emerald.light : DS.surfaceAlt,
+                                        border: `1px solid ${item.done ? DS.emerald.border : DS.rule}`,
+                                        transition: 'all .15s',
+                                    }}>
+                                        <div style={{
+                                            width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
+                                            border: `2px solid ${item.done ? DS.emerald.base : DS.rule}`,
+                                            background: item.done ? DS.emerald.base : 'transparent',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}>
+                                            {item.done && <Check style={{ width: '9px', height: '9px', color: '#fff', strokeWidth: 3 }} />}
                                         </div>
-                                        <span style={{ flex: 1, fontSize: '13px', color: item.done ? C.grayLt : C.slate, textDecoration: item.done ? 'line-through' : 'none' }}>{item.label}</span>
-                                        {item.required && !item.done && <span style={{ fontSize: '10px', color: C.red }}>*req</span>}
+                                        <span style={{
+                                            flex: 1, fontSize: DS.font.sm,
+                                            color: item.done ? DS.inkFaint : DS.inkMid,
+                                            textDecoration: item.done ? 'line-through' : 'none',
+                                        }}>
+                                            {item.label}
+                                        </span>
+                                        {item.required && !item.done && (
+                                            <span style={{ fontSize: '10px', color: DS.rose.base, fontWeight: DS.weight.bold }}>req</span>
+                                        )}
                                         {!item.done && (
-                                            <button onClick={() => handleResolve(item.fieldKey || item.id)} disabled={resolving} style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', background: C.green, color: '#fff', fontSize: '11px', fontWeight: '700', cursor: resolving ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-                                                {resolving ? '…' : 'Done ✓'}
-                                            </button>
+                                            <ActionButton onClick={() => handleResolve(item.fieldKey || item.id)} loading={resolving} variant="soft" color={DS.emerald}>
+                                                <Check style={{ width: '11px', height: '11px', strokeWidth: 2.5 }} /> Done
+                                            </ActionButton>
                                         )}
                                     </div>
                                 ))}
                             </div>
 
-                            {/* Outcome note */}
+                            {/* Outcome */}
                             <div>
-                                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '5px' }}>Outcome Note (optional)</label>
+                                <div style={{ fontSize: DS.font.xs, fontWeight: DS.weight.semibold, color: DS.inkFaint, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                                    Outcome note <span style={{ textTransform: 'none', fontWeight: DS.weight.normal, letterSpacing: 0 }}>— optional</span>
+                                </div>
                                 <textarea
                                     value={outcome}
                                     onChange={e => setOutcome(e.target.value)}
+                                    onFocus={() => setFocusedOutcome(true)}
+                                    onBlur={() => setFocusedOutcome(false)}
                                     rows={2}
-                                    placeholder="What happened? e.g. Player confirmed deposit tomorrow, couldn't reach them, etc."
-                                    style={{ ...INPUT, resize: 'none', lineHeight: '1.5' }}
+                                    placeholder="What happened? Player confirmed deposit, couldn't reach…"
+                                    style={{
+                                        width: '100%', padding: '10px 12px',
+                                        border: `1.5px solid ${focusedOutcome ? accent.base : DS.rule}`,
+                                        borderRadius: DS.radius.md, resize: 'none',
+                                        fontSize: DS.font.sm, fontFamily: 'inherit',
+                                        lineHeight: '1.6', color: DS.ink,
+                                        background: focusedOutcome ? DS.surface : DS.surfaceAlt,
+                                        outline: 'none', boxSizing: 'border-box',
+                                        transition: 'all .15s',
+                                        boxShadow: focusedOutcome ? `0 0 0 3px ${accent.border}` : 'none',
+                                    }}
                                 />
                             </div>
-                        </div>
+                        </>
                     )}
-
-
                 </div>
             )}
 
-            {/* Body: completed */}
+            {/* ── Completed State ── */}
             {isCompleted && (
-                <div style={{ padding: '0 16px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ padding: '10px 12px', background: '#f0fdf4', border: `1px solid ${C.greenBdr}`, borderRadius: '8px', fontSize: '12px', color: C.green, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <CheckCircle style={{ width: '14px', height: '14px', flexShrink: 0 }} />
-                        Followup completed for <strong>@{meta.username}</strong>.
-                        {meta.outcome && <span style={{ color: C.gray, marginLeft: '4px' }}> — {meta.outcome}</span>}
+                <div style={{ borderTop: `1px solid ${DS.ruleFaint}`, padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: DS.font.sm }}>
+                        <CheckCircle style={{ width: '14px', height: '14px', color: DS.emerald.base, flexShrink: 0 }} />
+                        <span style={{ color: DS.inkSoft }}>
+                            Completed for <strong style={{ color: DS.inkMid }}>@{meta.username}</strong>
+                            {meta.outcome && <> — <em style={{ color: DS.inkFaint }}>{meta.outcome}</em></>}
+                        </span>
                     </div>
                     {(isClaimedByMe || !task.assignedToId) && (
-                        <button onClick={handleUndo} disabled={undoing} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '7px', borderRadius: '8px', border: `1px solid ${C.border}`, background: C.white, color: C.gray, fontSize: '12px', fontWeight: '700', cursor: undoing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-                            {undoing ? <><RefreshCw style={{ width: '12px', height: '12px', animation: 'spin 0.8s linear infinite' }} /> Undoing…</> : <><Undo2 style={{ width: '12px', height: '12px' }} /> Undo</>}
-                        </button>
+                        <ActionButton onClick={handleUndo} loading={undoing} variant="ghost">
+                            <Undo2 style={{ width: '11px', height: '11px' }} /> Undo
+                        </ActionButton>
                     )}
-
                 </div>
             )}
 
-            {/* Body: claimed by other */}
+            {/* ── Claimed by Other ── */}
             {isClaimedByOther && !isCompleted && (
-                <div style={{ padding: '0 16px 14px' }}>
-                    <div style={{ padding: '10px 12px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '12px', color: C.gray, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Lock style={{ width: '13px', height: '13px', flexShrink: 0 }} />
-                        <strong>{task.assignedTo?.name}</strong> is working on this player.
-                    </div>
+                <div style={{ borderTop: `1px solid ${DS.ruleFaint}`, padding: '10px 18px', fontSize: DS.font.sm, color: DS.inkSoft, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Lock style={{ width: '12px', height: '12px', flexShrink: 0 }} />
+                    <strong style={{ color: DS.inkMid }}>{task.assignedTo?.name}</strong> is handling this player.
                 </div>
             )}
         </div>
@@ -279,11 +400,10 @@ export function PlayerFollowupCard({ task, currentUser, onClaim, onUpdated }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// BONUS FOLLOWUP CARD (for members)
+// BONUS FOLLOWUP CARD
 // ═══════════════════════════════════════════════════════════════
 export function BonusFollowupCard({ task, currentUser, onClaim, onUpdated }) {
     const { add: toast } = useToast();
-
     const [expanded, setExpanded] = useState(true);
     const [claiming, setClaiming] = useState(false);
     const [granting, setGranting] = useState(false);
@@ -293,19 +413,26 @@ export function BonusFollowupCard({ task, currentUser, onClaim, onUpdated }) {
     const meta = useMemo(() => { try { return JSON.parse(task.notes || '{}'); } catch { return {}; } }, [task.notes]);
 
     const checklist = task.checklistItems || [];
-    const doneCount = checklist.filter(i => i.done).length;
     const isClaimedByMe = !!task.assignedToId && myId !== null && parseInt(task.assignedToId, 10) === myId;
     const isClaimedByOther = !!task.assignedToId && !isClaimedByMe;
     const isCompleted = task.status === 'COMPLETED';
+
+    const bonusCfg = {
+        streak:   { color: DS.amber,  icon: '🔥', label: 'Streak',   hint: 'Go to Bonuses → Grant streak bonus to this player.' },
+        referral: { color: DS.emerald, icon: '👥', label: 'Referral', hint: 'Go to Bonuses → Grant referral bonus to player and their referrer.' },
+        match:    { color: DS.sky,    icon: '💰', label: 'Match',    hint: 'Go to Bonuses → Grant match deposit bonus (50%).' },
+    }[meta.bonusType] || { color: DS.violet, icon: '🎁', label: 'Bonus', hint: 'Grant the bonus from the Bonuses page.' };
+
+    const accent = isCompleted ? DS.emerald : bonusCfg.color;
 
     const handleClaim = async () => {
         setClaiming(true);
         try {
             const res = await fetch(`${API}/tasks/${task.id}/claim`, { method: 'POST', credentials: 'include', headers: getAuthHeaders(true) });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to claim');
+            if (!res.ok) throw new Error(data.error);
             onClaim(data.data);
-        } catch (err) { toast('Failed to claim task.', 'error'); }
+        } catch { toast('Could not claim task.', 'error'); }
         finally { setClaiming(false); }
     };
 
@@ -314,9 +441,9 @@ export function BonusFollowupCard({ task, currentUser, onClaim, onUpdated }) {
         try {
             const res = await fetch(`${API}/tasks/${task.id}/resolve-followup`, { method: 'POST', credentials: 'include', headers: getAuthHeaders(true), body: JSON.stringify({ outcome: 'Bonus granted', completedItems: checklist.map(i => i.fieldKey || i.id) }) });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed');
+            if (!res.ok) throw new Error(data.error);
             onUpdated(data.data);
-        } catch (err) { toast('Failed to resolve task.', 'error'); }
+        } catch { toast('Could not resolve task.', 'error'); }
         finally { setGranting(false); }
     };
 
@@ -325,89 +452,110 @@ export function BonusFollowupCard({ task, currentUser, onClaim, onUpdated }) {
         try {
             const res = await fetch(`${API}/tasks/${task.id}/undo-completion`, { method: 'POST', credentials: 'include', headers: getAuthHeaders(true) });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed');
+            if (!res.ok) throw new Error(data.error);
             onUpdated(data.data);
-        } catch (err) { toast('Failed to undo task.', 'error'); }
+        } catch { toast('Could not undo.', 'error'); }
         finally { setUndoing(false); }
     };
 
-    const bonusCfg = {
-        streak: { color: C.amber, bg: '#fffbeb', bdr: C.amberBdr, icon: '🔥', hint: 'Go to Bonuses → Grant streak bonus to this player.' },
-        referral: { color: C.green, bg: '#f0fdf4', bdr: C.greenBdr, icon: '👥', hint: 'Go to Bonuses → Grant referral bonus to player and their referrer.' },
-        match: { color: C.sky, bg: C.skyLt, bdr: '#bae6fd', icon: '💰', hint: 'Go to Bonuses → Grant match bonus (50%) for their recent deposit.' },
-    }[meta.bonusType] || { color: C.violet, bg: C.violetLt, bdr: C.violetBdr, icon: '🎁', hint: 'Grant the bonus from the Bonuses page.' };
-
     return (
-        <div style={{ ...CARD, overflow: 'hidden', border: `1px solid ${isCompleted ? C.greenBdr : bonusCfg.bdr}`, borderLeft: `4px solid ${isCompleted ? C.green : bonusCfg.color}`, opacity: isCompleted ? 0.85 : 1 }}>
-            {/* Header */}
-            <div style={{ padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', flexShrink: 0, background: isCompleted ? '#dcfce7' : bonusCfg.bg, border: `1px solid ${isCompleted ? C.greenBdr : bonusCfg.bdr}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '17px' }}>
+        <div style={{
+            background: DS.surface, borderRadius: DS.radius.xl,
+            border: `1px solid ${DS.rule}`,
+            borderLeft: `3px solid ${accent.base}`,
+            boxShadow: DS.shadow.sm,
+            overflow: 'hidden', opacity: isCompleted ? 0.75 : 1,
+            transition: 'opacity .2s',
+        }}>
+            {/* ── Header ── */}
+            <div style={{ padding: '16px 18px', display: 'flex', gap: '14px', alignItems: 'center' }}>
+                {/* Bonus icon pill */}
+                <div style={{
+                    width: '40px', height: '40px', flexShrink: 0, borderRadius: DS.radius.lg,
+                    background: accent.light, border: `1px solid ${accent.border}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '18px',
+                }}>
                     {isCompleted ? '✅' : bonusCfg.icon}
                 </div>
+
+                {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: '700', color: C.slate }}>{meta.playerName}</span>
-                        <span style={{ fontSize: '12px', color: C.grayLt }}>@{meta.username}</span>
-                        <BonusTypeChip bonusType={meta.bonusType} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '3px' }}>
+                        <span style={{ fontSize: DS.font.md, fontWeight: DS.weight.bold, color: DS.ink, letterSpacing: '-0.01em' }}>
+                            {meta.playerName}
+                        </span>
+                        <span style={{ fontSize: DS.font.sm, color: DS.inkFaint }}>@{meta.username}</span>
+                        <Pill label={bonusCfg.label} color={bonusCfg.color} />
                     </div>
-                    <p style={{ margin: '0 0 4px', fontSize: '12px', color: C.gray, lineHeight: '1.5' }}>{meta.details}</p>
+                    <p style={{ margin: 0, fontSize: DS.font.sm, color: DS.inkSoft, lineHeight: '1.5' }}>{meta.details}</p>
                     {meta.eligibleAmount && (
-                        <p style={{ margin: 0, fontSize: '12px', fontWeight: '700', color: bonusCfg.color }}>
-                            Eligible amount: ${parseFloat(meta.eligibleAmount).toFixed(2)}
-                        </p>
+                        <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <span style={{ fontSize: DS.font.xs, color: DS.inkFaint }}>Eligible</span>
+                            <span style={{ fontSize: DS.font.base, fontWeight: DS.weight.bold, color: accent.base }}>
+                                ${parseFloat(meta.eligibleAmount).toFixed(2)}
+                            </span>
+                        </div>
                     )}
-                    <div style={{ marginTop: '4px' }}><ClaimStatus task={task} myId={myId} /></div>
                 </div>
-                {!isClaimedByOther && !isCompleted && (
-                    <button onClick={() => setExpanded(v => !v)} style={{ background: 'none', border: `1px solid ${C.border}`, borderRadius: '7px', cursor: 'pointer', padding: '6px', color: C.gray, display: 'flex', flexShrink: 0 }}>
-                        {expanded ? <ChevronUp style={{ width: '14px', height: '14px' }} /> : <ChevronDown style={{ width: '14px', height: '14px' }} />}
-                    </button>
-                )}
+
+                {/* Right */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    <ClaimBadge task={task} myId={myId} />
+                    {!isClaimedByOther && !isCompleted && (
+                        <button
+                            onClick={() => setExpanded(v => !v)}
+                            style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${DS.rule}`, borderRadius: DS.radius.md, background: DS.surface, cursor: 'pointer', color: DS.inkFaint }}
+                        >
+                            {expanded ? <ChevronUp style={{ width: '13px', height: '13px' }} /> : <ChevronDown style={{ width: '13px', height: '13px' }} />}
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {/* Body */}
+            {/* ── Body ── */}
             {expanded && !isCompleted && !isClaimedByOther && (
-                <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ borderTop: `1px solid ${DS.ruleFaint}`, padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {/* Hint */}
-                    <div style={{ padding: '10px 14px', background: bonusCfg.bg, border: `1px solid ${bonusCfg.bdr}`, borderRadius: '8px', fontSize: '12px', color: bonusCfg.color }}>
-                        💡 <strong>How to resolve:</strong> {bonusCfg.hint}
+                    <div style={{ padding: '10px 14px', borderRadius: DS.radius.md, background: accent.light, border: `1px solid ${accent.border}`, fontSize: DS.font.sm, color: accent.text, lineHeight: '1.55' }}>
+                        <strong style={{ fontWeight: DS.weight.semibold }}>How to resolve: </strong>{bonusCfg.hint}
                     </div>
 
-                    {!task.assignedToId && (
-                        <button onClick={handleClaim} disabled={claiming} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: claiming ? '#e2e8f0' : bonusCfg.color, color: claiming ? C.grayLt : '#fff', fontWeight: '700', fontSize: '13px', cursor: claiming ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'inherit' }}>
-                            {claiming ? <><RefreshCw style={{ width: '13px', height: '13px', animation: 'spin 0.8s linear infinite' }} /> Claiming…</> : <><UserCheck style={{ width: '13px', height: '13px' }} /> Claim & Handle This Bonus</>}
-                        </button>
-                    )}
-
-                    {isClaimedByMe && (
-                        <button onClick={handleMarkGranted} disabled={granting} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: granting ? '#e2e8f0' : C.green, color: granting ? C.grayLt : '#fff', fontWeight: '700', fontSize: '13px', cursor: granting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: 'inherit' }}>
-                            {granting ? <><RefreshCw style={{ width: '13px', height: '13px', animation: 'spin 0.8s linear infinite' }} /> Saving…</> : <><Gift style={{ width: '13px', height: '13px' }} /> Mark Bonus as Granted ✓</>}
-                        </button>
-                    )}
-
-
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        {!task.assignedToId && (
+                            <ActionButton onClick={handleClaim} loading={claiming} color={accent}>
+                                <UserCheck style={{ width: '12px', height: '12px' }} /> Claim
+                            </ActionButton>
+                        )}
+                        {isClaimedByMe && (
+                            <ActionButton onClick={handleMarkGranted} loading={granting} color={DS.emerald}>
+                                <Gift style={{ width: '12px', height: '12px' }} /> Mark Granted
+                            </ActionButton>
+                        )}
+                    </div>
                 </div>
             )}
 
+            {/* ── Completed ── */}
             {isCompleted && (
-                <div style={{ padding: '0 16px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ padding: '10px 12px', background: '#f0fdf4', border: `1px solid ${C.greenBdr}`, borderRadius: '8px', fontSize: '12px', color: C.green, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <CheckCircle style={{ width: '14px', height: '14px', flexShrink: 0 }} /> Bonus granted for <strong>@{meta.username}</strong>.
+                <div style={{ borderTop: `1px solid ${DS.ruleFaint}`, padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: DS.font.sm, color: DS.inkSoft }}>
+                        <CheckCircle style={{ width: '14px', height: '14px', color: DS.emerald.base, flexShrink: 0 }} />
+                        Bonus granted for <strong style={{ color: DS.inkMid }}>@{meta.username}</strong>
                     </div>
                     {(isClaimedByMe || !task.assignedToId) && (
-                        <button onClick={handleUndo} disabled={undoing} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '7px', borderRadius: '8px', border: `1px solid ${C.border}`, background: C.white, color: C.gray, fontSize: '12px', fontWeight: '700', cursor: undoing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-                            {undoing ? 'Undoing…' : <><Undo2 style={{ width: '12px', height: '12px' }} /> Undo</>}
-                        </button>
+                        <ActionButton onClick={handleUndo} loading={undoing} variant="ghost">
+                            <Undo2 style={{ width: '11px', height: '11px' }} /> Undo
+                        </ActionButton>
                     )}
                 </div>
             )}
 
+            {/* ── Claimed by other ── */}
             {isClaimedByOther && !isCompleted && (
-                <div style={{ padding: '0 16px 14px' }}>
-                    <div style={{ padding: '10px 12px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '12px', color: C.gray }}>
-                        <Lock style={{ width: '13px', height: '13px', display: 'inline', marginRight: '5px' }} />
-                        <strong>{task.assignedTo?.name}</strong> is handling this bonus.
-                    </div>
+                <div style={{ borderTop: `1px solid ${DS.ruleFaint}`, padding: '10px 18px', fontSize: DS.font.sm, color: DS.inkSoft, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Lock style={{ width: '12px', height: '12px', flexShrink: 0 }} />
+                    <strong style={{ color: DS.inkMid }}>{task.assignedTo?.name}</strong> is handling this bonus.
                 </div>
             )}
         </div>
@@ -415,26 +563,24 @@ export function BonusFollowupCard({ task, currentUser, onClaim, onUpdated }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ADMIN FOLLOWUP PANEL (for AdminTaskPage)
-// Shows summary + per-task assignment controls.
+// ADMIN FOLLOWUP PANEL
 // ═══════════════════════════════════════════════════════════════
 export function AdminFollowupPanel({ teamMembers = [], onTaskUpdated }) {
     const { add: toast } = useToast();
-
     const [summary, setSummary] = useState(null);
     const [loading, setLoading] = useState(false);
     const [generating, setGenerating] = useState({ player: false, bonus: false });
-    const [assigning, setAssigning] = useState(null); // taskId
-    const [activeSection, setActiveSection] = useState('player'); // 'player' | 'bonus'
+    const [assigning, setAssigning] = useState(null);
+    const [activeSection, setActiveSection] = useState('player');
 
     const load = async () => {
         setLoading(true);
         try {
             const res = await fetch(`${API}/tasks/followup-summary`, { credentials: 'include', headers: getAuthHeaders() });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed');
+            if (!res.ok) throw new Error(data.error);
             setSummary(data);
-        } catch (err) { toast('Failed to load follow-up summary.', 'error'); }
+        } catch { toast('Failed to load summary.', 'error'); }
         finally { setLoading(false); }
     };
 
@@ -444,11 +590,10 @@ export function AdminFollowupPanel({ teamMembers = [], onTaskUpdated }) {
             const endpoint = type === 'player' ? 'generate-player-followup' : 'generate-bonus-followup';
             const res = await fetch(`${API}/tasks/${endpoint}`, { method: 'POST', credentials: 'include', headers: getAuthHeaders(true) });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed');
-            toast('Follow-up tasks generated successfully.', 'success');
-            load();
-            if (onTaskUpdated) onTaskUpdated();
-        } catch (err) { toast('Failed to generate follow-up tasks.', 'error'); }
+            if (!res.ok) throw new Error(data.error);
+            toast('Follow-up tasks generated.', 'success');
+            load(); if (onTaskUpdated) onTaskUpdated();
+        } catch { toast('Generation failed.', 'error'); }
         finally { setGenerating(g => ({ ...g, [type]: false })); }
     };
 
@@ -457,15 +602,13 @@ export function AdminFollowupPanel({ teamMembers = [], onTaskUpdated }) {
         try {
             const res = await fetch(`${API}/tasks/${taskId}/assign`, { method: 'PATCH', credentials: 'include', headers: getAuthHeaders(true), body: JSON.stringify({ assignedToId: memberId || null }) });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed');
-            toast('Task assigned successfully.', 'success');
-            load();
-            if (onTaskUpdated) onTaskUpdated();
-        } catch (err) { toast('Failed to assign task.', 'error'); }
+            if (!res.ok) throw new Error(data.error);
+            toast('Assigned.', 'success');
+            load(); if (onTaskUpdated) onTaskUpdated();
+        } catch { toast('Assignment failed.', 'error'); }
         finally { setAssigning(null); }
     };
 
-    // Load on mount
     useState(() => { load(); }, []);
 
     const tasks = activeSection === 'player'
@@ -474,111 +617,172 @@ export function AdminFollowupPanel({ teamMembers = [], onTaskUpdated }) {
 
     const parseMeta = t => { try { return JSON.parse(t.notes || '{}'); } catch { return {}; } };
 
+    // Summary stat definitions
+    const stats = summary ? [
+        { label: 'Player Tasks', value: summary.playerFollowup.total, sub: `${summary.playerFollowup.unclaimed} open`, color: DS.amber, section: 'player' },
+        { label: 'High Priority', value: summary.playerFollowup.hc, sub: 'Critical outreach', color: DS.rose, section: 'player' },
+        { label: 'Inactive', value: summary.playerFollowup.inactive, sub: '7d no deposit', color: DS.orange, section: 'player' },
+        { label: 'Bonus Tasks', value: summary.bonusFollowup.total, sub: `${summary.bonusFollowup.unclaimed} open`, color: DS.emerald, section: 'bonus' },
+        { label: 'Streak', value: summary.bonusFollowup.streak, sub: 'Eligible', color: DS.amber, section: 'bonus' },
+        { label: 'Referral', value: summary.bonusFollowup.referral, sub: 'Pending', color: DS.violet, section: 'bonus' },
+        { label: 'Match', value: summary.bonusFollowup.match, sub: 'Recent deposits', color: DS.sky, section: 'bonus' },
+    ] : [];
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Header + generate buttons */}
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button onClick={() => { load(); if (onTaskUpdated) onTaskUpdated(); }} disabled={loading} style={{ padding: '8px 14px', border: `1px solid ${C.border}`, borderRadius: '8px', background: C.white, color: C.gray, fontSize: '12px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <RefreshCw style={{ width: '12px', height: '12px', animation: loading ? 'spin 0.8s linear infinite' : 'none' }} /> Refresh
-                    </button>
-                </div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button onClick={() => generate('player')} disabled={generating.player} style={{ padding: '8px 14px', border: 'none', borderRadius: '8px', background: generating.player ? '#e2e8f0' : C.amber, color: generating.player ? C.grayLt : '#fff', fontSize: '12px', fontWeight: '700', cursor: generating.player ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        {generating.player ? '⏳ Generating…' : '🔄 Generate Player Tasks'}
-                    </button>
-                    <button onClick={() => generate('bonus')} disabled={generating.bonus} style={{ padding: '8px 14px', border: 'none', borderRadius: '8px', background: generating.bonus ? '#e2e8f0' : C.green, color: generating.bonus ? C.grayLt : '#fff', fontSize: '12px', fontWeight: '700', cursor: generating.bonus ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        {generating.bonus ? '⏳ Generating…' : '🔄 Generate Bonus Tasks'}
-                    </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+            {/* ── Toolbar ── */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <ActionButton onClick={() => { load(); if (onTaskUpdated) onTaskUpdated(); }} loading={loading} variant="ghost">
+                    <RefreshCw style={{ width: '12px', height: '12px' }} /> Refresh
+                </ActionButton>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <ActionButton onClick={() => generate('player')} loading={generating.player} color={DS.amber}>
+                        <Zap style={{ width: '12px', height: '12px' }} /> Generate Players
+                    </ActionButton>
+                    <ActionButton onClick={() => generate('bonus')} loading={generating.bonus} color={DS.emerald}>
+                        <Gift style={{ width: '12px', height: '12px' }} /> Generate Bonuses
+                    </ActionButton>
                 </div>
             </div>
 
-            {/* Summary stats */}
+            {/* ── Stats Grid ── */}
             {summary && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
-                    {[
-                        { label: 'Player Tasks', value: summary.playerFollowup.total, sub: `${summary.playerFollowup.unclaimed} unclaimed`, color: C.amber, onClick: () => setActiveSection('player') },
-                        { label: 'HC Players', value: summary.playerFollowup.hc, sub: 'Highly critical', color: C.orange, onClick: () => setActiveSection('player') },
-                        { label: 'Inactive', value: summary.playerFollowup.inactive, sub: 'No deposit 7d+', color: C.red, onClick: () => setActiveSection('player') },
-                        { label: 'Bonus Tasks', value: summary.bonusFollowup.total, sub: `${summary.bonusFollowup.unclaimed} unclaimed`, color: C.green, onClick: () => setActiveSection('bonus') },
-                        { label: 'Streak', value: summary.bonusFollowup.streak, sub: 'Bonus eligible', color: C.amber, onClick: () => setActiveSection('bonus') },
-                        { label: 'Referral', value: summary.bonusFollowup.referral, sub: 'Not granted', color: C.violet, onClick: () => setActiveSection('bonus') },
-                        { label: 'Match', value: summary.bonusFollowup.match, sub: 'Recent deposits', color: C.sky, onClick: () => setActiveSection('bonus') },
-                    ].map(({ label, value, sub, color, onClick }) => (
-                        <div key={label} onClick={onClick} style={{ padding: '12px 14px', background: C.white, border: `1.5px solid ${C.border}`, borderRadius: '10px', cursor: 'pointer', transition: 'border-color .15s' }}
-                            onMouseEnter={e => e.currentTarget.style.borderColor = color}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
-                            <div style={{ fontSize: '20px', fontWeight: '800', color }}>{value}</div>
-                            <div style={{ fontSize: '11px', fontWeight: '700', color: C.slate, marginTop: '2px' }}>{label}</div>
-                            <div style={{ fontSize: '10px', color: C.grayLt, marginTop: '1px' }}>{sub}</div>
-                        </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
+                    {stats.map(s => (
+                        <button
+                            key={s.label}
+                            onClick={() => setActiveSection(s.section)}
+                            style={{
+                                padding: '14px 16px', textAlign: 'left',
+                                background: activeSection === s.section && s.section ? s.color.light : DS.surface,
+                                border: `1.5px solid ${activeSection === s.section ? s.color.border : DS.rule}`,
+                                borderRadius: DS.radius.lg, cursor: 'pointer',
+                                transition: 'all .18s ease', fontFamily: 'inherit',
+                            }}
+                        >
+                            <div style={{ fontSize: '22px', fontWeight: DS.weight.black, color: s.color.base, letterSpacing: '-0.03em', lineHeight: 1 }}>{s.value}</div>
+                            <div style={{ fontSize: DS.font.sm, fontWeight: DS.weight.semibold, color: DS.inkMid, marginTop: '5px', letterSpacing: '-0.01em' }}>{s.label}</div>
+                            <div style={{ fontSize: DS.font.xs, color: DS.inkFaint, marginTop: '2px' }}>{s.sub}</div>
+                        </button>
                     ))}
                 </div>
             )}
 
-            {/* Section tabs */}
-            <div style={{ display: 'flex', gap: '2px', borderBottom: `1px solid ${C.border}` }}>
+            {/* ── Tabs ── */}
+            <div style={{ display: 'flex', borderBottom: `1px solid ${DS.rule}`, gap: '0' }}>
                 {[
-                    { id: 'player', label: `Player Followup (${summary?.playerFollowup?.total ?? 0})` },
-                    { id: 'bonus', label: `Bonus Followup (${summary?.bonusFollowup?.total ?? 0})` },
-                ].map(tab => (
-                    <button key={tab.id} onClick={() => setActiveSection(tab.id)} style={{ padding: '8px 16px', border: 'none', fontFamily: 'inherit', fontSize: '12px', fontWeight: '600', cursor: 'pointer', background: activeSection === tab.id ? C.white : 'transparent', color: activeSection === tab.id ? '#0ea5e9' : C.grayLt, borderBottom: `2px solid ${activeSection === tab.id ? '#0ea5e9' : 'transparent'}` }}>
-                        {tab.label}
-                    </button>
-                ))}
+                    { id: 'player', label: 'Player Follow-up', count: summary?.playerFollowup?.total ?? 0 },
+                    { id: 'bonus',  label: 'Bonus Follow-up',  count: summary?.bonusFollowup?.total ?? 0 },
+                ].map(tab => {
+                    const active = activeSection === tab.id;
+                    return (
+                        <button key={tab.id} onClick={() => setActiveSection(tab.id)} style={{
+                            padding: '9px 20px', border: 'none', fontFamily: 'inherit',
+                            fontSize: DS.font.sm, fontWeight: active ? DS.weight.semibold : DS.weight.medium,
+                            cursor: 'pointer', background: 'transparent',
+                            color: active ? DS.sky.base : DS.inkFaint,
+                            borderBottom: `2px solid ${active ? DS.sky.base : 'transparent'}`,
+                            marginBottom: '-1px', transition: 'all .15s',
+                            display: 'flex', alignItems: 'center', gap: '7px',
+                        }}>
+                            {tab.label}
+                            <span style={{
+                                display: 'inline-block', padding: '1px 7px', borderRadius: DS.radius.pill,
+                                background: active ? DS.sky.light : DS.ruleFaint,
+                                color: active ? DS.sky.base : DS.inkFaint,
+                                fontSize: DS.font.xs, fontWeight: DS.weight.bold,
+                            }}>{tab.count}</span>
+                        </button>
+                    );
+                })}
             </div>
 
-            {/* Task list with assignment controls */}
+            {/* ── Task List ── */}
             {loading ? (
-                <div style={{ padding: '30px', textAlign: 'center', color: C.grayLt, fontSize: '13px' }}>Loading…</div>
+                <div style={{ padding: '40px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: DS.inkFaint, fontSize: DS.font.sm }}>
+                    <RefreshCw style={{ width: '14px', height: '14px', animation: 'followupSpin 0.8s linear infinite' }} /> Loading…
+                </div>
             ) : tasks.length === 0 ? (
-                <div style={{ padding: '30px', textAlign: 'center', color: C.grayLt, fontSize: '13px' }}>
-                    No open {activeSection === 'player' ? 'player followup' : 'bonus followup'} tasks. Click "Generate" to create them.
+                <div style={{ padding: '40px', textAlign: 'center' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: DS.ruleFaint, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: '20px' }}>
+                        {activeSection === 'player' ? '👤' : '🎁'}
+                    </div>
+                    <p style={{ margin: 0, fontSize: DS.font.md, fontWeight: DS.weight.semibold, color: DS.inkMid }}>No tasks yet</p>
+                    <p style={{ margin: '4px 0 0', fontSize: DS.font.sm, color: DS.inkFaint }}>Click Generate to create follow-up tasks.</p>
                 </div>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {tasks.map(task => {
                         const meta = parseMeta(task);
-                        const isAssigning = assigning === task.id;
+                        const isHigh = task.priority === 'HIGH';
+                        const accent = activeSection === 'player'
+                            ? (meta.category === 'HIGHLY_CRITICAL' ? DS.amber : DS.rose)
+                            : ({ streak: DS.amber, referral: DS.emerald, match: DS.sky }[meta.bonusType] || DS.violet);
+                        const isAssigningThis = assigning === task.id;
+
                         return (
-                            <div key={task.id} style={{ padding: '12px 16px', background: C.white, border: `1px solid ${C.border}`, borderLeft: `4px solid ${task.priority === 'HIGH' ? C.red : C.amber}`, borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                            <div key={task.id} style={{
+                                display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
+                                padding: '12px 16px',
+                                background: DS.surface,
+                                border: `1px solid ${DS.rule}`,
+                                borderLeft: `3px solid ${accent.base}`,
+                                borderRadius: DS.radius.lg,
+                                transition: 'border-color .15s',
+                            }}>
+                                {/* Type icon */}
+                                <span style={{ fontSize: '16px', flexShrink: 0 }}>
+                                    {activeSection === 'player'
+                                        ? (meta.category === 'HIGHLY_CRITICAL' ? '🟡' : '🔴')
+                                        : ({ streak: '🔥', referral: '👥', match: '💰' }[meta.bonusType] || '🎁')}
+                                </span>
+
+                                {/* Main info */}
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: '13px', fontWeight: '700', color: C.slate, marginBottom: '2px' }}>
-                                        {activeSection === 'player'
-                                            ? <><span style={{ marginRight: '6px' }}>{meta.category === 'HIGHLY_CRITICAL' ? '🟡' : '🔴'}</span>{meta.playerName} <span style={{ color: C.grayLt, fontWeight: '400' }}>@{meta.username}</span></>
-                                            : <><span style={{ marginRight: '6px' }}>{meta.bonusType === 'streak' ? '🔥' : meta.bonusType === 'referral' ? '👥' : '💰'}</span>{meta.playerName} <span style={{ color: C.grayLt, fontWeight: '400' }}>@{meta.username}</span></>
-                                        }
+                                    <div style={{ fontSize: DS.font.base, fontWeight: DS.weight.semibold, color: DS.ink }}>
+                                        {meta.playerName}{' '}
+                                        <span style={{ fontSize: DS.font.sm, fontWeight: DS.weight.normal, color: DS.inkFaint }}>@{meta.username}</span>
                                     </div>
-                                    <div style={{ fontSize: '11px', color: C.grayLt }}>
+                                    <div style={{ fontSize: DS.font.xs, color: DS.inkFaint, marginTop: '2px' }}>
                                         {activeSection === 'player'
-                                            ? `Last deposit: ${meta.lastDepositDate || 'Never'} · Balance: $${parseFloat(meta.balance || 0).toFixed(2)}`
-                                            : meta.details
-                                        }
+                                            ? `Last deposit: ${meta.lastDepositDate || '—'} · Balance: $${parseFloat(meta.balance || 0).toFixed(2)}`
+                                            : meta.details}
                                     </div>
                                 </div>
 
-                                {/* Assignee chip */}
-                                <div style={{ fontSize: '12px', color: task.assignedToId ? C.sky : C.grayLt, whiteSpace: 'nowrap' }}>
+                                {/* Assignee */}
+                                <div style={{ fontSize: DS.font.xs, fontWeight: DS.weight.medium, color: task.assignedToId ? DS.sky.base : DS.inkFaint, whiteSpace: 'nowrap', flexShrink: 0 }}>
                                     {task.assignedToId ? `→ ${task.assignedTo?.name || `#${task.assignedToId}`}` : 'Unassigned'}
                                 </div>
 
-                                {/* Assignment dropdown */}
-                                <select
-                                    value={task.assignedToId || ''}
-                                    onChange={e => assign(task.id, e.target.value ? parseInt(e.target.value) : null)}
-                                    disabled={isAssigning}
-                                    style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: '7px', fontSize: '12px', fontFamily: 'inherit', cursor: 'pointer', background: C.white, color: C.slate, minWidth: '130px' }}
-                                >
-                                    <option value="">Open to all</option>
-                                    {teamMembers.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role})</option>)}
-                                </select>
+                                {/* Assign dropdown */}
+                                <div style={{ position: 'relative', flexShrink: 0 }}>
+                                    <select
+                                        value={task.assignedToId || ''}
+                                        onChange={e => assign(task.id, e.target.value ? parseInt(e.target.value) : null)}
+                                        disabled={isAssigningThis}
+                                        style={{
+                                            padding: '7px 28px 7px 10px', border: `1px solid ${DS.rule}`,
+                                            borderRadius: DS.radius.md, fontSize: DS.font.xs, fontFamily: 'inherit',
+                                            cursor: 'pointer', background: DS.surface, color: DS.inkMid,
+                                            minWidth: '130px', appearance: 'none', outline: 'none',
+                                        }}
+                                    >
+                                        <option value="">Open to all</option>
+                                        {teamMembers.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role})</option>)}
+                                    </select>
+                                    <ChevronDown style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '11px', height: '11px', color: DS.inkFaint, pointerEvents: 'none' }} />
+                                </div>
 
-                                {isAssigning && <RefreshCw style={{ width: '13px', height: '13px', color: C.grayLt, animation: 'spin 0.8s linear infinite' }} />}
+                                {isAssigningThis && <RefreshCw style={{ width: '13px', height: '13px', color: DS.inkFaint, animation: 'followupSpin 0.8s linear infinite', flexShrink: 0 }} />}
                             </div>
                         );
                     })}
                 </div>
             )}
+
+            <style>{`@keyframes followupSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 }
