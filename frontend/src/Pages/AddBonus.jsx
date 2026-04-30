@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useContext } from "react";
-import { CheckCircle, AlertCircle, Search, X, Gift, RefreshCw, Flame, Tag, Users, Lock } from "lucide-react";
+import { CheckCircle, Search, X, Gift, RefreshCw, Flame, Tag, Users, Lock, ChevronRight, Zap } from "lucide-react";
 import { api } from "../api";
 import { fmtTX } from "../utils/txTime";
 import { useNavigate } from 'react-router-dom';
@@ -7,92 +7,87 @@ import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
 import { useToast } from '../Context/toastContext';
 
-
-const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', flexShrink: 0 }}>
-        {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
-    </svg>
-);
-const IAlert = () => <Ico d={['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'M12 9v4', 'M12 17h.01']} />;
-const ILock = () => <Ico d={['M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z', 'M7 11V7a5 5 0 0110 0v4']} />;
-
-const C = {
-    sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
-    green: '#16a34a', greenLt: '#f0fdf4', greenBdr: '#86efac',
-    red: '#dc2626', redLt: '#fff1f2', redBdr: '#fecdd3',
-    amber: '#d97706', amberLt: '#fffbeb', amberBdr: '#fcd34d',
-    violet: '#7c3aed', violetLt: '#f5f3ff', violetBdr: '#ddd6fe',
-    slate: '#0f172a', gray: '#64748b', grayLt: '#94a3b8',
-    border: '#e2e8f0', bg: '#f8fafc', white: '#fff',
-};
-
-const LABEL = {
-    display: "block", fontSize: "11px", fontWeight: "700",
-    color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px",
-};
-const INPUT = {
-    width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0",
-    borderRadius: "8px", fontSize: "14px", fontFamily: "inherit",
-    boxSizing: "border-box", background: "#fff", color: "#0f172a", outline: "none",
-};
-const CARD = {
-    background: "#fff", borderRadius: "14px", border: "1px solid #e2e8f0",
-    boxShadow: "0 2px 12px rgba(15,23,42,.07)", padding: "28px 32px",
-};
-
+/* ─── Micro helpers ──────────────────────────────────────────────────────── */
 const fmt = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
-function Card({ children, style = {}, accent }) {
-    return (
-        <div style={{
-            background: "var(--color-background-primary)",
-            borderRadius: "var(--border-radius-lg)",
-            border: "0.5px solid var(--color-border-tertiary)",
-            ...(accent ? { borderLeft: `3px solid ${accent}` } : {}),
-            ...style,
-        }}>
-            {children}
-        </div>
-    );
-}
 
-// ─── Bonus type config ────────────────────────────────────────────────────────
+/* ─── Bonus type config ───────────────────────────────────────────────────── */
 const BONUS_TYPES = [
     {
         id: "streak",
-        label: "Streak Bonus",
+        label: "Streak",
+        sublabel: "Daily streak reward",
         icon: Flame,
-        color: { bg: "#fffbeb", border: "#fde68a", dot: "#f59e0b", text: "#92400e", badge: "#fef3c7" },
-        description: (streak) =>
-            `$1 × ${streak} day${streak !== 1 ? "s" : ""} = ${fmt(streak)} — streak resets to 0 after granting`,
+        accent: "#f59e0b",
+        bg: "#fffbeb",
+        border: "#fde68a",
+        text: "#92400e",
     },
     {
         id: "referral",
-        label: "Referral Bonus",
+        label: "Referral",
+        sublabel: "Deposit-linked bonus",
         icon: Users,
-        color: { bg: "#f0fdf4", border: "#86efac", dot: "#22c55e", text: "#166534", badge: "#dcfce7" },
-        description: () => "Player must have a referrer. Grant individually to the player OR the referrer — game deducted 1× only.",
+        accent: "#22c55e",
+        bg: "#f0fdf4",
+        border: "#86efac",
+        text: "#166534",
     },
     {
         id: "other",
-        label: "Custom Bonus",
+        label: "Custom",
+        sublabel: "Any label & amount",
         icon: Tag,
-        color: { bg: "#eff6ff", border: "#bfdbfe", dot: "rgb(14, 165, 233)", text: "rgb(14, 165, 233)", badge: "#dbeafe" },
-        description: () => "Enter a label (e.g. 'Tournament Prize') and a custom amount",
+        accent: "#0ea5e9",
+        bg: "#f0f9ff",
+        border: "#bae6fd",
+        text: "#0369a1",
     },
 ];
 
-// ═════════════════════════════════════════════════════════════════════════════
-// MAIN BONUS PAGE
-// ═════════════════════════════════════════════════════════════════════════════
+/* ─── Reusable atoms ──────────────────────────────────────────────────────── */
+const Label = ({ children, hint }) => (
+    <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.6px", marginBottom: "7px" }}>
+        {children}
+        {hint && <span style={{ marginLeft: "6px", fontWeight: "400", textTransform: "none", letterSpacing: 0, color: "#94a3b8" }}>{hint}</span>}
+    </label>
+);
+
+const inputBase = {
+    width: "100%", padding: "10px 12px", border: "1px solid #e2e8f0",
+    borderRadius: "8px", fontSize: "14px", fontFamily: "inherit",
+    boxSizing: "border-box", background: "#fff", color: "#0f172a",
+    outline: "none", transition: "border-color .15s",
+};
+
+/* Step pill shown inside referral panel */
+const StepPill = ({ n, label, active, done }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{
+            width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "11px", fontWeight: "800",
+            background: done ? "#22c55e" : active ? "#0f172a" : "#e2e8f0",
+            color: done || active ? "#fff" : "#94a3b8",
+            flexShrink: 0,
+            transition: "all .2s",
+        }}>
+            {done ? "✓" : n}
+        </div>
+        <span style={{ fontSize: "12px", fontWeight: done || active ? "700" : "500", color: done ? "#16a34a" : active ? "#0f172a" : "#94a3b8", transition: "color .2s" }}>
+            {label}
+        </span>
+    </div>
+);
+
+const Divider = () => <div style={{ width: 1, height: 20, background: "#e2e8f0", margin: "0 4px" }} />;
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
 export default function BonusPage() {
-    // const { shiftActive } = useContext(ShiftStatusContext);
     const { shiftActive, shiftLoading } = useContext(ShiftStatusContext);
     const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
     const navigate = useNavigate();
-    // const { toast } = useToast();
     const { add: toast } = useToast();
 
-    // ── Player search state ───────────────────────────────────────────────────
+    /* Player search */
     const [player, setPlayer] = useState(null);
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
@@ -100,46 +95,36 @@ export default function BonusPage() {
     const [eligLoading, setEligLoading] = useState(false);
     const [showDrop, setShowDrop] = useState(false);
     const [eligibleBonuses, setEligibleBonuses] = useState([]);
-    const [selectedRbId, setSelectedRbId] = useState(null);   // ReferralBonus record id
-    const [referralSide, setReferralSide] = useState('referred'); // 'referrer' | 'referred'
+    const [selectedRbId, setSelectedRbId] = useState(null);
+    const [referralSide, setReferralSide] = useState('referred');
     const dropRef = useRef(null);
 
-    // ── Form state ────────────────────────────────────────────────────────────
+    /* Form */
     const [bonusType, setBonusType] = useState("streak");
     const [customLabel, setCustomLabel] = useState("");
     const [amount, setAmount] = useState("");
     const [selectedGameId, setSelectedGameId] = useState("");
     const [notes, setNotes] = useState("");
-
-    // ── Referral target: 'player' = grant to the selected player,
-    //                     'referrer' = grant to their referrer ─────────────────
     const [referralTarget, setReferralTarget] = useState("player");
+    const [bonusPct, setBonusPct] = useState(50);
+    const [grantBoth, setGrantBoth] = useState(false);
 
-    // ── Data state ────────────────────────────────────────────────────────────
+    /* Data */
     const [games, setGames] = useState([]);
     const [gamesLoading, setGamesLoading] = useState(true);
     const [ledger, setLedger] = useState([]);
     const [ledgerLoading, setLedgerLoading] = useState(true);
     const [lastLedgerRefresh, setLastLedgerRefresh] = useState(null);
-
-    // ── Submission state ──────────────────────────────────────────────────────
     const [submitting, setSubmitting] = useState(false);
 
-    const [hover, setHover] = useState(false);
-    const [bonusPct, setBonusPct] = useState(50);   // configurable percentage
-    const [grantBoth, setGrantBoth] = useState(false); // default: referrer only
+    const handleView = (p) => { setSelectedPlayer(p); navigate(`/playerDashboard/${p.id}`); };
 
-    const handleView = (player) => {
-        setSelectedPlayer(player);
-        navigate(`/playerDashboard/${player.id}`);
-    };
-
-    // Load eligible bonuses whenever player changes:
+    /* Load eligible bonuses */
     useEffect(() => {
         if (!player?.id) { setEligibleBonuses([]); setSelectedRbId(null); return; }
         setEligLoading(true);
         api.referralBonuses.getEligible(player.id)
-            .then(r => { setEligibleBonuses(r?.data || []); })
+            .then(r => setEligibleBonuses(r?.data || []))
             .catch(() => setEligibleBonuses([]))
             .finally(() => setEligLoading(false));
     }, [player?.id]);
@@ -147,111 +132,58 @@ export default function BonusPage() {
     useEffect(() => {
         if (bonusType !== 'referral') return;
         const rb = eligibleBonuses.find(e => e.id === selectedRbId);
-        if (rb) {
-            const computed = parseFloat((rb.depositAmount * (bonusPct / 100)).toFixed(2));
-            setAmount(computed.toFixed(2));
-        } else {
-            setAmount('');
-        }
+        if (rb) setAmount(parseFloat((rb.depositAmount * (bonusPct / 100)).toFixed(2)).toFixed(2));
+        else setAmount('');
     }, [selectedRbId, bonusType, eligibleBonuses, bonusPct]);
 
-    // ── Load games ────────────────────────────────────────────────────────────
     const loadGames = useCallback(async (silent = false) => {
-        try {
-            if (!silent) setGamesLoading(true);
-            const r = await api.games.getGames();
-            setGames(r?.data || []);
-        } catch (e) { console.error(e); }
-        finally { if (!silent) setGamesLoading(false); }
+        try { if (!silent) setGamesLoading(true); const r = await api.games.getGames(); setGames(r?.data || []); }
+        catch (e) { console.error(e); } finally { if (!silent) setGamesLoading(false); }
     }, []);
 
-    // ── Load ledger ───────────────────────────────────────────────────────────
     const loadLedger = useCallback(async (silent = false) => {
         try {
             if (!silent) setLedgerLoading(true);
             const r = await api.bonuses.getLedger();
-            setLedger(r?.data || []);
-            setLastLedgerRefresh(new Date());
-        } catch (e) { console.error(e); }
-        finally { if (!silent) setLedgerLoading(false); }
+            setLedger(r?.data || []); setLastLedgerRefresh(new Date());
+        } catch (e) { console.error(e); } finally { if (!silent) setLedgerLoading(false); }
     }, []);
 
     useEffect(() => {
-        loadGames();
-        loadLedger();
-        const ledgerInterval = setInterval(() => loadLedger(true), 10000);
-        const gamesInterval = setInterval(() => loadGames(true), 15000);
-        return () => { clearInterval(ledgerInterval); clearInterval(gamesInterval); };
+        loadGames(); loadLedger();
+        const li = setInterval(() => loadLedger(true), 10000);
+        const gi = setInterval(() => loadGames(true), 15000);
+        return () => { clearInterval(li); clearInterval(gi); };
     }, [loadGames, loadLedger]);
 
-    // ── Derived values from player ────────────────────────────────────────────
     const streak = player?.streak?.currentStreak ?? player?.currentStreak ?? 0;
     const hasReferrer = !!(player?.referredBy);
     const referrerInfo = player?.referredBy || null;
 
-    // Check if THIS player already received their referral bonus.
-    // Primary: scan player transaction history (loaded via getPlayer).
-    // Fallback: scan ledger for entries tagged [ref:refId] (new individual-grant system).
     const playerReferralUsed = (() => {
         if (!player) return false;
-        const inHistory = (player.transactionHistory || []).some(tx =>
-            tx.type === "Referral Bonus" ||
-            (typeof tx.type === "string" && tx.type.toLowerCase().includes("referral"))
-        );
-        if (inHistory) return true;
-        const refId = referrerInfo ? parseInt(referrerInfo?.id || referrerInfo) : null;
-        if (!refId) return false;
-        const refTag = "[ref:" + refId + "]";
-        return ledger.some(entry =>
-            entry.status !== "CANCELLED" &&
-            entry.playerId === player.id &&
-            (entry.description || "").toLowerCase().includes("referral bonus") &&
-            (entry.description || "").includes(refTag)
-        );
-    })();
-
-    // Check if the referrer already received their bonus FOR THIS specific player.
-    // We embed a tagged marker "[pid:X]" in notes at submit time so the backend
-    // stores it in the description. ID-based — immune to name changes or overlaps.
-    const referrerBonusUsedForPlayer = (() => {
-        if (!player || !referrerInfo) return false;
-        const refId = parseInt(referrerInfo?.id || referrerInfo);
-        const pidTag = "[pid:" + player.id + "]";
-        return ledger.some(entry =>
-            entry.status !== "CANCELLED" &&
-            entry.playerId === refId &&
-            (entry.description || "").toLowerCase().includes("referral bonus") &&
-            (entry.description || "").includes(pidTag)
+        return (player.transactionHistory || []).some(tx =>
+            tx.type === "Referral Bonus" || (typeof tx.type === "string" && tx.type.toLowerCase().includes("referral"))
         );
     })();
 
     const referralEligible = hasReferrer;
 
-    // ── Reset referralTarget when bonusType changes ───────────────────────────
-    useEffect(() => {
-        setReferralTarget("player");
-    }, [bonusType]);
+    useEffect(() => { setReferralTarget("player"); }, [bonusType]);
 
-    // ── Auto-fill amount when bonus type / player changes ─────────────────────
     useEffect(() => {
-        if (bonusType === "streak" && player) {
-            setAmount(streak > 0 ? (streak * 1.0).toFixed(2) : "");
-        } else if (bonusType === "referral" || bonusType === "other") {
-            setAmount("");
-        }
+        if (bonusType === "streak" && player) setAmount(streak > 0 ? (streak * 1.0).toFixed(2) : "");
+        else if (bonusType === "referral" || bonusType === "other") setAmount("");
     }, [bonusType, player, streak]);
 
-    // ── Player search dropdown ────────────────────────────────────────────────
     useEffect(() => {
         if (!query.trim() || query.length < 2) { setResults([]); setShowDrop(false); return; }
         const t = setTimeout(async () => {
             try {
                 setSearching(true);
                 const r = await api.players.getPlayers(1, 10, query, "");
-                setResults(r?.data || []);
-                setShowDrop(true);
-            } catch (e) { console.error(e); }
-            finally { setSearching(false); }
+                setResults(r?.data || []); setShowDrop(true);
+            } catch (e) { console.error(e); } finally { setSearching(false); }
         }, 300);
         return () => clearTimeout(t);
     }, [query]);
@@ -263,827 +195,456 @@ export default function BonusPage() {
     }, []);
 
     const selectPlayer = async (p) => {
-        setQuery(p.name);
-        setShowDrop(false);
-        setResults([]);
-        setPlayer(null);
-        setEligLoading(true);
-        try {
-            const r = await api.players.getPlayer(p.id);
-            setPlayer(r?.data || p);
-        } catch { setPlayer(p); }
-        finally { setEligLoading(false); }
+        setQuery(p.name); setShowDrop(false); setResults([]); setPlayer(null); setEligLoading(true);
+        try { const r = await api.players.getPlayer(p.id); setPlayer(r?.data || p); }
+        catch { setPlayer(p); } finally { setEligLoading(false); }
     };
 
-    const clearPlayer = () => {
-        setPlayer(null);
-        setQuery("");
-        setAmount("");
-        setSelectedGameId("");
-        setReferralTarget("player");
-    };
+    const clearPlayer = () => { setPlayer(null); setQuery(""); setAmount(""); setSelectedGameId(""); setReferralTarget("player"); };
 
-    // ── Derived values for form logic ─────────────────────────────────────────
     const amt = parseFloat(amount) || 0;
     const selectedGame = games.find(g => g.id === selectedGameId) || null;
-
-    // Referral grants 1× only (individual grant)
     const stockNeeded = amt;
     const stockOk = selectedGame ? stockNeeded <= selectedGame.pointStock : false;
-
     const customLabelOk = bonusType === "streak" || bonusType === "referral" || customLabel.trim().length > 0;
-    // const referralOk = bonusType !== "referral" || referralEligible;
     const referralOk = bonusType !== "referral" || eligibleBonuses.length > 0;
 
+    const canSubmit = !!player?.id && amt > 0 && !!selectedGameId && stockOk && customLabelOk && referralOk && !submitting;
 
-    // For referral: recipient name shown in UI
-    const referralRecipientName = bonusType === "referral"
-        ? referralTarget === "player"
-            ? player?.name
-            : (referrerInfo?.name || `ID ${referrerInfo?.id || referrerInfo}`)
-        : null;
+    const matchUsedToday = (() => {
+        if (!player) return false;
+        const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        return (player.transactionHistory || []).some(tx => tx.date === todayStr && tx.type === "Match Bonus");
+    })();
 
-    const canSubmit =
-        !!player?.id &&
-        amt > 0 &&
-        !!selectedGameId &&
-        stockOk &&
-        customLabelOk &&
-        referralOk &&
-        !submitting;
-
-    // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!player?.id) {
-            toast("Please select a player.", "error");
-
-            return;
-        }
+        if (!player?.id) { toast("Please select a player.", "error"); return; }
         if (!selectedGameId) { toast("Please select a game.", "error"); return; }
         if (!amt || amt <= 0) { toast("Enter a valid bonus amount.", "error"); return; }
         if (bonusType === "other" && !customLabel.trim()) { toast("Enter a label for the custom bonus.", "error"); return; }
+        if (bonusType === "referral" && eligibleBonuses.length === 0) { toast("No eligible referral bonus records found.", "error"); return; }
+        if (!stockOk) { toast(`Insufficient game stock. ${selectedGame?.name} has ${selectedGame?.pointStock?.toFixed(0)} pts, need ${amt.toFixed(0)} pts.`, "error"); return; }
 
-        if (bonusType === "referral" && eligibleBonuses.length === 0) {
-            toast("No eligible referral bonus records found for this player.", "error");
-            return;
-        }
-        if (!stockOk) {
-            toast(`Insufficient game stock. ${selectedGame?.name} has ${selectedGame?.pointStock?.toFixed(0)} pts, need ${amt.toFixed(0)} pts.`, "error");
-            return;
-        }
-
-        // For referral: use a custom bonusType string so backend treats it as individual grant (1× deduction).
-        // Determine recipient: player or referrer.
         let recipientPlayerId = player.id;
         let bonusTypePayload;
 
         if (bonusType === "streak") {
-            bonusTypePayload = "streak";
-            recipientPlayerId = player.id;
+            bonusTypePayload = "streak"; recipientPlayerId = player.id;
         } else if (bonusType === "referral") {
-            // Send as custom "Referral Bonus" so backend grants to ONE person only (1× game deduction)
             bonusTypePayload = "Referral Bonus";
             if (referralTarget === "referrer") {
-                // Grant to the referrer — use their ID as the player
                 const refId = referrerInfo?.id || referrerInfo;
-                if (!refId) {
-                    toast("Could not resolve referrer ID.", "error"); return;
-                }
+                if (!refId) { toast("Could not resolve referrer ID.", "error"); return; }
                 recipientPlayerId = parseInt(refId);
-            } else {
-                recipientPlayerId = player.id;
-            }
+            } else { recipientPlayerId = player.id; }
         } else {
-            bonusTypePayload = customLabel.trim();
-            recipientPlayerId = player.id;
+            bonusTypePayload = customLabel.trim(); recipientPlayerId = player.id;
         }
-
-        // Build notes with embedded ID tags so the ledger entry can be
-        // reliably identified later without relying on name matching.
-        let finalNotes = notes.trim();
-
 
         if (bonusType === 'referral') {
             if (!selectedRbId) { toast("Please select a referral bonus record.", "error"); return; }
             try {
                 setSubmitting(true);
-                // const result = await api.referralBonuses.claim(selectedRbId, {
-                //     side: referralSide,
-                //     gameId: selectedGameId,
-                //     notes: notes.trim() || undefined,
-                // });
                 const result = await api.referralBonuses.claim(selectedRbId, {
-                    side: referralSide,
-                    gameId: selectedGameId,
+                    side: referralSide, gameId: selectedGameId,
                     notes: notes.trim() || undefined,
-                    amount: parseFloat(amount),   // ← custom amount
-                    grantBoth,                    // ← grant mode
+                    amount: parseFloat(amount), grantBoth,
                 });
                 toast(result.message, "success");
                 setAmount(''); setNotes(''); setSelectedGameId(''); setSelectedRbId(null);
                 const fresh = await api.players.getPlayer(player.id);
                 setPlayer(fresh?.data || player);
                 await Promise.all([loadGames(true), loadLedger()]);
-                // Refresh eligible bonuses
                 const rb = await api.referralBonuses.getEligible(player.id);
                 setEligibleBonuses(rb?.data || []);
-            } catch (err) {
-                toast("Failed to claim referral bonus.", "error");
-            } finally {
-                setSubmitting(false);
-            }
+            } catch { toast("Failed to claim referral bonus.", "error"); }
+            finally { setSubmitting(false); }
             return;
         }
 
         try {
             setSubmitting(true);
-            await api.bonuses.grantBonus({
-                playerId: recipientPlayerId,
-                amount: amt,
-                gameId: selectedGameId,
-                bonusType: bonusTypePayload,
-                notes: finalNotes || undefined,
-            });
-
-            let msg = "";
-            if (bonusType === "streak") {
-                msg = `${fmt(amt)} Streak Bonus granted to ${player.name} from ${selectedGame?.name}. Streak has been reset to 0.`;
-            } else if (bonusType === "referral") {
-                const recipientName = referralTarget === "player"
-                    ? player.name
-                    : (referrerInfo?.name || `ID ${referrerInfo?.id || referrerInfo}`);
-                msg = `${fmt(amt)} Referral Bonus granted to ${recipientName} from ${selectedGame?.name}.`;
-            } else {
-                msg = `${fmt(amt)} ${customLabel.trim()} granted to ${player.name} from ${selectedGame?.name}.`;
-            }
+            await api.bonuses.grantBonus({ playerId: recipientPlayerId, amount: amt, gameId: selectedGameId, bonusType: bonusTypePayload, notes: notes.trim() || undefined });
+            let msg = bonusType === "streak"
+                ? `${fmt(amt)} Streak Bonus granted to ${player.name}. Streak reset to 0.`
+                : bonusType === "referral"
+                    ? `${fmt(amt)} Referral Bonus granted from ${selectedGame?.name}.`
+                    : `${fmt(amt)} ${customLabel.trim()} granted to ${player.name} from ${selectedGame?.name}.`;
             toast(msg, "success");
-
-            setAmount("");
-            setNotes("");
-            setSelectedGameId("");
-            setCustomLabel("");
-            setReferralTarget("player");
-
-            // Refresh player to reflect new balance/streak
+            setAmount(""); setNotes(""); setSelectedGameId(""); setCustomLabel(""); setReferralTarget("player");
             const fresh = await api.players.getPlayer(player.id);
             setPlayer(fresh?.data || player);
             await Promise.all([loadGames(true), loadLedger()]);
-        } catch (err) {
-            toast("Failed to grant bonus. Please try again.", "error");
-        } finally {
-            setSubmitting(false);
-        }
+        } catch { toast("Failed to grant bonus. Please try again.", "error"); }
+        finally { setSubmitting(false); }
     };
 
     const handleClear = () => {
-        setAmount("");
-        setNotes("");
-        setSelectedGameId("");
-        setCustomLabel("");
-        setReferralTarget("player");
-        clearPlayer();
-        setBonusType("streak");
+        setAmount(""); setNotes(""); setSelectedGameId(""); setCustomLabel(""); setReferralTarget("player");
+        clearPlayer(); setBonusType("streak");
     };
 
-    // ── Ledger type resolver ──────────────────────────────────────────────────
     const resolveLedgerType = (b) => {
-        const desc = (b.description || "");
-        const descLower = desc.toLowerCase();
-        if (descLower.startsWith("streak bonus")) return { label: "Streak Bonus", emoji: "🔥", bg: "#fffbeb", color: "#92400e" };
-        if (descLower.startsWith("referral bonus")) return { label: "Referral Bonus", emoji: "👤", bg: "#f0fdf4", color: "#166534" };
-        if (descLower.startsWith("match bonus")) return { label: "Match Bonus", emoji: "💰", bg: "#eff6ff", color: "rgb(14, 165, 233)" };
-        const fromIdx = desc.indexOf(" from ");
-        const customType = fromIdx > 0 ? desc.slice(0, fromIdx).trim() : "Custom Bonus";
+        const desc = (b.description || "").toLowerCase();
+        if (desc.startsWith("streak bonus")) return { label: "Streak Bonus", emoji: "🔥", bg: "#fffbeb", color: "#92400e" };
+        if (desc.startsWith("referral bonus")) return { label: "Referral Bonus", emoji: "👤", bg: "#f0fdf4", color: "#166534" };
+        if (desc.startsWith("match bonus")) return { label: "Match Bonus", emoji: "💰", bg: "#eff6ff", color: "#0369a1" };
+        const fromIdx = (b.description || "").indexOf(" from ");
+        const customType = fromIdx > 0 ? (b.description || "").slice(0, fromIdx).trim() : "Custom Bonus";
         return { label: customType, emoji: "🏷️", bg: "#f5f3ff", color: "#5b21b6" };
     };
 
-    // ── Shift guard ───────────────────────────────────────────────────────────
-    if (shiftLoading) {
-        return (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <div
-                    style={{
-                        padding: "60px 24px",
-                        textAlign: "center",
-                        background: "var(--color-background-primary)",
-                        borderRadius: "var(--border-radius-lg)",
-                        border: "0.5px solid var(--color-border-tertiary)",
-                    }}
-                >
-                    <div
-                        style={{
-                            width: "32px",
-                            height: "32px",
-                            border: "3px solid var(--color-border-tertiary)",
-                            borderTopColor: "#0ea5e9",
-                            borderRadius: "50%",
-                            margin: "0 auto 12px",
-                            animation: "spin 0.8s linear infinite",
-                        }}
-                    />
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: "13px",
-                            color: "var(--color-text-tertiary)",
-                        }}
-                    >
-                        Checking shift status…
-                    </p>
-                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    /* ── Shift guards ──────────────────────────────────────────────────────── */
+    if (shiftLoading) return (
+        <div style={{ padding: "80px 0", textAlign: "center" }}>
+            <div style={{ width: 28, height: 28, border: "2.5px solid #e2e8f0", borderTopColor: "#0ea5e9", borderRadius: "50%", margin: "0 auto 12px", animation: "spin .8s linear infinite" }} />
+            <p style={{ margin: 0, fontSize: 13, color: "#94a3b8" }}>Checking shift status…</p>
+            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        </div>
+    );
+
+    if (!shiftActive) return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <button onClick={() => navigate('/shifts')} style={{ alignSelf: "flex-start", padding: "9px 18px", background: "var(--color-background-info)", color: "var(--color-text-info)", border: "0.5px solid var(--color-border-info)", borderRadius: "var(--border-radius-md)", fontWeight: 500, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>
+                Start Shift
+            </button>
+            <div style={{ padding: "14px 16px", borderLeft: "3px solid var(--color-border-warning)", background: "var(--color-background-warning)", borderRadius: "var(--border-radius-md)" }}>
+                <p style={{ fontWeight: 500, color: "var(--color-text-warning)", margin: "0 0 2px", fontSize: 13 }}>Shift required</p>
+                <p style={{ color: "var(--color-text-warning)", margin: 0, fontSize: 12 }}>You must have an active shift to grant bonuses.</p>
+            </div>
+            <div style={{ padding: "60px 24px", textAlign: "center", background: "var(--color-background-primary)", borderRadius: "var(--border-radius-lg)", border: "0.5px solid var(--color-border-tertiary)" }}>
+                <div style={{ width: 48, height: 48, background: "var(--color-background-secondary)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                    <Lock style={{ width: 20, height: 20, color: "var(--color-text-tertiary)" }} />
                 </div>
+                <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 500, color: "var(--color-text-primary)" }}>Dashboard locked</p>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--color-text-tertiary)" }}>Go to Shifts and start your shift first.</p>
             </div>
-        );
-    }
+        </div>
+    );
 
-    if (!shiftActive) {
-        return (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <button onClick={() => navigate('/shifts')} style={{ alignSelf: "flex-start", padding: "9px 18px", background: "var(--color-background-info)", color: "var(--color-text-info)", border: "0.5px solid var(--color-border-info)", borderRadius: "var(--border-radius-md)", fontWeight: "500", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
-                    Start Shift
-                </button>
-                <Card style={{ padding: "14px 16px", borderLeft: "3px solid var(--color-border-warning)", background: "var(--color-background-warning)" }}>
-                    <p style={{ fontWeight: "500", color: "var(--color-text-warning)", margin: "0 0 2px", fontSize: "13px" }}>Shift required</p>
-                    <p style={{ color: "var(--color-text-warning)", margin: 0, fontSize: "12px" }}>You must have an active shift to grant bonuses and view tasks.</p>
-                </Card>
-                <Card style={{ padding: "60px 24px", textAlign: "center" }}>
-                    <div style={{ width: "48px", height: "48px", background: "var(--color-background-secondary)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
-                        <Lock style={{ width: "20px", height: "20px", color: "var(--color-text-tertiary)" }} />
-                    </div>
-                    <p style={{ margin: "0 0 4px", fontSize: "14px", fontWeight: "500", color: "var(--color-text-primary)" }}>Dashboard locked</p>
-                    <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-tertiary)" }}>Go to Shifts and start your shift first.</p>
-                </Card>
-            </div>
-        );
-    }
+    /* ── Referral panel helpers ─────────────────────────────────────────────── */
+    const selectedRb = eligibleBonuses.find(e => e.id === selectedRbId) || null;
+    const depositAmt = selectedRb?.depositAmount || 0;
+    const computedAmt = parseFloat((depositAmt * (bonusPct / 100)).toFixed(2));
 
-    const matchUsedToday = (() => {
-        if (!player) return false;
-        const todayStr = new Date().toLocaleDateString("en-US", {
-            month: "short", day: "numeric", year: "numeric"
-        });
-        return (player.transactionHistory || []).some(
-            tx => tx.date === todayStr && tx.type === "Match Bonus"
-        );
-    })();
-    // ─────────────────────────────────────────────────────────────────────────
+    const referralStep = !selectedRbId ? 1 : 2; // step 1 = pick record, step 2 = configure
+
+    /* ══════════════════════════════════════════════════════════════════════════
+       RENDER
+    ══════════════════════════════════════════════════════════════════════════ */
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 24, fontFamily: "inherit" }}>
 
-            {/* ════ FORM CARD ════ */}
-            <div style={CARD}>
+            {/* ── FORM CARD ─────────────────────────────────────────────────── */}
+            <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", boxShadow: "0 1px 8px rgba(15,23,42,.06)", overflow: "hidden" }}>
 
-                {/* Header banner */}
-                <div style={{ marginBottom: "24px", padding: "14px 16px", background: "#fffbeb", borderLeft: "4px solid #f59e0b", borderRadius: "8px", display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                    <Gift style={{ width: "18px", height: "18px", color: "#b45309", flexShrink: 0, marginTop: "1px" }} />
+                {/* Header */}
+                <div style={{ padding: "18px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: "#fffbeb", border: "1px solid #fde68a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Gift style={{ width: 16, height: 16, color: "#d97706" }} />
+                    </div>
                     <div>
-                        <p style={{ fontWeight: "700", color: "#78350f", margin: "0 0 2px", fontSize: "14px" }}>Award Player Bonuses</p>
-                        <p style={{ color: "#92400e", margin: 0, fontSize: "12px", lineHeight: "1.6" }}>
-                            <strong>Streak Bonus:</strong> $1 per consecutive day — auto-filled, streak resets after granting.&nbsp;
-                            <strong>Referral Bonus:</strong> Grant individually to the player OR their referrer — enter deposit ÷ 2 as the amount. Game deducted 1× only.&nbsp;
-                            <strong>Custom Bonus:</strong> Enter a label and any amount.
-                        </p>
+                        <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Award Player Bonus</h2>
+                        <p style={{ margin: 0, fontSize: 12, color: "#94a3b8" }}>Streak · Referral · Custom — all deducted from game stock</p>
                     </div>
                 </div>
 
+                <form onSubmit={handleSubmit} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: 24 }}>
 
-
-                <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
-
-                    {/* ── 1. Player search ── */}
+                    {/* ── 1. Player search ──────────────────────────────────── */}
                     <div>
-                        <label style={LABEL}>Player * — search by name or username</label>
+                        <Label>Player <span style={{ color: "#ef4444" }}>*</span></Label>
                         <div ref={dropRef} style={{ position: "relative" }}>
                             <div style={{ position: "relative" }}>
-                                <Search style={{ position: "absolute", left: "11px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
+                                <Search style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "#94a3b8", pointerEvents: "none" }} />
                                 <input
                                     type="text"
-                                    placeholder="Type at least 2 characters…"
+                                    placeholder="Search by name or username…"
                                     value={query}
                                     onChange={e => { setQuery(e.target.value); if (player) clearPlayer(); }}
-                                    style={{ ...INPUT, paddingLeft: "34px", paddingRight: player ? "36px" : "12px" }}
+                                    style={{ ...inputBase, paddingLeft: 34, paddingRight: (player || query) ? 36 : 12 }}
                                 />
                                 {(player || query) && (
                                     <button type="button" onClick={clearPlayer}
-                                        style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex" }}>
-                                        <X style={{ width: "14px", height: "14px" }} />
+                                        style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex", padding: 2 }}>
+                                        <X style={{ width: 14, height: 14 }} />
                                     </button>
                                 )}
                             </div>
 
-                            {searching && (
-                                <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 60, background: "#fff", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "12px 16px", color: "#94a3b8", fontSize: "13px", boxShadow: "0 4px 12px rgba(0,0,0,.08)" }}>
-                                    Searching…
+                            {/* Dropdown */}
+                            {(searching || (showDrop && !searching)) && (
+                                <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 60, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, boxShadow: "0 8px 28px rgba(15,23,42,.12)", overflow: "hidden" }}>
+                                    {searching
+                                        ? <div style={{ padding: "14px 16px", color: "#94a3b8", fontSize: 13 }}>Searching…</div>
+                                        : results.length === 0
+                                            ? <div style={{ padding: "14px 16px", color: "#94a3b8", fontSize: 13 }}>No players found for "{query}"</div>
+                                            : results.map(p => (
+                                                <div key={p.id} onClick={() => selectPlayer(p)}
+                                                    style={{ padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid #f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center", transition: "background .1s" }}
+                                                    onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
+                                                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                                                    <div>
+                                                        <div style={{ fontWeight: 600, fontSize: 13, color: "#0f172a" }}>{p.name}</div>
+                                                        <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>{p.email}</div>
+                                                    </div>
+                                                    <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
+                                                        <div style={{ fontWeight: 700, fontSize: 13, color: "#10b981" }}>{fmt(p.balance)}</div>
+                                                        <span style={{ fontSize: 10, padding: "1px 7px", borderRadius: 4, fontWeight: 700, display: "inline-block", marginTop: 2, background: p.tier === "GOLD" ? "#fef3c7" : p.tier === "SILVER" ? "#e0e7ff" : "#fed7aa", color: p.tier === "GOLD" ? "#92400e" : p.tier === "SILVER" ? "#3730a3" : "#9a3412" }}>
+                                                            {p.tier}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))
+                                    }
                                 </div>
                             )}
 
-                            {showDrop && !searching && (
-                                <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 60, background: "#fff", border: "1px solid #e2e8f0", borderRadius: "10px", boxShadow: "0 8px 24px rgba(15,23,42,.12)", overflow: "hidden", maxHeight: "260px", overflowY: "auto" }}>
-                                    {results.length === 0
-                                        ? <div style={{ padding: "14px 16px", color: "#94a3b8", fontSize: "13px" }}>No players found for "{query}"</div>
-                                        : results.map(p => (
-                                            <div key={p.id} onClick={() => selectPlayer(p)}
-                                                style={{ padding: "10px 16px", cursor: "pointer", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                                                onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
-                                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                                                <div>
-                                                    <div style={{ fontWeight: "600", fontSize: "13px", color: "#0f172a" }}>{p.name}</div>
-                                                    <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "1px" }}>{p.email}</div>
-                                                </div>
-                                                <div style={{ textAlign: "right", flexShrink: 0, marginLeft: "12px" }}>
-                                                    <div style={{ fontWeight: "700", fontSize: "13px", color: "#10b981" }}>{fmt(p.balance)}</div>
-                                                    <span style={{ fontSize: "10px", padding: "1px 6px", borderRadius: "4px", fontWeight: "700", display: "inline-block", marginTop: "2px", background: p.tier === "GOLD" ? "#fef3c7" : p.tier === "SILVER" ? "#e0e7ff" : "#fed7aa", color: p.tier === "GOLD" ? "#92400e" : p.tier === "SILVER" ? "#3730a3" : "#9a3412" }}>
-                                                        {p.tier}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                </div>
-                            )}
+                            {eligLoading && <p style={{ margin: "6px 0 0", fontSize: 12, color: "#94a3b8" }}>Loading player data…</p>}
 
-                            {eligLoading && (
-                                <div style={{ marginTop: "6px", fontSize: "12px", color: "#94a3b8" }}>Loading player data…</div>
-                            )}
-
-                            {/* Selected player info strip */}
+                            {/* Player status chips */}
                             {player && !eligLoading && (
-
-                                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, flexWrap: "wrap", marginTop: "8px" }}>
-
-                                    {/* Streak */}
-                                    {streak > 0 ? (
-                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "20px", fontSize: "13px", fontWeight: "700", color: "#92400e" }}>
-                                            🔥 {streak}-day streak
-                                            <span style={{ fontWeight: "500", color: "#b45309", fontSize: "11px" }}>= {fmt(streak * 1.0)} bonus</span>
-                                        </span>
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                                    <Chip
+                                        emoji={streak > 0 ? "🔥" : "🔥"}
+                                        label={streak > 0 ? `${streak}-day streak` : "No active streak"}
+                                        sub={streak > 0 ? `= ${fmt(streak)}` : null}
+                                        color={streak > 0 ? { bg: "#fffbeb", border: "#fde68a", text: "#92400e" } : { bg: "#f1f5f9", border: "#e2e8f0", text: "#94a3b8" }}
+                                    />
+                                    <Chip
+                                        emoji={matchUsedToday ? "⚠" : "✓"}
+                                        label={matchUsedToday ? "Match used today" : "Match available"}
+                                        color={matchUsedToday ? { bg: "#fff7ed", border: "#fed7aa", text: "#c2410c" } : { bg: "#f0fdf4", border: "#86efac", text: "#166534" }}
+                                    />
+                                    {hasReferrer ? (
+                                        eligibleBonuses.length > 0
+                                            ? <Chip emoji="👥" label={`${eligibleBonuses.length} referral pending`} sub={`$${eligibleBonuses.reduce((s, b) => s + b.bonusAmount, 0).toFixed(2)}`} color={{ bg: "#f0fdf4", border: "#86efac", text: "#166534" }} />
+                                            : <Chip emoji="👥" label={`Referred by ${referrerInfo?.name || "—"}`} sub="no pending" color={{ bg: "#f8fafc", border: "#e2e8f0", text: "#64748b" }} />
                                     ) : (
-                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#94a3b8" }}>
-                                            🔥 No active streak
-                                        </span>
+                                        <Chip emoji="👥" label="No referrer" color={{ bg: "#f1f5f9", border: "#e2e8f0", text: "#94a3b8" }} />
                                     )}
-
-                                    {/* Match bonus eligibility */}
-                                    {matchUsedToday ? (
-                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "#92400e" }}>
-                                            ⚠ Match bonus used today
-                                        </span>
-                                    ) : (
-                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "#166634" }}>
-                                            ✓ Match bonus available
-                                        </span>
-                                    )}
-
-                                    {/* Referral bonus eligibility */}
-                                    {eligLoading ? (
-                                        <span style={{ padding: "5px 12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", color: "#94a3b8" }}>
-                                            Checking referral…
-                                        </span>
-                                    ) : hasReferrer ? (
-                                        eligibleBonuses.length > 0 ? (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "#166634" }}>
-                                                👥 {eligibleBonuses.length} referral bonus{eligibleBonuses.length !== 1 ? "es" : ""} pending
-                                                <span style={{ fontWeight: "500", fontSize: "11px", color: "#4ade80" }}>
-                                                    · ${eligibleBonuses.reduce((s, b) => s + b.bonusAmount, 0).toFixed(2)}
-                                                </span>
-                                            </span>
-                                        ) : (
-                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#64748b" }}>
-                                                👥 Referred by {referrerInfo?.name || `ID ${referrerInfo?.id || referrerInfo}`}
-                                                <span style={{ fontWeight: "400", color: "#94a3b8", fontSize: "11px" }}>· no pending bonus</span>
-                                            </span>
-                                        )
-                                    ) : (
-                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "5px 12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#94a3b8" }}>
-                                            👥 No referrer
-                                        </span>
-                                    )}
-
-                                    {/* Tier */}
-                                    <span style={{ padding: "5px 12px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "20px", fontSize: "12px", fontWeight: "700", color: "rgb(14, 165, 233)" }}>
-                                        {player.tier}
-                                    </span>
+                                    <Chip emoji="⭐" label={player.tier} color={{ bg: "#eff6ff", border: "#bfdbfe", text: "#0369a1" }} />
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* ── 2. Bonus type selector ── */}
+                    {/* ── 2. Bonus type ────────────────────────────────────── */}
                     <div>
-                        <label style={LABEL}>Bonus Type *</label>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+                        <Label>Bonus Type <span style={{ color: "#ef4444" }}>*</span></Label>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                             {BONUS_TYPES.map(bt => {
                                 const Icon = bt.icon;
                                 const selected = bonusType === bt.id;
-                                const playerStreak = player ? streak : 0;
-                                const desc = bt.description(playerStreak);
-
-                                let typeDisabled = false;
-                                let disabledNote = null;
-                                // if (bt.id === "referral" && player && !hasReferrer) {
-                                //     typeDisabled = true;
-                                //     disabledNote = "No referrer";
-                                // }
-                                if (bt.id === "referral" && player && !eligLoading && eligibleBonuses.length === 0) {
-                                    typeDisabled = true;
-                                    disabledNote = "No eligible records";
-                                }
-
+                                const disabled = bt.id === "referral" && player && !eligLoading && eligibleBonuses.length === 0;
                                 return (
-                                    <button
-                                        key={bt.id}
-                                        type="button"
-                                        onClick={() => { if (!typeDisabled) setBonusType(bt.id); }}
+                                    <button key={bt.id} type="button"
+                                        onClick={() => { if (!disabled) setBonusType(bt.id); }}
                                         style={{
-                                            display: "flex", alignItems: "flex-start", gap: "10px",
-                                            padding: "12px 14px", borderRadius: "10px",
-                                            cursor: typeDisabled ? "not-allowed" : "pointer",
-                                            border: `2px solid ${selected ? bt.color.dot : "#e2e8f0"}`,
-                                            background: selected ? bt.color.bg : typeDisabled ? "#f8fafc" : "#fafafa",
-                                            fontFamily: "inherit", textAlign: "left", transition: "all .15s",
-                                            opacity: typeDisabled ? 0.55 : 1,
+                                            padding: "14px 16px", borderRadius: 12, cursor: disabled ? "not-allowed" : "pointer",
+                                            border: `1.5px solid ${selected ? bt.accent : "#e2e8f0"}`,
+                                            background: selected ? bt.bg : "#fafafa",
+                                            fontFamily: "inherit", textAlign: "left",
+                                            transition: "all .15s", opacity: disabled ? 0.45 : 1,
+                                            display: "flex", alignItems: "center", gap: 12,
                                         }}>
-                                        <div style={{ width: "34px", height: "34px", borderRadius: "8px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: selected ? bt.color.badge : "#f1f5f9", border: `1px solid ${selected ? bt.color.border : "#e2e8f0"}` }}>
-                                            <Icon style={{ width: "15px", height: "15px", color: selected ? bt.color.dot : "#94a3b8" }} />
+                                        <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: selected ? "#fff" : "#f1f5f9", border: `1px solid ${selected ? bt.border : "#e2e8f0"}`, transition: "all .15s" }}>
+                                            <Icon style={{ width: 15, height: 15, color: selected ? bt.accent : "#94a3b8" }} />
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontWeight: "700", fontSize: "13px", color: selected ? bt.color.text : "#374151" }}>{bt.label}</div>
-                                            {disabledNote
-                                                ? <div style={{ fontSize: "11px", color: "#f59e0b", marginTop: "2px", fontWeight: "600" }}>⚠ {disabledNote}</div>
-                                                : <div style={{ fontSize: "11px", color: selected ? bt.color.text : "#94a3b8", marginTop: "2px", lineHeight: "1.5", opacity: selected ? 0.9 : 0.7 }}>{desc}</div>
-                                            }
+                                            <div style={{ fontWeight: 700, fontSize: 13, color: selected ? bt.text : "#374151", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                                {bt.label}
+                                                {selected && <CheckCircle style={{ width: 13, height: 13, color: bt.accent }} />}
+                                            </div>
+                                            <div style={{ fontSize: 11, color: selected ? bt.text : "#94a3b8", marginTop: 1, opacity: selected ? 0.8 : 0.7 }}>
+                                                {disabled ? <span style={{ color: "#f59e0b", fontWeight: 600 }}>⚠ No eligible records</span> : bt.sublabel}
+                                            </div>
                                         </div>
-                                        {selected && (
-                                            <CheckCircle style={{ width: "14px", height: "14px", color: bt.color.dot, flexShrink: 0, marginTop: "2px" }} />
-                                        )}
                                     </button>
                                 );
                             })}
                         </div>
 
-
-
-                        {bonusType === 'referral' && player && (
-                            <div style={{ marginTop: '12px', padding: '14px 16px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px' }}>
-                                <div style={{ fontWeight: '700', fontSize: '13px', color: '#166534', marginBottom: '10px' }}>
-                                    👤 Select Referral Bonus Record
+                        {/* Custom label */}
+                        {bonusType === "other" && (
+                            <div style={{ marginTop: 14 }}>
+                                <Label hint="— shown in ledger & transactions">Custom Label <span style={{ color: "#ef4444" }}>*</span></Label>
+                                <div style={{ position: "relative" }}>
+                                    <Tag style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "#94a3b8", pointerEvents: "none" }} />
+                                    <input type="text" placeholder="e.g. Tournament Prize, Loyalty Bonus…" value={customLabel} onChange={e => setCustomLabel(e.target.value)} maxLength={60}
+                                        style={{ ...inputBase, paddingLeft: 34, borderColor: customLabel.trim() ? "#bfdbfe" : "#e2e8f0" }} />
                                 </div>
-
-                                {eligLoading && <div style={{ fontSize: '12px', color: '#94a3b8' }}>Loading eligible records…</div>}
-
-                                {!eligLoading && eligibleBonuses.length === 0 && (
-                                    <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '12px', color: '#92400e' }}>
-                                        ⚠ No unclaimed referral bonus eligibility found for {player.name}.
-                                        Record it first via the referral toggle during deposit on the Transactions page.
-                                    </div>
+                                {customLabel.trim() && (
+                                    <p style={{ margin: "5px 0 0", fontSize: 11, color: "#5b21b6", fontWeight: 600 }}>
+                                        🏷️ Will display as: <strong>"{customLabel.trim()}"</strong>
+                                    </p>
                                 )}
-
-                                {!eligLoading && eligibleBonuses.length > 0 && (
-                                    <>
-                                        {/* Record picker */}
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
-                                            {eligibleBonuses.map(rb => {
-                                                const isSelected = selectedRbId === rb.id;
-                                                const isBside = rb.side === 'referred';
-                                                const sideLabel = isBside
-                                                    ? `${player.name} was referred by ${rb.counterpartName}`
-                                                    : `${player.name} referred ${rb.counterpartName}`;
-                                                return (
-                                                    <div key={rb.id} onClick={() => { setSelectedRbId(rb.id); setReferralSide(rb.side); }}
-                                                        style={{ padding: '12px 14px', borderRadius: '8px', cursor: 'pointer', border: `2px solid ${isSelected ? '#16a34a' : '#d1fae5'}`, background: isSelected ? '#dcfce7' : '#f0fdf4', transition: 'all .15s' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                            <div>
-                                                                <div style={{ fontWeight: '700', fontSize: '12px', color: '#14532d' }}>
-                                                                    {isBside ? '🙋 Player bonus (B side)' : '👤 Referrer bonus (A side)'}
-                                                                </div>
-                                                                <div style={{ fontSize: '11px', color: '#166534', marginTop: '2px' }}>{sideLabel}</div>
-                                                                <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '4px' }}>
-                                                                    Deposit was <strong>${rb.depositAmount.toFixed(2)}</strong>
-                                                                </div>
-                                                            </div>
-                                                            <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
-                                                                <div style={{ fontSize: '11px', color: '#94a3b8' }}>stored amount</div>
-                                                                <div style={{ fontSize: '16px', fontWeight: '900', color: '#16a34a' }}>${rb.bonusAmount.toFixed(2)}</div>
-                                                                {isSelected && <CheckCircle style={{ width: '14px', height: '14px', color: '#16a34a', marginTop: '4px' }} />}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-
-                                        {/* ── Percentage + Grant Mode controls (only when a record is selected) ── */}
-                                        {selectedRbId && (() => {
-                                            const rb = eligibleBonuses.find(e => e.id === selectedRbId);
-                                            const depositAmt = rb?.depositAmount || 0;
-                                            const computedAmt = parseFloat((depositAmt * (bonusPct / 100)).toFixed(2));
-                                            return (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '14px', background: '#fff', border: '1px solid #d1fae5', borderRadius: '10px' }}>
-
-                                                    {/* Percentage input */}
-                                                    <div>
-                                                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
-                                                            Bonus % of deposit
-                                                            <span style={{ marginLeft: '6px', fontWeight: '400', textTransform: 'none', color: '#94a3b8' }}>
-                                                                — deposit was ${depositAmt.toFixed(2)}
-                                                            </span>
-                                                        </label>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                            <input
-                                                                type="number" min="1" max="200" step="1"
-                                                                value={bonusPct}
-                                                                onChange={e => setBonusPct(Math.max(1, parseFloat(e.target.value) || 50))}
-                                                                style={{ width: '90px', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '15px', fontWeight: '700', color: '#16a34a', fontFamily: 'inherit', outline: 'none', textAlign: 'center' }}
-                                                            />
-                                                            <span style={{ fontSize: '13px', color: '#64748b' }}>%</span>
-                                                            <div style={{ display: 'flex', gap: '6px' }}>
-                                                                {[25, 50, 75, 100].map(p => (
-                                                                    <button key={p} type="button" onClick={() => setBonusPct(p)}
-                                                                        style={{ padding: '4px 10px', borderRadius: '6px', border: `1px solid ${bonusPct === p ? '#16a34a' : '#e2e8f0'}`, background: bonusPct === p ? '#f0fdf4' : '#fafafa', color: bonusPct === p ? '#16a34a' : '#64748b', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}>
-                                                                        {p}%
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                            <span style={{ fontSize: '16px', fontWeight: '900', color: '#16a34a', marginLeft: 'auto' }}>
-                                                                = ${computedAmt.toFixed(2)}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Grant mode toggle */}
-                                                    <div>
-                                                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
-                                                            Grant to
-                                                        </label>
-                                                        <div style={{ display: 'flex', gap: '10px' }}>
-                                                            {[
-                                                                { value: false, label: 'Referrer only (default)', sub: `Only ${rb?.counterpartName || 'referrer'} (A) receives $${computedAmt.toFixed(2)}`, emoji: '👤', color: '#0ea5e9', bg: '#f0f9ff', border: '#bae6fd', deduction: `${computedAmt.toFixed(2)} pts` },
-                                                                { value: true, label: 'Both A and B', sub: `Both ${rb?.counterpartName || 'referrer'} and ${player.name} each receive $${computedAmt.toFixed(2)}`, emoji: '👥', color: '#16a34a', bg: '#f0fdf4', border: '#86efac', deduction: `${(computedAmt * 2).toFixed(2)} pts` },
-                                                            ].map(opt => (
-                                                                <button key={String(opt.value)} type="button" onClick={() => setGrantBoth(opt.value)}
-                                                                    style={{ flex: 1, padding: '12px 14px', borderRadius: '10px', border: `2px solid ${grantBoth === opt.value ? opt.color : '#e2e8f0'}`, background: grantBoth === opt.value ? opt.bg : '#fafafa', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'all .15s' }}>
-                                                                    <div style={{ fontWeight: '700', fontSize: '13px', color: grantBoth === opt.value ? opt.color : '#374151', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                                        <span>{opt.emoji}</span> {opt.label}
-                                                                        {grantBoth === opt.value && <CheckCircle style={{ width: '13px', height: '13px', marginLeft: 'auto' }} />}
-                                                                    </div>
-                                                                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', lineHeight: '1.4' }}>{opt.sub}</div>
-                                                                    <div style={{ marginTop: '6px', fontSize: '11px', fontWeight: '600', color: grantBoth === opt.value ? opt.color : '#94a3b8' }}>
-                                                                        Game deduction: {opt.deduction}
-                                                                    </div>
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })()}
-                                    </>
-                                )}
-
-                                <div style={{ marginTop: '10px', fontSize: '12px', color: '#166534', lineHeight: '1.6', padding: '8px 12px', background: '#bbf7d030', borderRadius: '6px', border: '1px solid #d1fae5' }}>
-                                    💡 Default grants only to the <strong>referrer (A)</strong>. Switch to "Both" to also reward the referred player. Adjust the % to change the bonus amount.
-                                </div>
                             </div>
                         )}
 
-                        {/* Custom label input */}
-                        {bonusType === "other" && (
-                            <div style={{ marginTop: "12px" }}>
-                                <label style={LABEL}>
-                                    Custom Bonus Label *
-                                    <span style={{ marginLeft: "6px", fontWeight: "400", textTransform: "none", letterSpacing: 0, color: "#94a3b8" }}>
-                                        — this will appear as the bonus type in the ledger and transactions
-                                    </span>
-                                </label>
-                                <div style={{ position: "relative" }}>
-                                    <Tag style={{ position: "absolute", left: "11px", top: "50%", transform: "translateY(-50%)", width: "14px", height: "14px", color: "#94a3b8", pointerEvents: "none" }} />
-                                    <input
-                                        type="text"
-                                        placeholder="e.g. Tournament Prize, Loyalty Bonus, Weekend Promo…"
-                                        value={customLabel}
-                                        onChange={e => setCustomLabel(e.target.value)}
-                                        maxLength={60}
-                                        style={{ ...INPUT, paddingLeft: "34px", borderColor: customLabel.trim() ? "#bfdbfe" : "#e2e8f0" }}
-                                    />
-                                </div>
-                                {customLabel.trim() && (
-                                    <div style={{ marginTop: "6px", fontSize: "11px", color: "#5b21b6", fontWeight: "600" }}>
-                                        🏷️ Will display as: <strong>"{customLabel.trim()}"</strong> in ledger &amp; transactions
-                                    </div>
-                                )}
-                            </div>
+                        {/* ── Referral Panel ──────────────────────────────── */}
+                        {bonusType === "referral" && player && (
+                            <ReferralPanel
+                                player={player}
+                                eligLoading={eligLoading}
+                                eligibleBonuses={eligibleBonuses}
+                                selectedRbId={selectedRbId}
+                                setSelectedRbId={setSelectedRbId}
+                                setReferralSide={setReferralSide}
+                                bonusPct={bonusPct}
+                                setBonusPct={setBonusPct}
+                                grantBoth={grantBoth}
+                                setGrantBoth={setGrantBoth}
+                                computedAmt={computedAmt}
+                                depositAmt={depositAmt}
+                                selectedRb={selectedRb}
+                            />
                         )}
                     </div>
 
-                    {/* ── 3. Amount + Game row ── */}
-                    <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: "16px", alignItems: "start" }}>
-
-                        {/* Amount */}
+                    {/* ── 3. Amount + Game ─────────────────────────────────── */}
+                    <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: 16, alignItems: "start" }}>
                         <div>
-                            <label style={LABEL}>
-                                Bonus Amount ($) *
-                                {bonusType === "streak" && player && streak > 0 && (
-                                    <span style={{ marginLeft: "6px", fontWeight: "500", textTransform: "none", letterSpacing: 0, color: "#f59e0b" }}>auto-filled</span>
-                                )}
-                                {bonusType === "referral" && (
-                                    <span style={{ marginLeft: "6px", fontWeight: "500", textTransform: "none", letterSpacing: 0, color: "#22c55e" }}>deposit ÷ 2</span>
-                                )}
-                            </label>
+                            <Label hint={bonusType === "streak" && streak > 0 ? "auto-filled" : bonusType === "referral" ? "from % above" : null}>
+                                Amount ($) <span style={{ color: "#ef4444" }}>*</span>
+                            </Label>
                             <input
-                                type="number"
-                                placeholder="0.00"
-                                min="0.01"
-                                step="0.01"
+                                type="number" placeholder="0.00" min="0.01" step="0.01"
                                 value={amount}
                                 onChange={e => setAmount(e.target.value)}
                                 readOnly={bonusType === "streak" && player && streak > 0}
                                 style={{
-                                    ...INPUT,
-                                    background: bonusType === "streak" && player && streak > 0 ? "#fffbeb" :
-                                        bonusType === "referral" ? "#f0fdf4" : "#fff",
-                                    color: bonusType === "streak" && player && streak > 0 ? "#92400e" :
-                                        bonusType === "referral" ? "#166534" : "#0f172a",
-                                    fontWeight: (bonusType === "streak" && player && streak > 0) || bonusType === "referral" ? "700" : "400",
+                                    ...inputBase,
+                                    background: bonusType === "streak" && player && streak > 0 ? "#fffbeb" : bonusType === "referral" ? "#f0fdf4" : "#fff",
+                                    color: bonusType === "streak" && player && streak > 0 ? "#92400e" : bonusType === "referral" ? "#166534" : "#0f172a",
+                                    fontWeight: ((bonusType === "streak" && player && streak > 0) || bonusType === "referral") ? 700 : 400,
                                     cursor: bonusType === "streak" && player && streak > 0 ? "default" : "text",
+                                    borderColor: bonusType === "referral" && selectedRb ? "#86efac" : "#e2e8f0",
                                 }}
                             />
                             {bonusType === "streak" && player && streak === 0 && (
-                                <div style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>
-                                    ⚠ Player has no active streak
-                                </div>
-                            )}
-                            {bonusType === "referral" && amt > 0 && (
-                                <div style={{ fontSize: "11px", color: "#16a34a", marginTop: "4px", fontWeight: "600" }}>
-                                    Granting {fmt(amt)} to {referralTarget === "player" ? player?.name : (referrerInfo?.name || "referrer")}
-                                </div>
+                                <p style={{ margin: "5px 0 0", fontSize: 11, color: "#ef4444" }}>⚠ No active streak</p>
                             )}
                         </div>
 
-                        {/* Game selector */}
                         <div>
-                            <label style={LABEL}>
-                                Select Game * — points deducted from this game
-                                {bonusType === "referral" && amt > 0 && (
-                                    <span style={{ marginLeft: "6px", fontWeight: "500", textTransform: "none", letterSpacing: 0, color: "#22c55e" }}>
-                                        needs {amt.toFixed(0)} pts (1×)
-                                    </span>
-                                )}
-                            </label>
-                            {gamesLoading ? (
-                                <div style={{ ...INPUT, color: "#94a3b8", display: "flex", alignItems: "center" }}>Loading games…</div>
-                            ) : (
-                                <select
-                                    value={selectedGameId}
-                                    onChange={e => setSelectedGameId(e.target.value)}
-                                    style={{ ...INPUT, cursor: "pointer", appearance: "none", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}>
+                            <Label hint={bonusType === "referral" && amt > 0 ? `needs ${amt.toFixed(0)} pts` : null}>
+                                Game <span style={{ color: "#ef4444" }}>*</span>
+                            </Label>
+                            {gamesLoading
+                                ? <div style={{ ...inputBase, color: "#94a3b8", display: "flex", alignItems: "center" }}>Loading…</div>
+                                : <select value={selectedGameId} onChange={e => setSelectedGameId(e.target.value)}
+                                    style={{ ...inputBase, cursor: "pointer", appearance: "none", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}>
                                     <option value="">— Choose a game —</option>
                                     {games.map(g => (
                                         <option key={g.id} value={g.id} disabled={g.pointStock <= 0}>
-                                            {g.name}  ·  {g.pointStock.toFixed(0)} pts available
-                                            {g.pointStock <= 0 ? "  (No stock)" : g.pointStock <= 500 ? "  (Low stock)" : ""}
+                                            {g.name}  ·  {g.pointStock.toFixed(0)} pts{g.pointStock <= 0 ? " (No stock)" : g.pointStock <= 500 ? " (Low)" : ""}
                                         </option>
                                     ))}
                                 </select>
-                            )}
-
-                            {/* Stock indicator */}
+                            }
                             {selectedGame && amt > 0 && (
-                                <div style={{ marginTop: "8px", padding: "8px 12px", borderRadius: "8px", background: stockOk ? "#f0fdf4" : "#fee2e2", border: `1px solid ${stockOk ? "#86efac" : "#fca5a5"}`, fontSize: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <span style={{ color: stockOk ? "#166534" : "#991b1b", fontWeight: "600" }}>
+                                <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: stockOk ? "#f0fdf4" : "#fee2e2", border: `1px solid ${stockOk ? "#86efac" : "#fca5a5"}`, fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span style={{ color: stockOk ? "#166534" : "#991b1b", fontWeight: 600 }}>
                                         {stockOk
-                                            ? `✓ ${selectedGame.name}: ${selectedGame.pointStock.toFixed(0)} pts → ${(selectedGame.pointStock - stockNeeded).toFixed(0)} pts after`
-                                            : `⚠ Need ${stockNeeded.toFixed(0)} pts, only ${selectedGame.pointStock.toFixed(0)} available`
-                                        }
+                                            ? `✓ ${selectedGame.pointStock.toFixed(0)} → ${(selectedGame.pointStock - stockNeeded).toFixed(0)} pts`
+                                            : `⚠ Need ${stockNeeded.toFixed(0)}, only ${selectedGame.pointStock.toFixed(0)} available`}
                                     </span>
-                                    <span style={{ color: stockOk ? "#16a34a" : "#ef4444", fontWeight: "700" }}>
-                                        −{stockNeeded.toFixed(0)} pts
-                                    </span>
+                                    <span style={{ color: stockOk ? "#16a34a" : "#ef4444", fontWeight: 700 }}>−{stockNeeded.toFixed(0)} pts</span>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* ── 4. Notes ── */}
+                    {/* ── 4. Notes ─────────────────────────────────────────── */}
                     <div>
-                        <label style={LABEL}>Notes (optional)</label>
-                        <textarea
-                            placeholder={
-                                bonusType === "streak" ? "e.g., 'Weekly streak reward'…" :
-                                    bonusType === "referral" ? "e.g., 'Referral bonus for new player deposit'…" :
-                                        "e.g., 'Tournament prize', 'Weekend promotion'…"
-                            }
-                            rows={2}
-                            value={notes}
-                            onChange={e => setNotes(e.target.value)}
-                            style={{ ...INPUT, resize: "none", lineHeight: "1.6" }}
-                        />
+                        <Label hint="— optional">Notes</Label>
+                        <textarea rows={2} placeholder="Additional context…" value={notes} onChange={e => setNotes(e.target.value)}
+                            style={{ ...inputBase, resize: "none", lineHeight: "1.6" }} />
                     </div>
 
-                    {/* ── Summary bar ── */}
+                    {/* ── Summary bar ──────────────────────────────────────── */}
                     {player && amt > 0 && selectedGame && (
-                        <div style={{ padding: "14px 18px", background: stockOk && referralOk ? "#f0fdf4" : "#fee2e2", border: `1px solid ${stockOk && referralOk ? "#86efac" : "#fca5a5"}`, borderRadius: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ padding: "14px 18px", background: stockOk && referralOk ? "#f0fdf4" : "#fee2e2", border: `1px solid ${stockOk && referralOk ? "#86efac" : "#fca5a5"}`, borderRadius: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
                             <div>
-                                <div style={{ fontWeight: "700", fontSize: "13px", color: stockOk && referralOk ? "#166534" : "#991b1b" }}>
-                                    {!referralOk
-                                        ? "⚠ Cannot grant — no eligible referral bonus records found"
-                                        : !stockOk ? "⚠ Cannot grant — insufficient game stock"
-                                            : "✓ Ready to grant"}
+                                <div style={{ fontWeight: 700, fontSize: 13, color: stockOk && referralOk ? "#166534" : "#991b1b" }}>
+                                    {!referralOk ? "⚠ No eligible referral records" : !stockOk ? "⚠ Insufficient game stock" : "✓ Ready to grant"}
                                 </div>
-                                <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
-                                    {bonusType === "streak" ? "Streak Bonus" :
-                                        bonusType === "referral" ? `Referral Bonus → ${referralTarget === "player" ? player.name : (referrerInfo?.name || "referrer")}` :
-                                            (customLabel.trim() || "Custom Bonus")}
-                                    {" "}&middot;{" "}{selectedGame.name}{" "}&middot;{" "}
-                                    {bonusType === "referral"
-                                        ? (referralTarget === "player" ? player.name : (referrerInfo?.name || "referrer"))
-                                        : player.name
-                                    }
-                                    {bonusType === "streak" && <span style={{ color: "#f59e0b", marginLeft: "6px" }}>· Streak resets to 0</span>}
-                                    {bonusType === "referral" && <span style={{ color: "#166534", marginLeft: "6px" }}>· 1× game deduction</span>}
+                                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                                    {bonusType === "streak" ? "Streak Bonus" : bonusType === "referral" ? "Referral Bonus" : (customLabel.trim() || "Custom Bonus")}
+                                    {" · "}{selectedGame.name}{" · "}{player.name}
+                                    {bonusType === "streak" && <span style={{ color: "#f59e0b", marginLeft: 6 }}>· streak resets</span>}
+                                    {bonusType === "referral" && <span style={{ color: "#166534", marginLeft: 6 }}>· 1× deduction</span>}
                                 </div>
                             </div>
-                            <div style={{ textAlign: "right", flexShrink: 0, marginLeft: "16px" }}>
-                                <span style={{ fontSize: "22px", fontWeight: "900", color: stockOk && referralOk ? "#10b981" : "#ef4444" }}>
-                                    +{fmt(amt)}
-                                </span>
-                            </div>
+                            <span style={{ fontSize: 22, fontWeight: 900, color: stockOk && referralOk ? "#10b981" : "#ef4444", flexShrink: 0 }}>
+                                +{fmt(amt)}
+                            </span>
                         </div>
                     )}
 
-                    {/* ── Action buttons ── */}
-                    <div style={{ display: "flex", gap: "12px", paddingTop: "4px" }}>
+                    {/* ── Actions ──────────────────────────────────────────── */}
+                    <div style={{ display: "flex", gap: 10 }}>
                         <button type="button" onClick={handleClear}
-                            style={{ flex: 1, padding: "12px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "14px", fontFamily: "inherit" }}>
+                            style={{ flex: 1, padding: "11px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, fontWeight: 600, cursor: "pointer", fontSize: 13, fontFamily: "inherit", color: "#64748b" }}>
                             Clear
                         </button>
                         <button type="submit" disabled={!canSubmit}
                             style={{
-                                flex: 2, padding: "12px", border: "none", borderRadius: "8px",
-                                fontWeight: "700", fontSize: "14px", fontFamily: "inherit",
+                                flex: 3, padding: "11px", border: "none", borderRadius: 8,
+                                fontWeight: 700, fontSize: 13, fontFamily: "inherit",
                                 cursor: canSubmit ? "pointer" : "not-allowed",
-                                background: canSubmit
-                                    ? bonusType === "referral" ? "#16a34a" : "#d97706"
-                                    : "#e2e8f0",
+                                background: canSubmit ? (bonusType === "referral" ? "#16a34a" : "#d97706") : "#e2e8f0",
                                 color: canSubmit ? "#fff" : "#94a3b8",
-                                display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
-                                transition: "background .2s",
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                                transition: "background .2s, opacity .15s",
                             }}>
                             {submitting
                                 ? <><span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⏳</span> Granting…</>
                                 : bonusType === "referral"
-                                    ? <><Users style={{ width: "15px", height: "15px" }} />
-                                        Grant Referral Bonus to {referralTarget === "player" ? player?.name || "Player" : (referrerInfo?.name || "Referrer")}
-                                        {amt > 0 ? ` (+${fmt(amt)})` : ""}
-                                    </>
-                                    : <><Gift style={{ width: "15px", height: "15px" }} />
-                                        Grant {bonusType === "streak" ? "Streak Bonus" : (customLabel.trim() || "Custom Bonus")}
-                                        {amt > 0 ? ` (+${fmt(amt)})` : ""}
-                                    </>
+                                    ? <><Users style={{ width: 14, height: 14 }} /> Grant Referral Bonus{amt > 0 ? ` · +${fmt(amt)}` : ""}</>
+                                    : <><Gift style={{ width: 14, height: 14 }} /> Grant {bonusType === "streak" ? "Streak Bonus" : (customLabel.trim() || "Custom Bonus")}{amt > 0 ? ` · +${fmt(amt)}` : ""}</>
                             }
                         </button>
                     </div>
                 </form>
             </div>
 
-            {/* ════ BONUS LEDGER ════ */}
-            <div style={{ background: "#fff", borderRadius: "14px", border: "1px solid #e2e8f0", boxShadow: "0 2px 12px rgba(15,23,42,.07)", overflow: "hidden" }}>
-                <div style={{ padding: "16px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+            {/* ── BONUS LEDGER ────────────────────────────────────────────── */}
+            <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", boxShadow: "0 1px 8px rgba(15,23,42,.06)", overflow: "hidden" }}>
+                <div style={{ padding: "16px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
                     <div>
-                        <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700", color: "#0f172a" }}>Bonus Ledger</h3>
-                        <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#94a3b8" }}>
-                            {ledger.length > 0 ? `${ledger.length} bonus grant${ledger.length !== 1 ? "s" : ""}` : "No bonuses yet"}
-                            {lastLedgerRefresh && (
-                                <span style={{ marginLeft: "8px", color: "#16a34a", fontWeight: "600" }}>
-                                    · Live · {fmtTX(lastLedgerRefresh)}
-                                </span>
-                            )}
+                        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Bonus Ledger</h3>
+                        <p style={{ margin: "2px 0 0", fontSize: 12, color: "#94a3b8" }}>
+                            {ledger.length > 0 ? `${ledger.length} grant${ledger.length !== 1 ? "s" : ""}` : "No bonuses yet"}
+                            {lastLedgerRefresh && <span style={{ marginLeft: 8, color: "#16a34a", fontWeight: 600 }}>· Live · {fmtTX(lastLedgerRefresh)}</span>}
                         </p>
                     </div>
                     <button onClick={() => loadLedger()} disabled={ledgerLoading}
-                        style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "7px 12px", cursor: "pointer", color: "#64748b", display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: "600", fontFamily: "inherit" }}>
-                        <RefreshCw style={{ width: "13px", height: "13px", animation: ledgerLoading ? "spin 1s linear infinite" : "none" }} />
+                        style={{ background: "none", border: "1px solid #e2e8f0", borderRadius: 8, padding: "7px 12px", cursor: "pointer", color: "#64748b", display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
+                        <RefreshCw style={{ width: 13, height: 13, animation: ledgerLoading ? "spin 1s linear infinite" : "none" }} />
                         Refresh
                     </button>
                 </div>
 
                 {ledgerLoading ? (
-
-                    <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
+                    <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
                         <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "spin .8s linear infinite" }} />
-                        Loading bonus history…
+                        Loading history…
                     </div>
                 ) : ledger.length === 0 ? (
-                    <div style={{ padding: "48px", textAlign: "center" }}>
-                        <Gift style={{ width: "36px", height: "36px", margin: "0 auto 10px", display: "block", color: "#e2e8f0" }} />
-                        <p style={{ color: "#94a3b8", fontSize: "13px", margin: 0 }}>No bonuses granted yet</p>
+                    <div style={{ padding: 48, textAlign: "center" }}>
+                        <Gift style={{ width: 36, height: 36, margin: "0 auto 10px", display: "block", color: "#e2e8f0" }} />
+                        <p style={{ color: "#94a3b8", fontSize: 13, margin: 0 }}>No bonuses granted yet</p>
                     </div>
                 ) : (
-                    <div style={{ overflowX: "auto", maxHeight: "500px", overflowY: "auto" }}>
-                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                    <div style={{ overflowX: "auto", maxHeight: 500, overflowY: "auto" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                             <thead>
                                 <tr style={{ background: "#f8fafc", position: "sticky", top: 0, zIndex: 1 }}>
-                                    {["#", "Player", "Bonus Type", "Amount", "Game", "Bal. Before → After", "Status", "Date"].map(h => (
-                                        <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontWeight: "600", color: "#64748b", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.4px", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>{h}</th>
+                                    {["#", "Player", "Type", "Amount", "Game", "Balance", "Status", "Date"].map(h => (
+                                        <th key={h} style={{ textAlign: "left", padding: "10px 14px", fontWeight: 600, color: "#64748b", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.4px", borderBottom: "1px solid #e2e8f0", whiteSpace: "nowrap" }}>{h}</th>
                                     ))}
                                 </tr>
                             </thead>
@@ -1095,53 +656,43 @@ export default function BonusPage() {
                                             onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"}
                                             onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                                             style={{ borderBottom: "1px solid #f1f5f9" }}>
-                                            <td style={{ padding: "11px 14px", color: "#cbd5e1", fontSize: "12px" }}>#{ledger.length - i}</td>
-                                            <td style={{ padding: "11px 14px" }}>
-                                                <div
-                                                    onClick={() => handleView(b.playerName ? { id: b.playerId, name: b.playerName } : null)}
-                                                    style={{ fontWeight: "600", fontSize: "13px", cursor: "pointer" }}
-                                                    className="hover-color"
-                                                >
+                                            <td style={{ padding: "10px 14px", color: "#cbd5e1", fontSize: 12 }}>#{ledger.length - i}</td>
+                                            <td style={{ padding: "10px 14px" }}>
+                                                <div onClick={() => b.playerName && handleView({ id: b.playerId, name: b.playerName })}
+                                                    style={{ fontWeight: 600, fontSize: 13, cursor: "pointer", color: "#0f172a" }}
+                                                    className="hover-color">
                                                     {b.playerName || "—"}
                                                 </div>
-                                                <div style={{ fontSize: "11px", color: "#94a3b8" }}>ID: {b.playerId}</div>
+                                                <div style={{ fontSize: 11, color: "#94a3b8" }}>ID: {b.playerId}</div>
                                             </td>
-                                            <td style={{ padding: "11px 14px" }}>
-                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", background: bt.bg, color: bt.color, borderRadius: "6px", fontSize: "11px", fontWeight: "700" }}>
+                                            <td style={{ padding: "10px 14px" }}>
+                                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 9px", background: bt.bg, color: bt.color, borderRadius: 6, fontSize: 11, fontWeight: 700 }}>
                                                     {bt.emoji} {bt.label}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: "11px 14px" }}>
-                                                <span style={{ fontWeight: "800", color: "#d97706", fontSize: "15px" }}>
-                                                    +{fmt(b.amount)}
-                                                </span>
+                                            <td style={{ padding: "10px 14px" }}>
+                                                <span style={{ fontWeight: 800, color: "#d97706", fontSize: 15 }}>+{fmt(b.amount)}</span>
                                             </td>
-                                            <td style={{ padding: "11px 14px" }}>
+                                            <td style={{ padding: "10px 14px" }}>
                                                 {b.gameName
-                                                    ? <span style={{ display: "inline-block", padding: "3px 9px", background: "#f1f5f9", borderRadius: "6px", fontSize: "12px", fontWeight: "500", color: "#475569", whiteSpace: "nowrap" }}>
+                                                    ? <span style={{ display: "inline-block", padding: "3px 9px", background: "#f1f5f9", borderRadius: 6, fontSize: 12, fontWeight: 500, color: "#475569", whiteSpace: "nowrap" }}>
                                                         {b.gameName.match(/^[^-]+/)[0].trim()}
                                                     </span>
-                                                    : <span style={{ color: "#cbd5e1" }}>—</span>
-                                                }
+                                                    : <span style={{ color: "#cbd5e1" }}>—</span>}
                                             </td>
-                                            <td style={{ padding: "11px 14px", fontSize: "12px", color: "#64748b", whiteSpace: "nowrap" }}>
+                                            <td style={{ padding: "10px 14px", fontSize: 12, color: "#64748b", whiteSpace: "nowrap" }}>
                                                 {b.balanceBefore != null && b.balanceAfter != null
-                                                    ? <><span>${parseFloat(b.balanceBefore).toFixed(2)}</span>{" "}<span style={{ color: "#22c55e", fontWeight: "700" }}>→ ${parseFloat(b.balanceAfter).toFixed(2)}</span></>
-                                                    : <span style={{ color: "#cbd5e1" }}>—</span>
-                                                }
+                                                    ? <><span>${parseFloat(b.balanceBefore).toFixed(2)}</span>{" "}<span style={{ color: "#22c55e", fontWeight: 700 }}>→ ${parseFloat(b.balanceAfter).toFixed(2)}</span></>
+                                                    : <span style={{ color: "#cbd5e1" }}>—</span>}
                                             </td>
-                                            <td style={{ padding: "11px 14px" }}>
-                                                {b.status === 'CANCELLED' ? (
-                                                    <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', background: '#fee2e2', color: '#991b1b' }}>CANCELLED</span>
-                                                ) : b.status === 'COMPLETED' ? (
-                                                    <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', background: '#dcfce7', color: '#166534' }}>COMPLETED</span>
-                                                ) : (
-                                                    <span style={{ color: '#cbd5e1', fontSize: '12px' }}>—</span>
-                                                )}
+                                            <td style={{ padding: "10px 14px" }}>
+                                                {b.status === 'CANCELLED'
+                                                    ? <span style={{ display: "inline-block", padding: "3px 9px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "#fee2e2", color: "#991b1b" }}>CANCELLED</span>
+                                                    : b.status === 'COMPLETED'
+                                                        ? <span style={{ display: "inline-block", padding: "3px 9px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: "#dcfce7", color: "#166534" }}>COMPLETED</span>
+                                                        : <span style={{ color: "#cbd5e1" }}>—</span>}
                                             </td>
-                                            <td style={{ padding: "11px 14px", color: "#64748b", whiteSpace: "nowrap", fontSize: "12px" }}>
-                                                {fmtTX(b.createdAt)}
-                                            </td>
+                                            <td style={{ padding: "10px 14px", color: "#64748b", whiteSpace: "nowrap", fontSize: 12 }}>{fmtTX(b.createdAt)}</td>
                                         </tr>
                                     );
                                 })}
@@ -1158,6 +709,222 @@ export default function BonusPage() {
                 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
                 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
             `}</style>
+        </div>
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REFERRAL PANEL — extracted for clarity
+═══════════════════════════════════════════════════════════════════════════ */
+function ReferralPanel({ player, eligLoading, eligibleBonuses, selectedRbId, setSelectedRbId, setReferralSide, bonusPct, setBonusPct, grantBoth, setGrantBoth, computedAmt, depositAmt, selectedRb }) {
+
+    if (eligLoading) return (
+        <div style={{ marginTop: 14, padding: "16px 18px", background: "#f8fafc", borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 13, color: "#94a3b8" }}>
+            Checking referral records…
+        </div>
+    );
+
+    if (eligibleBonuses.length === 0) return (
+        <div style={{ marginTop: 14, padding: "14px 18px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12, fontSize: 13, color: "#92400e", lineHeight: 1.6 }}>
+            <strong>⚠ No unclaimed referral bonuses</strong> for {player.name}.<br />
+            Record one first via the referral toggle on the Transactions page.
+        </div>
+    );
+
+    const step = !selectedRbId ? 1 : 2;
+
+    return (
+        <div style={{ marginTop: 14, borderRadius: 14, border: "1px solid #d1fae5", overflow: "hidden" }}>
+
+            {/* Panel header with step progress */}
+            <div style={{ padding: "12px 18px", background: "#f0fdf4", borderBottom: "1px solid #d1fae5", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: "#dcfce7", border: "1px solid #86efac", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Users style={{ width: 14, height: 14, color: "#16a34a" }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#14532d" }}>Referral Bonus</div>
+                    <div style={{ fontSize: 11, color: "#4ade80", marginTop: 1 }}>
+                        {eligibleBonuses.length} eligible record{eligibleBonuses.length !== 1 ? "s" : ""} · ${eligibleBonuses.reduce((s, b) => s + b.bonusAmount, 0).toFixed(2)} total
+                    </div>
+                </div>
+                {/* Step tracker */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <StepPill n={1} label="Pick record" active={step === 1} done={step > 1} />
+                    <ChevronRight style={{ width: 12, height: 12, color: "#d1fae5" }} />
+                    <StepPill n={2} label="Configure" active={step === 2} done={false} />
+                </div>
+            </div>
+
+            <div style={{ padding: "18px" }}>
+
+                {/* ── STEP 1: Record picker ─────────────────────────────── */}
+                <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 10 }}>
+                        Select Bonus Record
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {eligibleBonuses.map(rb => {
+                            const isSelected = selectedRbId === rb.id;
+                            const isBside = rb.side === 'referred';
+                            const sideLabel = isBside
+                                ? `${player.name} was referred by ${rb.counterpartName}`
+                                : `${player.name} referred ${rb.counterpartName}`;
+                            return (
+                                <button key={rb.id} type="button"
+                                    onClick={() => { setSelectedRbId(rb.id); setReferralSide(rb.side); }}
+                                    style={{
+                                        padding: "12px 16px", borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
+                                        border: `1.5px solid ${isSelected ? "#16a34a" : "#d1fae5"}`,
+                                        background: isSelected ? "#dcfce7" : "#f0fdf4",
+                                        textAlign: "left", transition: "all .15s",
+                                        display: "flex", alignItems: "center", gap: 12,
+                                    }}>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                                            <span style={{ fontSize: 12, fontWeight: 700, color: "#14532d" }}>
+                                                {isBside ? "🙋 Player (B side)" : "👤 Referrer (A side)"}
+                                            </span>
+                                        </div>
+                                        <div style={{ fontSize: 12, color: "#166534" }}>{sideLabel}</div>
+                                        <div style={{ fontSize: 11, color: "#4ade80", marginTop: 4 }}>
+                                            Deposit: <strong>${rb.depositAmount.toFixed(2)}</strong>
+                                        </div>
+                                    </div>
+                                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                                        <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2 }}>stored</div>
+                                        <div style={{ fontSize: 18, fontWeight: 900, color: "#16a34a" }}>${rb.bonusAmount.toFixed(2)}</div>
+                                        {isSelected && <CheckCircle style={{ width: 14, height: 14, color: "#16a34a", marginTop: 4 }} />}
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* ── STEP 2: Configure (only when record selected) ─────── */}
+                {selectedRbId && selectedRb && (
+                    <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid #d1fae5" }}>
+
+                        {/* Percentage */}
+                        <div style={{ marginBottom: 18 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 10 }}>
+                                Bonus % of Deposit
+                                <span style={{ marginLeft: 6, fontWeight: 400, textTransform: "none", color: "#94a3b8" }}>
+                                    — deposit was ${depositAmt.toFixed(2)}
+                                </span>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                                {/* Quick presets */}
+                                <div style={{ display: "flex", gap: 6 }}>
+                                    {[25, 50, 75, 100].map(p => (
+                                        <button key={p} type="button" onClick={() => setBonusPct(p)}
+                                            style={{ padding: "6px 14px", borderRadius: 8, border: `1.5px solid ${bonusPct === p ? "#16a34a" : "#e2e8f0"}`, background: bonusPct === p ? "#f0fdf4" : "#fff", color: bonusPct === p ? "#16a34a" : "#64748b", fontWeight: 700, fontSize: 12, cursor: "pointer", transition: "all .12s" }}>
+                                            {p}%
+                                        </button>
+                                    ))}
+                                </div>
+                                {/* Custom input */}
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "4px 10px 4px 4px" }}>
+                                    <input type="number" min="1" max="200" step="1" value={bonusPct}
+                                        onChange={e => setBonusPct(Math.max(1, parseFloat(e.target.value) || 50))}
+                                        style={{ width: 56, padding: "4px 8px", border: "none", background: "transparent", fontSize: 14, fontWeight: 700, color: "#16a34a", fontFamily: "inherit", outline: "none", textAlign: "center" }} />
+                                    <span style={{ fontSize: 12, color: "#64748b" }}>%</span>
+                                </div>
+                                {/* Result display */}
+                                <div style={{ marginLeft: "auto", padding: "6px 14px", background: "#dcfce7", border: "1px solid #86efac", borderRadius: 8 }}>
+                                    <span style={{ fontSize: 16, fontWeight: 900, color: "#16a34a" }}>${computedAmt.toFixed(2)}</span>
+                                    <span style={{ fontSize: 11, color: "#4ade80", marginLeft: 4 }}>per person</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Grant mode */}
+                        <div>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 10 }}>
+                                Grant To
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                                {[
+                                    {
+                                        value: false,
+                                        emoji: "👤",
+                                        label: "Referrer only",
+                                        sub: `${selectedRb?.counterpartName || "Referrer"} receives $${computedAmt.toFixed(2)}`,
+                                        deduction: `${computedAmt.toFixed(2)} pts deducted`,
+                                        accent: "#0ea5e9",
+                                        bg: "#f0f9ff",
+                                        border: "#bae6fd",
+                                    },
+                                    {
+                                        value: true,
+                                        emoji: "👥",
+                                        label: "Both players",
+                                        sub: `Each receive $${computedAmt.toFixed(2)}`,
+                                        deduction: `${(computedAmt * 2).toFixed(2)} pts deducted`,
+                                        accent: "#16a34a",
+                                        bg: "#f0fdf4",
+                                        border: "#86efac",
+                                    },
+                                ].map(opt => {
+                                    const active = grantBoth === opt.value;
+                                    return (
+                                        <button key={String(opt.value)} type="button" onClick={() => setGrantBoth(opt.value)}
+                                            style={{
+                                                padding: "12px 14px", borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
+                                                border: `1.5px solid ${active ? opt.accent : "#e2e8f0"}`,
+                                                background: active ? opt.bg : "#fafafa",
+                                                textAlign: "left", transition: "all .15s",
+                                            }}>
+                                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                                                <span style={{ fontSize: 13, fontWeight: 700, color: active ? opt.accent : "#374151" }}>
+                                                    {opt.emoji} {opt.label}
+                                                </span>
+                                                {active && <CheckCircle style={{ width: 13, height: 13, color: opt.accent }} />}
+                                            </div>
+                                            <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.4, marginBottom: 6 }}>{opt.sub}</div>
+                                            <div style={{ fontSize: 11, fontWeight: 600, color: active ? opt.accent : "#94a3b8", padding: "3px 8px", background: active ? opt.bg : "#f1f5f9", border: `1px solid ${active ? opt.border : "#e2e8f0"}`, borderRadius: 6, display: "inline-block" }}>
+                                                {opt.deduction}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+/* ─── Chip atom ───────────────────────────────────────────────────────────── */
+function Chip({ emoji, label, sub, color }) {
+    return (
+        <span style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            padding: "5px 11px", borderRadius: 20, fontSize: 12, fontWeight: 600,
+            background: color.bg, border: `1px solid ${color.border}`, color: color.text,
+        }}>
+            {emoji} {label}
+            {sub && <span style={{ fontWeight: 400, opacity: 0.7, fontSize: 11, marginLeft: 2 }}>· {sub}</span>}
+        </span>
+    );
+}
+
+function StepPill({ n, label, active, done }) {
+    return (
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{
+                width: 20, height: 20, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 10, fontWeight: 800, flexShrink: 0, transition: "all .2s",
+                background: done ? "#22c55e" : active ? "#0f172a" : "#e2e8f0",
+                color: done || active ? "#fff" : "#94a3b8",
+            }}>
+                {done ? "✓" : n}
+            </div>
+            <span style={{ fontSize: 11, fontWeight: done || active ? 700 : 500, color: done ? "#16a34a" : active ? "#0f172a" : "#94a3b8", transition: "color .2s" }}>
+                {label}
+            </span>
         </div>
     );
 }
