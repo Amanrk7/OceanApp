@@ -910,21 +910,3 @@ function Chip({ emoji, label, sub, color }) {
         </span>
     );
 }
-
-function StepPill({ n, label, active, done }) {
-    return (
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{
-                width: 20, height: 20, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 10, fontWeight: 800, flexShrink: 0, transition: "all .2s",
-                background: done ? "#22c55e" : active ? "#0f172a" : "#e2e8f0",
-                color: done || active ? "#fff" : "#94a3b8",
-            }}>
-                {done ? "✓" : n}
-            </div>
-            <span style={{ fontSize: 11, fontWeight: done || active ? 700 : 500, color: done ? "#16a34a" : active ? "#0f172a" : "#94a3b8", transition: "color .2s" }}>
-                {label}
-            </span>
-        </div>
-    );
-}
