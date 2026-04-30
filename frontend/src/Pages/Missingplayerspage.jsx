@@ -1047,11 +1047,15 @@ export default function MissingPlayersPage() {
         {/* Grid */}
         <div style={{ padding: 18 }}>
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-              {/* <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid var(--color-border)', borderTopColor: 'var(--danger)', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} /> */}
+            // <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            //   {/* <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid var(--color-border)', borderTopColor: 'var(--danger)', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} /> */}
+            //   <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "smartSpin .8s linear infinite" }} />
+            //   Loading players…
+            //   {/* <p style={{ color: 'var(--color-text-muted)', fontSize: 13, margin: 0 }}></p> */}
+            // </div>
+            <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
               <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "smartSpin .8s linear infinite" }} />
-              Loading players…
-              {/* <p style={{ color: 'var(--color-text-muted)', fontSize: 13, margin: 0 }}></p> */}
+              Loading tasks…
             </div>
           ) : filtered.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-text-muted)', fontSize: 14 }}>
