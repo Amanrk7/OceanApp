@@ -312,24 +312,6 @@ function AddTransactionsPage() {
         if (usedMatchToday) setForm(f => ({ ...f, bonusMatch: false }));
     };
 
-    // ── FIX: checkReferralStatus now receives the already-fetched full player ──
-    // const checkReferralStatus = async (fullPlayer) => {
-    //     if (!fullPlayer?.id || !fullPlayer?.referredBy) {
-    //         setReferralAlreadyRecorded(false);
-    //         return;
-    //     }
-    //     setReferralCheckLoading(true);
-    //     try {
-    //         const r = await api.referralBonuses.getEligible(fullPlayer.id);
-    //         // If there's already an unclaimed 'referred' side record, don't allow re-recording
-    //         const hasPending = (r?.data || []).some(e => e.side === 'referred');
-    //         setReferralAlreadyRecorded(hasPending);
-    //     } catch {
-    //         setReferralAlreadyRecorded(false);
-    //     } finally {
-    //         setReferralCheckLoading(false);
-    //     }
-    // };
 
     const checkReferralStatus = async (fullPlayer) => {
         if (!fullPlayer?.id || !fullPlayer?.referredBy) {
@@ -372,11 +354,7 @@ function AddTransactionsPage() {
         }
     };
 
-    // const clearPlayer = () => {
-    //     setPlayer(null); setQuery(""); setMatchUsedToday(false); setBonusReferral(false);
-    //     setReferralAlreadyRecorded(false);
-    //     setForm(f => ({ ...EMPTY, txType: f.txType }));
-    // };
+
     const clearPlayer = () => {
         setPlayer(null); setQuery(""); setMatchUsedToday(false); setBonusReferral(false);
         setReferralAlreadyRecorded(false); setEligibleBonuses([]);
@@ -489,42 +467,42 @@ function AddTransactionsPage() {
     };
 
     if (shiftLoading) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <div
-        style={{
-          padding: "60px 24px",
-          textAlign: "center",
-          background: "var(--color-background-primary)",
-          borderRadius: "var(--border-radius-lg)",
-          border: "0.5px solid var(--color-border-tertiary)",
-        }}
-      >
-        <div
-          style={{
-            width: "32px",
-            height: "32px",
-            border: "3px solid var(--color-border-tertiary)",
-            borderTopColor: "#0ea5e9",
-            borderRadius: "50%",
-            margin: "0 auto 12px",
-            animation: "spin 0.8s linear infinite",
-          }}
-        />
-        <p
-          style={{
-            margin: 0,
-            fontSize: "13px",
-            color: "var(--color-text-tertiary)",
-          }}
-        >
-          Checking shift status…
-        </p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    </div>
-  );
-}
+        return (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div
+                    style={{
+                        padding: "60px 24px",
+                        textAlign: "center",
+                        background: "var(--color-background-primary)",
+                        borderRadius: "var(--border-radius-lg)",
+                        border: "0.5px solid var(--color-border-tertiary)",
+                    }}
+                >
+                    <div
+                        style={{
+                            width: "32px",
+                            height: "32px",
+                            border: "3px solid var(--color-border-tertiary)",
+                            borderTopColor: "#0ea5e9",
+                            borderRadius: "50%",
+                            margin: "0 auto 12px",
+                            animation: "spin 0.8s linear infinite",
+                        }}
+                    />
+                    <p
+                        style={{
+                            margin: 0,
+                            fontSize: "13px",
+                            color: "var(--color-text-tertiary)",
+                        }}
+                    >
+                        Checking shift status…
+                    </p>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                </div>
+            </div>
+        );
+    }
     if (!shiftActive) {
         return (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -611,60 +589,7 @@ function AddTransactionsPage() {
                                 </div>
                             )}
                             {eligLoading && <div style={{ marginTop: "6px", fontSize: "12px", color: "#94a3b8" }}>Loading player data…</div>}
-                            {/* {player && !eligLoading && (
-                                <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166534" }}><CheckCircle style={{ width: "11px", height: "11px" }} />{player.name}<span style={{ fontWeight: "400", color: "#4ade80" }}>· ID {player.id}</span></span>
-                                    <span style={{ padding: "4px 10px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#1d4ed8" }}>Balance: {fmt(player.balance)}</span>
-                                    {streak > 0 && <span style={{ padding: "4px 10px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#92400e" }}>🔥 {streak}-day streak</span>}
-                                    {matchUsedToday && <span style={{ padding: "4px 10px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#92400e" }}>⚠ Match bonus used today</span>}
-                                    {!isDeposit && cashoutLimit > 0 && !streakWaived && <span style={{ padding: "4px 10px", background: cashoutOverLimit ? "#fee2e2" : "#fef2f2", border: `1px solid ${cashoutOverLimit ? "#fca5a5" : "#fecaca"}`, borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#991b1b" }}>Daily limit: {fmt(cashoutLimit - todayCashoutTotal)} remaining (of {fmt(cashoutLimit)})</span>}
-                                    {!isDeposit && streakWaived && <span style={{ padding: "4px 10px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "20px", fontSize: "12px", fontWeight: "600", color: "#166634" }}>✓ Limit waived (30-day streak)</span>}
-                                </div>
-                            )} */}
 
-                            {/* ── Referral bonus INFO banner — shown whenever player has referrer ── */}
-                            {/* {player && !eligLoading && isDeposit && playerHasReferrer && (
-                                <div style={{
-                                    marginTop: "10px",
-                                    padding: "13px 16px",
-                                    background: referralAlreadyRecorded ? "#fffbeb" : "#f0fdf4",
-                                    border: `1px solid ${referralAlreadyRecorded ? "#fde68a" : "#86efac"}`,
-                                    borderRadius: "10px",
-                                    display: "flex",
-                                    alignItems: "flex-start",
-                                    gap: "10px",
-                                }}>
-                                    <Users style={{ width: "16px", height: "16px", color: referralAlreadyRecorded ? "#d97706" : "#16a34a", flexShrink: 0, marginTop: "1px" }} />
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: "700", fontSize: "13px", color: referralAlreadyRecorded ? "#92400e" : "#166534" }}>
-                                            {referralAlreadyRecorded
-                                                ? "⚠ Referral bonus already pending for this player"
-                                                : "🎯 Referral bonus eligible"}
-                                        </div>
-                                        <div style={{ fontSize: "12px", color: referralAlreadyRecorded ? "#d97706" : "#16a34a", marginTop: "3px", lineHeight: "1.5" }}>
-                                            {referralAlreadyRecorded
-                                                ? `A referral bonus record already exists — go to the Bonus page to grant it.`
-                                                : <>
-                                                    Referred by <strong>{referrerName}</strong>.
-                                                    {amt > 0
-                                                        ? <> A deposit of <strong>{fmt(amt)}</strong> will create a <strong>${referralBonusAmt.toFixed(2)}</strong> eligibility for both <strong>{player.name}</strong> and <strong>{referrerName}</strong> — toggle below to record it, then grant from the Bonus page.</>
-                                                        : <> Enter a deposit amount below to see the referral bonus amount.</>
-                                                    }
-                                                </>
-                                            }
-                                        </div>
-                                        {!referralAlreadyRecorded && referralCheckLoading && (
-                                            <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "4px" }}>Checking status…</div>
-                                        )}
-                                    </div>
-                                    {!referralAlreadyRecorded && amt > 0 && (
-                                        <div style={{ flexShrink: 0, textAlign: "right" }}>
-                                            <div style={{ fontSize: "18px", fontWeight: "900", color: "#16a34a" }}>${referralBonusAmt.toFixed(2)}</div>
-                                            <div style={{ fontSize: "10px", color: "#4ade80" }}>each party</div>
-                                        </div>
-                                    )}
-                                </div>
-                            )} */}
 
                             {player && !eligLoading && (
                                 <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -957,9 +882,9 @@ function AddTransactionsPage() {
                 </div>
 
                 {ledgerLoading ? (
-                    <div style={{ padding: "48px", textAlign: "center" }}>
-                        <div style={{ width: "28px", height: "28px", borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#10b981", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
-                        <p style={{ color: "#94a3b8", fontSize: "13px", margin: 0 }}>Loading transactions…</p>
+                    <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
+                        <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "spin .8s linear infinite" }} />
+                        Loading tasks…
                     </div>
                 ) : ledger.length === 0 ? (
                     <div style={{ padding: "48px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No transactions yet</div>
