@@ -530,7 +530,7 @@ export default function ProfitTakeoutsPage() {
                                     Loading records… */}
 
                                     <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
-                                        <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "smartSpin .8s linear infinite" }} />
+                                        <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "spin .8s linear infinite" }} />
                                         Loading records…
                                     </div>
                                 </td></tr>
