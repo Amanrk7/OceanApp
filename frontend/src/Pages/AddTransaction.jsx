@@ -884,7 +884,7 @@ function AddTransactionsPage() {
                 {ledgerLoading ? (
                     <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
                         <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "spin .8s linear infinite" }} />
-                        Loading tasks…
+                        Loading transactions history…
                     </div>
                 ) : ledger.length === 0 ? (
                     <div style={{ padding: "48px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No transactions yet</div>
