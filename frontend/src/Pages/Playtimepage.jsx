@@ -207,7 +207,8 @@ const gameColor = (name) => GAME_COLORS[(name?.charCodeAt(0) || 0) % GAME_COLORS
 
 function GameChips({ games, loading }) {
     if (loading) return (
-        <div style={{ width: "14px", height: "14px", borderRadius: "50%", border: "2px solid #e2e8f0", borderTopColor: "#0ea5e9", animation: "spin 0.7s linear infinite" }} />
+        // <div style={{ width: "14px", height: "14px", borderRadius: "50%", border: "2px solid #e2e8f0", borderTopColor: "#0ea5e9", animation: "spin 0.7s linear infinite" }} />
+        <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "smartSpin .8s linear infinite" }} />
     );
     if (!games || games.length === 0) return <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>;
 
@@ -1039,43 +1040,43 @@ export default function PlaytimePage() {
 
 
     if (shiftLoading) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <div
-        style={{
-          padding: "60px 24px",
-          textAlign: "center",
-          background: "var(--color-background-primary)",
-          borderRadius: "var(--border-radius-lg)",
-          border: "0.5px solid var(--color-border-tertiary)",
-        }}
-      >
-        <div
-          style={{
-            width: "32px",
-            height: "32px",
-            border: "3px solid var(--color-border-tertiary)",
-            borderTopColor: "#0ea5e9",
-            borderRadius: "50%",
-            margin: "0 auto 12px",
-            animation: "spin 0.8s linear infinite",
-          }}
-        />
-        <p
-          style={{
-            margin: 0,
-            fontSize: "13px",
-            color: "var(--color-text-tertiary)",
-          }}
-        >
-          Checking shift status…
-        </p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    </div>
-  );
-}
-    
+        return (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div
+                    style={{
+                        padding: "60px 24px",
+                        textAlign: "center",
+                        background: "var(--color-background-primary)",
+                        borderRadius: "var(--border-radius-lg)",
+                        border: "0.5px solid var(--color-border-tertiary)",
+                    }}
+                >
+                    <div
+                        style={{
+                            width: "32px",
+                            height: "32px",
+                            border: "3px solid var(--color-border-tertiary)",
+                            borderTopColor: "#0ea5e9",
+                            borderRadius: "50%",
+                            margin: "0 auto 12px",
+                            animation: "spin 0.8s linear infinite",
+                        }}
+                    />
+                    <p
+                        style={{
+                            margin: 0,
+                            fontSize: "13px",
+                            color: "var(--color-text-tertiary)",
+                        }}
+                    >
+                        Checking shift status…
+                    </p>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                </div>
+            </div>
+        );
+    }
+
     if (!shiftActive) {
         return (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
