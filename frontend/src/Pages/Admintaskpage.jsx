@@ -624,7 +624,7 @@ export default function AdminTaskPage() {
                     </div>
                     <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
                         {["ALL", "PENDING", "IN_PROGRESS", "COMPLETED"].map(s => (
-                            <button key={s} onClick={() => setStatusFilter(s)} style={{ padding: "8px 14px", borderRadius: "8px", border: "1px solid", borderColor: statusFilter === s ? "#0f172a" : "#e2e8f0", background: statusFilter === s ? "rgb(14,165,233)" : "#fff", color: statusFilter === s ? "#fff" : "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit" }}>
+                            <button key={s} onClick={() => setStatusFilter(s)} style={{ padding: "8px 14px", borderRadius: "8px", border: "1px solid", borderColor: statusFilter === s ? "transparent" : "#e2e8f0", background: statusFilter === s ? "rgb(14,165,233)" : "#fff", color: statusFilter === s ? "#fff" : "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit" }}>
                                 {s.replace("_", " ")}
                             </button>
                         ))}
