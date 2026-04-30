@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from "react-router-dom";
 import { api } from '../api';
 import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
-import { Activity, AlertTriangle, Flame, UserX, ChevronLeft, ChevronRight, ArrowRight, Eye } from 'lucide-react';
+import { Activity, AlertTriangle, Flame, UserX, ChevronLeft, ChevronRight, ArrowRight, Eye, RefreshCw } from 'lucide-react';
 
 const C = {
   sky: '#0ea5e9', skyLt: '#f0f9ff',
