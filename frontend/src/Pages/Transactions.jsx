@@ -37,17 +37,17 @@ const fmtDate = (tx) => {
 const isCashout = (tx) => ['Cashout', 'cashout'].includes(tx.type);
 
 const TYPE_META = {
-  Deposit:        { bg: '#dcfce7', text: '#166634' },
-  Cashout:        { bg: '#fee2e2', text: '#991b1b' },
-  'Match Bonus':  { bg: '#eff6ff', text: '#0369a1' },
-  'Special Bonus':{ bg: '#faf5ff', text: '#6b21a8' },
+  Deposit: { bg: '#dcfce7', text: '#166634' },
+  Cashout: { bg: '#fee2e2', text: '#991b1b' },
+  'Match Bonus': { bg: '#eff6ff', text: '#0369a1' },
+  'Special Bonus': { bg: '#faf5ff', text: '#6b21a8' },
   'Streak Bonus': { bg: '#fffbeb', text: '#92400e' },
-  'Referral Bonus':{ bg: '#f0fdf4', text: '#166634' },
-  Bonus:          { bg: '#eff6ff', text: '#0369a1' },
+  'Referral Bonus': { bg: '#f0fdf4', text: '#166634' },
+  Bonus: { bg: '#eff6ff', text: '#0369a1' },
 };
 const amtColor = (type) =>
-  ['Deposit','Win','Bonus','Match Bonus','Special Bonus','Streak Bonus','Referral Bonus'].includes(type)
-    ? '#10b981' : ['Cashout','Loss'].includes(type) ? '#ef4444' : '#64748b';
+  ['Deposit', 'Win', 'Bonus', 'Match Bonus', 'Special Bonus', 'Streak Bonus', 'Referral Bonus'].includes(type)
+    ? '#10b981' : ['Cashout', 'Loss'].includes(type) ? '#ef4444' : '#64748b';
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 function StatCard({ icon: Icon, label, value, sub, color, bg, border }) {
@@ -168,19 +168,19 @@ function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess
   const [showPartial, setShowPartial] = useState(false);
   const [hover, setHover] = useState(false);
 
-  const isUndoing   = undoingId === tx.id;
+  const isUndoing = undoingId === tx.id;
   const isApproving = approvingId === tx.id;
-  const canUndo     = (tx.status === 'COMPLETED' || tx.status === 'PENDING') && !isUndoing && !isApproving;
-  const isDepositRow  = tx.type === 'Deposit';
-  const isCashoutRow  = isCashout(tx);
-  const isPending     = tx.status === 'PENDING';
-  const isCompleted   = tx.status === 'COMPLETED';
-  const positive      = !['Cashout', 'Loss'].includes(tx.type);
-  const feeVal        = parseFloat(tx.fee) || 0;
-  const depositVal    = parseFloat(tx.amount) || 0;
-  const paidAmount    = parseFloat(tx.paidAmount) || 0;
-  const totalAmount   = depositVal;
-  const typeStyle     = TYPE_META[tx.type] || { bg: '#f1f5f9', text: '#475569' };
+  const canUndo = (tx.status === 'COMPLETED' || tx.status === 'PENDING') && !isUndoing && !isApproving;
+  const isDepositRow = tx.type === 'Deposit';
+  const isCashoutRow = isCashout(tx);
+  const isPending = tx.status === 'PENDING';
+  const isCompleted = tx.status === 'COMPLETED';
+  const positive = !['Cashout', 'Loss'].includes(tx.type);
+  const feeVal = parseFloat(tx.fee) || 0;
+  const depositVal = parseFloat(tx.amount) || 0;
+  const paidAmount = parseFloat(tx.paidAmount) || 0;
+  const totalAmount = depositVal;
+  const typeStyle = TYPE_META[tx.type] || { bg: '#f1f5f9', text: '#475569' };
 
   const TD = {
     padding: '11px 14px', borderBottom: '1px solid #f1f5f9',
@@ -257,9 +257,9 @@ function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess
         <td style={{ ...TD, minWidth: '110px' }}>
           {tx.walletMethod || tx.walletName
             ? <div>
-                <div style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a' }}>{tx.walletMethod}</div>
-                <div style={{ fontSize: '11px', color: '#94a3b8' }}>{tx.walletName}</div>
-              </div>
+              <div style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a' }}>{tx.walletMethod}</div>
+              <div style={{ fontSize: '11px', color: '#94a3b8' }}>{tx.walletName}</div>
+            </div>
             : <span style={{ color: '#e2e8f0' }}>—</span>}
         </td>
 
@@ -369,18 +369,18 @@ function LockedScreen() {
 export default function Transactions() {
   // const { shiftActive } = useContext(ShiftStatusContext);
   const { shiftActive, shiftLoading } = useContext(ShiftStatusContext);
-  const [data, setData]         = useState(null);
-  const [loading, setLoading]   = useState(true);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [filterTab, setFilterTab] = useState(() => {
     const saved = sessionStorage.getItem('transactions_initialTab');
     sessionStorage.removeItem('transactions_initialTab');
     return saved === 'pending' ? 'pending' : 'all';
   });
-  const [search, setSearch]     = useState('');
+  const [search, setSearch] = useState('');
   const [currentPage, setCurrPage] = useState(1);
-  const [undoingId, setUndoingId]   = useState(null);
+  const [undoingId, setUndoingId] = useState(null);
   const [approvingId, setApprovingId] = useState(null);
-  const [banner, setBanner]     = useState({ type: '', msg: '' });
+  const [banner, setBanner] = useState({ type: '', msg: '' });
   const LIMIT = 15;
 
   const showBanner = (type, msg) => { setBanner({ type, msg }); setTimeout(() => setBanner({ type: '', msg: '' }), 4000); };
@@ -397,13 +397,13 @@ export default function Transactions() {
   useEffect(() => { load(currentPage, filterTab); }, [currentPage, filterTab]);
 
   const transactions = data?.data || [];
-  const pagination   = data?.pagination || { page: 1, limit: LIMIT, total: 0, pages: 1 };
+  const pagination = data?.pagination || { page: 1, limit: LIMIT, total: 0, pages: 1 };
   const pendingCount = transactions.filter(t => isCashout(t) && t.status === 'PENDING').length;
 
   // Stats for the top strip
-  const totalAmt    = transactions.reduce((s, t) => s + (t.type === 'Deposit' ? parseFloat(t.amount) : 0), 0);
-  const cashoutAmt  = transactions.reduce((s, t) => s + (isCashout(t) && t.status === 'COMPLETED' ? parseFloat(t.amount) : 0), 0);
-  const bonusAmt    = transactions.reduce((s, t) => s + (t.type?.includes('Bonus') && t.status === 'COMPLETED' ? parseFloat(t.amount) : 0), 0);
+  const totalAmt = transactions.reduce((s, t) => s + (t.type === 'Deposit' ? parseFloat(t.amount) : 0), 0);
+  const cashoutAmt = transactions.reduce((s, t) => s + (isCashout(t) && t.status === 'COMPLETED' ? parseFloat(t.amount) : 0), 0);
+  const bonusAmt = transactions.reduce((s, t) => s + (t.type?.includes('Bonus') && t.status === 'COMPLETED' ? parseFloat(t.amount) : 0), 0);
 
   const handleUndo = async (id) => {
     const numId = String(id).replace(/\D/g, '');
@@ -436,50 +436,50 @@ export default function Transactions() {
   });
 
   const TABS = [
-    { id: 'all',       label: 'All',       badge: null },
-    { id: 'pending',   label: 'Pending',   badge: filterTab !== 'pending' && pendingCount > 0 ? pendingCount : null },
+    { id: 'all', label: 'All', badge: null },
+    { id: 'pending', label: 'Pending', badge: filterTab !== 'pending' && pendingCount > 0 ? pendingCount : null },
     { id: 'completed', label: 'Completed', badge: null },
   ];
 
-  const COLS = ['ID','Player','Type','Amount','Fee','Received / Paid','Game','Wallet','Points','Status','Date','Actions'];
+  const COLS = ['ID', 'Player', 'Type', 'Amount', 'Fee', 'Received / Paid', 'Game', 'Wallet', 'Points', 'Status', 'Date', 'Actions'];
 
   if (shiftLoading) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <div
-        style={{
-          padding: "60px 24px",
-          textAlign: "center",
-          background: "var(--color-background-primary)",
-          borderRadius: "var(--border-radius-lg)",
-          border: "0.5px solid var(--color-border-tertiary)",
-        }}
-      >
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <div
           style={{
-            width: "32px",
-            height: "32px",
-            border: "3px solid var(--color-border-tertiary)",
-            borderTopColor: "#0ea5e9",
-            borderRadius: "50%",
-            margin: "0 auto 12px",
-            animation: "spin 0.8s linear infinite",
-          }}
-        />
-        <p
-          style={{
-            margin: 0,
-            fontSize: "13px",
-            color: "var(--color-text-tertiary)",
+            padding: "60px 24px",
+            textAlign: "center",
+            background: "var(--color-background-primary)",
+            borderRadius: "var(--border-radius-lg)",
+            border: "0.5px solid var(--color-border-tertiary)",
           }}
         >
-          Checking shift status…
-        </p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <div
+            style={{
+              width: "32px",
+              height: "32px",
+              border: "3px solid var(--color-border-tertiary)",
+              borderTopColor: "#0ea5e9",
+              borderRadius: "50%",
+              margin: "0 auto 12px",
+              animation: "spin 0.8s linear infinite",
+            }}
+          />
+          <p
+            style={{
+              margin: 0,
+              fontSize: "13px",
+              color: "var(--color-text-tertiary)",
+            }}
+          >
+            Checking shift status…
+          </p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
   if (!shiftActive) return <LockedScreen />;
 
   return (
@@ -487,10 +487,10 @@ export default function Transactions() {
 
       {/* ── Stat strip ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
-        <StatCard icon={TrendingUp}  label="Deposits (page)"  value={fmt(totalAmt)}  color="#10b981" bg="#f0fdf4" border="#86efac" />
+        <StatCard icon={TrendingUp} label="Deposits (page)" value={fmt(totalAmt)} color="#10b981" bg="#f0fdf4" border="#86efac" />
         <StatCard icon={TrendingDown} label="Cashouts (page)" value={fmt(cashoutAmt)} color="#ef4444" bg="#fee2e2" border="#fca5a5" />
-        <StatCard icon={Activity}    label="Bonuses (page)"   value={fmt(bonusAmt)}  color="#f59e0b" bg="#fffbeb" border="#fde68a" />
-        <StatCard icon={Clock}       label="Pending cashouts" value={pendingCount}    color="#0ea5e9" bg="#f0f9ff" border="#bae6fd" sub="awaiting approval" />
+        <StatCard icon={Activity} label="Bonuses (page)" value={fmt(bonusAmt)} color="#f59e0b" bg="#fffbeb" border="#fde68a" />
+        <StatCard icon={Clock} label="Pending cashouts" value={pendingCount} color="#0ea5e9" bg="#f0f9ff" border="#bae6fd" sub="awaiting approval" />
       </div>
 
       {/* ── Banners ── */}
@@ -560,9 +560,13 @@ export default function Transactions() {
 
         {/* Table */}
         {loading ? (
-          <div style={{ padding: '60px', textAlign: 'center' }}>
-            <div style={{ width: '30px', height: '30px', border: '3px solid #e2e8f0', borderTopColor: '#0ea5e9', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 10px' }} />
-            <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>Loading transactions…</p>
+          // <div style={{ padding: '60px', textAlign: 'center' }}>
+          //   <div style={{ width: '30px', height: '30px', border: '3px solid #e2e8f0', borderTopColor: '#0ea5e9', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 10px' }} />
+          //   <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>Loading transactions…</p>
+          // </div>
+          <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
+            <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "smartSpin .8s linear infinite" }} />
+            Loading tasks…
           </div>
         ) : (
           <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '60vh', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f8fafc' }}>
@@ -609,7 +613,7 @@ export default function Transactions() {
         )}
       </div>
 
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } ::-webkit-scrollbar { width: 5px; height: 5px; } ::-webkit-scrollbar-track { background: #f8fafc; } ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }`}</style>
+      <style>{`@keyframes smartSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } ::-webkit-scrollbar { width: 5px; height: 5px; } ::-webkit-scrollbar-track { background: #f8fafc; } ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }`}</style>
     </div>
   );
 }
