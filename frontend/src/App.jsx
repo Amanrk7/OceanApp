@@ -443,7 +443,7 @@ function StoreSwitcher({ user, onSwitch }) {
 
   const rawAccess = user?.storeAccess;
   const accessibleStores = isAdmin
-    ? [1, 2, 3]
+    ? [1, 2]
     : Array.isArray(rawAccess)
       ? rawAccess
       : typeof rawAccess === 'number'
