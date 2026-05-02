@@ -454,6 +454,8 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
 
         const gi = {};
         gameList.forEach(g => { gi[g.id] = (g.pointStock ?? 0).toFixed(0); });
+        const fetched = Math.round(g.pointStock ?? 0); // ← already done correctly in the row render
+
         setGameInputs(gi);
       })
       .catch(err => console.error('CheckinModal fetch:', err))
@@ -468,11 +470,16 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
     const fetched = w.balance ?? 0;
     return !isNaN(entered) && Math.abs(r2(entered - fetched)) > 0.01;
   });
+  // const gameDiscrepancies = games.filter(g => {
+  //   const entered = parseFloat(gameInputs[g.id]);
+  //   const fetched = g.pointStock ?? 0;
+  //   return !isNaN(entered) && Math.abs(Math.round(entered - fetched)) > 0;
+  // });
   const gameDiscrepancies = games.filter(g => {
-    const entered = parseFloat(gameInputs[g.id]);
-    const fetched = g.pointStock ?? 0;
-    return !isNaN(entered) && Math.abs(Math.round(entered - fetched)) > 0;
-  });
+  const entered = parseFloat(gameInputs[g.id]);
+  const fetched = Math.round(g.pointStock ?? 0); // ← round fetched too
+  return !isNaN(entered) && Math.abs(Math.round(entered) - fetched) > 0;
+});
   const hasDiscrepancies = walletDiscrepancies.length > 0 || gameDiscrepancies.length > 0;
 
   const handleConfirm = async () => {
