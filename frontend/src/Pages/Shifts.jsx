@@ -652,7 +652,7 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
             </section>
 
             {/* ── Game Points ── */}
-            <section>
+            {/* <section>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Gamepad2 size={14} color="#7c3aed" /> Game Points
@@ -708,6 +708,94 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
                       <td colSpan={2} style={{ ...T.td, fontWeight: '700', color: '#5b21b6' }}>Combined Total</td>
                       <td style={{ ...T.td, textAlign: 'right', color: '#94a3b8', fontSize: '12px' }}>{Math.round(games.reduce((s, g) => s + (g.pointStock ?? 0), 0))} pts</td>
                       <td style={{ ...T.td, textAlign: 'right', fontWeight: '800', color: '#7c3aed', fontSize: '14px' }}>{totalGames} pts</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section> */}
+
+            {/* ── Game Points Reconciliation ── */}
+            <section>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Gamepad2 size={14} color="#7c3aed" /> Game Points
+                  {hasSharedGames && (
+                    <span style={{ fontSize: '11px', fontWeight: '600', color: '#7c3aed', background: '#f5f3ff', padding: '1px 6px', borderRadius: '8px', marginLeft: '4px' }}>
+                      shared games present
+                    </span>
+                  )}
+                </h3>
+                {hasStartSnapshot && (
+                  <span style={{ fontSize: '12px', color: '#64748b' }}>
+                    Expected Δ: <b style={{ color: '#7c3aed' }}>{expectedGameChange >= 0 ? '+' : ''}{expectedGameChange} pts</b>
+                    <span style={{ color: '#94a3b8', marginLeft: '4px', fontSize: '11px' }}>
+                      (D+fees+bonus−CO = {expectedGameDeduction.toFixed(0)} pts removed)
+                    </span>
+                  </span>
+                )}
+              </div>
+ 
+              {/* Shared-game cross-store warning */}
+              {hasSharedGames && (
+                <div style={{ padding: '9px 13px', background: '#f5f3ff', border: '1px solid #c4b5fd', borderLeft: '4px solid #7c3aed', borderRadius: '8px', fontSize: '12px', color: '#4c1d95', marginBottom: '10px' }}>
+                  <b>⚠ Shared game(s) detected:</b> {sharedGameNames}.
+                  {' '}These games are used across multiple stores simultaneously.
+                  Any game-point discrepancy shown below may partly reflect
+                  activity from <em>other stores</em> during this shift, not an
+                  error on your end. Cross-store deductions are always expected.
+                </div>
+              )}
+ 
+              <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr>
+                    <th style={T.th}>Game</th>
+                    {hasStartSnapshot && <th style={{ ...T.th, textAlign: 'right' }}>Start</th>}
+                    <th style={{ ...T.th, textAlign: 'right' }}>End</th>
+                    {hasStartSnapshot && <th style={{ ...T.th, textAlign: 'right' }}>Change</th>}
+                  </tr></thead>
+                  <tbody>
+                    {gameRows.map(g => {
+                      const δ = g.endPts - g.startPts;
+                      const isSharedGame = sharedGames.some(sg => sg.id === g.id);
+                      return (
+                        <tr key={g.id} style={{ background: isSharedGame ? '#faf5ff' : 'transparent' }}>
+                          <td style={T.td}>
+                            <b>{g.name}</b>
+                            {isSharedGame && (
+                              <span style={{ marginLeft: '6px', fontSize: '10px', fontWeight: '700', color: '#7c3aed', background: '#ede9fe', padding: '1px 5px', borderRadius: '5px' }}>
+                                shared
+                              </span>
+                            )}
+                          </td>
+                          {hasStartSnapshot && <td style={{ ...T.td, textAlign: 'right', color: '#64748b' }}>{g.startPts} pts</td>}
+                          <td style={{ ...T.td, textAlign: 'right', fontWeight: '600' }}>{g.endPts} pts</td>
+                          {hasStartSnapshot && (
+                            <td style={{ ...T.td, textAlign: 'right', fontWeight: '700', color: clrPts(δ) }}>
+                              {δ >= 0 ? '+' : ''}{δ} pts
+                              {isSharedGame && δ !== 0 && (
+                                <div style={{ fontSize: '10px', color: '#7c3aed', fontWeight: '500' }}>cross-store activity possible</div>
+                              )}
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                    <tr style={{ background: '#f8fafc' }}>
+                      <td style={{ ...T.td, fontWeight: '700' }}>Total</td>
+                      {hasStartSnapshot && <td style={{ ...T.td, textAlign: 'right', fontWeight: '600' }}>{startTotalG} pts</td>}
+                      <td style={{ ...T.td, textAlign: 'right', fontWeight: '700' }}>{endTotalG} pts</td>
+                      {hasStartSnapshot && (
+                        <td style={{ ...T.td, textAlign: 'right', fontWeight: '700', color: clrPts(gameChange) }}>
+                          {gameChange >= 0 ? '+' : ''}{gameChange} pts
+                          {!gameBalanced && (
+                            <div style={{ fontSize: '11px', color: hasSharedGames ? '#7c3aed' : '#dc2626', fontWeight: '600' }}>
+                              {hasSharedGames ? '⚡' : '⚠️'} {gameDisc >= 0 ? '+' : ''}{gameDisc} pts vs expected
+                              {hasSharedGames && ' (may include other-store usage)'}
+                            </div>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   </tbody>
                 </table>
@@ -788,482 +876,6 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
     </div>
   );
 };
-
-// ═══════════════════════════════════════════════════════════════
-// CHECKOUT MODAL — Fixed
-// ═══════════════════════════════════════════════════════════════
-// const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
-//   const [endWallets, setEndWallets] = useState([]);
-//   const [endGames, setEndGames] = useState([]);
-//   const [shiftTxns, setShiftTxns] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [submitting, setSubmitting] = useState(false);
-//   const [activeTab, setActiveTab] = useState('reconciliation');
-
-//   // ✅ FIX: fb is a ref-stable object; setFb uses functional updates to avoid stale closure
-//   const [fb, setFb] = useState({
-//     effort: 7,
-//     effortReason: '',
-//     improvements: '',
-//     workSummary: '',
-//     issuesEncountered: '',
-//     shiftWorkDescription: '',
-//     recommendationsLastShift: '',
-//     recommendationsOverall: '',
-//   });
-
-//   // ✅ FIX: stable setter — won't cause RequiredTextarea to remount
-//   const setFbField = useCallback((field, value) => {
-//     setFb(prev => ({ ...prev, [field]: value }));
-//   }, []);
-
-//   useEffect(() => {
-//     const token = localStorage.getItem('authToken');
-//     if (!token) { setLoading(false); return; }
-//     const fromDate = encodeURIComponent(new Date(shift.startTime).toISOString());
-//     Promise.all([
-//       fj('/wallets'),
-//       fj('/games'),
-//       fj(`/transactions?limit=500&status=COMPLETED&fromDate=${fromDate}`),
-//     ])
-//       .then(([w, g, txns]) => {
-//         // ✅ Only live wallets
-//         setEndWallets((w.data ?? []).flatMap(grp => grp.subAccounts ?? []).filter(w => w.isLive !== false));
-//         setEndGames(g.data ?? []);
-//         const start = new Date(shift.startTime);
-//         const list = (txns.data ?? []).filter(t => {
-//           if (t.createdAtISO) return new Date(t.createdAtISO) >= start;
-//           return true;
-//         });
-//         setShiftTxns(list);
-//       })
-//       .catch(err => console.error('CheckoutModal fetch:', err))
-//       .finally(() => setLoading(false));
-//   }, [shift]);
-
-//   const hasStartSnapshot = startSnapshot != null;
-//   const startWallets = startSnapshot?.walletSnapshot ?? [];
-//   const startGames = startSnapshot?.gameSnapshot ?? [];
-//   const startTotalW = r2(startSnapshot?.totalWallet ?? 0);
-//   const startTotalG = Math.round(startSnapshot?.totalGames ?? 0);
-
-//   const endTotalW = r2(endWallets.reduce((s, w) => s + (w.balance ?? 0), 0));
-//   // const endTotalG = Math.round(endGames.reduce((s, g) => s + (g.pointStock ?? 0), 0));
-//   const endTotalG = endGames.reduce((s, g) => s + Math.round(g.pointStock ?? 0), 0);
-
-//   const walletChange = hasStartSnapshot ? r2(endTotalW - startTotalW) : 0;
-//   const gameChange = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
-
-//   const BONUS_TYPES = ['Match Bonus', 'Special Bonus', 'Streak Bonus', 'Referral Bonus', 'Bonus'];
-//   const deposits = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.amount ?? 0), 0));
-//   const cashouts = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.amount ?? 0), 0));
-//   const bonuses = r2(shiftTxns.filter(t => BONUS_TYPES.includes(t.type)).reduce((s, t) => s + (t.amount ?? 0), 0));
-//   // ✅ Net profit = Deposits - Cashouts (business metric, no fees deducted from profit)
-//   const netProfit = r2(deposits - cashouts);
-
-//   const depositFees = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.fee ?? 0), 0));
-//   const cashoutFees = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.fee ?? 0), 0));
-//   const totalFees = r2(depositFees + cashoutFees);
-//   const hasFees = totalFees > 0.001;
-
-//   // ✅ Expected wallet change = (deposits - depositFees) - (cashouts + cashoutFees)
-//   // const expectedWalletChange = r2((deposits - depositFees) - (cashouts + cashoutFees));
-//   // ✅ Expected game change = -(deposits + bonuses - cashouts) — fees don't affect game stock
-//   // const expectedGameChange = Math.round(-(deposits + bonuses - cashouts));
-
-//   // ✅ Separate $ and pts discrepancies — never mix them
-//   // const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
-//   // const gameDisc = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
-
-//   // ✅ balanced checks wallet and game separately
-//   // const walletBalanced = Math.abs(walletDisc) < 0.02;
-//   // const gameBalanced = Math.abs(gameDisc) < 2;
-//   // const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced);
-
-//   // ── Replace the existing discrepancy calculations ──────────────────────────
-
-//   // Expected wallet change (fees-adjusted): unchanged
-//   const expectedWalletChange = r2((deposits - depositFees) - (cashouts + cashoutFees));
-
-//   // ✅ User's formula: walletChange + fees = -gameChange - bonuses
-//   // => expectedGameChange derived from wallet side (no circular dependency):
-//   // -gameChange = walletChange + fees + bonuses
-//   // gameChange  = -(walletChange_expected + fees + bonuses)
-//   //             = -((deposits - depositFees - cashouts - cashoutFees) + totalFees + bonuses)
-//   //             = -(deposits - cashouts + bonuses)   ← fees cancel out
-//   const expectedGameChange = Math.round(-(deposits - cashouts + bonuses));
-//   // Note: this is identical to the prior formula mathematically,
-//   // but now expressed from user's cross-check perspective
-
-//   // Separate discrepancies
-//   const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
-//   const gameDisc = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
-
-//   // ✅ Combined cross-check (user's formula):
-//   // walletChange + fees + gameChange + bonuses should = 0
-//   const crossDisc = hasStartSnapshot
-//     ? r2(walletChange + totalFees + gameChange + bonuses)
-//     : 0;
-
-//   const walletBalanced = Math.abs(walletDisc) < 0.02;
-//   const gameBalanced = Math.abs(gameDisc) < 1;      // tighter: 0pt tolerance after rounding fix
-//   const crossBalanced = Math.abs(crossDisc) < 0.02;  // cross-formula check
-//   const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced && crossBalanced);
-
-//   const walletRows = endWallets.map(w => {
-//     const s = startWallets.find(sw => sw.id === w.id);
-//     return { ...w, startBal: r2(s?.balance ?? 0), endBal: r2(w.balance ?? 0) };
-//   });
-//   startWallets.forEach(sw => {
-//     if (!endWallets.find(w => w.id === sw.id))
-//       walletRows.push({ ...sw, startBal: r2(sw.balance), endBal: 0 });
-//   });
-
-//   const gameRows = endGames.map(g => {
-//     const s = startGames.find(sg => sg.id === g.id);
-//     return { ...g, startPts: Math.round(s?.pointStock ?? 0), endPts: Math.round(g.pointStock ?? 0) };
-//   });
-//   startGames.forEach(sg => {
-//     if (!endGames.find(g => g.id === sg.id))
-//       gameRows.push({ id: sg.id, name: sg.name, startPts: Math.round(sg.pointStock), endPts: 0 });
-//   });
-
-//   const handleSubmit = async () => {
-//     setSubmitting(true);
-//     try {
-//       await onSubmit({
-//         endSnapshot: {
-//           walletSnapshot: endWallets.map(w => ({ id: w.id, name: w.name, method: w.method, balance: r2(w.balance ?? 0) })),
-//           gameSnapshot: endGames.map(g => ({ id: g.id, name: g.name, pointStock: Math.round(g.pointStock ?? 0) })),
-//           totalWallet: endTotalW, totalGames: endTotalG,
-//           walletChange, gameChange, netProfit,
-//           deposits, cashouts, bonuses,
-//           depositFees, cashoutFees,
-//           walletDiscrepancy: walletDisc,
-//           gameDiscrepancy: gameDisc,
-//           isBalanced: balanced,
-//           capturedAt: new Date().toISOString(),
-//         },
-//         feedback: fb,
-//       });
-//     } finally { setSubmitting(false); }
-//   };
-
-//   const canSubmit =
-//     fb.effortReason.trim().length > 5 &&
-//     fb.improvements.trim().length > 5 &&
-//     fb.workSummary.trim().length > 5 &&
-//     fb.issuesEncountered.trim().length > 5 &&
-//     fb.shiftWorkDescription.trim().length > 5 &&
-//     fb.recommendationsLastShift.trim().length > 5 &&
-//     fb.recommendationsOverall.trim().length > 5;
-
-//   // ✅ FIX: Helper as a regular function (NOT a React component) — avoids unmount/remount on re-render
-//   const renderTextarea = (field, label, placeholder, rows = 3) => (
-//     <div>
-//       <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
-//         {label} <span style={{ color: '#dc2626' }}>*</span>
-//       </label>
-//       <textarea
-//         value={fb[field]}
-//         onChange={e => setFbField(field, e.target.value)}
-//         placeholder={placeholder}
-//         rows={rows}
-//         style={taStyle(true, fb[field])}
-//       />
-//     </div>
-//   );
-
-//   const TabBtn = ({ id, label }) => (
-//     <button onClick={() => setActiveTab(id)} style={{
-//       padding: '8px 18px', border: 'none', cursor: 'pointer', fontWeight: '600',
-//       fontSize: '13px', borderRadius: '8px', transition: 'all .15s',
-//       background: activeTab === id ? '#0f172a' : 'transparent',
-//       color: activeTab === id ? '#fff' : '#64748b',
-//     }}>{label}</button>
-//   );
-
-//   return (
-//     <div style={T.overlay}>
-//       <div style={{ ...T.modal, maxWidth: '800px' }}>
-//         <div style={{ padding: '20px 28px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0 }}>
-//           <div>
-//             <h2 style={{ margin: '0 0 4px', fontSize: '17px', fontWeight: '700', color: '#0f172a' }}>🌙 End-of-Shift Report</h2>
-//             <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Review your shift balances and submit your closing report</p>
-//           </div>
-//           <button onClick={onCancel} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '4px' }}><X size={18} /></button>
-//         </div>
-
-//         <div style={{ padding: '10px 28px', borderBottom: '1px solid #f1f5f9', display: 'flex', gap: '4px', background: '#fafafa', flexShrink: 0 }}>
-//           <TabBtn id="reconciliation" label="📊 Reconciliation" />
-//           <TabBtn id="feedback" label="💬 Feedback" />
-//         </div>
-
-//         <div style={{ overflowY: 'auto', flex: 1, padding: '20px 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-//           {loading ? (
-//             <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
-//               <RefreshCw size={20} style={{ animation: 'spin 1s linear infinite', display: 'block', margin: '0 auto 10px' }} />
-//               Fetching end-of-shift data…
-//             </div>
-//           ) : activeTab === 'reconciliation' ? <>
-
-//             {/* ── Activity Summary ── */}
-//             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px' }}>
-//               {[
-//                 { label: 'Deposits', val: `+$${deposits.toFixed(2)}`, color: '#16a34a', bg: '#f0fdf4' },
-//                 { label: 'Cashouts', val: `-$${cashouts.toFixed(2)}`, color: '#dc2626', bg: '#fef2f2' },
-//                 { label: 'Bonuses', val: `-$${bonuses.toFixed(2)}`, color: '#d97706', bg: '#fffbeb' },
-//                 { label: 'Net Profit (D−C)', val: `${netProfit >= 0 ? '+' : ''}$${netProfit.toFixed(2)}`, color: netProfit >= 0 ? '#16a34a' : '#dc2626', bg: netProfit >= 0 ? '#f0fdf4' : '#fef2f2' },
-//               ].map(({ label, val, color, bg }) => (
-//                 <div key={label} style={{ padding: '14px', background: bg, borderRadius: '10px', textAlign: 'center' }}>
-//                   <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '.4px' }}>{label}</p>
-//                   <p style={{ margin: 0, fontSize: '16px', fontWeight: '800', color }}>{val}</p>
-//                 </div>
-//               ))}
-//             </div>
-
-//             {hasFees && (
-//               <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderLeft: '4px solid #f59e0b', borderRadius: '8px', fontSize: '12px', color: '#92400e' }}>
-//                 💡 <b>Fees noted:</b> Deposit fees −${depositFees.toFixed(2)}{cashoutFees > 0 ? ` · Cashout fees −$${cashoutFees.toFixed(2)}` : ''}.
-//                 Expected wallet change is fee-adjusted: expected = deposits−dep.fees−cashouts−co.fees = ${expectedWalletChange.toFixed(2)}
-//               </div>
-//             )}
-
-//             {!hasStartSnapshot && (
-//               <div style={{ padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: '4px solid #94a3b8', borderRadius: '8px', fontSize: '12px', color: '#475569' }}>
-//                 ℹ️ <b>No start-of-shift snapshot.</b> Reconciliation shows current balances only.
-//               </div>
-//             )}
-
-//             {/* ── Wallet Reconciliation ── */}
-//             <section>
-//               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-//                 <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-//                   <Wallet size={14} color="#2563eb" /> Wallet Balances
-//                 </h3>
-//                 {hasStartSnapshot && (
-//                   <span style={{ fontSize: '12px', color: '#64748b' }}>
-//                     Expected change: <b style={{ color: expectedWalletChange >= 0 ? '#16a34a' : '#dc2626' }}>
-//                       {expectedWalletChange >= 0 ? '+' : ''}${expectedWalletChange.toFixed(2)}
-//                     </b>
-//                     {hasFees && <span style={{ color: '#94a3b8', marginLeft: '4px', fontSize: '11px' }}>(fee-adjusted)</span>}
-//                   </span>
-//                 )}
-//               </div>
-//               <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
-//                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-//                   <thead><tr>
-//                     <th style={T.th}>Wallet</th>
-//                     {hasStartSnapshot && <th style={{ ...T.th, textAlign: 'right' }}>Start</th>}
-//                     <th style={{ ...T.th, textAlign: 'right' }}>End</th>
-//                     {hasStartSnapshot && <th style={{ ...T.th, textAlign: 'right' }}>Change</th>}
-//                   </tr></thead>
-//                   <tbody>
-//                     {walletRows.map(w => {
-//                       const δ = r2(w.endBal - w.startBal);
-//                       return (
-//                         <tr key={w.id}>
-//                           <td style={T.td}><b style={{ color: '#475569' }}>{w.method}</b> — {w.name}</td>
-//                           {hasStartSnapshot && <td style={{ ...T.td, textAlign: 'right', color: '#64748b' }}>${w.startBal.toFixed(2)}</td>}
-//                           <td style={{ ...T.td, textAlign: 'right', fontWeight: '600' }}>${w.endBal.toFixed(2)}</td>
-//                           {hasStartSnapshot && (
-//                             <td style={{ ...T.td, textAlign: 'right', fontWeight: '700', color: clr$(δ) }}>{sign$(δ)}{fmt$(δ)}</td>
-//                           )}
-//                         </tr>
-//                       );
-//                     })}
-//                     <tr style={{ background: '#f8fafc' }}>
-//                       <td style={{ ...T.td, fontWeight: '700' }}>Total</td>
-//                       {hasStartSnapshot && <td style={{ ...T.td, textAlign: 'right', fontWeight: '600' }}>${startTotalW.toFixed(2)}</td>}
-//                       <td style={{ ...T.td, textAlign: 'right', fontWeight: '700' }}>${endTotalW.toFixed(2)}</td>
-//                       {hasStartSnapshot && (
-//                         <td style={{ ...T.td, textAlign: 'right', fontWeight: '700', color: clr$(walletChange) }}>
-//                           {sign$(walletChange)}{fmt$(walletChange)}
-//                           {!walletBalanced && (
-//                             <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: '600' }}>
-//                               ⚠️ {walletDisc >= 0 ? '+' : ''}${walletDisc.toFixed(2)} vs expected
-//                             </div>
-//                           )}
-//                         </td>
-//                       )}
-//                     </tr>
-//                   </tbody>
-//                 </table>
-//               </div>
-//             </section>
-
-//             {/* ── Game Points Reconciliation ── */}
-//             <section>
-//               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-//                 <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-//                   <Gamepad2 size={14} color="#7c3aed" /> Game Points
-//                 </h3>
-//                 {hasStartSnapshot && (
-//                   <span style={{ fontSize: '12px', color: '#64748b' }}>
-//                     Expected change: <b style={{ color: '#7c3aed' }}>{expectedGameChange >= 0 ? '+' : ''}{expectedGameChange} pts</b>
-//                     <span style={{ color: '#94a3b8', marginLeft: '4px', fontSize: '11px' }}>(deposits+bonuses−cashouts)</span>
-//                   </span>
-//                 )}
-//               </div>
-//               <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
-//                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-//                   <thead><tr>
-//                     <th style={T.th}>Game</th>
-//                     {hasStartSnapshot && <th style={{ ...T.th, textAlign: 'right' }}>Start</th>}
-//                     <th style={{ ...T.th, textAlign: 'right' }}>End</th>
-//                     {hasStartSnapshot && <th style={{ ...T.th, textAlign: 'right' }}>Change</th>}
-//                   </tr></thead>
-//                   <tbody>
-//                     {gameRows.map(g => {
-//                       const δ = g.endPts - g.startPts;
-//                       return (
-//                         <tr key={g.id}>
-//                           <td style={T.td}><b>{g.name}</b></td>
-//                           {hasStartSnapshot && <td style={{ ...T.td, textAlign: 'right', color: '#64748b' }}>{g.startPts} pts</td>}
-//                           <td style={{ ...T.td, textAlign: 'right', fontWeight: '600' }}>{g.endPts} pts</td>
-//                           {hasStartSnapshot && <td style={{ ...T.td, textAlign: 'right', fontWeight: '700', color: clrPts(δ) }}>{δ >= 0 ? '+' : ''}{δ} pts</td>}
-//                         </tr>
-//                       );
-//                     })}
-//                     <tr style={{ background: '#f8fafc' }}>
-//                       <td style={{ ...T.td, fontWeight: '700' }}>Total</td>
-//                       {hasStartSnapshot && <td style={{ ...T.td, textAlign: 'right', fontWeight: '600' }}>{startTotalG} pts</td>}
-//                       <td style={{ ...T.td, textAlign: 'right', fontWeight: '700' }}>{endTotalG} pts</td>
-//                       {hasStartSnapshot && (
-//                         <td style={{ ...T.td, textAlign: 'right', fontWeight: '700', color: clrPts(gameChange) }}>
-//                           {gameChange >= 0 ? '+' : ''}{gameChange} pts
-//                           {!gameBalanced && (
-//                             <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: '600' }}>
-//                               ⚠️ {gameDisc >= 0 ? '+' : ''}{gameDisc} pts vs expected
-//                             </div>
-//                           )}
-//                         </td>
-//                       )}
-//                     </tr>
-//                   </tbody>
-//                 </table>
-//               </div>
-//             </section>
-
-//             {/* ── Reconciliation Banner ── */}
-//             {balanced === null ? (
-//               <div style={{ padding: '14px 18px', background: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: '4px solid #94a3b8', borderRadius: '10px', fontSize: '13px', color: '#475569' }}>
-//                 ℹ️ Reconciliation unavailable — no start-of-shift snapshot recorded.
-//               </div>
-//             ) : (
-//               <div style={{
-//                 padding: '14px 18px', borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '12px',
-//                 background: balanced ? '#f0fdf4' : '#fef2f2',
-//                 border: `1px solid ${balanced ? '#86efac' : '#fca5a5'}`,
-//                 borderLeft: `4px solid ${balanced ? '#16a34a' : '#dc2626'}`,
-//               }}>
-//                 {balanced
-//                   ? <CheckCircle size={18} color="#16a34a" style={{ flexShrink: 0, marginTop: '1px' }} />
-//                   : <AlertCircle size={18} color="#dc2626" style={{ flexShrink: 0, marginTop: '1px' }} />}
-//                 <div>
-//                   <p style={{ margin: '0 0 4px', fontWeight: '700', color: balanced ? '#166534' : '#991b1b', fontSize: '14px' }}>
-//                     {balanced ? '✓ Fully Balanced' : `⚠️ Discrepancy Detected${!walletBalanced ? ` — Cash $${Math.abs(walletDisc).toFixed(2)}` : ''}${!gameBalanced ? ` — Points ${Math.abs(gameDisc)} pts` : ''}`}
-//                   </p>
-//                   {/* <p style={{ margin: 0, fontSize: '12px', color: balanced ? '#16a34a' : '#dc2626', lineHeight: 1.5 }}>
-//                     {balanced
-//                       ? `Net profit $${netProfit.toFixed(2)} (D−C) · Wallet Δ ${sign$(walletChange)}${fmt$(walletChange)}${hasFees ? ` after $${totalFees.toFixed(2)} fees` : ''} · Game Δ ${gameChange} pts`
-//                       : `${!walletBalanced ? `Wallet: ${sign$(walletDisc)}${fmt$(walletDisc)} vs expected $${expectedWalletChange.toFixed(2)}` : ''}${!walletBalanced && !gameBalanced ? ' | ' : ''}${!gameBalanced ? `Game: ${gameDisc >= 0 ? '+' : ''}${gameDisc} pts vs expected ${expectedGameChange} pts` : ''}`}
-//                   </p> */}
-//                   <p style={{ margin: 0, fontSize: '12px', color: balanced ? '#16a34a' : '#dc2626', lineHeight: 1.5 }}>
-//                     {balanced
-//                       ? `Net profit $${netProfit.toFixed(2)} · Wallet Δ ${sign$(walletChange)}${fmt$(walletChange)}${hasFees ? ` +$${totalFees.toFixed(2)} fees` : ''} = Points deducted ${Math.abs(gameChange)} pts${bonuses > 0 ? ` + $${bonuses.toFixed(2)} bonuses` : ''}`
-//                       : [
-//                         !walletBalanced ? `Wallet: ${sign$(walletDisc)}${fmt$(walletDisc)} vs expected` : '',
-//                         !gameBalanced ? `Game: ${gameDisc >= 0 ? '+' : ''}${gameDisc} pts vs expected` : '',
-//                         !crossBalanced ? `Cross-check: W+fees+G+bonus = ${crossDisc.toFixed(2)} (should be 0)` : '',
-//                       ].filter(Boolean).join(' | ')
-//                     }
-//                   </p>
-//                 </div>
-//               </div>
-//             )}
-
-//           </> : <>
-//             {/* ════ FEEDBACK TAB ════ */}
-//             {/* ✅ FIX: All textareas rendered via renderTextarea() — a plain function, NOT a component */}
-//             {/* This prevents React from unmounting/remounting the textarea on every re-render */}
-
-//             {/* Effort Rating */}
-//             <div>
-//               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>
-//                 Effort Rating
-//                 <span style={{ marginLeft: '12px', fontSize: '22px', fontWeight: '800', color: fb.effort >= 8 ? '#16a34a' : fb.effort >= 5 ? '#d97706' : '#dc2626' }}>
-//                   {fb.effort}<span style={{ fontSize: '14px', color: '#94a3b8' }}>/10</span>
-//                 </span>
-//               </label>
-//               <div style={{ display: 'flex', gap: '8px' }}>
-//                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-//                   <button key={n} onClick={() => setFbField('effort', n)} style={{
-//                     width: '40px', height: '40px', borderRadius: '8px', border: '2px solid',
-//                     cursor: 'pointer', fontWeight: '700', fontSize: '13px', transition: 'all .15s',
-//                     borderColor: fb.effort === n ? '#0f172a' : '#e2e8f0',
-//                     background: fb.effort === n ? (n >= 8 ? '#16a34a' : n >= 5 ? '#d97706' : '#dc2626') : '#f8fafc',
-//                     color: fb.effort === n ? '#fff' : '#475569',
-//                   }}>{n}</button>
-//                 ))}
-//               </div>
-//             </div>
-
-//             {renderTextarea('effortReason', `Why did you rate your effort ${fb.effort}/10?`, 'Describe your energy level, focus, challenges faced…')}
-//             {renderTextarea('shiftWorkDescription', 'Describe the work of this shift', 'Walk through what you did — players contacted, deposits, tasks, issues handled…', 4)}
-//             {renderTextarea('workSummary', 'Work Summary', 'Key accomplishments and highlights from this shift…')}
-//             {renderTextarea('issuesEncountered', 'Issues Encountered', 'Player complaints, system issues, payment problems…')}
-//             {renderTextarea('improvements', 'What could you have done better?', 'Areas for improvement, missed follow-ups…')}
-//             {renderTextarea('recommendationsLastShift', 'Recommendations to the previous shift', 'Handover notes, pending players, unresolved issues…')}
-//             {renderTextarea('recommendationsOverall', 'Recommendations overall', 'Broader suggestions, process improvements, patterns noticed…')}
-
-//             {!canSubmit && (
-//               <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', fontSize: '12px', color: '#92400e' }}>
-//                 ⚠️ All fields are <b>required</b> (min 6 chars each) before you can end your shift.
-//                 {[
-//                   ['effortReason', 'Effort reason'], ['shiftWorkDescription', 'Shift work description'],
-//                   ['workSummary', 'Work summary'], ['issuesEncountered', 'Issues encountered'],
-//                   ['improvements', 'Improvements'], ['recommendationsLastShift', 'Recs to last shift'],
-//                   ['recommendationsOverall', 'Overall recs'],
-//                 ].filter(([k]) => fb[k].trim().length <= 5).map(([, label]) => (
-//                   <span key={label} style={{ display: 'inline-block', marginRight: '8px', marginTop: '4px', padding: '2px 8px', background: '#fef3c7', borderRadius: '6px', fontSize: '11px' }}>· {label}</span>
-//                 ))}
-//               </div>
-//             )}
-//           </>}
-//         </div>
-
-//         <div style={{ padding: '14px 28px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexShrink: 0, background: '#f8fafc' }}>
-//           <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-//             {activeTab === 'reconciliation'
-//               ? 'Switch to Feedback to complete your report'
-//               : `Balanced: ${balanced === null ? 'N/A' : balanced ? '✓ Yes' : '⚠️ Discrepancy'}`}
-//           </span>
-//           <div style={{ display: 'flex', gap: '10px' }}>
-//             <button onClick={onCancel} style={{ padding: '10px 18px', background: '#fff', border: '1px solid #d1d5db', borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer', color: '#374151' }}>
-//               Cancel
-//             </button>
-//             {activeTab === 'reconciliation' ? (
-//               <button onClick={() => setActiveTab('feedback')} style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
-//                 Next: Feedback →
-//               </button>
-//             ) : (
-//               <button onClick={handleSubmit} disabled={!canSubmit || submitting} style={{
-//                 padding: '10px 22px', background: '#dc2626', color: '#fff', border: 'none',
-//                 borderRadius: '8px', fontWeight: '700', fontSize: '13px',
-//                 cursor: !canSubmit || submitting ? 'not-allowed' : 'pointer',
-//                 opacity: !canSubmit || submitting ? .6 : 1,
-//                 display: 'flex', alignItems: 'center', gap: '7px',
-//               }}>
-//                 {submitting ? <><RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} /> Submitting…</> : '✓ Submit & End Shift'}
-//               </button>
-//             )}
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
 
 // ═══════════════════════════════════════════════════════════════
 // CHECKOUT MODAL — with Transactions + Expenses & Takeouts tabs
@@ -1349,15 +961,33 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   const totalFees = r2(depositFees + cashoutFees);
   const hasFees = totalFees > 0.001;
 
-  const expectedWalletChange = r2((deposits - depositFees) - (cashouts + cashoutFees));
-  const expectedGameChange = Math.round(-(deposits - cashouts + bonuses));
-  const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
-  const gameDisc = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
-  const crossDisc = hasStartSnapshot ? r2(walletChange + totalFees + gameChange + bonuses) : 0;
+  // const expectedWalletChange = r2((deposits - depositFees) - (cashouts + cashoutFees));
+  // const expectedGameChange = Math.round(-(deposits - cashouts + bonuses));
+  // const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
+  // const gameDisc = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
+  // const crossDisc = hasStartSnapshot ? r2(walletChange + totalFees + gameChange + bonuses) : 0;
+  // const walletBalanced = Math.abs(walletDisc) < 0.02;
+  // const gameBalanced = Math.abs(gameDisc) < 1;
+  // const crossBalanced = Math.abs(crossDisc) < 0.02;
+  // const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced && crossBalanced);
+
+  // Wallet: what we should see in the wallet = Deposits - Cashouts - Fees
+  const expectedWalletChange = r2(deposits - cashouts - totalFees);
+  // Game:   points that should have been removed = Deposits + Fees + Bonuses - Cashouts
+  //         (so the actual pointStock change is the negative of that)
+  const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
+  const expectedGameChange    = Math.round(-expectedGameDeduction);
+ 
+  const walletDisc  = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
+  const gameDisc    = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
   const walletBalanced = Math.abs(walletDisc) < 0.02;
-  const gameBalanced = Math.abs(gameDisc) < 1;
-  const crossBalanced = Math.abs(crossDisc) < 0.02;
-  const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced && crossBalanced);
+  const gameBalanced   = Math.abs(gameDisc)   < 2;   // 2-pt tolerance for rounding
+  const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced);
+ 
+  // Detect shared games so we can annotate discrepancies that may come from other stores
+  const sharedGames     = endGames.filter(g => g.isShared);
+  const hasSharedGames  = sharedGames.length > 0;
+  const sharedGameNames = sharedGames.map(g => g.name).join(', ');
 
   const walletRows = endWallets.map(w => {
     const s = startWallets.find(sw => sw.id === w.id);
@@ -1597,7 +1227,7 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
             </section>
 
             {/* Balance Banner */}
-            {balanced === null ? (
+            {/* /* {balanced === null ? (
               <div style={{ padding: '14px 18px', background: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: '4px solid #94a3b8', borderRadius: '10px', fontSize: '13px', color: '#475569' }}>
                 ℹ️ Reconciliation unavailable — no start-of-shift snapshot recorded.
               </div>
@@ -1610,6 +1240,52 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                   </p>
                   <p style={{ margin: 0, fontSize: '12px', color: balanced ? '#16a34a' : '#dc2626', lineHeight: 1.5 }}>
                     D ${deposits.toFixed(2)} − CO ${cashouts.toFixed(2)} = Net ${netProfit.toFixed(2)} · Expenses ${totalShiftExpenses.toFixed(2)} · Takeouts ${totalShiftTakeouts.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            )} */ */}
+
+            {/* ── Reconciliation Banner ── */}
+            {balanced === null ? (
+              <div style={{ padding: '14px 18px', background: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: '4px solid #94a3b8', borderRadius: '10px', fontSize: '13px', color: '#475569' }}>
+                ℹ️ Reconciliation unavailable — no start-of-shift snapshot recorded.
+              </div>
+            ) : (
+              <div style={{
+                padding: '14px 18px', borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '12px',
+                background: balanced ? '#f0fdf4' : (hasSharedGames && !walletBalanced === false) ? '#faf5ff' : '#fef2f2',
+                border: `1px solid ${balanced ? '#86efac' : hasSharedGames && walletBalanced ? '#c4b5fd' : '#fca5a5'}`,
+                borderLeft: `4px solid ${balanced ? '#16a34a' : hasSharedGames && walletBalanced ? '#7c3aed' : '#dc2626'}`,
+              }}>
+                {balanced
+                  ? <CheckCircle size={18} color="#16a34a" style={{ flexShrink: 0, marginTop: '1px' }} />
+                  : <AlertCircle size={18} color={hasSharedGames && walletBalanced ? '#7c3aed' : '#dc2626'} style={{ flexShrink: 0, marginTop: '1px' }} />}
+                <div>
+                  <p style={{ margin: '0 0 4px', fontWeight: '700', fontSize: '14px', color: balanced ? '#166534' : hasSharedGames && walletBalanced ? '#4c1d95' : '#991b1b' }}>
+                    {balanced
+                      ? '✓ Fully Balanced'
+                      : [
+                          !walletBalanced ? `⚠️ Cash discrepancy $${Math.abs(walletDisc).toFixed(2)}` : '',
+                          !gameBalanced   ? `${hasSharedGames ? '⚡ Game points off' : '⚠️ Game points off'} ${Math.abs(gameDisc)} pts` : '',
+                        ].filter(Boolean).join(' · ')
+                    }
+                  </p>
+                  <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.6,
+                      color: balanced ? '#16a34a' : hasSharedGames && walletBalanced ? '#6d28d9' : '#991b1b' }}>
+                    {balanced
+                      ? `Net profit $${netProfit.toFixed(2)} (D−CO) · ` +
+                        `Expected wallet Δ ${expectedWalletChange >= 0 ? '+' : ''}$${expectedWalletChange.toFixed(2)} ` +
+                        `(D−CO−fees) · Expected game Δ −${expectedGameDeduction.toFixed(0)} pts (D+fees+bonus−CO)`
+                      : [
+                          !walletBalanced
+                            ? `Wallet: actual ${walletChange >= 0 ? '+' : ''}$${walletChange.toFixed(2)}, expected $${expectedWalletChange.toFixed(2)} (D−CO−fees)`
+                            : '',
+                          !gameBalanced
+                            ? `Game: actual ${gameChange >= 0 ? '+' : ''}${gameChange} pts, expected ${expectedGameChange} pts (D+fees+bonus−CO = ${expectedGameDeduction.toFixed(0)} pts removed)` +
+                              (hasSharedGames ? ` — shared games (${sharedGameNames}) may account for extra deductions from other stores` : '')
+                            : '',
+                        ].filter(Boolean).join('\n')
+                    }
                   </p>
                 </div>
               </div>
@@ -1929,10 +1605,25 @@ function printShiftPDF(shift) {
   const gameChange = Math.round(es?.gameChange ?? 0);
   const depositFees = r2(es?.depositFees ?? 0);
   const cashoutFees = r2(es?.cashoutFees ?? 0);
-  const expectedWallet = r2((deposits - depositFees) - (cashouts + cashoutFees));
-  const expectedGame = Math.round(-(deposits + bonuses - cashouts));
-  const walletDisc = r2((es?.walletDiscrepancy) ?? r2(walletChange - expectedWallet));
-  const gameDisc = Math.round((es?.gameDiscrepancy) ?? (gameChange - expectedGame));
+  // const expectedWallet = r2((deposits - depositFees) - (cashouts + cashoutFees));
+  // const expectedGame = Math.round(-(deposits + bonuses - cashouts));
+  
+  // const walletDisc = r2((es?.walletDiscrepancy) ?? r2(walletChange - expectedWallet));
+  // const gameDisc = Math.round((es?.gameDiscrepancy) ?? (gameChange - expectedGame));
+
+    // Wallet formula: D − CO − fees
+  const expectedWallet = r2(deposits - cashouts - depositFees - cashoutFees);
+  // Game formula:   expected deduction = D + fees + bonus − CO
+  const expectedGameDeductionPdf = r2(deposits + depositFees + cashoutFees + bonuses - cashouts);
+  const expectedGame   = Math.round(-expectedGameDeductionPdf);
+  const walletDisc     = r2((es?.walletDiscrepancy) ?? r2(walletChange - expectedWallet));
+  const gameDisc       = Math.round((es?.gameDiscrepancy) ?? (gameChange - expectedGame));
+  // Detect shared games from the end snapshot (if available)
+  const endGameSnap    = es?.gameSnapshot ?? [];
+  // We flag shared games via a "shared" property if it was stored; otherwise show a generic note
+  const sharedGameNoteForPdf = endGameSnap.some(g => g.isShared)
+    ? 'Note: some games are shared across stores — game discrepancies may include cross-store activity.'
+    : '';
   const walletOk = Math.abs(walletDisc) < 0.02;
   const gameOk = Math.abs(gameDisc) < 2;
   const allOk = walletOk && gameOk;
@@ -2018,11 +1709,11 @@ ${gameRows ? `<h2>Game Point Audit</h2>
 ${es ? `<h2>Audit Verification</h2>
 <div class="banner" style="background:${allOk ? '#f0fdf4' : '#fef2f2'};border-color:${allOk ? '#86efac' : '#fca5a5'};border-left:4px solid ${allOk ? '#16a34a' : '#dc2626'}">
   <b style="color:${allOk ? '#16a34a' : '#dc2626'}">${allOk ? '✓ Fully Balanced' : `⚠ Discrepancy: ${!walletOk ? `Cash $${Math.abs(walletDisc).toFixed(2)}` : ''}${!walletOk && !gameOk ? ' | ' : ''}${!gameOk ? `Points ${Math.abs(gameDisc)} pts` : ''}`}</b><br>
-  <span style="color:#475569;font-size:11px">
-    Deposits ${fmtMoney(deposits)} − Cashouts ${fmtMoney(cashouts)} = Net Profit ${fmtMoney(netProfit)} · 
-    Expected Wallet Δ ${fmtMoney(expectedWallet)} · Actual Wallet Δ ${fmtMoney(walletChange)} · 
-    Expected Game Δ ${expectedGame} pts · Actual Game Δ ${gameChange} pts
-  </span>
+    <span style="color:#475569;font-size:11px">
+      Wallet expected: D ${fmtMoney(deposits)} − CO ${fmtMoney(cashouts)} − fees ${fmtMoney(depositFees + cashoutFees)} = ${fmtMoney(expectedWallet)} · Actual Δ ${fmtMoney(walletChange)}<br>
+      Game expected removal: D+fees+bonus−CO = ${expectedGameDeductionPdf.toFixed(0)} pts · Actual Δ ${gameChange} pts
+      ${sharedGameNoteForPdf ? `<br><em style="color:#7c3aed">${sharedGameNoteForPdf}</em>` : ''}
+    </span>
 </div>` : ''}
 
 ${effortReason || improvements || shift.checkin?.workSummary ? `<h2>Member Feedback</h2>
