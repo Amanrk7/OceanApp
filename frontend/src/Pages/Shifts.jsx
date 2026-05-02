@@ -716,78 +716,80 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
 
             {/* ── Game Points Reconciliation ── */}
             {/* ── Game Points ── */}
-<section>
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-    <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-      <Gamepad2 size={14} color="#7c3aed" /> Game Points
-      <span style={{ fontSize: '11px', fontWeight: '400', color: '#94a3b8' }}>(enter actual)</span>
-    </h3>
-    <span style={{ fontSize: '16px', fontWeight: '800', color: '#7c3aed' }}>{totalGames} pts total</span>
-  </div>
-  <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
-    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-      <thead>
-        <tr>
-          <th style={T.th}>Game</th>
-          <th style={{ ...T.th, textAlign: 'center' }}>Status</th>
-          <th style={{ ...T.th, textAlign: 'right' }}>System</th>
-          <th style={{ ...T.th, textAlign: 'right', color: '#0f172a', minWidth: '130px' }}>Actual ✏️</th>
-        </tr>
-      </thead>
-      <tbody>
-        {games.map(g => {
-          const entered = parseFloat(gameInputs[g.id]);
-          const fetched = Math.round(g.pointStock ?? 0);
-          const hasDisc = !isNaN(entered) && Math.abs(Math.round(entered) - fetched) > 0;
-          return (
-            <tr key={g.id} style={{ background: hasDisc ? '#fefce8' : 'transparent' }}>
-              <td style={T.td}>
-                <b>{g.name}</b>
-                {g.isShared && (
-                  <span style={{ marginLeft: '6px', fontSize: '10px', fontWeight: '700',
-                                 color: '#7c3aed', background: '#ede9fe',
-                                 padding: '1px 5px', borderRadius: '5px' }}>shared</span>
-                )}
-              </td>
-              <td style={{ ...T.td, textAlign: 'center' }}>
-                <Badge
-                  label={g.status}
-                  color={g.status === 'HEALTHY' ? '#16a34a' : g.status === 'LOW_STOCK' ? '#854d0e' : '#991b1b'}
-                  bg={g.status === 'HEALTHY' ? '#dcfce7' : g.status === 'LOW_STOCK' ? '#fef9c3' : '#fee2e2'}
-                />
-              </td>
-              <td style={{ ...T.td, textAlign: 'right', color: '#94a3b8', fontSize: '12px' }}>{fetched} pts</td>
-              <td style={{ ...T.td, textAlign: 'right' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                  <input
-                    type="number" step="1" min="0"
-                    value={gameInputs[g.id] ?? ''}
-                    onChange={e => setGameInputs(prev => ({ ...prev, [g.id]: e.target.value }))}
-                    style={inputStyle(hasDisc)}
-                  />
-                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>pts</span>
-                  {hasDisc && <span style={{ fontSize: '10px', color: '#f59e0b', fontWeight: '700' }}>⚠️</span>}
-                </div>
-              </td>
-            </tr>
-          );
-        })}
-        {games.length === 0 && (
-          <tr><td colSpan={4} style={{ ...T.td, textAlign: 'center', color: '#94a3b8' }}>No games found</td></tr>
-        )}
-        <tr style={{ background: '#f5f3ff' }}>
-          <td colSpan={2} style={{ ...T.td, fontWeight: '700', color: '#5b21b6' }}>Combined Total</td>
-          <td style={{ ...T.td, textAlign: 'right', color: '#94a3b8', fontSize: '12px' }}>
-            {Math.round(games.reduce((s, g) => s + (g.pointStock ?? 0), 0))} pts
-          </td>
-          <td style={{ ...T.td, textAlign: 'right', fontWeight: '800', color: '#7c3aed', fontSize: '14px' }}>
-            {totalGames} pts
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</section>
+            <section>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Gamepad2 size={14} color="#7c3aed" /> Game Points
+                  <span style={{ fontSize: '11px', fontWeight: '400', color: '#94a3b8' }}>(enter actual)</span>
+                </h3>
+                <span style={{ fontSize: '16px', fontWeight: '800', color: '#7c3aed' }}>{totalGames} pts total</span>
+              </div>
+              <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={T.th}>Game</th>
+                      <th style={{ ...T.th, textAlign: 'center' }}>Status</th>
+                      <th style={{ ...T.th, textAlign: 'right' }}>System</th>
+                      <th style={{ ...T.th, textAlign: 'right', color: '#0f172a', minWidth: '130px' }}>Actual ✏️</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {games.map(g => {
+                      const entered = parseFloat(gameInputs[g.id]);
+                      const fetched = Math.round(g.pointStock ?? 0);
+                      const hasDisc = !isNaN(entered) && Math.abs(Math.round(entered) - fetched) > 0;
+                      return (
+                        <tr key={g.id} style={{ background: hasDisc ? '#fefce8' : 'transparent' }}>
+                          <td style={T.td}>
+                            <b>{g.name}</b>
+                            {g.isShared && (
+                              <span style={{
+                                marginLeft: '6px', fontSize: '10px', fontWeight: '700',
+                                color: '#7c3aed', background: '#ede9fe',
+                                padding: '1px 5px', borderRadius: '5px'
+                              }}>shared</span>
+                            )}
+                          </td>
+                          <td style={{ ...T.td, textAlign: 'center' }}>
+                            <Badge
+                              label={g.status}
+                              color={g.status === 'HEALTHY' ? '#16a34a' : g.status === 'LOW_STOCK' ? '#854d0e' : '#991b1b'}
+                              bg={g.status === 'HEALTHY' ? '#dcfce7' : g.status === 'LOW_STOCK' ? '#fef9c3' : '#fee2e2'}
+                            />
+                          </td>
+                          <td style={{ ...T.td, textAlign: 'right', color: '#94a3b8', fontSize: '12px' }}>{fetched} pts</td>
+                          <td style={{ ...T.td, textAlign: 'right' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                              <input
+                                type="number" step="1" min="0"
+                                value={gameInputs[g.id] ?? ''}
+                                onChange={e => setGameInputs(prev => ({ ...prev, [g.id]: e.target.value }))}
+                                style={inputStyle(hasDisc)}
+                              />
+                              <span style={{ fontSize: '12px', color: '#94a3b8' }}>pts</span>
+                              {hasDisc && <span style={{ fontSize: '10px', color: '#f59e0b', fontWeight: '700' }}>⚠️</span>}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {games.length === 0 && (
+                      <tr><td colSpan={4} style={{ ...T.td, textAlign: 'center', color: '#94a3b8' }}>No games found</td></tr>
+                    )}
+                    <tr style={{ background: '#f5f3ff' }}>
+                      <td colSpan={2} style={{ ...T.td, fontWeight: '700', color: '#5b21b6' }}>Combined Total</td>
+                      <td style={{ ...T.td, textAlign: 'right', color: '#94a3b8', fontSize: '12px' }}>
+                        {Math.round(games.reduce((s, g) => s + (g.pointStock ?? 0), 0))} pts
+                      </td>
+                      <td style={{ ...T.td, textAlign: 'right', fontWeight: '800', color: '#7c3aed', fontSize: '14px' }}>
+                        {totalGames} pts
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
 
             {/* ── Active Tasks ── */}
             {tasks.length > 0 && (
@@ -1008,9 +1010,18 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   const crossAdjGameBalanced = Math.abs(crossAdjGameDisc) < 2;
   const crossAdjWalletBalanced = Math.abs(crossAdjWalletDisc) < 0.02;
 
+  // const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced);
+  // const crossAdjBalanced = !hasStartSnapshot ? null :
+  //   (crossAdjWalletBalanced && crossAdjGameBalanced);
+
+  // crossAdjBalanced is now the PRIMARY signal — not just a fallback
   const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced);
   const crossAdjBalanced = !hasStartSnapshot ? null :
     (crossAdjWalletBalanced && crossAdjGameBalanced);
+
+  // This is what actually determines if there's a REAL problem
+  const hasRealDiscrepancy = hasStartSnapshot && !balanced && !crossAdjBalanced;
+  const isFullyOk = hasStartSnapshot && (balanced || crossAdjBalanced);
 
   const walletRows = endWallets.map(w => {
     const s = startWallets.find(sw => sw.id === w.id);
@@ -1395,7 +1406,7 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
             )}
 
             {/* Cross-store notice */}
-            {crossStoreData && (Object.keys(crossGameInfo).length > 0 || Object.keys(crossWalletInfo).length > 0) && (
+            {/* {crossStoreData && (Object.keys(crossGameInfo).length > 0 || Object.keys(crossWalletInfo).length > 0) && (
               <div style={{
                 padding: '10px 14px', background: '#f5f3ff', border: '1px solid #c4b5fd',
                 borderLeft: '4px solid #7c3aed', borderRadius: '8px', fontSize: '12px', color: '#4c1d95'
@@ -1403,6 +1414,33 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                 ⚡ <b>Shared resources detected.</b> Expand each game/wallet below to see per-store usage.
                 {totalCrossGamePts > 0 && ` Other stores removed ~${Math.round(totalCrossGamePts)} pts from shared games.`}
                 {Math.abs(totalCrossWalletAmt) > 0.01 && ` Other stores moved ~$${Math.abs(totalCrossWalletAmt).toFixed(2)} through shared wallets.`}
+              </div>
+            )} */}
+
+            {crossStoreData && (Object.keys(crossGameInfo).length > 0 || Object.keys(crossWalletInfo).length > 0) && (
+              <div style={{
+                padding: '12px 16px', background: '#f5f3ff', border: '1px solid #c4b5fd',
+                borderLeft: '4px solid #7c3aed', borderRadius: '8px', fontSize: '12px', color: '#4c1d95'
+              }}>
+                <div style={{ fontWeight: '700', marginBottom: '6px' }}>
+                  ⚡ Cross-Store Activity Detected
+                </div>
+                <div style={{ color: '#6d28d9', lineHeight: 1.6 }}>
+                  This shift window overlaps with activity on <b>shared resources</b> used by other stores.
+                  These are shown below for transparency but are <b>NOT counted as your discrepancy</b>.
+                </div>
+                <div style={{ marginTop: '8px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  {totalCrossGamePts > 0 && (
+                    <span style={{ background: '#ede9fe', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>
+                      🎮 Other stores used ~{Math.round(totalCrossGamePts)} pts from shared games
+                    </span>
+                  )}
+                  {Math.abs(totalCrossWalletAmt) > 0.01 && (
+                    <span style={{ background: '#ede9fe', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>
+                      💳 Other stores moved ~${Math.abs(totalCrossWalletAmt).toFixed(2)} through shared wallets
+                    </span>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1493,10 +1531,13 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                           {sign$(walletChange)}{fmt$(walletChange)}
                           {!walletBalanced && (
                             <div style={{ fontSize: '11px', fontWeight: '600' }}>
-                              <span style={{ color: '#dc2626' }}>⚠️ ${walletDisc.toFixed(2)} vs expected</span>
-                              {Math.abs(totalCrossWalletAmt) > 0.01 && crossAdjWalletBalanced && (
-                                <span style={{ color: '#7c3aed', display: 'block' }}>
-                                  ✓ balanced after cross-store
+                              {crossAdjWalletBalanced && Math.abs(totalCrossWalletAmt) > 0.01 ? (
+                                <span style={{ color: '#16a34a', display: 'block' }}>
+                                  ✓ ${Math.abs(totalCrossWalletAmt).toFixed(2)} moved by other stores — your store is balanced
+                                </span>
+                              ) : (
+                                <span style={{ color: '#dc2626' }}>
+                                  ⚠️ ${Math.abs(crossAdjWalletDisc).toFixed(2)} real discrepancy
                                 </span>
                               )}
                             </div>
@@ -1597,12 +1638,15 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                           {gameChange >= 0 ? '+' : ''}{gameChange} pts
                           {!gameBalanced && (
                             <div style={{ fontSize: '11px', fontWeight: '600' }}>
-                              <span style={{ color: hasSharedGames ? '#7c3aed' : '#dc2626' }}>
-                                {hasSharedGames ? '⚡' : '⚠️'} {gameDisc >= 0 ? '+' : ''}{gameDisc} pts vs expected
-                              </span>
-                              {crossAdjGameBalanced && hasSharedGames && (
+                              {crossAdjGameBalanced && hasSharedGames ? (
+                                // Cross-store explains it — green, not warning
                                 <span style={{ color: '#16a34a', display: 'block' }}>
-                                  ✓ balanced after cross-store
+                                  ✓ {Math.round(totalCrossGamePts)} pts from other stores — your store is balanced
+                                </span>
+                              ) : (
+                                // Real discrepancy — red warning
+                                <span style={{ color: '#dc2626' }}>
+                                  ⚠️ {crossAdjGameDisc >= 0 ? '+' : ''}{crossAdjGameDisc} pts real discrepancy
                                 </span>
                               )}
                             </div>
@@ -1618,64 +1662,99 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
             {/* ── Final balance banner ─────────────────────────────────────── */}
             {balanced === null ? (
               <div style={{
-                padding: '14px 18px', background: '#f8fafc', border: '1px solid #e2e8f0',
-                borderLeft: '4px solid #94a3b8', borderRadius: '10px', fontSize: '13px', color: '#475569'
+                padding: '14px 18px', background: '#f8fafc',
+                border: '1px solid #e2e8f0', borderLeft: '4px solid #94a3b8',
+                borderRadius: '10px', fontSize: '13px', color: '#475569'
               }}>
                 ℹ️ Reconciliation unavailable — no start-of-shift snapshot recorded.
               </div>
-            ) : (
+
+            ) : balanced ? (
+              // ── STATE 1: Perfectly balanced ──────────────────────────────
               <div style={{
-                padding: '14px 18px', borderRadius: '10px',
-                display: 'flex', alignItems: 'flex-start', gap: '12px',
-                background: balanced ? '#f0fdf4' : crossAdjBalanced ? '#f5f3ff' : '#fef2f2',
-                border: `1px solid ${balanced ? '#86efac' : crossAdjBalanced ? '#c4b5fd' : '#fca5a5'}`,
-                borderLeft: `4px solid ${balanced ? '#16a34a' : crossAdjBalanced ? '#7c3aed' : '#dc2626'}`,
+                padding: '14px 18px', background: '#f0fdf4',
+                border: '1px solid #86efac', borderLeft: '4px solid #16a34a',
+                borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '12px'
               }}>
-                {balanced
-                  ? <CheckCircle size={18} color="#16a34a" style={{ flexShrink: 0, marginTop: '1px' }} />
-                  : crossAdjBalanced
-                    ? <CheckCircle size={18} color="#7c3aed" style={{ flexShrink: 0, marginTop: '1px' }} />
-                    : <AlertCircle size={18} color="#dc2626" style={{ flexShrink: 0, marginTop: '1px' }} />}
+                <CheckCircle size={18} color="#16a34a" style={{ flexShrink: 0, marginTop: '1px' }} />
                 <div>
-                  <p style={{
-                    margin: '0 0 4px', fontWeight: '700', fontSize: '14px',
-                    color: balanced ? '#166534' : crossAdjBalanced ? '#4c1d95' : '#991b1b'
-                  }}>
-                    {balanced
-                      ? '✓ Fully Balanced'
-                      : crossAdjBalanced
-                        ? '⚡ Balanced after cross-store adjustment'
-                        : [
-                          !walletBalanced ? `⚠️ Cash discrepancy $${Math.abs(walletDisc).toFixed(2)}` : '',
-                          !gameBalanced ? `${hasSharedGames ? '⚡' : '⚠️'} Game pts off ${Math.abs(gameDisc)} pts` : '',
-                        ].filter(Boolean).join(' · ')
-                    }
+                  <p style={{ margin: '0 0 4px', fontWeight: '700', fontSize: '14px', color: '#166534' }}>
+                    ✓ Fully Balanced
                   </p>
-                  <p style={{
-                    margin: 0, fontSize: '12px', lineHeight: 1.6,
-                    color: balanced ? '#16a34a' : crossAdjBalanced ? '#6d28d9' : '#991b1b'
-                  }}>
-                    {balanced
-                      ? `Net profit $${netProfit.toFixed(2)} · ` +
-                      `Wallet Δ expected ${expectedWalletChange >= 0 ? '+' : ''}$${expectedWalletChange.toFixed(2)} · ` +
-                      `Game Δ expected −${expectedGameDeduction.toFixed(0)} pts`
-                      : crossAdjBalanced
-                        ? `Raw discrepancies (wallet: $${walletDisc.toFixed(2)}, game: ${gameDisc} pts) are fully ` +
-                        `explained by cross-store usage of shared resources. Expand each shared item above for details.`
-                        : [
-                          !walletBalanced
-                            ? `Wallet: actual ${walletChange >= 0 ? '+' : ''}$${walletChange.toFixed(2)}, ` +
-                            `expected $${expectedWalletChange.toFixed(2)}` +
-                            (Math.abs(totalCrossWalletAmt) > 0.01
-                              ? ` (incl. $${Math.abs(totalCrossWalletAmt).toFixed(2)} cross-store)` : '')
-                            : '',
-                          !gameBalanced
-                            ? `Game: actual ${gameChange >= 0 ? '+' : ''}${gameChange} pts, expected ${expectedGameChange} pts` +
-                            (totalCrossGamePts > 0
-                              ? ` (incl. ~${Math.round(totalCrossGamePts)} pts cross-store)` : '')
-                            : '',
-                        ].filter(Boolean).join(' | ')
-                    }
+                  <p style={{ margin: 0, fontSize: '12px', color: '#16a34a', lineHeight: 1.6 }}>
+                    Net profit ${netProfit.toFixed(2)} ·
+                    Wallet Δ expected {expectedWalletChange >= 0 ? '+' : ''}${expectedWalletChange.toFixed(2)} ·
+                    Game Δ expected −{expectedGameDeduction.toFixed(0)} pts
+                  </p>
+                </div>
+              </div>
+
+            ) : crossAdjBalanced ? (
+              // ── STATE 2: Cross-store explains everything — NOT an error ──
+              <div style={{
+                padding: '14px 18px', background: '#f0fdf4',
+                border: '1px solid #86efac', borderLeft: '4px solid #16a34a',
+                borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '12px'
+              }}>
+                <CheckCircle size={18} color="#16a34a" style={{ flexShrink: 0, marginTop: '1px' }} />
+                <div>
+                  <p style={{ margin: '0 0 4px', fontWeight: '700', fontSize: '14px', color: '#166534' }}>
+                    ✓ Your Store is Balanced
+                  </p>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#16a34a', lineHeight: 1.6 }}>
+                    All surface-level differences are fully explained by other stores using shared resources.
+                    <br />
+                    {totalCrossGamePts > 0 && (
+                      <span>🎮 ~{Math.round(totalCrossGamePts)} pts on shared games came from other stores. </span>
+                    )}
+                    {Math.abs(totalCrossWalletAmt) > 0.01 && (
+                      <span>💳 ~${Math.abs(totalCrossWalletAmt).toFixed(2)} on shared wallets came from other stores.</span>
+                    )}
+                  </p>
+                  {/* Small detail row for transparency */}
+                  <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#64748b' }}>
+                    Raw numbers — Wallet: {walletChange >= 0 ? '+' : ''}${walletChange.toFixed(2)} actual
+                    vs ${expectedWalletChange.toFixed(2)} expected ·
+                    Game: {gameChange >= 0 ? '+' : ''}{gameChange} pts actual vs {expectedGameChange} pts expected
+                    (cross-store accounts for the gap)
+                  </p>
+                </div>
+              </div>
+
+            ) : (
+              // ── STATE 3: Real discrepancy — actual error ─────────────────
+              <div style={{
+                padding: '14px 18px', background: '#fef2f2',
+                border: '1px solid #fca5a5', borderLeft: '4px solid #dc2626',
+                borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '12px'
+              }}>
+                <AlertCircle size={18} color="#dc2626" style={{ flexShrink: 0, marginTop: '1px' }} />
+                <div>
+                  <p style={{ margin: '0 0 4px', fontWeight: '700', fontSize: '14px', color: '#991b1b' }}>
+                    {[
+                      !crossAdjWalletBalanced ? `⚠️ Cash discrepancy $${Math.abs(crossAdjWalletDisc).toFixed(2)}` : '',
+                      !crossAdjGameBalanced ? `⚠️ Game pts off ${Math.abs(crossAdjGameDisc)} pts` : '',
+                    ].filter(Boolean).join(' · ')}
+                  </p>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#991b1b', lineHeight: 1.6 }}>
+                    {/* Already subtracted cross-store usage — this is a genuine mismatch */}
+                    After accounting for cross-store shared resource activity,
+                    your store still has an unresolved discrepancy.
+                    Please review your transactions and contact your admin.
+                  </p>
+                  <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#64748b' }}>
+                    {!crossAdjWalletBalanced && (
+                      `Wallet: actual ${walletChange >= 0 ? '+' : ''}$${walletChange.toFixed(2)}, 
+           expected $${expectedWalletChange.toFixed(2)}, 
+           cross-store accounted for $${Math.abs(totalCrossWalletAmt).toFixed(2)} — 
+           still $${Math.abs(crossAdjWalletDisc).toFixed(2)} off. `
+                    )}
+                    {!crossAdjGameBalanced && (
+                      `Game: actual ${gameChange >= 0 ? '+' : ''}${gameChange} pts, 
+           expected ${expectedGameChange} pts, 
+           cross-store accounted for ~${Math.round(totalCrossGamePts)} pts — 
+           still ${Math.abs(crossAdjGameDisc)} pts off.`
+                    )}
                   </p>
                 </div>
               </div>
