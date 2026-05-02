@@ -150,7 +150,9 @@ async function fetchPendingMilestones(playerId) {
     return pb?.data?.milestones || [];
 }
 
-function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory = [], onGrantClick }) {
+// function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory = [], onGrantClick }) {
+function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory = [], onGrantClick, justGranted = new Set() }) {
+
     const MILESTONE_STEP = 50;
     const BONUS_PER_MILESTONE = 5;
 
@@ -237,7 +239,9 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory =
                     const reached = todayDeposits >= v;
                     const pendingObj = pendingByValue[v];
                     const isPending = !!pendingObj;
-                    const isClaimed = grantedMilestoneValues.has(v);
+                    // const isClaimed = grantedMilestoneValues.has(v);
+                    const isClaimed = grantedMilestoneValues.has(v) || justGranted.has(v);
+
                     const isClickable = isPending && !!onGrantClick;
 
                     let bg, border, textColor, badgeBg, badgeColor, badgeLabel, statusNote;
@@ -645,7 +649,9 @@ const fmt = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
 function MilestoneGrantModal({ milestone, player, todayDeposits, onClose, onGranted }) {
     const [games, setGames] = useState([]);
     const [gameId, setGameId] = useState('');
-    const [amount, setAmount] = useState(String(parseFloat(milestone?.bonusAmount || 5).toFixed(2)));
+    // const [amount, setAmount] = useState(String(parseFloat(milestone?.bonusAmount || 5).toFixed(2)));
+    const [amount, setAmount] = useState('');
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -703,9 +709,11 @@ function MilestoneGrantModal({ milestone, player, todayDeposits, onClose, onGran
                             onChange={e => setAmount(e.target.value)}
                             style={{ width: '100%', padding: '10px 12px', border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '15px', fontWeight: '700', color: '#d97706', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }}
                         />
-                        <p style={{ margin: '4px 0 0', fontSize: '11px', color: C.grayLt }}>
+                        {/* <p style={{ margin: '4px 0 0', fontSize: '11px', color: C.grayLt }}>
                             Default: ${parseFloat(milestone?.bonusAmount || 5).toFixed(2)} · edit to grant a different amount
-                        </p>
+                        </p> */}
+                        <p>Enter the bonus amount to grant for this milestone</p>
+
                     </div>
 
                     <div>
@@ -728,9 +736,12 @@ function MilestoneGrantModal({ milestone, player, todayDeposits, onClose, onGran
                 </div>
                 <div style={{ borderBottomLeftRadius: '14px', borderBottomRightRadius: '14px', padding: '14px 20px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: '10px', background: C.bg }}>
                     <button onClick={onClose} style={{ flex: 1, padding: '10px', background: C.white, border: `1px solid ${C.border}`, borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
-                    <button onClick={handleGrant} disabled={loading || !gameId}
+                    <button onClick={handleGrant} disabled={loading || !gameId || !amount || parseFloat(amount) <= 0}
+
                         style={{ flex: 2, padding: '10px', background: loading || !gameId ? '#e2e8f0' : '#d97706', color: loading || !gameId ? C.grayLt : '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: loading || !gameId ? 'not-allowed' : 'pointer' }}>
-                        {loading ? '⏳ Granting…' : `🏆 Grant $${parseFloat(amount || 0).toFixed(2)} Bonus`}
+
+                        {loading ? '⏳ Granting…' : amount && parseFloat(amount) > 0 ? `🏆 Grant $${parseFloat(amount).toFixed(2)} Bonus` : 'Enter amount above'}
+
                     </button>
                 </div>
             </div>
@@ -760,7 +771,31 @@ export default function PlayerDashboard() {
     const [referralBannerDismissed, setReferralBannerDismissed] = useState(false);
     const [cancellingBonusId, setCancellingBonusId] = useState(null);
     const [cancelError, setCancelError] = useState('');
+    const [justGrantedMilestones, setJustGrantedMilestones] = useState(new Set());
 
+
+    // const loadPlayer = useCallback(async (isInitial = false) => {
+    //     if (!playerId) return;
+    //     try {
+    //         if (isInitial) setLoading(true);
+    //         setError('');
+    //         const res = await api.players.getPlayer(parseInt(playerId));
+    //         setPlayer(res.data);
+    //         // ── Fetch pending milestones with auth token ──────────────────
+    //         try {
+    //             const milestones = await fetchPendingMilestones(parseInt(playerId));
+    //             setPendingMilestones(milestones);
+    //         } catch {
+    //             setPendingMilestones([]);
+    //         }
+    //         loadEligible(parseInt(playerId));
+    //         setLastUpdated(new Date());
+    //     } catch (err) {
+    //         setError(err.message || 'Failed to load player.');
+    //     } finally {
+    //         if (isInitial) setLoading(false);
+    //     }
+    // }, [playerId]);
     const loadPlayer = useCallback(async (isInitial = false) => {
         if (!playerId) return;
         try {
@@ -768,14 +803,11 @@ export default function PlayerDashboard() {
             setError('');
             const res = await api.players.getPlayer(parseInt(playerId));
             setPlayer(res.data);
-            // ── Fetch pending milestones with auth token ──────────────────
             try {
                 const milestones = await fetchPendingMilestones(parseInt(playerId));
                 setPendingMilestones(milestones);
-            } catch {
-                setPendingMilestones([]);
-            }
-            loadEligible(parseInt(playerId));
+            } catch { setPendingMilestones([]); }
+            if (isInitial) loadEligible(parseInt(playerId)); // ← ONLY on initial
             setLastUpdated(new Date());
         } catch (err) {
             setError(err.message || 'Failed to load player.');
@@ -800,12 +832,18 @@ export default function PlayerDashboard() {
         return () => clearInterval(interval);
     }, [loadPlayer, showEdit]);
 
+    // const handleSaved = useCallback(() => {
+    //     loadEligible(parseInt(playerId));
+    //     loadPlayer(false);
+    //     setSavedFlash(true);
+    //     setTimeout(() => setSavedFlash(false), 2500);
+    // }, [loadPlayer]);
     const handleSaved = useCallback(() => {
         loadEligible(parseInt(playerId));
         loadPlayer(false);
         setSavedFlash(true);
         setTimeout(() => setSavedFlash(false), 2500);
-    }, [loadPlayer]);
+    }, [loadPlayer, playerId]);
 
     if (loading) return (
         // <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px' }}>
@@ -1003,11 +1041,18 @@ export default function PlayerDashboard() {
 
             <PlayerActivityStats player={player} />
 
+            {/* <DailyMilestoneBar
+                todayDeposits={todayDeposits}
+                pendingBonuses={pendingMilestones}
+                transactionHistory={player.transactionHistory || []}
+                onGrantClick={(m) => setGrantingMilestone(m)}
+            /> */}
             <DailyMilestoneBar
                 todayDeposits={todayDeposits}
                 pendingBonuses={pendingMilestones}
                 transactionHistory={player.transactionHistory || []}
                 onGrantClick={(m) => setGrantingMilestone(m)}
+                justGranted={justGrantedMilestones}   // ← ADD
             />
 
             <PendingBonusesCard
@@ -1017,9 +1062,8 @@ export default function PlayerDashboard() {
 
             {/* ── ELIGIBLE REFERRAL BONUSES ── */}
 
+            {(bonusesAsReferrer.length > 0 || player.referredBy) && (
 
-
-            {(bonusesAsReferrer.length > 0 || player.referredBy || (eligLoading && (player.referralsList?.length > 0 || player.referredBy))) && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
                     {/* ─── SECTION A: This player is the REFERRER ─────────────────────────── */}
@@ -1887,6 +1931,7 @@ export default function PlayerDashboard() {
                                     const effectiveAfter = isCashout && stockBefore != null ? stockBefore + paidAmt : stockAfter;
                                     const remainingPts = isCashout ? depositAmt - paidAmt : 0;
                                     const txId = tx.id ? `TXN${String(tx.id).padStart(6, '0')}` : '—';
+                                    // Add near other useState declarations:
 
                                     return (
                                         <tr key={tx.id}
@@ -1979,10 +2024,25 @@ export default function PlayerDashboard() {
                     player={player}
                     todayDeposits={todayDeposits}
                     onClose={() => setGrantingMilestone(null)}
+                    // onGranted={async () => {
+                    //     setGrantingMilestone(null);
+                    //     await loadPlayer(false);
+                    //     // Re-fetch pending milestones so card flips to "granted ✓"
+                    //     try {
+                    //         const milestones = await fetchPendingMilestones(parseInt(playerId));
+                    //         setPendingMilestones(milestones);
+                    //     } catch { setPendingMilestones([]); }
+                    //     setSavedFlash(true);
+                    //     setTimeout(() => setSavedFlash(false), 2500);
+                    // }}
+
                     onGranted={async () => {
+                        // Optimistically mark as granted immediately — prevents "processing" flash
+                        if (grantingMilestone?.milestone) {
+                            setJustGrantedMilestones(prev => new Set([...prev, grantingMilestone.milestone]));
+                        }
                         setGrantingMilestone(null);
                         await loadPlayer(false);
-                        // Re-fetch pending milestones so card flips to "granted ✓"
                         try {
                             const milestones = await fetchPendingMilestones(parseInt(playerId));
                             setPendingMilestones(milestones);
