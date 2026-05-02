@@ -715,92 +715,79 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
             </section> */}
 
             {/* ── Game Points Reconciliation ── */}
-            <section>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Gamepad2 size={14} color="#7c3aed" /> Game Points
-                  {hasSharedGames && (
-                    <span style={{ fontSize: '11px', fontWeight: '600', color: '#7c3aed', background: '#f5f3ff', padding: '1px 6px', borderRadius: '8px', marginLeft: '4px' }}>
-                      shared games present
-                    </span>
-                  )}
-                </h3>
-                {hasStartSnapshot && (
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>
-                    Expected Δ: <b style={{ color: '#7c3aed' }}>{expectedGameChange >= 0 ? '+' : ''}{expectedGameChange} pts</b>
-                    <span style={{ color: '#94a3b8', marginLeft: '4px', fontSize: '11px' }}>
-                      (D+fees+bonus−CO = {expectedGameDeduction.toFixed(0)} pts removed)
-                    </span>
-                  </span>
+            {/* ── Game Points ── */}
+<section>
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+    <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <Gamepad2 size={14} color="#7c3aed" /> Game Points
+      <span style={{ fontSize: '11px', fontWeight: '400', color: '#94a3b8' }}>(enter actual)</span>
+    </h3>
+    <span style={{ fontSize: '16px', fontWeight: '800', color: '#7c3aed' }}>{totalGames} pts total</span>
+  </div>
+  <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
+    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <thead>
+        <tr>
+          <th style={T.th}>Game</th>
+          <th style={{ ...T.th, textAlign: 'center' }}>Status</th>
+          <th style={{ ...T.th, textAlign: 'right' }}>System</th>
+          <th style={{ ...T.th, textAlign: 'right', color: '#0f172a', minWidth: '130px' }}>Actual ✏️</th>
+        </tr>
+      </thead>
+      <tbody>
+        {games.map(g => {
+          const entered = parseFloat(gameInputs[g.id]);
+          const fetched = Math.round(g.pointStock ?? 0);
+          const hasDisc = !isNaN(entered) && Math.abs(Math.round(entered) - fetched) > 0;
+          return (
+            <tr key={g.id} style={{ background: hasDisc ? '#fefce8' : 'transparent' }}>
+              <td style={T.td}>
+                <b>{g.name}</b>
+                {g.isShared && (
+                  <span style={{ marginLeft: '6px', fontSize: '10px', fontWeight: '700',
+                                 color: '#7c3aed', background: '#ede9fe',
+                                 padding: '1px 5px', borderRadius: '5px' }}>shared</span>
                 )}
-              </div>
-
-              {/* Shared-game cross-store warning */}
-              {hasSharedGames && (
-                <div style={{ padding: '9px 13px', background: '#f5f3ff', border: '1px solid #c4b5fd', borderLeft: '4px solid #7c3aed', borderRadius: '8px', fontSize: '12px', color: '#4c1d95', marginBottom: '10px' }}>
-                  <b>⚠ Shared game(s) detected:</b> {sharedGameNames}.
-                  {' '}These games are used across multiple stores simultaneously.
-                  Any game-point discrepancy shown below may partly reflect
-                  activity from <em>other stores</em> during this shift, not an
-                  error on your end. Cross-store deductions are always expected.
+              </td>
+              <td style={{ ...T.td, textAlign: 'center' }}>
+                <Badge
+                  label={g.status}
+                  color={g.status === 'HEALTHY' ? '#16a34a' : g.status === 'LOW_STOCK' ? '#854d0e' : '#991b1b'}
+                  bg={g.status === 'HEALTHY' ? '#dcfce7' : g.status === 'LOW_STOCK' ? '#fef9c3' : '#fee2e2'}
+                />
+              </td>
+              <td style={{ ...T.td, textAlign: 'right', color: '#94a3b8', fontSize: '12px' }}>{fetched} pts</td>
+              <td style={{ ...T.td, textAlign: 'right' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                  <input
+                    type="number" step="1" min="0"
+                    value={gameInputs[g.id] ?? ''}
+                    onChange={e => setGameInputs(prev => ({ ...prev, [g.id]: e.target.value }))}
+                    style={inputStyle(hasDisc)}
+                  />
+                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>pts</span>
+                  {hasDisc && <span style={{ fontSize: '10px', color: '#f59e0b', fontWeight: '700' }}>⚠️</span>}
                 </div>
-              )}
-
-              <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead><tr>
-                    <th style={T.th}>Game</th>
-                    {hasStartSnapshot && <th style={{ ...T.th, textAlign: 'right' }}>Start</th>}
-                    <th style={{ ...T.th, textAlign: 'right' }}>End</th>
-                    {hasStartSnapshot && <th style={{ ...T.th, textAlign: 'right' }}>Change</th>}
-                  </tr></thead>
-                  <tbody>
-                    {gameRows.map(g => {
-                      const δ = g.endPts - g.startPts;
-                      const isSharedGame = sharedGames.some(sg => sg.id === g.id);
-                      return (
-                        <tr key={g.id} style={{ background: isSharedGame ? '#faf5ff' : 'transparent' }}>
-                          <td style={T.td}>
-                            <b>{g.name}</b>
-                            {isSharedGame && (
-                              <span style={{ marginLeft: '6px', fontSize: '10px', fontWeight: '700', color: '#7c3aed', background: '#ede9fe', padding: '1px 5px', borderRadius: '5px' }}>
-                                shared
-                              </span>
-                            )}
-                          </td>
-                          {hasStartSnapshot && <td style={{ ...T.td, textAlign: 'right', color: '#64748b' }}>{g.startPts} pts</td>}
-                          <td style={{ ...T.td, textAlign: 'right', fontWeight: '600' }}>{g.endPts} pts</td>
-                          {hasStartSnapshot && (
-                            <td style={{ ...T.td, textAlign: 'right', fontWeight: '700', color: clrPts(δ) }}>
-                              {δ >= 0 ? '+' : ''}{δ} pts
-                              {isSharedGame && δ !== 0 && (
-                                <div style={{ fontSize: '10px', color: '#7c3aed', fontWeight: '500' }}>cross-store activity possible</div>
-                              )}
-                            </td>
-                          )}
-                        </tr>
-                      );
-                    })}
-                    <tr style={{ background: '#f8fafc' }}>
-                      <td style={{ ...T.td, fontWeight: '700' }}>Total</td>
-                      {hasStartSnapshot && <td style={{ ...T.td, textAlign: 'right', fontWeight: '600' }}>{startTotalG} pts</td>}
-                      <td style={{ ...T.td, textAlign: 'right', fontWeight: '700' }}>{endTotalG} pts</td>
-                      {hasStartSnapshot && (
-                        <td style={{ ...T.td, textAlign: 'right', fontWeight: '700', color: clrPts(gameChange) }}>
-                          {gameChange >= 0 ? '+' : ''}{gameChange} pts
-                          {!gameBalanced && (
-                            <div style={{ fontSize: '11px', color: hasSharedGames ? '#7c3aed' : '#dc2626', fontWeight: '600' }}>
-                              {hasSharedGames ? '⚡' : '⚠️'} {gameDisc >= 0 ? '+' : ''}{gameDisc} pts vs expected
-                              {hasSharedGames && ' (may include other-store usage)'}
-                            </div>
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </section>
+              </td>
+            </tr>
+          );
+        })}
+        {games.length === 0 && (
+          <tr><td colSpan={4} style={{ ...T.td, textAlign: 'center', color: '#94a3b8' }}>No games found</td></tr>
+        )}
+        <tr style={{ background: '#f5f3ff' }}>
+          <td colSpan={2} style={{ ...T.td, fontWeight: '700', color: '#5b21b6' }}>Combined Total</td>
+          <td style={{ ...T.td, textAlign: 'right', color: '#94a3b8', fontSize: '12px' }}>
+            {Math.round(games.reduce((s, g) => s + (g.pointStock ?? 0), 0))} pts
+          </td>
+          <td style={{ ...T.td, textAlign: 'right', fontWeight: '800', color: '#7c3aed', fontSize: '14px' }}>
+            {totalGames} pts
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 
             {/* ── Active Tasks ── */}
             {tasks.length > 0 && (
