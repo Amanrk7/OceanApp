@@ -734,7 +734,7 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
                   </span>
                 )}
               </div>
- 
+
               {/* Shared-game cross-store warning */}
               {hasSharedGames && (
                 <div style={{ padding: '9px 13px', background: '#f5f3ff', border: '1px solid #c4b5fd', borderLeft: '4px solid #7c3aed', borderRadius: '8px', fontSize: '12px', color: '#4c1d95', marginBottom: '10px' }}>
@@ -745,7 +745,7 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
                   error on your end. Cross-store deductions are always expected.
                 </div>
               )}
- 
+
               <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead><tr>
@@ -976,17 +976,17 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   // Game:   points that should have been removed = Deposits + Fees + Bonuses - Cashouts
   //         (so the actual pointStock change is the negative of that)
   const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
-  const expectedGameChange    = Math.round(-expectedGameDeduction);
- 
-  const walletDisc  = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
-  const gameDisc    = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
+  const expectedGameChange = Math.round(-expectedGameDeduction);
+
+  const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
+  const gameDisc = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
   const walletBalanced = Math.abs(walletDisc) < 0.02;
-  const gameBalanced   = Math.abs(gameDisc)   < 2;   // 2-pt tolerance for rounding
+  const gameBalanced = Math.abs(gameDisc) < 2;   // 2-pt tolerance for rounding
   const balanced = !hasStartSnapshot ? null : (walletBalanced && gameBalanced);
- 
+
   // Detect shared games so we can annotate discrepancies that may come from other stores
-  const sharedGames     = endGames.filter(g => g.isShared);
-  const hasSharedGames  = sharedGames.length > 0;
+  const sharedGames = endGames.filter(g => g.isShared);
+  const hasSharedGames = sharedGames.length > 0;
   const sharedGameNames = sharedGames.map(g => g.name).join(', ');
 
   const walletRows = endWallets.map(w => {
@@ -1226,25 +1226,6 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
               </div>
             </section>
 
-            {/* Balance Banner */}
-            {/* /* {balanced === null ? (
-              <div style={{ padding: '14px 18px', background: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: '4px solid #94a3b8', borderRadius: '10px', fontSize: '13px', color: '#475569' }}>
-                ℹ️ Reconciliation unavailable — no start-of-shift snapshot recorded.
-              </div>
-            ) : (
-              <div style={{ padding: '14px 18px', borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '12px', background: balanced ? '#f0fdf4' : '#fef2f2', border: `1px solid ${balanced ? '#86efac' : '#fca5a5'}`, borderLeft: `4px solid ${balanced ? '#16a34a' : '#dc2626'}` }}>
-                {balanced ? <CheckCircle size={18} color="#16a34a" style={{ flexShrink: 0, marginTop: '1px' }} /> : <AlertCircle size={18} color="#dc2626" style={{ flexShrink: 0, marginTop: '1px' }} />}
-                <div>
-                  <p style={{ margin: '0 0 4px', fontWeight: '700', color: balanced ? '#166534' : '#991b1b', fontSize: '14px' }}>
-                    {balanced ? '✓ Fully Balanced' : `⚠️ Discrepancy${!walletBalanced ? ` — Cash $${Math.abs(walletDisc).toFixed(2)}` : ''}${!gameBalanced ? ` — Points ${Math.abs(gameDisc)} pts` : ''}`}
-                  </p>
-                  <p style={{ margin: 0, fontSize: '12px', color: balanced ? '#16a34a' : '#dc2626', lineHeight: 1.5 }}>
-                    D ${deposits.toFixed(2)} − CO ${cashouts.toFixed(2)} = Net ${netProfit.toFixed(2)} · Expenses ${totalShiftExpenses.toFixed(2)} · Takeouts ${totalShiftTakeouts.toFixed(2)}
-                  </p>
-                </div>
-              </div>
-            )} */ */}
-
             {/* ── Reconciliation Banner ── */}
             {balanced === null ? (
               <div style={{ padding: '14px 18px', background: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: '4px solid #94a3b8', borderRadius: '10px', fontSize: '13px', color: '#475569' }}>
@@ -1265,26 +1246,28 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                     {balanced
                       ? '✓ Fully Balanced'
                       : [
-                          !walletBalanced ? `⚠️ Cash discrepancy $${Math.abs(walletDisc).toFixed(2)}` : '',
-                          !gameBalanced   ? `${hasSharedGames ? '⚡ Game points off' : '⚠️ Game points off'} ${Math.abs(gameDisc)} pts` : '',
-                        ].filter(Boolean).join(' · ')
+                        !walletBalanced ? `⚠️ Cash discrepancy $${Math.abs(walletDisc).toFixed(2)}` : '',
+                        !gameBalanced ? `${hasSharedGames ? '⚡ Game points off' : '⚠️ Game points off'} ${Math.abs(gameDisc)} pts` : '',
+                      ].filter(Boolean).join(' · ')
                     }
                   </p>
-                  <p style={{ margin: 0, fontSize: '12px', lineHeight: 1.6,
-                      color: balanced ? '#16a34a' : hasSharedGames && walletBalanced ? '#6d28d9' : '#991b1b' }}>
+                  <p style={{
+                    margin: 0, fontSize: '12px', lineHeight: 1.6,
+                    color: balanced ? '#16a34a' : hasSharedGames && walletBalanced ? '#6d28d9' : '#991b1b'
+                  }}>
                     {balanced
                       ? `Net profit $${netProfit.toFixed(2)} (D−CO) · ` +
-                        `Expected wallet Δ ${expectedWalletChange >= 0 ? '+' : ''}$${expectedWalletChange.toFixed(2)} ` +
-                        `(D−CO−fees) · Expected game Δ −${expectedGameDeduction.toFixed(0)} pts (D+fees+bonus−CO)`
+                      `Expected wallet Δ ${expectedWalletChange >= 0 ? '+' : ''}$${expectedWalletChange.toFixed(2)} ` +
+                      `(D−CO−fees) · Expected game Δ −${expectedGameDeduction.toFixed(0)} pts (D+fees+bonus−CO)`
                       : [
-                          !walletBalanced
-                            ? `Wallet: actual ${walletChange >= 0 ? '+' : ''}$${walletChange.toFixed(2)}, expected $${expectedWalletChange.toFixed(2)} (D−CO−fees)`
-                            : '',
-                          !gameBalanced
-                            ? `Game: actual ${gameChange >= 0 ? '+' : ''}${gameChange} pts, expected ${expectedGameChange} pts (D+fees+bonus−CO = ${expectedGameDeduction.toFixed(0)} pts removed)` +
-                              (hasSharedGames ? ` — shared games (${sharedGameNames}) may account for extra deductions from other stores` : '')
-                            : '',
-                        ].filter(Boolean).join('\n')
+                        !walletBalanced
+                          ? `Wallet: actual ${walletChange >= 0 ? '+' : ''}$${walletChange.toFixed(2)}, expected $${expectedWalletChange.toFixed(2)} (D−CO−fees)`
+                          : '',
+                        !gameBalanced
+                          ? `Game: actual ${gameChange >= 0 ? '+' : ''}${gameChange} pts, expected ${expectedGameChange} pts (D+fees+bonus−CO = ${expectedGameDeduction.toFixed(0)} pts removed)` +
+                          (hasSharedGames ? ` — shared games (${sharedGameNames}) may account for extra deductions from other stores` : '')
+                          : '',
+                      ].filter(Boolean).join('\n')
                     }
                   </p>
                 </div>
@@ -1607,19 +1590,19 @@ function printShiftPDF(shift) {
   const cashoutFees = r2(es?.cashoutFees ?? 0);
   // const expectedWallet = r2((deposits - depositFees) - (cashouts + cashoutFees));
   // const expectedGame = Math.round(-(deposits + bonuses - cashouts));
-  
+
   // const walletDisc = r2((es?.walletDiscrepancy) ?? r2(walletChange - expectedWallet));
   // const gameDisc = Math.round((es?.gameDiscrepancy) ?? (gameChange - expectedGame));
 
-    // Wallet formula: D − CO − fees
+  // Wallet formula: D − CO − fees
   const expectedWallet = r2(deposits - cashouts - depositFees - cashoutFees);
   // Game formula:   expected deduction = D + fees + bonus − CO
   const expectedGameDeductionPdf = r2(deposits + depositFees + cashoutFees + bonuses - cashouts);
-  const expectedGame   = Math.round(-expectedGameDeductionPdf);
-  const walletDisc     = r2((es?.walletDiscrepancy) ?? r2(walletChange - expectedWallet));
-  const gameDisc       = Math.round((es?.gameDiscrepancy) ?? (gameChange - expectedGame));
+  const expectedGame = Math.round(-expectedGameDeductionPdf);
+  const walletDisc = r2((es?.walletDiscrepancy) ?? r2(walletChange - expectedWallet));
+  const gameDisc = Math.round((es?.gameDiscrepancy) ?? (gameChange - expectedGame));
   // Detect shared games from the end snapshot (if available)
-  const endGameSnap    = es?.gameSnapshot ?? [];
+  const endGameSnap = es?.gameSnapshot ?? [];
   // We flag shared games via a "shared" property if it was stored; otherwise show a generic note
   const sharedGameNoteForPdf = endGameSnap.some(g => g.isShared)
     ? 'Note: some games are shared across stores — game discrepancies may include cross-store activity.'
@@ -2055,8 +2038,8 @@ export const ShiftsPage = () => {
               </div>
             </div>
             <div style={{ padding: '10px 16px 16px' }}>
-  <SmartTaskList tasks={tasks} variant="shifts" pageSize={20} />
-</div>
+              <SmartTaskList tasks={tasks} variant="shifts" pageSize={20} />
+            </div>
           </div>
         )}
 
