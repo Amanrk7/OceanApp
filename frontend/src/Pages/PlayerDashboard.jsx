@@ -338,11 +338,10 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory =
                             badgeStyle = { background: '#dcfce7', color: '#166534', border: '1px solid #86efac' };
                         
                            } else {
-    // reached, no pending record found yet
+    bg = '#f1f5f9'; border = '#e2e8f0';
+    labelColor = '#64748b'; sublabelColor = '#94a3b8';
     badge = 'No record yet';
     badgeStyle = { background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0' };
-    // sublabel:
-    statusNote = 'Bonus engine may still be running';
 }
 
                         return (
