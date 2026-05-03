@@ -237,7 +237,16 @@ const ManageWalletsPage = () => {
         } catch (err) { setGlobalError(err.message || 'Failed to update wallet status'); }
         finally { setTogglingId(null); }
     };
-
+const handleToggleShare = async (wallet) => {
+    setGlobalError(null);
+    try {
+        await api.wallets.updateWallet(wallet.id, { isShared: !wallet.isShared });
+        await loadWallets(true);
+        flash(`"${wallet.name}" is now ${!wallet.isShared ? 'shared across all stores' : 'store-private'}.`);
+    } catch (err) {
+        setGlobalError(err.message || 'Failed to update share status.');
+    }
+};
     // ── add ──────────────────────────────────────────────────────────────────
     const handleAdd = async (e) => {
         e.preventDefault(); setAddError(null);
@@ -466,6 +475,21 @@ const ManageWalletsPage = () => {
 
                                                     {/* Actions */}
                                                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                                                        <button
+        onClick={() => handleToggleShare(wallet)}
+        title={wallet.isShared ? 'Shared — click to make store-private' : 'Private — click to share across stores'}
+        style={{
+            width: '28px', height: '28px', borderRadius: '6px',
+            border: `1px solid ${wallet.isShared ? '#bfdbfe' : '#e2e8f0'}`,
+            background: wallet.isShared ? '#eff6ff' : '#f8fafc',
+            color: wallet.isShared ? '#2563eb' : '#cbd5e1',
+            cursor: 'pointer', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: '12px', padding: 0,
+        }}
+    >
+        🔗
+    </button>
+
                                                         <button onClick={() => openEdit(wallet)}
                                                             style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', background: SKY, color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
                                                             <Edit2 style={{ width: '11px', height: '11px' }} /> Edit
