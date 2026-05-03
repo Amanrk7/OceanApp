@@ -11,7 +11,6 @@ import {
 import { fmtTXTime } from '../utils/txTime';
 import EditPlayer from './Editplayer';
 import PendingBonusesCard from './PendingBonusesCard';
-// import MilestoneGrantModal from './MilestoneGrantModal';
 
 
 const C = {
@@ -118,14 +117,6 @@ function TxPaymentProgress({ paid, total }) {
     );
 }
 
-// ── Helper to fetch pending milestones (reused in loadPlayer + onGranted) ────
-// const BACKEND_BASE = (
-//     import.meta.env.VITE_API_URL ||
-//     import.meta.env.VITE_BACKEND_URL ||
-//     import.meta.env.VITE_API_BASE_URL ||
-//     'https://oceanappbackend.onrender.com'
-// ).replace(/\/api\/?$/, '');
-
 const BACKEND_BASE = (() => {
     const raw = (
         import.meta.env.VITE_API_URL ||
@@ -134,7 +125,7 @@ const BACKEND_BASE = (() => {
         'https://oceanappbackend.onrender.com'
     ).trim();
     try {
-        return new URL(raw).origin;   // strips /api, /api/, trailing slashes, spaces
+        return new URL(raw).origin;
     } catch {
         return raw.replace(/\/api\/?$/, '');
     }
@@ -151,19 +142,19 @@ async function fetchPendingMilestones(playerId) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 1.  DailyMilestoneBar 
+// DailyMilestoneBar — REVISED
 // ══════════════════════════════════════════════════════════════════════════════
 
 function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory = [], onGrantClick, justGranted = new Set() }) {
 
     const MILESTONE_STEP = 50;
-    const BONUS_PER_MILESTONE = 5;
 
     const texasToday = new Date().toLocaleDateString('en-US', {
         timeZone: 'America/Chicago',
         month: 'short', day: 'numeric', year: 'numeric'
     });
 
+    // Build a set of milestone values that already have a granted transaction today
     const grantedMilestoneValues = new Set(
         transactionHistory
             .filter(tx => {
@@ -191,7 +182,7 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory =
 
     const pendingCount = Object.keys(pendingByValue).length;
 
-    /* ── empty state ───────────────────────────────────────────────── */
+    /* ── empty state ── */
     if (todayDeposits === 0 && (pendingBonuses || []).length === 0) {
         return (
             <div style={{
@@ -202,51 +193,54 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory =
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
                     <span style={{ fontSize: '16px' }}>🎯</span>
                     <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Daily Milestones</p>
-                    <span style={{ padding: '2px 9px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', background: '#f8fafc', color: '#94a3b8', border: '1px solid #e2e8f0' }}>$50 each · resets midnight</span>
+                    <span style={{ padding: '2px 9px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', background: '#f8fafc', color: '#94a3b8', border: '1px solid #e2e8f0' }}>Every $50 · resets midnight</span>
                 </div>
                 <p style={{ margin: '12px 0 0', fontSize: '13px', color: '#94a3b8', padding: '14px 18px', background: '#f8fafc', borderRadius: '10px', textAlign: 'center' }}>
-                    No deposits today — first $50 unlocks a bonus
+                    No deposits today — first $50 unlocks a milestone bonus
                 </p>
             </div>
         );
     }
 
-    /* ── main card ─────────────────────────────────────────────────── */
-    const borderColor = milestonesReached > 0 ? '#bbf7d0' : '#e2e8f0';
-    const headerColor = milestonesReached > 0 ? '#15803d' : '#475569';
+    /* ── main card ── */
+    const hasPending = pendingCount > 0;
+    const borderColor = hasPending ? '#fde68a' : milestonesReached > 0 ? '#bbf7d0' : '#e2e8f0';
+    const headerBg = hasPending ? '#fffbeb' : milestonesReached > 0 ? '#f0fdf4' : '#fafafa';
+    const headerBorderColor = hasPending ? '#fde68a' : milestonesReached > 0 ? '#dcfce7' : '#f1f5f9';
 
     return (
         <div style={{
-            background: '#fff', borderRadius: '16px',
+            background: '#fff',
+            borderRadius: '16px',
             border: `1px solid ${borderColor}`,
-            boxShadow: milestonesReached > 0
-                ? '0 0 0 4px rgba(134,239,172,.12), 0 2px 12px rgba(15,23,42,.06)'
-                : '0 2px 12px rgba(15,23,42,.06)',
+            boxShadow: hasPending
+                ? '0 0 0 4px rgba(253,230,138,.15), 0 2px 16px rgba(15,23,42,.08)'
+                : milestonesReached > 0
+                    ? '0 0 0 4px rgba(134,239,172,.12), 0 2px 12px rgba(15,23,42,.06)'
+                    : '0 2px 12px rgba(15,23,42,.06)',
             overflow: 'hidden',
         }}>
 
             {/* ── header strip ── */}
             <div style={{
-                padding: '18px 26px 16px',
-                borderBottom: `1px solid ${milestonesReached > 0 ? '#dcfce7' : '#f1f5f9'}`,
-                background: milestonesReached > 0 ? '#f0fdf4' : '#fafafa',
+                padding: '16px 24px',
+                borderBottom: `1px solid ${headerBorderColor}`,
+                background: headerBg,
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px',
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                        <span style={{ fontSize: '14px' }}>🏆</span>
-                        <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: headerColor, textTransform: 'uppercase', letterSpacing: '0.7px' }}>
-                            Daily Milestones
-                        </p>
-                    </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '15px' }}>🏆</span>
+                    <p style={{ margin: 0, fontSize: '11px', fontWeight: '800', color: hasPending ? '#b45309' : milestonesReached > 0 ? '#15803d' : '#475569', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                        Daily Milestones
+                    </p>
                     {milestonesReached > 0 && (
-                        <span style={{ padding: '2px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0' }}>
+                        <span style={{ padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0' }}>
                             {milestonesReached} reached
                         </span>
                     )}
-                    {pendingCount > 0 && (
-                        <span style={{ padding: '2px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>
-                            {pendingCount} pending
+                    {hasPending && (
+                        <span style={{ padding: '2px 8px', borderRadius: '20px', fontSize: '10px', fontWeight: '700', background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>
+                            {pendingCount} pending grant
                         </span>
                     )}
                 </div>
@@ -254,11 +248,14 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory =
             </div>
 
             {/* ── body ── */}
-            <div style={{ padding: '22px 26px' }}>
+            <div style={{ padding: '20px 24px' }}>
 
-                {/* amount + next label */}
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '18px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '32px', fontWeight: '800', letterSpacing: '-1px', color: milestonesReached > 0 ? '#15803d' : '#0f172a', lineHeight: 1 }}>
+                {/* amount row */}
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                    <span style={{
+                        fontSize: '30px', fontWeight: '800', letterSpacing: '-1px',
+                        color: milestonesReached > 0 ? '#15803d' : '#0f172a', lineHeight: 1,
+                    }}>
                         ${todayDeposits.toFixed(2)}
                     </span>
                     <span style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '500' }}>deposited today</span>
@@ -267,35 +264,34 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory =
                         color: milestonesReached >= slotsToShow ? '#15803d' : '#b45309',
                     }}>
                         {milestonesReached >= slotsToShow
-                            ? '✓ All milestones reached'
+                            ? '✓ All visible milestones reached'
                             : `$${toNext.toFixed(2)} to next milestone`}
                     </span>
                 </div>
 
-                {/* progress bar + tick marks */}
+                {/* progress bar */}
                 <div style={{ position: 'relative', marginBottom: '20px' }}>
-                    {/* track */}
-                    <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden', position: 'relative' }}>
+                    <div style={{ height: '7px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden', position: 'relative' }}>
                         <div style={{
                             position: 'absolute', left: 0, top: 0, height: '100%',
                             width: `${fillPct}%`,
-                            background: milestonesReached > 0
-                                ? 'linear-gradient(90deg, #16a34a, #4ade80)'
-                                : 'linear-gradient(90deg, #0ea5e9, #818cf8)',
+                            background: hasPending
+                                ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+                                : milestonesReached > 0
+                                    ? 'linear-gradient(90deg, #16a34a, #4ade80)'
+                                    : 'linear-gradient(90deg, #0ea5e9, #818cf8)',
                             borderRadius: '99px',
                             transition: 'width .6s cubic-bezier(.4,0,.2,1)',
                         }} />
-                        {/* dividers */}
                         {slots.slice(0, -1).map((v, i) => (
                             <div key={i} style={{
                                 position: 'absolute', left: `${(v / totalBarWidth) * 100}%`,
                                 top: 0, width: '1px', height: '100%',
-                                background: '#fff', opacity: 0.7,
+                                background: '#fff', opacity: 0.8,
                             }} />
                         ))}
                     </div>
-                    {/* dollar labels below */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', paddingRight: '2px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px' }}>
                         <span style={{ fontSize: '10px', color: '#cbd5e1', fontWeight: '600' }}>$0</span>
                         {slots.map(v => (
                             <span key={v} style={{
@@ -309,8 +305,8 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory =
                     </div>
                 </div>
 
-                {/* milestone cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))', gap: '10px' }}>
+                {/* milestone cards grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(152px, 1fr))', gap: '10px' }}>
                     {slots.map(v => {
                         const reached = todayDeposits >= v;
                         const pendingObj = pendingByValue[v];
@@ -318,100 +314,122 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory =
                         const isClaimed = grantedMilestoneValues.has(v) || justGranted.has(v);
                         const isClickable = isPending && !!onGrantClick;
 
-                        /* state-dependent style tokens */
-                        let bg, border, labelColor, sublabelColor, badge, badgeStyle;
+                        // Determine card state
+                        let state;
+                        if (!reached) state = 'locked';
+                        else if (isPending) state = 'pending';
+                        else if (isClaimed) state = 'claimed';
+                        else state = 'reached'; // reached but bonus not yet in system
 
-                        if (!reached) {
-                            bg = '#f8fafc'; border = '#e2e8f0';
-                            labelColor = '#94a3b8'; sublabelColor = '#cbd5e1';
-                            badge = `$${(v - todayDeposits).toFixed(0)} away`;
-                            badgeStyle = { background: '#f1f5f9', color: '#94a3b8', border: '1px solid #e2e8f0' };
-                        } else if (isPending) {
-                            bg = '#fffbeb'; border = '#fde68a';
-                            labelColor = '#92400e'; sublabelColor = '#b45309';
-                            badge = 'Grant now';
-                            badgeStyle = { background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' };
-                        } else if (isClaimed) {
-                            bg = '#f0fdf4'; border = '#86efac';
-                            labelColor = '#166534'; sublabelColor = '#16a34a';
-                            badge = 'Granted ✓';
-                            badgeStyle = { background: '#dcfce7', color: '#166534', border: '1px solid #86efac' };
-                        
-                           } else {
-    bg = '#f1f5f9'; border = '#e2e8f0';
-    labelColor = '#64748b'; sublabelColor = '#94a3b8';
-    badge = 'No record yet';
-    badgeStyle = { background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0' };
-}
+                        const stateStyles = {
+                            locked: {
+                                bg: '#f8fafc', border: '#e8edf4',
+                                labelColor: '#94a3b8', amtColor: '#b8c5d6',
+                                sublabelColor: '#c5cfdb',
+                            },
+                            pending: {
+                                bg: '#fffbeb', border: '#fcd34d',
+                                labelColor: '#92400e', amtColor: '#d97706',
+                                sublabelColor: '#b45309',
+                            },
+                            claimed: {
+                                bg: '#f0fdf4', border: '#86efac',
+                                labelColor: '#166534', amtColor: '#16a34a',
+                                sublabelColor: '#4ade80',
+                            },
+                            reached: {
+                                bg: '#f8fafc', border: '#cbd5e1',
+                                labelColor: '#64748b', amtColor: '#94a3b8',
+                                sublabelColor: '#94a3b8',
+                            },
+                        }[state];
+
+                        const bonusAmt = pendingObj?.bonusAmount ?? null;
 
                         return (
                             <div
                                 key={v}
                                 onClick={() => isClickable && onGrantClick(pendingObj)}
-                                title={isClickable ? `Click to grant $${BONUS_PER_MILESTONE} bonus` : undefined}
+                                title={isClickable ? 'Click to grant milestone bonus' : undefined}
                                 style={{
-                                    padding: '14px 16px',
-                                    background: bg,
-                                    border: `1px solid ${border}`,
+                                    padding: '13px 14px',
+                                    background: stateStyles.bg,
+                                    border: `1px solid ${stateStyles.border}`,
                                     borderRadius: '12px',
-                                    opacity: reached ? 1 : 0.5,
+                                    opacity: reached ? 1 : 0.52,
                                     cursor: isClickable ? 'pointer' : 'default',
                                     transition: 'transform .15s ease, box-shadow .15s ease',
-                                    position: 'relative',
-                                    boxShadow: isPending && !isClaimed
-                                        ? '0 0 0 3px rgba(253,230,138,.4)'
+                                    boxShadow: state === 'pending'
+                                        ? '0 0 0 3px rgba(253,211,77,.25)'
                                         : 'none',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '6px',
                                 }}
                                 onMouseEnter={e => {
                                     if (isClickable) {
                                         e.currentTarget.style.transform = 'translateY(-2px)';
-                                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(217,119,6,.2), 0 0 0 3px rgba(253,230,138,.5)';
+                                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(217,119,6,.2), 0 0 0 3px rgba(253,211,77,.4)';
                                     }
                                 }}
                                 onMouseLeave={e => {
                                     if (isClickable) {
                                         e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(253,230,138,.4)';
+                                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(253,211,77,.25)';
                                     }
                                 }}
                             >
-                                {/* milestone value */}
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                    <span style={{ fontSize: '11px', fontWeight: '700', color: labelColor }}>
+                                {/* Row 1: milestone label + status badge */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', minHeight: '20px' }}>
+                                    <span style={{ fontSize: '11px', fontWeight: '700', color: stateStyles.labelColor, whiteSpace: 'nowrap' }}>
                                         ${v} milestone
                                     </span>
+                                    {/* Status badge — fixed width, right-aligned */}
                                     <span style={{
+                                        flexShrink: 0,
                                         fontSize: '9px', fontWeight: '700',
-                                        padding: '2px 7px', borderRadius: '20px',
-                                        ...badgeStyle,
+                                        padding: '2px 6px', borderRadius: '20px',
+                                        lineHeight: '14px',
+                                        ...(state === 'locked' && { background: '#f1f5f9', color: '#94a3b8', border: '1px solid #e2e8f0' }),
+                                        ...(state === 'pending' && { background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }),
+                                        ...(state === 'claimed' && { background: '#dcfce7', color: '#166534', border: '1px solid #86efac' }),
+                                        ...(state === 'reached' && { background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0' }),
                                     }}>
-                                        {badge}
+                                        {state === 'locked' && `$${(v - todayDeposits).toFixed(0)} away`}
+                                        {state === 'pending' && 'Grant now'}
+                                        {state === 'claimed' && 'Granted ✓'}
+                                        {state === 'reached' && 'Reached ✓'}
                                     </span>
                                 </div>
 
-                                {/* bonus amount — large */}
-                                <div style={{ fontSize: '22px', fontWeight: '800', color: labelColor, lineHeight: 1, marginBottom: '4px' }}>
-                                    +${BONUS_PER_MILESTONE.toFixed(2)}
+                                {/* Row 2: Bonus amount or placeholder */}
+                                <div style={{ fontSize: '20px', fontWeight: '800', color: stateStyles.amtColor, lineHeight: 1 }}>
+                                    {state === 'pending' && bonusAmt != null
+                                        ? `+$${parseFloat(bonusAmt).toFixed(2)}`
+                                        : state === 'claimed' && bonusAmt != null
+                                            ? `+$${parseFloat(bonusAmt).toFixed(2)}`
+                                            : state === 'locked' || state === 'reached'
+                                                ? '—'
+                                                : '—'
+                                    }
                                 </div>
 
-                                <div style={{ fontSize: '10px', color: sublabelColor, marginTop: '2px' }}>
-                                    {!reached
-                                        ? `Need $${(v - todayDeposits).toFixed(0)} more`
-                                        : isPending
-                                            ? 'Tap to grant instantly'
-                                            : isClaimed
-                                                ? 'Bonus was credited'
-                                                : 'Bonus engine processing'}
+                                {/* Row 3: sublabel */}
+                                <div style={{ fontSize: '10px', color: stateStyles.sublabelColor, lineHeight: '1.4' }}>
+                                    {state === 'locked' && `Need $${(v - todayDeposits).toFixed(0)} more to unlock`}
+                                    {state === 'pending' && 'Tap to grant instantly'}
+                                    {state === 'claimed' && 'Bonus was credited ✓'}
+                                    {state === 'reached' && 'Bonus amount set on grant'}
                                 </div>
 
-                                {/* arrow hint for clickable */}
-                                {isClickable && (
+                                {/* Row 4: CTA strip for pending */}
+                                {state === 'pending' && (
                                     <div style={{
-                                        marginTop: '10px', paddingTop: '8px',
-                                        borderTop: '1px solid #fde68a',
+                                        marginTop: '4px', paddingTop: '8px',
+                                        borderTop: `1px solid #fcd34d`,
                                         fontSize: '11px', fontWeight: '700',
-                                        color: '#b45309', display: 'flex',
-                                        alignItems: 'center', gap: '4px',
+                                        color: '#b45309',
+                                        display: 'flex', alignItems: 'center', gap: '4px',
                                     }}>
                                         Grant bonus →
                                     </div>
@@ -422,16 +440,16 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory =
                 </div>
 
                 {/* tip banner */}
-                {pendingCount > 0 && (
+                {hasPending && (
                     <div style={{
                         marginTop: '14px', padding: '10px 16px',
                         background: '#fffbeb', border: '1px solid #fde68a',
                         borderRadius: '10px', fontSize: '12px', color: '#92400e',
                         display: 'flex', alignItems: 'center', gap: '8px',
                     }}>
-                        <span style={{ fontSize: '14px' }}>💡</span>
+                        <span style={{ fontSize: '14px', flexShrink: 0 }}>💡</span>
                         <span>
-                            Tap any <strong>"Grant now"</strong> card above to instantly credit the $5 milestone bonus.
+                            Tap any <strong>"Grant now"</strong> card to set the bonus amount and credit it instantly.
                         </span>
                     </div>
                 )}
@@ -443,32 +461,19 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory =
 function PlayerActivityStats({ player }) {
     const txns = player.transactionHistory || [];
 
-    const now = new Date();
-    // const startOf = (daysAgo) => {
-    //     const d = new Date(now);
-    //     d.setDate(d.getDate() - daysAgo);
-    //     d.setHours(0, 0, 0, 0);
-    //     return d;
-    // };
-    // const start1d = startOf(0);
-    // const start7d = startOf(7);
-    // const start30d = startOf(30);
-
     const getTexasDayCutoff = (daysAgo) => {
         const d = new Date();
         d.setDate(d.getDate() - daysAgo);
-        // Get the date string in Texas time
         const texasStr = d.toLocaleDateString('en-US', {
             timeZone: 'America/Chicago',
             month: 'short', day: 'numeric', year: 'numeric'
         });
-        // Parse back in local time and set to midnight — now aligned with parseTxDate
         const parsed = new Date(texasStr);
         parsed.setHours(0, 0, 0, 0);
         return parsed;
     };
 
-    const start1d = getTexasDayCutoff(0);   // Texas today at local midnight
+    const start1d = getTexasDayCutoff(0);
     const start7d = getTexasDayCutoff(7);
     const start30d = getTexasDayCutoff(30);
 
@@ -524,11 +529,10 @@ function PlayerActivityStats({ player }) {
     };
 
     const PERIODS = [
-        { label: '1 day', hColor: '#059669', bgAlpha: 'rgba(16,185,129,.04)', dep: dep1d, cash: cash1d, bon: bon1d, total: false },
-        { label: '7 days', hColor: '#0284c7', bgAlpha: 'rgba(14,165,233,.04)', dep: dep7d, cash: cash7d, bon: bon7d, total: false },
-        { label: '30 days', hColor: '#7c3aed', bgAlpha: 'rgba(139,92,246,.04)', dep: dep30d, cash: cash30d, bon: bon30d, total: false },
-        // { label: 'All-time', hColor: '#d97706', bgAlpha: 'rgba(249,115,22,.05)', dep: dep30d, cash: cash30d, bon: bonTotal, total: true },
-        { label: 'All-time', hColor: '#d97706', bgAlpha: 'rgba(249,115,22,.05)', dep: depAll, cash: cashAll, bon: bonTotal, total: true },
+        { label: '1 day', hColor: '#059669', dep: dep1d, cash: cash1d, bon: bon1d },
+        { label: '7 days', hColor: '#0284c7', dep: dep7d, cash: cash7d, bon: bon7d },
+        { label: '30 days', hColor: '#7c3aed', dep: dep30d, cash: cash30d, bon: bon30d },
+        { label: 'All-time', hColor: '#d97706', dep: depAll, cash: cashAll, bon: bonTotal, total: true },
     ];
 
     const ROWS = [
@@ -554,11 +558,11 @@ function PlayerActivityStats({ player }) {
             </div>
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '480px' }}>
-                    <thead style={{ background: 'transparent' }}>
+                    <thead>
                         <tr>
                             <th style={{ ...thStyle, textAlign: 'left' }}>Type</th>
                             {PERIODS.map(p => (
-                                <th key={p.label} style={{ ...thStyle, color: p.hColor, background: 'transparent' }}>{p.label}</th>
+                                <th key={p.label} style={{ ...thStyle, color: p.hColor }}>{p.label}</th>
                             ))}
                         </tr>
                     </thead>
@@ -569,14 +573,11 @@ function PlayerActivityStats({ player }) {
                                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: row.dot, flexShrink: 0 }} />
                                     {row.label}
                                 </td>
-                                {PERIODS.map(p => {
-                                    const isTotal = p.total && row.key !== 'bon';
-                                    return (
-                                        <td key={p.label} style={{ ...tdBase, color: row.color, background: 'transparent' }}>
-                                            {fmt(row.getVal(p))}
-                                        </td>
-                                    );
-                                })}
+                                {PERIODS.map(p => (
+                                    <td key={p.label} style={{ ...tdBase, color: row.color }}>
+                                        {fmt(row.getVal(p))}
+                                    </td>
+                                ))}
                             </tr>
                         ))}
                         <tr>
@@ -586,7 +587,7 @@ function PlayerActivityStats({ player }) {
                             </td>
                             {PERIODS.map(p => {
                                 const { label, color } = net(p.dep, p.cash);
-                                return <td key={p.label} style={{ ...tdBase, color, fontSize: '12px', background: 'transparent' }}>{label}</td>;
+                                return <td key={p.label} style={{ ...tdBase, color, fontSize: '12px' }}>{label}</td>;
                             })}
                         </tr>
                     </tbody>
@@ -596,8 +597,6 @@ function PlayerActivityStats({ player }) {
                 <span style={{ padding: '4px 10px', background: '#f0fdf4', color: '#059669', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{depCount30} deposit{depCount30 !== 1 ? 's' : ''} (30d)</span>
                 <span style={{ padding: '4px 10px', background: '#fff1f2', color: '#dc2626', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{cashCount30} cashout{cashCount30 !== 1 ? 's' : ''} (30d)</span>
                 <span style={{ padding: '4px 10px', background: '#faf5ff', color: '#7c3aed', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>{bonCount30} bonus{bonCount30 !== 1 ? 'es' : ''} (30d)</span>
-                {/* <span style={{ fontSize: '11px', color: C.grayLt, marginLeft: 'auto' }}>★ All-time from bonus tracker &nbsp;·&nbsp; deposits/cashouts limited to 30d history</span> */}
-                {/* <span style={{ fontSize: '11px', color: C.grayLt, marginLeft: 'auto' }}>★ All-time bonuses from bonus tracker &nbsp;·&nbsp; dep/cashout from last 200 txns</span> */}
             </div>
         </div>
     );
@@ -744,22 +743,6 @@ function DeleteModal({ player, onClose, onDeleted }) {
     );
 }
 
-function CustomChartTooltip({ active, payload, label }) {
-    if (!active || !payload || !payload.length) return null;
-    return (
-        <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: '10px', padding: '10px 14px', boxShadow: '0 4px 16px rgba(15,23,42,.12)', fontSize: '12px' }}>
-            <p style={{ margin: '0 0 8px', fontWeight: '700', color: C.slate }}>{label}</p>
-            {payload.map(entry => (
-                <div key={entry.dataKey} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: entry.color, flexShrink: 0 }} />
-                    <span style={{ color: C.gray }}>{entry.name}:</span>
-                    <span style={{ fontWeight: '700', color: entry.color }}>${parseFloat(entry.value).toFixed(2)}</span>
-                </div>
-            ))}
-        </div>
-    );
-}
-
 function PeopleChip({ person, emoji = '👤', onClick }) {
     return (
         <div onClick={onClick}
@@ -785,7 +768,7 @@ const TIER_CONFIG = {
 function SavedFlash({ show }) {
     if (!show) return null;
     return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '20px', fontSize: '12px', fontWeight: '700', color: '#166534', animation: 'fadeIn .2s ease' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '20px', fontSize: '12px', fontWeight: '700', color: '#166634', animation: 'fadeIn .2s ease' }}>
             ✓ Saved
         </span>
     );
@@ -793,13 +776,11 @@ function SavedFlash({ show }) {
 
 const fmt = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
 
-// ── Inline MilestoneGrantModal ────────────────────────────────────────────────
+// ── MilestoneGrantModal ───────────────────────────────────────────────────────
 function MilestoneGrantModal({ milestone, player, todayDeposits, onClose, onGranted }) {
     const [games, setGames] = useState([]);
     const [gameId, setGameId] = useState('');
-    // const [amount, setAmount] = useState(String(parseFloat(milestone?.bonusAmount || 5).toFixed(2)));
     const [amount, setAmount] = useState('');
-
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -828,46 +809,72 @@ function MilestoneGrantModal({ milestone, player, todayDeposits, onClose, onGran
     };
 
     const selectedGame = games.find(g => g.id === gameId);
+    const parsedAmt = parseFloat(amount);
+    const amtValid = !isNaN(parsedAmt) && parsedAmt > 0;
 
     return (
         <div onClick={e => { if (e.target === e.currentTarget) onClose(); }}
             style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-            <div style={{ background: C.white, borderRadius: '14px', boxShadow: '0 24px 60px rgba(15,23,42,.25)', width: '100%', maxWidth: '440px' }}>
-                <div style={{ borderTopLeftRadius: '14px', borderTopRightRadius: '14px', padding: '18px 20px', background: '#fffbeb', borderBottom: '1px solid #fde68a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ background: C.white, borderRadius: '16px', boxShadow: '0 24px 60px rgba(15,23,42,.3)', width: '100%', maxWidth: '440px' }}>
+
+                {/* Header */}
+                <div style={{ borderTopLeftRadius: '16px', borderTopRightRadius: '16px', padding: '18px 22px', background: 'linear-gradient(135deg, #fffbeb, #fef3c7)', borderBottom: '1px solid #fde68a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <p style={{ margin: 0, fontWeight: '800', fontSize: '15px', color: '#92400e' }}>🏆 Grant Milestone Bonus</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#d97706' }}>
+                        <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#b45309' }}>
                             ${milestone?.milestone} daily deposit milestone · {milestone?.date}
                         </p>
                     </div>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.grayLt, fontSize: '18px' }}>✕</button>
+                    <button onClick={onClose} style={{ background: 'rgba(0,0,0,.05)', border: 'none', cursor: 'pointer', color: '#92400e', fontSize: '16px', width: '28px', height: '28px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
                 </div>
-                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    <div style={{ padding: '12px 14px', background: '#f8fafc', border: `1px solid ${C.border}`, borderRadius: '8px' }}>
-                        <p style={{ margin: 0, fontWeight: '700', color: C.slate, fontSize: '13px' }}>{player.name}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: C.grayLt }}>
-                            @{player.username} · ${todayDeposits.toFixed(2)} deposited today
+
+                <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                    {/* Player info */}
+                    <div style={{ padding: '12px 14px', background: '#f8fafc', border: `1px solid ${C.border}`, borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Avatar name={player.name} size={34} fontSize={12} />
+                        <div>
+                            <p style={{ margin: 0, fontWeight: '700', color: C.slate, fontSize: '13px' }}>{player.name}</p>
+                            <p style={{ margin: '1px 0 0', fontSize: '11px', color: C.grayLt }}>
+                                @{player.username} · ${todayDeposits.toFixed(2)} deposited today
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Bonus amount */}
+                    <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '7px' }}>
+                            Bonus Amount ($) <span style={{ color: C.red }}>*</span>
+                        </label>
+                        <div style={{ position: 'relative' }}>
+                            <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', fontWeight: '700', color: amtValid ? '#d97706' : C.grayLt }}>$</span>
+                            <input
+                                type="number" min="0.01" step="0.01" value={amount}
+                                onChange={e => setAmount(e.target.value)}
+                                placeholder="0.00"
+                                style={{
+                                    width: '100%', padding: '11px 12px 11px 26px',
+                                    border: `1.5px solid ${amtValid ? '#fcd34d' : C.border}`,
+                                    borderRadius: '9px', fontSize: '18px', fontWeight: '800',
+                                    color: amtValid ? '#d97706' : C.slate,
+                                    fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none',
+                                    background: amtValid ? '#fffbeb' : C.white,
+                                    transition: 'all .15s',
+                                }}
+                            />
+                        </div>
+                        <p style={{ margin: '5px 0 0', fontSize: '11px', color: C.grayLt }}>
+                            Enter the custom bonus amount to grant for this ${ milestone?.milestone} milestone
                         </p>
                     </div>
 
+                    {/* Game select */}
                     <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: C.gray, textTransform: 'uppercase', marginBottom: '6px' }}>Bonus Amount ($) *</label>
-                        <input
-                            type="number" min="0.01" step="0.01" value={amount}
-                            onChange={e => setAmount(e.target.value)}
-                            style={{ width: '100%', padding: '10px 12px', border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '15px', fontWeight: '700', color: '#d97706', fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none' }}
-                        />
-                        {/* <p style={{ margin: '4px 0 0', fontSize: '11px', color: C.grayLt }}>
-                            Default: ${parseFloat(milestone?.bonusAmount || 5).toFixed(2)} · edit to grant a different amount
-                        </p> */}
-                        <p>Enter the bonus amount to grant for this milestone</p>
-
-                    </div>
-
-                    <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: C.gray, textTransform: 'uppercase', marginBottom: '6px' }}>Select Game *</label>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '7px' }}>
+                            Select Game <span style={{ color: C.red }}>*</span>
+                        </label>
                         <select value={gameId} onChange={e => setGameId(e.target.value)}
-                            style={{ width: '100%', padding: '10px 12px', border: `1px solid ${C.border}`, borderRadius: '8px', fontSize: '13px', fontFamily: 'inherit', boxSizing: 'border-box', background: C.white, outline: 'none' }}>
+                            style={{ width: '100%', padding: '11px 12px', border: `1.5px solid ${gameId ? C.sky : C.border}`, borderRadius: '9px', fontSize: '13px', fontFamily: 'inherit', boxSizing: 'border-box', background: gameId ? '#f0f9ff' : C.white, outline: 'none', color: gameId ? C.sky : C.slate, transition: 'all .15s' }}>
                             <option value="">— choose a game —</option>
                             {games.map(g => (
                                 <option key={g.id} value={g.id}>
@@ -875,21 +882,35 @@ function MilestoneGrantModal({ milestone, player, todayDeposits, onClose, onGran
                                 </option>
                             ))}
                         </select>
-                        {selectedGame && parseFloat(amount) > selectedGame.pointStock && (
-                            <p style={{ margin: '4px 0 0', fontSize: '11px', color: C.red }}>⚠️ Insufficient stock — game has {selectedGame.pointStock.toFixed(0)} pts</p>
+                        {selectedGame && amtValid && parsedAmt > selectedGame.pointStock && (
+                            <p style={{ margin: '5px 0 0', fontSize: '11px', color: C.red }}>⚠️ Insufficient stock — game has {selectedGame.pointStock.toFixed(0)} pts</p>
                         )}
                     </div>
 
-                    {error && <p style={{ margin: 0, fontSize: '12px', color: C.red, padding: '8px 12px', background: C.redLt, borderRadius: '6px' }}>{error}</p>}
+                    {error && (
+                        <div style={{ padding: '10px 12px', background: C.redLt, border: `1px solid ${C.redBdr}`, borderRadius: '8px', fontSize: '12px', color: C.red }}>
+                            ⚠ {error}
+                        </div>
+                    )}
                 </div>
-                <div style={{ borderBottomLeftRadius: '14px', borderBottomRightRadius: '14px', padding: '14px 20px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: '10px', background: C.bg }}>
-                    <button onClick={onClose} style={{ flex: 1, padding: '10px', background: C.white, border: `1px solid ${C.border}`, borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
-                    <button onClick={handleGrant} disabled={loading || !gameId || !amount || parseFloat(amount) <= 0}
 
-                        style={{ flex: 2, padding: '10px', background: loading || !gameId ? '#e2e8f0' : '#d97706', color: loading || !gameId ? C.grayLt : '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: loading || !gameId ? 'not-allowed' : 'pointer' }}>
-
-                        {loading ? '⏳ Granting…' : amount && parseFloat(amount) > 0 ? `🏆 Grant $${parseFloat(amount).toFixed(2)} Bonus` : 'Enter amount above'}
-
+                {/* Footer */}
+                <div style={{ borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px', padding: '14px 22px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: '10px', background: C.bg }}>
+                    <button onClick={onClose} style={{ flex: 1, padding: '10px', background: C.white, border: `1px solid ${C.border}`, borderRadius: '9px', fontWeight: '600', cursor: 'pointer', fontSize: '13px', color: C.gray }}>Cancel</button>
+                    <button
+                        onClick={handleGrant}
+                        disabled={loading || !gameId || !amtValid}
+                        style={{
+                            flex: 2, padding: '10px',
+                            background: loading || !gameId || !amtValid
+                                ? '#e2e8f0'
+                                : 'linear-gradient(135deg, #d97706, #f59e0b)',
+                            color: loading || !gameId || !amtValid ? C.grayLt : '#fff',
+                            border: 'none', borderRadius: '9px', fontWeight: '700', fontSize: '13px',
+                            cursor: loading || !gameId || !amtValid ? 'not-allowed' : 'pointer',
+                            transition: 'all .15s',
+                        }}>
+                        {loading ? '⏳ Granting…' : amtValid ? `🏆 Grant $${parsedAmt.toFixed(2)} Bonus` : 'Enter amount above'}
                     </button>
                 </div>
             </div>
@@ -916,7 +937,6 @@ export default function PlayerDashboard() {
     const [showEdit, setShowEdit] = useState(false);
     const [savedFlash, setSavedFlash] = useState(false);
     const [lastUpdated, setLastUpdated] = useState(null);
-    const [referralBannerDismissed, setReferralBannerDismissed] = useState(false);
     const [cancellingBonusId, setCancellingBonusId] = useState(null);
     const [cancelError, setCancelError] = useState('');
     const [justGrantedMilestones, setJustGrantedMilestones] = useState(new Set());
@@ -932,7 +952,7 @@ export default function PlayerDashboard() {
                 const milestones = await fetchPendingMilestones(parseInt(playerId));
                 setPendingMilestones(milestones);
             } catch { setPendingMilestones([]); }
-            if (isInitial) loadEligible(parseInt(playerId)); // ← ONLY on initial
+            if (isInitial) loadEligible(parseInt(playerId));
             setLastUpdated(new Date());
         } catch (err) {
             setError(err.message || 'Failed to load player.');
@@ -957,12 +977,6 @@ export default function PlayerDashboard() {
         return () => clearInterval(interval);
     }, [loadPlayer, showEdit]);
 
-    // const handleSaved = useCallback(() => {
-    //     loadEligible(parseInt(playerId));
-    //     loadPlayer(false);
-    //     setSavedFlash(true);
-    //     setTimeout(() => setSavedFlash(false), 2500);
-    // }, [loadPlayer]);
     const handleSaved = useCallback(() => {
         loadEligible(parseInt(playerId));
         loadPlayer(false);
@@ -971,12 +985,6 @@ export default function PlayerDashboard() {
     }, [loadPlayer, playerId]);
 
     if (loading) return (
-        // <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px' }}>
-        //     <div style={{ textAlign: 'center' }}>
-        //         <div style={{ width: '40px', height: '40px', border: `4px solid ${C.border}`, borderTopColor: C.sky, borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
-        //         <p style={{ color: C.gray, fontSize: '14px' }}>Loading player dashboard…</p>
-        //     </div>
-        // </div>
         <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
             <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "spin .8s linear infinite" }} />
             Loading player dashboard…
@@ -1009,7 +1017,6 @@ export default function PlayerDashboard() {
     const amtToNext = weeklyTarget ? Math.max(0, weeklyTarget - weeklyDeposits) : 0;
     const status = STATUS_MAP[player.status] || STATUS_MAP.ACTIVE;
 
-    // Texas time — both backend fmtTXDate and frontend "today" use same timezone
     const texasTodayStr = new Date().toLocaleDateString('en-US', {
         timeZone: 'America/Chicago',
         month: 'short', day: 'numeric', year: 'numeric'
@@ -1045,9 +1052,9 @@ export default function PlayerDashboard() {
         : player.tier === 'GOLD' ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #0ea5e9, #7c3aed)';
 
     const TX_HEADERS = [
-        { label: 'Date', style: {} }, { label: 'ID', style: {} }, { label: 'Type', style: {} },
-        { label: 'Amount', style: {} }, { label: 'Fee', style: {} }, { label: 'Received / Paid', style: {} },
-        { label: 'Game', style: {} }, { label: 'Wallet', style: {} }, { label: 'Before → After', style: {} }, { label: 'Status', style: {} },
+        { label: 'Date' }, { label: 'ID' }, { label: 'Type' },
+        { label: 'Amount' }, { label: 'Fee' }, { label: 'Received / Paid' },
+        { label: 'Game' }, { label: 'Wallet' }, { label: 'Before → After' }, { label: 'Status' },
     ];
 
     const paymentFields = [
@@ -1056,9 +1063,6 @@ export default function PlayerDashboard() {
         { key: 'paypalEmail', label: 'PayPal', emoji: '🔵', prefix: '', urlFn: (v) => `https://paypal.com/paypalme/${v}` },
     ];
 
-    // Split eligible bonuses by this player's role in each record
-    // side === 'referrer' → this player IS Player A (will receive a bonus)
-    // side === 'referred' → this player IS Player B (was referred, has a pending bonus)
     const bonusesAsReferrer = eligibleBonuses.filter(rb => rb.side === 'referrer');
     const bonusesAsReferred = eligibleBonuses.filter(rb => rb.side === 'referred');
 
@@ -1067,7 +1071,6 @@ export default function PlayerDashboard() {
         setCancelError('');
         try {
             await api.referralBonuses.cancel(rbId);
-            // Refresh eligible bonuses list
             const r = await api.referralBonuses.getEligible(parseInt(playerId));
             setEligibleBonuses(r?.data || []);
             setCancellingBonusId(null);
@@ -1166,18 +1169,12 @@ export default function PlayerDashboard() {
 
             <PlayerActivityStats player={player} />
 
-            {/* <DailyMilestoneBar
-                todayDeposits={todayDeposits}
-                pendingBonuses={pendingMilestones}
-                transactionHistory={player.transactionHistory || []}
-                onGrantClick={(m) => setGrantingMilestone(m)}
-            /> */}
             <DailyMilestoneBar
                 todayDeposits={todayDeposits}
                 pendingBonuses={pendingMilestones}
                 transactionHistory={player.transactionHistory || []}
                 onGrantClick={(m) => setGrantingMilestone(m)}
-                justGranted={justGrantedMilestones}   // ← ADD
+                justGranted={justGrantedMilestones}
             />
 
             <PendingBonusesCard
@@ -1186,244 +1183,102 @@ export default function PlayerDashboard() {
             />
 
             {/* ── ELIGIBLE REFERRAL BONUSES ── */}
-
             {(bonusesAsReferrer.length > 0 || player.referredBy) && (
-
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-                    {/* ─── SECTION A: This player is the REFERRER ─────────────────────────── */}
                     {(bonusesAsReferrer.length > 0 || (eligLoading && player.referralsList?.length > 0)) && (
                         <div style={{
                             ...card({ padding: '20px 24px' }),
                             border: bonusesAsReferrer.length > 0 ? '1.5px solid #86efac' : `1px solid ${C.border}`,
                         }}>
-                            {/* Header */}
-                            <div style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                marginBottom: '14px', paddingBottom: '10px',
-                                borderBottom: `1px solid ${bonusesAsReferrer.length > 0 ? '#d1fae5' : C.border}`,
-                            }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', paddingBottom: '10px', borderBottom: `1px solid ${bonusesAsReferrer.length > 0 ? '#d1fae5' : C.border}` }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    {/* Blue [A] badge */}
-                                    <span style={{
-                                        padding: '2px 8px', borderRadius: '5px', fontSize: '11px',
-                                        fontWeight: '800', background: '#eff6ff',
-                                        border: '1px solid #bfdbfe', color: '#1d4ed8',
-                                    }}>A</span>
-                                    <p style={{
-                                        margin: 0, fontSize: '12px', fontWeight: '800',
-                                        color: bonusesAsReferrer.length > 0 ? '#16a34a' : C.gray,
-                                        textTransform: 'uppercase', letterSpacing: '0.6px',
-                                    }}>
+                                    <span style={{ padding: '2px 8px', borderRadius: '5px', fontSize: '11px', fontWeight: '800', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8' }}>A</span>
+                                    <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: bonusesAsReferrer.length > 0 ? '#16a34a' : C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
                                         Referral Bonuses — This player A as Referrer
                                     </p>
                                     {bonusesAsReferrer.length > 0 && (
-                                        <span style={{
-                                            padding: '1px 8px', background: '#dcfce7',
-                                            color: '#16a34a', borderRadius: '10px',
-                                            fontSize: '11px', fontWeight: '700',
-                                        }}>
+                                        <span style={{ padding: '1px 8px', background: '#dcfce7', color: '#16a34a', borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>
                                             {bonusesAsReferrer.length} pending
                                         </span>
                                     )}
                                 </div>
-                                <button
-                                    onClick={() => navigate('/?page=addBonus')}
-                                    style={{
-                                        padding: '6px 14px', borderRadius: '8px', cursor: 'pointer',
-                                        fontFamily: 'inherit', fontWeight: '700', fontSize: '12px',
-                                        border: bonusesAsReferrer.length > 0 ? '1px solid #86efac' : `1px solid ${C.border}`,
-                                        background: bonusesAsReferrer.length > 0 ? '#f0fdf4' : C.bg,
-                                        color: bonusesAsReferrer.length > 0 ? '#16a34a' : C.gray,
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
+                                <button onClick={() => navigate('/?page=addBonus')}
+                                    style={{ padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: '700', fontSize: '12px', border: bonusesAsReferrer.length > 0 ? '1px solid #86efac' : `1px solid ${C.border}`, background: bonusesAsReferrer.length > 0 ? '#f0fdf4' : C.bg, color: bonusesAsReferrer.length > 0 ? '#16a34a' : C.gray, whiteSpace: 'nowrap' }}>
                                     {bonusesAsReferrer.length > 0 ? 'Grant on Bonus page →' : 'Bonus page →'}
                                 </button>
                             </div>
 
-                            {/* Info line */}
-                            <div style={{
-                                fontSize: '12px', color: C.gray, marginBottom: '12px',
-                                padding: '8px 12px', background: '#f0f9ff',
-                                border: '1px solid #bae6fd', borderRadius: '8px',
-                            }}>
-                                When a referred player B make deposits, the reffrer player A earns <strong>50% of their deposit</strong> as a referral bonus.
-                                Each pending record below is ready to be granted.
+                            <div style={{ fontSize: '12px', color: C.gray, marginBottom: '12px', padding: '8px 12px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px' }}>
+                                When a referred player B makes deposits, the referrer player A earns <strong>50% of their deposit</strong> as a referral bonus.
                             </div>
 
-                            {eligLoading && (
-                                <div style={{ fontSize: '12px', color: C.grayLt, padding: '8px 0' }}>
-                                    Checking for pending bonuses…
-                                </div>
-                            )}
+                            {eligLoading && <div style={{ fontSize: '12px', color: C.grayLt, padding: '8px 0' }}>Checking for pending bonuses…</div>}
 
                             {!eligLoading && bonusesAsReferrer.length === 0 && (
-                                <div style={{
-                                    padding: '14px 16px', background: C.bg,
-                                    border: `1px solid ${C.border}`, borderRadius: '10px',
-                                    fontSize: '12px', color: C.grayLt, textAlign: 'center',
-                                }}>
+                                <div style={{ padding: '14px 16px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: '10px', fontSize: '12px', color: C.grayLt, textAlign: 'center' }}>
                                     No pending referral bonuses at the moment.
-                                    They appear here when this player refers someone and that referred player makes a deposit.
                                 </div>
                             )}
 
                             {!eligLoading && bonusesAsReferrer.length > 0 && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     {bonusesAsReferrer.map(rb => (
-                                        <div key={rb.id} style={{
-                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                            padding: '13px 16px', background: '#f0fdf4',
-                                            border: '1px solid #86efac', borderRadius: '10px',
-                                            flexWrap: 'wrap', gap: '10px',
-                                        }}>
+                                        <div key={rb.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px', flexWrap: 'wrap', gap: '10px' }}>
                                             <div style={{ flex: 1, minWidth: 0 }}>
-                                                <div style={{
-                                                    fontWeight: '700', fontSize: '13px', color: '#166534',
-                                                    display: 'flex', alignItems: 'center', gap: '6px',
-                                                }}>
-                                                    <span style={{
-                                                        padding: '1px 6px', borderRadius: '4px', fontSize: '10px',
-                                                        fontWeight: '800', background: '#eff6ff',
-                                                        border: '1px solid #bfdbfe', color: '#1d4ed8',
-                                                    }}>A</span>
+                                                <div style={{ fontWeight: '700', fontSize: '13px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <span style={{ padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '800', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8' }}>A</span>
                                                     This player referred {rb.counterpartName}
-                                                    <span style={{
-                                                        padding: '1px 6px', borderRadius: '4px', fontSize: '10px',
-                                                        fontWeight: '800', background: '#dcfce7',
-                                                        border: '1px solid #86efac', color: '#166534',
-                                                    }}>B</span>
+                                                    <span style={{ padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '800', background: '#dcfce7', border: '1px solid #86efac', color: '#166534' }}>B</span>
                                                 </div>
                                                 <div style={{ fontSize: '11px', color: '#16a34a', marginTop: '3px' }}>
-                                                    {rb.counterpartName} deposited <strong>${rb.depositAmount.toFixed(2)}</strong>
-                                                    {' '}→ this player's share is <strong>50% = ${rb.bonusAmount.toFixed(2)}</strong>
-                                                </div>
-                                                <div style={{ fontSize: '11px', color: '#4ade80', marginTop: '2px' }}>
-                                                    Recorded {new Date(rb.createdAt).toLocaleDateString('en-US', {
-                                                        month: 'short', day: 'numeric', year: 'numeric'
-                                                    })}
+                                                    {rb.counterpartName} deposited <strong>${rb.depositAmount.toFixed(2)}</strong> → this player's share: <strong>50% = ${rb.bonusAmount.toFixed(2)}</strong>
                                                 </div>
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
                                                 <div style={{ textAlign: 'right' }}>
-                                                    <div style={{ fontSize: '22px', fontWeight: '900', color: '#16a34a' }}>
-                                                        +${rb.bonusAmount.toFixed(2)}
-                                                    </div>
+                                                    <div style={{ fontSize: '22px', fontWeight: '900', color: '#16a34a' }}>+${rb.bonusAmount.toFixed(2)}</div>
                                                     <div style={{ fontSize: '10px', color: '#4ade80' }}>for this player (A)</div>
                                                 </div>
-                                                <button
-                                                    onClick={() => navigate('/?page=addBonus')}
-                                                    style={{
-                                                        padding: '7px 14px', background: '#16a34a',
-                                                        border: 'none', borderRadius: '8px',
-                                                        color: '#fff', fontWeight: '700', fontSize: '12px',
-                                                        cursor: 'pointer', fontFamily: 'inherit',
-                                                        whiteSpace: 'nowrap',
-                                                    }}
-                                                >
+                                                <button onClick={() => navigate('/?page=addBonus')}
+                                                    style={{ padding: '7px 14px', background: '#16a34a', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                                                     Grant →
                                                 </button>
                                             </div>
                                         </div>
                                     ))}
-                                    <div style={{
-                                        padding: '8px 12px', background: '#bbf7d030',
-                                        border: '1px solid #d1fae5', borderRadius: '8px',
-                                        fontSize: '11px', color: '#166634',
-                                    }}>
-                                        💡 Go to the <strong>Bonus page</strong>, search for{' '}
-                                        <strong>{player.name}</strong>, select Referral Bonus and grant.
-                                    </div>
                                 </div>
                             )}
                         </div>
                     )}
 
-
-                    {/* ─── SECTION B: This player WAS REFERRED (they are Player B) ──────────── */}
-
                     {player.referredBy && (
-                        <div style={{
-                            borderRadius: '16px',
-                            border: bonusesAsReferred.length > 0 ? '1px solid #bbf7d0' : '1px solid #e2e8f0',
-                            background: '#fff',
-                            overflow: 'hidden',
-                            boxShadow: bonusesAsReferred.length > 0
-                                ? '0 0 0 4px rgba(134,239,172,.1), 0 2px 12px rgba(15,23,42,.06)'
-                                : '0 2px 12px rgba(15,23,42,.06)',
-                        }}>
-
-                            {/* ── header ── */}
-                            <div style={{
-                                padding: '18px 26px',
-                                background: bonusesAsReferred.length > 0 ? '#f0fdf4' : '#fafafa',
-                                borderBottom: `1px solid ${bonusesAsReferred.length > 0 ? '#dcfce7' : '#f1f5f9'}`,
-                                display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px',
-                            }}>
+                        <div style={{ borderRadius: '16px', border: bonusesAsReferred.length > 0 ? '1px solid #bbf7d0' : '1px solid #e2e8f0', background: '#fff', overflow: 'hidden', boxShadow: '0 2px 12px rgba(15,23,42,.06)' }}>
+                            <div style={{ padding: '18px 26px', background: bonusesAsReferred.length > 0 ? '#f0fdf4' : '#fafafa', borderBottom: `1px solid ${bonusesAsReferred.length > 0 ? '#dcfce7' : '#f1f5f9'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                                    {/* B badge */}
-                                    <span style={{
-                                        width: '24px', height: '24px', borderRadius: '7px',
-                                        background: '#dcfce7', border: '1px solid #86efac',
-                                        color: '#166534', fontWeight: '800', fontSize: '11px',
-                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                        flexShrink: 0,
-                                    }}>B</span>
-                                    <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: bonusesAsReferred.length > 0 ? '#15803d' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
-                                        Referred Player
-                                    </p>
+                                    <span style={{ width: '24px', height: '24px', borderRadius: '7px', background: '#dcfce7', border: '1px solid #86efac', color: '#166534', fontWeight: '800', fontSize: '11px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>B</span>
+                                    <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: bonusesAsReferred.length > 0 ? '#15803d' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Referred Player</p>
                                     {bonusesAsReferred.length > 0 && (
                                         <span style={{ padding: '2px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0' }}>
                                             {bonusesAsReferred.length} bonus{bonusesAsReferred.length !== 1 ? 'es' : ''} pending
                                         </span>
                                     )}
                                 </div>
-                                <button
-                                    onClick={() => navigate('/?page=addBonus')}
-                                    style={{
-                                        padding: '6px 14px', borderRadius: '8px', cursor: 'pointer',
-                                        fontFamily: 'inherit', fontWeight: '700', fontSize: '12px',
-                                        border: bonusesAsReferred.length > 0 ? '1px solid #86efac' : '1px solid #e2e8f0',
-                                        background: bonusesAsReferred.length > 0 ? '#f0fdf4' : '#f8fafc',
-                                        color: bonusesAsReferred.length > 0 ? '#16a34a' : '#64748b',
-                                        whiteSpace: 'nowrap', transition: 'all .15s',
-                                    }}
-                                >
+                                <button onClick={() => navigate('/?page=addBonus')}
+                                    style={{ padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: '700', fontSize: '12px', border: bonusesAsReferred.length > 0 ? '1px solid #86efac' : '1px solid #e2e8f0', background: bonusesAsReferred.length > 0 ? '#f0fdf4' : '#f8fafc', color: bonusesAsReferred.length > 0 ? '#16a34a' : '#64748b', whiteSpace: 'nowrap' }}>
                                     Bonus page →
                                 </button>
                             </div>
 
-                            {/* ── body ── */}
                             <div style={{ padding: '20px 26px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-
-                                {/* relationship row */}
-                                <div style={{
-                                    display: 'flex', alignItems: 'center', gap: '14px',
-                                    padding: '14px 18px',
-                                    background: '#f8fafc', borderRadius: '12px',
-                                    border: '1px solid #f1f5f9',
-                                }}>
-                                    {/* avatar placeholder */}
-                                    <div style={{
-                                        width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
-                                        background: 'linear-gradient(135deg,#bbf7d0,#6ee7b7)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '14px',
-                                    }}>
-                                        👤
-                                    </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg,#bbf7d0,#6ee7b7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>👤</div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                                            <span style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a' }}>
-                                                {player.name}
-                                            </span>
+                                            <span style={{ fontWeight: '700', fontSize: '13px', color: '#0f172a' }}>{player.name}</span>
                                             <span style={{ padding: '1px 7px', borderRadius: '5px', fontSize: '10px', fontWeight: '800', background: '#dcfce7', border: '1px solid #86efac', color: '#166534' }}>B</span>
                                             <span style={{ fontSize: '12px', color: '#64748b' }}>was referred by</span>
-                                            <span
-                                                onClick={() => navigate(`/playerDashboard/${player.referredBy.id}`)}
-                                                style={{ fontWeight: '700', fontSize: '13px', color: '#0ea5e9', cursor: 'pointer', textDecoration: 'underline', textDecorationColor: '#bae6fd' }}
-                                            >
+                                            <span onClick={() => navigate(`/playerDashboard/${player.referredBy.id}`)} style={{ fontWeight: '700', fontSize: '13px', color: '#0ea5e9', cursor: 'pointer', textDecoration: 'underline', textDecorationColor: '#bae6fd' }}>
                                                 {player.referredBy.name || `ID ${player.referredBy.id}`}
                                             </span>
                                             <span style={{ padding: '1px 7px', borderRadius: '5px', fontSize: '10px', fontWeight: '800', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8' }}>A</span>
@@ -1434,153 +1289,53 @@ export default function PlayerDashboard() {
                                     </div>
                                 </div>
 
-                                {/* cancel error */}
                                 {cancelError && (
-                                    <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', fontSize: '12px', color: '#991b1b' }}>
-                                        ⚠ {cancelError}
-                                    </div>
+                                    <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', fontSize: '12px', color: '#991b1b' }}>⚠ {cancelError}</div>
                                 )}
 
-                                {/* loading */}
-                                {eligLoading && (
-                                    <div style={{ fontSize: '12px', color: '#94a3b8', padding: '8px 0' }}>
-                                        Checking for pending bonuses…
-                                    </div>
-                                )}
-
-                                {/* empty */}
                                 {!eligLoading && bonusesAsReferred.length === 0 && (
                                     <div style={{ padding: '14px 18px', background: '#f8fafc', border: '1px solid #f1f5f9', borderRadius: '12px', fontSize: '12px', color: '#94a3b8' }}>
-                                        No pending referral bonuses right now. Record eligibility via the referral toggle during a deposit on the{' '}
-                                        <span onClick={() => navigate('/?page=addTransactions')} style={{ color: '#0ea5e9', cursor: 'pointer', textDecoration: 'underline' }}>
-                                            Transactions page
-                                        </span>.
+                                        No pending referral bonuses right now.
                                     </div>
                                 )}
 
-                                {/* bonus rows */}
                                 {!eligLoading && bonusesAsReferred.length > 0 && (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                         {bonusesAsReferred.map(rb => (
-                                            <div key={rb.id} style={{
-                                                borderRadius: '12px', overflow: 'hidden',
-                                                border: '1px solid #bbf7d0',
-                                                background: '#f0fdf4',
-                                            }}>
-                                                {/* top strip */}
+                                            <div key={rb.id} style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid #bbf7d0', background: '#f0fdf4' }}>
                                                 <div style={{ padding: '13px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                                                     <div style={{ flex: 1, minWidth: 0 }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
                                                             <span style={{ padding: '1px 7px', borderRadius: '5px', fontSize: '10px', fontWeight: '800', background: '#dcfce7', border: '1px solid #86efac', color: '#166534' }}>B</span>
-                                                            <span style={{ fontWeight: '700', fontSize: '13px', color: '#166534' }}>
-                                                                {player.name}'s pending referral bonus
-                                                            </span>
+                                                            <span style={{ fontWeight: '700', fontSize: '13px', color: '#166534' }}>{player.name}'s pending referral bonus</span>
                                                         </div>
                                                         <div style={{ fontSize: '11px', color: '#16a34a' }}>
-                                                            Deposit of <strong>${rb.depositAmount.toFixed(2)}</strong>
-                                                            {' → '}referrer{' '}
-                                                            <strong>{rb.counterpartName} [A]</strong> earns{' '}
-                                                            <strong>${rb.bonusAmount.toFixed(2)}</strong>
-                                                        </div>
-                                                        <div style={{ fontSize: '11px', color: '#86efac', marginTop: '3px' }}>
-                                                            Recorded {new Date(rb.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            Deposit of <strong>${rb.depositAmount.toFixed(2)}</strong> → referrer <strong>{rb.counterpartName} [A]</strong> earns <strong>${rb.bonusAmount.toFixed(2)}</strong>
                                                         </div>
                                                     </div>
-
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-                                                        {/* amount badge */}
                                                         <div style={{ textAlign: 'right' }}>
-                                                            <div style={{ fontSize: '22px', fontWeight: '800', color: '#15803d', lineHeight: 1 }}>
-                                                                +${rb.bonusAmount.toFixed(2)}
-                                                            </div>
+                                                            <div style={{ fontSize: '22px', fontWeight: '800', color: '#15803d', lineHeight: 1 }}>+${rb.bonusAmount.toFixed(2)}</div>
                                                             <div style={{ fontSize: '10px', color: '#4ade80', fontWeight: '600' }}>eligible</div>
                                                         </div>
-
-                                                        {/* Grant */}
-                                                        <button
-                                                            onClick={() => navigate('/?page=addBonus')}
-                                                            style={{
-                                                                padding: '7px 14px', background: '#16a34a',
-                                                                border: 'none', borderRadius: '8px',
-                                                                color: '#fff', fontWeight: '700', fontSize: '12px',
-                                                                cursor: 'pointer', fontFamily: 'inherit',
-                                                                whiteSpace: 'nowrap', transition: 'background .15s',
-                                                            }}
-                                                            onMouseEnter={e => e.currentTarget.style.background = '#15803d'}
-                                                            onMouseLeave={e => e.currentTarget.style.background = '#16a34a'}
-                                                        >
-                                                            Grant →
-                                                        </button>
-
-                                                        {/* Cancel / Confirm */}
+                                                        <button onClick={() => navigate('/?page=addBonus')} style={{ padding: '7px 14px', background: '#16a34a', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '700', fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>Grant →</button>
                                                         {cancellingBonusId === rb.id ? (
                                                             <div style={{ display: 'flex', gap: '6px' }}>
-                                                                <button
-                                                                    onClick={() => handleCancelReferralBonus(rb.id)}
-                                                                    style={{
-                                                                        padding: '7px 12px', background: '#fef2f2',
-                                                                        border: '1px solid #fca5a5', borderRadius: '8px',
-                                                                        color: '#991b1b', fontWeight: '700', fontSize: '11px',
-                                                                        cursor: 'pointer', fontFamily: 'inherit',
-                                                                    }}
-                                                                >
-                                                                    ✓ Confirm
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => setCancellingBonusId(null)}
-                                                                    style={{
-                                                                        padding: '7px 12px', background: '#f8fafc',
-                                                                        border: '1px solid #e2e8f0', borderRadius: '8px',
-                                                                        color: '#64748b', fontWeight: '600', fontSize: '11px',
-                                                                        cursor: 'pointer', fontFamily: 'inherit',
-                                                                    }}
-                                                                >
-                                                                    Keep
-                                                                </button>
+                                                                <button onClick={() => handleCancelReferralBonus(rb.id)} style={{ padding: '7px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#991b1b', fontWeight: '700', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit' }}>✓ Confirm</button>
+                                                                <button onClick={() => setCancellingBonusId(null)} style={{ padding: '7px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#64748b', fontWeight: '600', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit' }}>Keep</button>
                                                             </div>
                                                         ) : (
-                                                            <button
-                                                                onClick={() => { setCancelError(''); setCancellingBonusId(rb.id); }}
-                                                                style={{
-                                                                    padding: '7px 12px', background: '#fff',
-                                                                    border: '1px solid #fca5a5', borderRadius: '8px',
-                                                                    color: '#dc2626', fontWeight: '600', fontSize: '11px',
-                                                                    cursor: 'pointer', fontFamily: 'inherit',
-                                                                    whiteSpace: 'nowrap', transition: 'all .15s',
-                                                                }}
-                                                                onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; }}
-                                                                onMouseLeave={e => { e.currentTarget.style.background = '#fff'; }}
-                                                            >
-                                                                Cancel
-                                                            </button>
+                                                            <button onClick={() => { setCancelError(''); setCancellingBonusId(rb.id); }} style={{ padding: '7px 12px', background: '#fff', border: '1px solid #fca5a5', borderRadius: '8px', color: '#dc2626', fontWeight: '600', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>Cancel</button>
                                                         )}
                                                     </div>
                                                 </div>
-
-                                                {/* inline confirm warning */}
                                                 {cancellingBonusId === rb.id && (
-                                                    <div style={{
-                                                        padding: '10px 16px',
-                                                        background: '#fff7f7', borderTop: '1px solid #fecdd3',
-                                                        fontSize: '12px', color: '#991b1b',
-                                                    }}>
-                                                        ⚠ This cancels <strong>{player.name}'s [B]</strong> referral record only.{' '}
-                                                        <strong>{rb.counterpartName} [A]</strong> (the referrer) can still be granted from the Bonus page. This cannot be undone.
+                                                    <div style={{ padding: '10px 16px', background: '#fff7f7', borderTop: '1px solid #fecdd3', fontSize: '12px', color: '#991b1b' }}>
+                                                        ⚠ This cancels <strong>{player.name}'s [B]</strong> referral record only. This cannot be undone.
                                                     </div>
                                                 )}
                                             </div>
                                         ))}
-
-                                        {/* footnote */}
-                                        <div style={{
-                                            padding: '10px 16px', background: '#f0fdf4',
-                                            border: '1px solid #dcfce7', borderRadius: '10px',
-                                            fontSize: '11px', color: '#166534', lineHeight: '1.6',
-                                        }}>
-                                            💡 <strong>Grant</strong> goes to the Bonus page to credit{' '}
-                                            <strong>{player.referredBy?.name} [A]</strong>.{' '}
-                                            <strong>Cancel</strong> permanently removes the pending record if you decide not to grant.
-                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -1588,7 +1343,6 @@ export default function PlayerDashboard() {
                     )}
                 </div>
             )}
-
 
             {/* ── BONUS BREAKDOWN ── */}
             <div style={card({ padding: '20px 22px' })}>
@@ -1727,10 +1481,7 @@ export default function PlayerDashboard() {
                                         <p style={{ margin: 0, fontSize: '12px', fontWeight: '800', color: C.gray, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Friends</p>
                                         <span style={{ padding: '1px 7px', background: C.skyLt, color: C.sky, borderRadius: '10px', fontSize: '11px', fontWeight: '700' }}>{uniqueFriends.length}</span>
                                     </div>
-                                    <button onClick={() => setShowEdit(true)}
-                                        style={{ padding: '6px 14px', background: C.skyLt, border: `1px solid #bae6fd`, borderRadius: '8px', color: C.skyDk, fontWeight: '700', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                                        ✏️ Edit Friends
-                                    </button>
+                                    <button onClick={() => setShowEdit(true)} style={{ padding: '6px 14px', background: C.skyLt, border: `1px solid #bae6fd`, borderRadius: '8px', color: C.skyDk, fontWeight: '700', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>✏️ Edit Friends</button>
                                 </div>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                     {uniqueFriends.map(f => <PeopleChip key={f.id} person={f} emoji="🤝" onClick={() => navigate(`/playerDashboard/${f.id}`)} />)}
@@ -1769,40 +1520,17 @@ export default function PlayerDashboard() {
             </div>
 
             {/* ── DEPOSIT / CASHOUT CHART ── */}
-
             <div style={card({ padding: "20px 24px" })}>
-                <div style={{
-                    display: "flex", justifyContent: "space-between",
-                    alignItems: "center", marginBottom: "18px", flexWrap: "wrap", gap: "10px",
-                }}>
-                    <p style={{ margin: 0, fontWeight: "800", fontSize: "14px", color: C.slate }}>
-                        Deposits vs Cashouts
-                    </p>
-                    {/* Tab selector matching Dashboard style */}
-                    <div style={{
-                        display: "flex", gap: "4px", background: "#f1f5f9",
-                        borderRadius: "8px", padding: "3px",
-                    }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", flexWrap: "wrap", gap: "10px" }}>
+                    <p style={{ margin: 0, fontWeight: "800", fontSize: "14px", color: C.slate }}>Deposits vs Cashouts</p>
+                    <div style={{ display: "flex", gap: "4px", background: "#f1f5f9", borderRadius: "8px", padding: "3px" }}>
                         {[[7, "7d"], [14, "14d"], [30, "30d"]].map(([d, lbl]) => (
-                            <button
-                                key={d}
-                                onClick={() => setChartDays(d)}
-                                style={{
-                                    padding: "5px 12px", fontSize: "11px", fontWeight: "600",
-                                    borderRadius: "6px", border: "none", cursor: "pointer",
-                                    transition: "all .15s",
-                                    background: chartDays === d ? "#fff" : "transparent",
-                                    color: chartDays === d ? C.slate : C.gray,
-                                    boxShadow: chartDays === d ? "0 1px 4px rgba(0,0,0,.1)" : "none",
-                                    fontFamily: "inherit",
-                                }}
-                            >
+                            <button key={d} onClick={() => setChartDays(d)} style={{ padding: "5px 12px", fontSize: "11px", fontWeight: "600", borderRadius: "6px", border: "none", cursor: "pointer", transition: "all .15s", background: chartDays === d ? "#fff" : "transparent", color: chartDays === d ? C.slate : C.gray, boxShadow: chartDays === d ? "0 1px 4px rgba(0,0,0,.1)" : "none", fontFamily: "inherit" }}>
                                 {lbl}
                             </button>
                         ))}
                     </div>
                 </div>
-
                 {finalChartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={240}>
                         <AreaChart data={finalChartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
@@ -1816,77 +1544,27 @@ export default function PlayerDashboard() {
                                     <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid
-                                stroke="#f1f5f9" strokeDasharray="3 3" vertical={false}
-                            />
-                            <XAxis
-                                dataKey="date"
-                                tick={{ fontSize: 11, fill: C.grayLt, fontWeight: 600 }}
-                                tickLine={false} axisLine={false}
-                            />
-                            <YAxis
-                                tick={{ fontSize: 11, fill: C.grayLt }}
-                                tickLine={false} axisLine={false}
-                                tickFormatter={v => `$${v}`}
-                            />
-                            {/* Dark tooltip matching Dashboard */}
-                            <Tooltip
-                                content={({ active, payload, label }) => {
-                                    if (!active || !payload?.length) return null;
-                                    return (
-                                        <div style={{
-                                            background: "#0f172a", border: "none",
-                                            borderRadius: "10px", padding: "8px 12px",
-                                            fontSize: "12px", color: "#fff",
-                                            boxShadow: "0 8px 24px rgba(0,0,0,.25)",
-                                        }}>
-                                            <p style={{ margin: "0 0 4px 0", color: "#94a3b8", fontWeight: "600" }}>
-                                                {label}
-                                            </p>
-                                            {payload.map((p, i) => (
-                                                <p key={i} style={{ margin: 0, color: p.color, fontWeight: "600" }}>
-                                                    {p.name}: ${parseFloat(p.value).toFixed(2)}
-                                                </p>
-                                            ))}
-                                        </div>
-                                    );
-                                }}
-                            />
-                            <Legend
-                                formatter={value => (
-                                    <span style={{ fontSize: "12px", color: C.gray, fontWeight: "600" }}>
-                                        {value}
-                                    </span>
-                                )}
-                            />
-                            <Area
-                                type="monotone"
-                                dataKey="deposits"
-                                stroke="#10b981"
-                                strokeWidth={2.5}
-                                fill="url(#depGrad)"
-                                name="Deposits"
-                                dot={false}
-                                activeDot={{ r: 4, strokeWidth: 0 }}
-                            />
-                            <Area
-                                type="monotone"
-                                dataKey="cashouts"
-                                stroke="#ef4444"
-                                strokeWidth={2.5}
-                                fill="url(#cashGrad)"
-                                name="Cashouts"
-                                dot={false}
-                                activeDot={{ r: 4, strokeWidth: 0 }}
-                            />
+                            <CartesianGrid stroke="#f1f5f9" strokeDasharray="3 3" vertical={false} />
+                            <XAxis dataKey="date" tick={{ fontSize: 11, fill: C.grayLt, fontWeight: 600 }} tickLine={false} axisLine={false} />
+                            <YAxis tick={{ fontSize: 11, fill: C.grayLt }} tickLine={false} axisLine={false} tickFormatter={v => `$${v}`} />
+                            <Tooltip content={({ active, payload, label }) => {
+                                if (!active || !payload?.length) return null;
+                                return (
+                                    <div style={{ background: "#0f172a", border: "none", borderRadius: "10px", padding: "8px 12px", fontSize: "12px", color: "#fff", boxShadow: "0 8px 24px rgba(0,0,0,.25)" }}>
+                                        <p style={{ margin: "0 0 4px 0", color: "#94a3b8", fontWeight: "600" }}>{label}</p>
+                                        {payload.map((p, i) => (
+                                            <p key={i} style={{ margin: 0, color: p.color, fontWeight: "600" }}>{p.name}: ${parseFloat(p.value).toFixed(2)}</p>
+                                        ))}
+                                    </div>
+                                );
+                            }} />
+                            <Legend formatter={value => <span style={{ fontSize: "12px", color: C.gray, fontWeight: "600" }}>{value}</span>} />
+                            <Area type="monotone" dataKey="deposits" stroke="#10b981" strokeWidth={2.5} fill="url(#depGrad)" name="Deposits" dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
+                            <Area type="monotone" dataKey="cashouts" stroke="#ef4444" strokeWidth={2.5} fill="url(#cashGrad)" name="Cashouts" dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
                         </AreaChart>
                     </ResponsiveContainer>
                 ) : (
-                    <div style={{
-                        height: "180px", display: "flex",
-                        alignItems: "center", justifyContent: "center",
-                        color: C.grayLt, fontSize: "13px",
-                    }}>
+                    <div style={{ height: "180px", display: "flex", alignItems: "center", justifyContent: "center", color: C.grayLt, fontSize: "13px" }}>
                         No transaction data in this range
                     </div>
                 )}
@@ -1941,18 +1619,14 @@ export default function PlayerDashboard() {
                                     <span style={{ fontSize: '15px' }}>{emoji}</span>
                                     <div>
                                         <div style={{ fontSize: '10px', fontWeight: '700', color: C.violet, textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>{label}</div>
-                                        {url
-                                            ? <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontWeight: '700', color: C.violet, textDecoration: 'none' }}>{display}</a>
-                                            : <span style={{ fontWeight: '700', color: C.slate }}>{display}</span>
-                                        }
+                                        {url ? <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontWeight: '700', color: C.violet, textDecoration: 'none' }}>{display}</a>
+                                            : <span style={{ fontWeight: '700', color: C.slate }}>{display}</span>}
                                     </div>
                                 </div>
                             );
                         })}
                         {!paymentFields.some(({ key }) => player.socials?.[key]) && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', width: '100%' }}>
-                                <p style={{ color: C.grayLt, fontSize: '13px', margin: 0, flex: 1 }}>No payment handles added yet</p>
-                            </div>
+                            <p style={{ color: C.grayLt, fontSize: '13px', margin: 0 }}>No payment handles added yet</p>
                         )}
                     </div>
                 </div>
@@ -1963,10 +1637,10 @@ export default function PlayerDashboard() {
                 <SectionHeader title="Recent Transactions (Last 30 Days)" count={(player.transactionHistory || []).length} />
                 <div style={{ overflowX: 'auto', borderRadius: '10px', border: `1px solid ${C.border}` }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '980px' }}>
-                        <thead style={{ position: 'sticky', top: 0, zIndex: 5 }}>
+                        <thead>
                             <tr>
                                 {TX_HEADERS.map(h => (
-                                    <th key={h.label} style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.4px', borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap', background: h.style.background || C.bg, color: h.style.color || C.grayLt }}>{h.label}</th>
+                                    <th key={h.label} style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.4px', borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap', background: C.bg, color: C.grayLt }}>{h.label}</th>
                                 ))}
                             </tr>
                         </thead>
@@ -1995,7 +1669,6 @@ export default function PlayerDashboard() {
                                     const effectiveAfter = isCashout && stockBefore != null ? stockBefore + paidAmt : stockAfter;
                                     const remainingPts = isCashout ? depositAmt - paidAmt : 0;
                                     const txId = tx.id ? `TXN${String(tx.id).padStart(6, '0')}` : '—';
-                                    // Add near other useState declarations:
 
                                     return (
                                         <tr key={tx.id}
@@ -2011,10 +1684,10 @@ export default function PlayerDashboard() {
                                                 <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', background: t.bg, color: t.color, whiteSpace: 'nowrap' }}>{t.label}</span>
                                             </td>
                                             <td style={{ padding: '11px 14px', fontWeight: '800', fontSize: '14px', color: isCashout ? C.red : '#10b981', whiteSpace: 'nowrap' }}>{isCashout ? '−' : '+'}${depositAmt.toFixed(2)}</td>
-                                            <td style={{ padding: '11px 14px', background: isDeposit ? '#fafeff' : 'transparent', whiteSpace: 'nowrap' }}>
+                                            <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
                                                 {feeVal > 0 ? <span style={{ fontWeight: '700', fontSize: '12px', color: '#f59e0b' }}>−${feeVal.toFixed(2)}</span> : <span style={{ color: C.border, fontSize: '12px' }}>—</span>}
                                             </td>
-                                            <td style={{ padding: '11px 14px', background: (isDeposit || isCashout) ? '#fafeff' : 'transparent' }}>
+                                            <td style={{ padding: '11px 14px' }}>
                                                 {isDeposit
                                                     ? <span style={{ fontWeight: '700', fontSize: '13px', color: C.sky }}>${(receivedAmt ?? depositAmt).toFixed(2)}</span>
                                                     : isCashout ? <TxPaymentProgress paid={paidAmt} total={depositAmt} />
@@ -2088,20 +1761,7 @@ export default function PlayerDashboard() {
                     player={player}
                     todayDeposits={todayDeposits}
                     onClose={() => setGrantingMilestone(null)}
-                    // onGranted={async () => {
-                    //     setGrantingMilestone(null);
-                    //     await loadPlayer(false);
-                    //     // Re-fetch pending milestones so card flips to "granted ✓"
-                    //     try {
-                    //         const milestones = await fetchPendingMilestones(parseInt(playerId));
-                    //         setPendingMilestones(milestones);
-                    //     } catch { setPendingMilestones([]); }
-                    //     setSavedFlash(true);
-                    //     setTimeout(() => setSavedFlash(false), 2500);
-                    // }}
-
                     onGranted={async () => {
-                        // Optimistically mark as granted immediately — prevents "processing" flash
                         if (grantingMilestone?.milestone) {
                             setJustGrantedMilestones(prev => new Set([...prev, grantingMilestone.milestone]));
                         }
