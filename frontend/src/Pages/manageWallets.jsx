@@ -575,15 +575,15 @@ const handleToggleShare = async (wallet) => {
                     </Field>
 
                     {/* Live status toggle in edit form */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: editForm.isLive ? '#f0fdf4' : '#f8fafc', borderRadius: '8px', border: `1px solid ${editForm.isLive ? '#bbf7d0' : '#e2e8f0'}`, transition: 'all .2s' }}>
+                    {/* <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: editForm.isLive ? '#f0fdf4' : '#f8fafc', borderRadius: '8px', border: `1px solid ${editForm.isLive ? '#bbf7d0' : '#e2e8f0'}`, transition: 'all .2s' }}>
                         <div>
                             <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>Wallet Status</p>
                             <p style={{ margin: 0, fontSize: '11px', color: editForm.isLive ? '#15803d' : '#94a3b8' }}>
                                 {editForm.isLive ? 'Live — available for transactions' : 'Offline — hidden from transaction forms'}
                             </p>
-                        </div>
+                        </div> */}
                         {/* <LiveToggle isLive={editForm.isLive} loading={false} onToggle={() => setEditForm(f => ({ ...f, isLive: !f.isLive }))} /> */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: editForm.isShared ? '#eff6ff' : '#f8fafc', borderRadius: '8px', border: `1px solid ${editForm.isShared ? '#bfdbfe' : '#e2e8f0'}`, transition: 'all .2s' }}>
+                        {/* <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: editForm.isShared ? '#eff6ff' : '#f8fafc', borderRadius: '8px', border: `1px solid ${editForm.isShared ? '#bfdbfe' : '#e2e8f0'}`, transition: 'all .2s' }}>
                             <div>
                                 <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>Share across all stores</p>
                                 <p style={{ margin: 0, fontSize: '11px', color: editForm.isShared ? '#1d4ed8' : '#94a3b8' }}>
@@ -592,7 +592,28 @@ const handleToggleShare = async (wallet) => {
                             </div>
                             <LiveToggle isLive={editForm.isShared} loading={false} onToggle={() => setEditForm(f => ({ ...f, isShared: !f.isShared }))} />
                         </div>
-                    </div>
+                    </div> */}
+                    {/* Live status */}
+<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: editForm.isLive ? '#f0fdf4' : '#f8fafc', borderRadius: '8px', border: `1px solid ${editForm.isLive ? '#bbf7d0' : '#e2e8f0'}`, transition: 'all .2s' }}>
+    <div>
+        <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>Wallet Status</p>
+        <p style={{ margin: 0, fontSize: '11px', color: editForm.isLive ? '#15803d' : '#94a3b8' }}>
+            {editForm.isLive ? 'Live — available for transactions' : 'Offline — hidden from transaction forms'}
+        </p>
+    </div>
+    <LiveToggle isLive={editForm.isLive} loading={false} onToggle={() => setEditForm(f => ({ ...f, isLive: !f.isLive }))} />
+</div>
+
+{/* Share across stores */}
+<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: editForm.isShared ? '#eff6ff' : '#f8fafc', borderRadius: '8px', border: `1px solid ${editForm.isShared ? '#bfdbfe' : '#e2e8f0'}`, transition: 'all .2s' }}>
+    <div>
+        <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>Share across all stores</p>
+        <p style={{ margin: 0, fontSize: '11px', color: editForm.isShared ? '#1d4ed8' : '#94a3b8' }}>
+            {editForm.isShared ? 'Visible and usable by all stores' : 'This store only'}
+        </p>
+    </div>
+    <LiveToggle isLive={editForm.isShared} loading={false} onToggle={() => setEditForm(f => ({ ...f, isShared: !f.isShared }))} />
+</div>
 
                     <Alert type="error" message={editError} />
                     <div style={{ display: 'flex', gap: '12px', paddingTop: '4px', borderTop: '1px solid #f1f5f9', marginTop: '4px' }}>
