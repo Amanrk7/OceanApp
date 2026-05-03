@@ -476,10 +476,10 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
   //   return !isNaN(entered) && Math.abs(Math.round(entered - fetched)) > 0;
   // });
   const gameDiscrepancies = games.filter(g => {
-  const entered = parseFloat(gameInputs[g.id]);
-  const fetched = Math.round(g.pointStock ?? 0); // ← round fetched too
-  return !isNaN(entered) && Math.abs(Math.round(entered) - fetched) > 0;
-});
+    const entered = parseFloat(gameInputs[g.id]);
+    const fetched = Math.round(g.pointStock ?? 0); // ← round fetched too
+    return !isNaN(entered) && Math.abs(Math.round(entered) - fetched) > 0;
+  });
   const hasDiscrepancies = walletDiscrepancies.length > 0 || gameDiscrepancies.length > 0;
 
   const handleConfirm = async () => {
@@ -935,26 +935,26 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   }, [shift]);
 
   useEffect(() => {
-  if (!shift?.startTime) return;
-  const token = localStorage.getItem('authToken');
-  const es = new EventSource(`${API_BASE}/tasks/events?token=${token}`, { withCredentials: true });
+    if (!shift?.startTime) return;
+    const token = localStorage.getItem('authToken');
+    const es = new EventSource(`${API_BASE}/tasks/events?token=${token}`, { withCredentials: true });
 
-  es.onmessage = (e) => {
-    try {
-      const { type } = JSON.parse(e.data);
-      if (type === 'shared_game_updated' || type === 'shared_wallet_updated') {
-        const from = encodeURIComponent(new Date(shift.startTime).toISOString());
-        const to   = encodeURIComponent(new Date().toISOString());
-        fj(`/shifts/shared-resource-usage?fromDate=${from}&toDate=${to}`)
-          .then(r => setCrossStoreData(r?.data ?? null))
-          .catch(() => {});
-      }
-    } catch (_) {}
-  };
-  return () => es.close();
-}, [shift?.startTime]);
+    es.onmessage = (e) => {
+      try {
+        const { type } = JSON.parse(e.data);
+        if (type === 'shared_game_updated' || type === 'shared_wallet_updated') {
+          const from = encodeURIComponent(new Date(shift.startTime).toISOString());
+          const to = encodeURIComponent(new Date().toISOString());
+          fj(`/shifts/shared-resource-usage?fromDate=${from}&toDate=${to}`)
+            .then(r => setCrossStoreData(r?.data ?? null))
+            .catch(() => { });
+        }
+      } catch (_) { }
+    };
+    return () => es.close();
+  }, [shift?.startTime]);
 
-//   // ── Reconciliation math ────────────────────────────────────────────────────
+  //   // ── Reconciliation math ────────────────────────────────────────────────────
   const hasStartSnapshot = startSnapshot != null;
   const startWallets = startSnapshot?.walletSnapshot ?? [];
   const startGames = startSnapshot?.gameSnapshot ?? [];
@@ -967,51 +967,55 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
 
   // const BONUS_TYPES = ['Match Bonus', 'Special Bonus', 'Streak Bonus', 'Referral Bonus', 'Bonus'];
   // Any transaction that's not a Deposit or Cashout counts as a game deduction
-const isBonus = (t) => t.type !== 'Deposit' && t.type !== 'Cashout';
+  const isBonus = (t) => t.type !== 'Deposit' && t.type !== 'Cashout';
 
-const deposits    = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.amount ?? 0), 0));
-const cashouts    = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.amount ?? 0), 0));
-const bonuses     = r2(shiftTxns.filter(isBonus).reduce((s,t) => s + (t.amount ?? 0), 0));
-const netProfit   = r2(deposits - cashouts);
-const depositFees = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.fee ?? 0), 0));
-const cashoutFees = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.fee ?? 0), 0));
-const totalFees   = r2(depositFees + cashoutFees);
-const hasFees     = totalFees > 0.001;
-//   export const RECONCILIATION_MATH_BLOCK = `
-//   // ── Reconciliation math ──────────────────────────────────────
-//   const hasStartSnapshot = startSnapshot != null;
-//   const startWallets = startSnapshot?.walletSnapshot ?? [];
-//   const startGames   = startSnapshot?.gameSnapshot ?? [];
-//   const startTotalW  = r2(startSnapshot?.totalWallet ?? 0);
-//   const startTotalG  = Math.round(startSnapshot?.totalGames ?? 0);
-//   const endTotalW    = r2(endWallets.reduce((s, w) => s + (w.balance ?? 0), 0));
-//   const endTotalG    = endGames.reduce((s, g) => s + Math.round(g.pointStock ?? 0), 0);
-//   const walletChange = hasStartSnapshot ? r2(endTotalW - startTotalW) : 0;
-//   const gameChange   = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
- 
-//   // ✅ FIX: Treat ANY non-Deposit, non-Cashout transaction as a bonus/deduction.
-//   //         This catches "random bonus", "loyalty bonus", "Player no 1x2", etc.
-//   const isBonus = (t) => t.type !== 'Deposit' && t.type !== 'Cashout';
- 
-//   const deposits     = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.amount ?? 0), 0));
-//   const cashouts     = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.amount ?? 0), 0));
-//   const bonuses      = r2(shiftTxns.filter(isBonus).reduce((s,t) => s + (t.amount ?? 0), 0));
-//   const netProfit    = r2(deposits - cashouts);
- 
-//   const depositFees  = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.fee ?? 0), 0));
-//   const cashoutFees  = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.fee ?? 0), 0));
-//   const totalFees    = r2(depositFees + cashoutFees);
-//   const hasFees      = totalFees > 0.001;
- 
-//   // Expected wallet change = Deposits − Cashouts − fees (fees leave the wallet)
-//   const expectedWalletChange  = r2(deposits - cashouts - totalFees);
-//   // Expected game deduction  = Deposits + fees + all bonuses − Cashouts
-//   const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
-//   const expectedGameChange    = Math.round(-expectedGameDeduction);
-// `;
-const expectedWalletChange  = r2(deposits - cashouts - totalFees);
-const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
-// const expectedGameChange    = Math.round(-expectedGameDeduction);
+  const deposits = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.amount ?? 0), 0));
+  const cashouts = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.amount ?? 0), 0));
+  const bonuses = r2(shiftTxns.filter(isBonus).reduce((s, t) => s + (t.amount ?? 0), 0));
+  const netProfit = r2(deposits - cashouts);
+  const depositFees = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.fee ?? 0), 0));
+  const cashoutFees = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.fee ?? 0), 0));
+  const totalFees = r2(depositFees + cashoutFees);
+  const hasFees = totalFees > 0.001;
+  //   export const RECONCILIATION_MATH_BLOCK = `
+  //   // ── Reconciliation math ──────────────────────────────────────
+  //   const hasStartSnapshot = startSnapshot != null;
+  //   const startWallets = startSnapshot?.walletSnapshot ?? [];
+  //   const startGames   = startSnapshot?.gameSnapshot ?? [];
+  //   const startTotalW  = r2(startSnapshot?.totalWallet ?? 0);
+  //   const startTotalG  = Math.round(startSnapshot?.totalGames ?? 0);
+  //   const endTotalW    = r2(endWallets.reduce((s, w) => s + (w.balance ?? 0), 0));
+  //   const endTotalG    = endGames.reduce((s, g) => s + Math.round(g.pointStock ?? 0), 0);
+  //   const walletChange = hasStartSnapshot ? r2(endTotalW - startTotalW) : 0;
+  //   const gameChange   = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
+
+  //   // ✅ FIX: Treat ANY non-Deposit, non-Cashout transaction as a bonus/deduction.
+  //   //         This catches "random bonus", "loyalty bonus", "Player no 1x2", etc.
+  //   const isBonus = (t) => t.type !== 'Deposit' && t.type !== 'Cashout';
+
+  //   const deposits     = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.amount ?? 0), 0));
+  //   const cashouts     = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.amount ?? 0), 0));
+  //   const bonuses      = r2(shiftTxns.filter(isBonus).reduce((s,t) => s + (t.amount ?? 0), 0));
+  //   const netProfit    = r2(deposits - cashouts);
+
+  //   const depositFees  = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.fee ?? 0), 0));
+  //   const cashoutFees  = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.fee ?? 0), 0));
+  //   const totalFees    = r2(depositFees + cashoutFees);
+  //   const hasFees      = totalFees > 0.001;
+
+  //   // Expected wallet change = Deposits − Cashouts − fees (fees leave the wallet)
+  //   const expectedWalletChange  = r2(deposits - cashouts - totalFees);
+  //   // Expected game deduction  = Deposits + fees + all bonuses − Cashouts
+  //   const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
+  //   const expectedGameChange    = Math.round(-expectedGameDeduction);
+  // `;
+  const expectedWalletChange = r2(deposits - cashouts - totalFees);
+  const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
+  const totalShiftExpenses = shiftExpenses.reduce((s, e) => s + (e.amount ?? 0), 0);
+  const totalShiftTakeouts = shiftTakeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+  const shiftPointsAdded = shiftExpenses.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
+  const expectedGameChange = Math.round(-expectedGameDeduction + shiftPointsAdded);
+  // const expectedGameChange    = Math.round(-expectedGameDeduction);
   // const expectedGameChange = Math.round(-expectedGameDeduction + shiftPointsAdded);
   // const expectedGameChange = Math.round(-expectedGameDeduction);
   // const deposits = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.amount ?? 0), 0));
@@ -1119,14 +1123,7 @@ const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
       });
   });
 
-  // const totalShiftExpenses = shiftExpenses.reduce((s, e) => s + (e.amount ?? 0), 0);
-  // const totalShiftTakeouts = shiftTakeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
-  // const shiftPointsAdded = shiftExpenses.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
 
-  const totalShiftExpenses = shiftExpenses.reduce((s, e) => s + (e.amount ?? 0), 0);
-const totalShiftTakeouts = shiftTakeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
-const shiftPointsAdded = shiftExpenses.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
-const expectedGameChange = Math.round(-expectedGameDeduction + shiftPointsAdded);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -1468,7 +1465,7 @@ const expectedGameChange = Math.round(-expectedGameDeduction + shiftPointsAdded)
                 { label: 'Net Profit (D−C)', val: `${netProfit >= 0 ? '+' : ''}$${netProfit.toFixed(2)}`, color: netProfit >= 0 ? '#16a34a' : '#dc2626', bg: netProfit >= 0 ? '#f0fdf4' : '#fef2f2' },
                 { label: 'Expenses', val: `-$${totalShiftExpenses.toFixed(2)}`, color: '#b45309', bg: '#fffbeb' },
                 { label: 'Takeouts', val: `-$${totalShiftTakeouts.toFixed(2)}`, color: '#991b1b', bg: '#fff1f2' }, */}
-      {/* // ...(shiftPointsAdded > 0 ? [{ label: 'Pts Reloaded', val: `+${shiftPointsAdded} pts`, color: '#7c3aed', bg: '#f5f3ff' }] : []),
+            {/* // ...(shiftPointsAdded > 0 ? [{ label: 'Pts Reloaded', val: `+${shiftPointsAdded} pts`, color: '#7c3aed', bg: '#f5f3ff' }] : []),
       // { label: 'Pts Reloaded', val: shiftPointsAdded > 0 ? `+${shiftPointsAdded} pts` : '0 pts', color: '#7c3aed', bg: '#f5f3ff' },
       //         ].map(({ label, val, color, bg }) => (
       //           <div key={label} style={{ padding: '12px', background: bg, borderRadius: '10px', textAlign: 'center' }}>
@@ -1479,37 +1476,37 @@ const expectedGameChange = Math.round(-expectedGameDeduction + shiftPointsAdded)
       //       </div> */}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px,1fr))', gap: '10px' }}>
-  <div style={{ padding: '12px', background: '#f0fdf4', borderRadius: '10px', textAlign: 'center' }}>
-    <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Deposits</p>
-    <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#16a34a' }}>+${deposits.toFixed(2)}</p>
-  </div>
-  <div style={{ padding: '12px', background: '#fef2f2', borderRadius: '10px', textAlign: 'center' }}>
-    <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Cashouts</p>
-    <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#dc2626' }}>-${cashouts.toFixed(2)}</p>
-  </div>
-  <div style={{ padding: '12px', background: '#fffbeb', borderRadius: '10px', textAlign: 'center' }}>
-    <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Bonuses</p>
-    <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#d97706' }}>-${bonuses.toFixed(2)}</p>
-  </div>
-  <div style={{ padding: '12px', background: netProfit >= 0 ? '#f0fdf4' : '#fef2f2', borderRadius: '10px', textAlign: 'center' }}>
-    <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Net Profit (D−C)</p>
-    <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: netProfit >= 0 ? '#16a34a' : '#dc2626' }}>{netProfit >= 0 ? '+' : ''}${netProfit.toFixed(2)}</p>
-  </div>
-  <div style={{ padding: '12px', background: '#fffbeb', borderRadius: '10px', textAlign: 'center' }}>
-    <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Expenses</p>
-    <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#b45309' }}>-${totalShiftExpenses.toFixed(2)}</p>
-  </div>
-  <div style={{ padding: '12px', background: '#fff1f2', borderRadius: '10px', textAlign: 'center' }}>
-    <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Takeouts</p>
-    <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#991b1b' }}>-${totalShiftTakeouts.toFixed(2)}</p>
-  </div>
-  {shiftPointsAdded > 0 && (
-    <div style={{ padding: '12px', background: '#f5f3ff', borderRadius: '10px', textAlign: 'center' }}>
-      <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Pts Reloaded</p>
-      <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#7c3aed' }}>+{shiftPointsAdded} pts</p>
-    </div>
-  )}
-</div>
+              <div style={{ padding: '12px', background: '#f0fdf4', borderRadius: '10px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Deposits</p>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#16a34a' }}>+${deposits.toFixed(2)}</p>
+              </div>
+              <div style={{ padding: '12px', background: '#fef2f2', borderRadius: '10px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Cashouts</p>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#dc2626' }}>-${cashouts.toFixed(2)}</p>
+              </div>
+              <div style={{ padding: '12px', background: '#fffbeb', borderRadius: '10px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Bonuses</p>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#d97706' }}>-${bonuses.toFixed(2)}</p>
+              </div>
+              <div style={{ padding: '12px', background: netProfit >= 0 ? '#f0fdf4' : '#fef2f2', borderRadius: '10px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Net Profit (D−C)</p>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: netProfit >= 0 ? '#16a34a' : '#dc2626' }}>{netProfit >= 0 ? '+' : ''}${netProfit.toFixed(2)}</p>
+              </div>
+              <div style={{ padding: '12px', background: '#fffbeb', borderRadius: '10px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Expenses</p>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#b45309' }}>-${totalShiftExpenses.toFixed(2)}</p>
+              </div>
+              <div style={{ padding: '12px', background: '#fff1f2', borderRadius: '10px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Takeouts</p>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#991b1b' }}>-${totalShiftTakeouts.toFixed(2)}</p>
+              </div>
+              {shiftPointsAdded > 0 && (
+                <div style={{ padding: '12px', background: '#f5f3ff', borderRadius: '10px', textAlign: 'center' }}>
+                  <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Pts Reloaded</p>
+                  <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#7c3aed' }}>+{shiftPointsAdded} pts</p>
+                </div>
+              )}
+            </div>
 
             {hasFees && (
               <div style={{
@@ -1845,51 +1842,51 @@ const expectedGameChange = Math.round(-expectedGameDeduction + shiftPointsAdded)
                 borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '12px'
               }}>
                 <AlertCircle size={18} color="#dc2626" style={{ flexShrink: 0, marginTop: '1px' }} />
-<div>
-  <p style={{ margin: '0 0 4px', fontWeight: '700', fontSize: '14px', color: '#991b1b' }}>
-    {[
-      !crossAdjWalletBalanced ? `⚠️ Cash discrepancy $${Math.abs(crossAdjWalletDisc).toFixed(2)}` : '',
-      !crossAdjGameBalanced ? `⚠️ Game pts off ${Math.abs(crossAdjGameDisc)} pts` : '',
-    ].filter(Boolean).join(' · ')}
-  </p>
+                <div>
+                  <p style={{ margin: '0 0 4px', fontWeight: '700', fontSize: '14px', color: '#991b1b' }}>
+                    {[
+                      !crossAdjWalletBalanced ? `⚠️ Cash discrepancy $${Math.abs(crossAdjWalletDisc).toFixed(2)}` : '',
+                      !crossAdjGameBalanced ? `⚠️ Game pts off ${Math.abs(crossAdjGameDisc)} pts` : '',
+                    ].filter(Boolean).join(' · ')}
+                  </p>
 
-  <p style={{ margin: 0, fontSize: '12px', color: '#991b1b', lineHeight: 1.6 }}>
-    {!crossAdjGameBalanced && (
-      <span style={{ display: 'block' }}>
-        🎮 Points: actual {gameChange >= 0 ? '+' : ''}{gameChange} pts, expected {expectedGameChange} pts
-        {' '}(deposits ${deposits.toFixed(2)} + fees ${totalFees.toFixed(2)} + bonuses ${bonuses.toFixed(2)} − cashouts ${cashouts.toFixed(2)})
-        {totalCrossGamePts > 0
-          ? ` — ~${Math.round(totalCrossGamePts)} pts from other stores excluded`
-          : ' — no cross-store game activity'}.
-        {' '}Still {Math.abs(crossAdjGameDisc)} pts unaccounted.
-      </span>
-    )}
-    {!crossAdjWalletBalanced && (
-      <span style={{ display: 'block', marginTop: !crossAdjGameBalanced ? '4px' : '0' }}>
-        💳 Wallet: actual {walletChange >= 0 ? '+' : ''}${walletChange.toFixed(2)}, expected ${expectedWalletChange.toFixed(2)}
-        {Math.abs(totalCrossWalletAmt) > 0.01
-          ? ` — $${Math.abs(totalCrossWalletAmt).toFixed(2)} from other stores excluded`
-          : ' — no cross-store wallet activity'}.
-        {' '}Still ${Math.abs(crossAdjWalletDisc).toFixed(2)} unaccounted.
-      </span>
-    )}
-  </p>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#991b1b', lineHeight: 1.6 }}>
+                    {!crossAdjGameBalanced && (
+                      <span style={{ display: 'block' }}>
+                        🎮 Points: actual {gameChange >= 0 ? '+' : ''}{gameChange} pts, expected {expectedGameChange} pts
+                        {' '}(deposits ${deposits.toFixed(2)} + fees ${totalFees.toFixed(2)} + bonuses ${bonuses.toFixed(2)} − cashouts ${cashouts.toFixed(2)})
+                        {totalCrossGamePts > 0
+                          ? ` — ~${Math.round(totalCrossGamePts)} pts from other stores excluded`
+                          : ' — no cross-store game activity'}.
+                        {' '}Still {Math.abs(crossAdjGameDisc)} pts unaccounted.
+                      </span>
+                    )}
+                    {!crossAdjWalletBalanced && (
+                      <span style={{ display: 'block', marginTop: !crossAdjGameBalanced ? '4px' : '0' }}>
+                        💳 Wallet: actual {walletChange >= 0 ? '+' : ''}${walletChange.toFixed(2)}, expected ${expectedWalletChange.toFixed(2)}
+                        {Math.abs(totalCrossWalletAmt) > 0.01
+                          ? ` — $${Math.abs(totalCrossWalletAmt).toFixed(2)} from other stores excluded`
+                          : ' — no cross-store wallet activity'}.
+                        {' '}Still ${Math.abs(crossAdjWalletDisc).toFixed(2)} unaccounted.
+                      </span>
+                    )}
+                  </p>
 
-  <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#64748b' }}>
-    {!crossAdjWalletBalanced && (
-      `Wallet: actual ${walletChange >= 0 ? '+' : ''}$${walletChange.toFixed(2)}, 
+                  <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#64748b' }}>
+                    {!crossAdjWalletBalanced && (
+                      `Wallet: actual ${walletChange >= 0 ? '+' : ''}$${walletChange.toFixed(2)}, 
        expected $${expectedWalletChange.toFixed(2)}, 
        cross-store accounted for $${Math.abs(totalCrossWalletAmt).toFixed(2)} — 
        still $${Math.abs(crossAdjWalletDisc).toFixed(2)} off. `
-    )}
-    {!crossAdjGameBalanced && (
-      `Game: actual ${gameChange >= 0 ? '+' : ''}${gameChange} pts, 
+                    )}
+                    {!crossAdjGameBalanced && (
+                      `Game: actual ${gameChange >= 0 ? '+' : ''}${gameChange} pts, 
        expected ${expectedGameChange} pts, 
        cross-store accounted for ~${Math.round(totalCrossGamePts)} pts — 
        still ${Math.abs(crossAdjGameDisc)} pts off.`
-    )}
-  </p>
-</div>
+                    )}
+                  </p>
+                </div>
               </div>
             )}
 
@@ -1923,7 +1920,7 @@ const expectedGameChange = Math.round(-expectedGameDeduction + shiftPointsAdded)
                       {shiftTxns.map(t => {
                         const isD = t.type === 'Deposit', isCO = t.type === 'Cashout';
                         // const isB = BONUS_TYPES.includes(t.type);
-                const isB = isBonus(t);
+                        const isB = isBonus(t);
 
                         const amtColor = isD ? '#16a34a' : isCO ? '#dc2626' : isB ? '#c2410c' : '#475569';
                         const pts = t.gameStockAfter != null && t.gameStockBefore != null
