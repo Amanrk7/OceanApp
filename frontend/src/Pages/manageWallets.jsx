@@ -4,6 +4,7 @@ import {
     RefreshCw, DollarSign, ChevronDown, ChevronUp, Save,
     Radio, WifiOff
 } from 'lucide-react';
+import { useToast } from '../Context/toastContext';
 import { api } from '../api';
 
 // ─── Style constants ──────────────────────────────────────────────────────────
@@ -138,23 +139,25 @@ function Field({ label, children, hint }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const ManageWalletsPage = () => {
+    const { add: toast } = useToast();
+
     const [grouped, setGrouped] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [globalError, setGlobalError] = useState(null);
-    const [globalSuccess, setGlobalSuccess] = useState(null);
+    // const [globalError, setGlobalError] = useState(null);
+    // const [globalSuccess, setGlobalSuccess] = useState(null);
     const [expandedMethod, setExpandedMethod] = useState(null);
     const [savingId, setSavingId] = useState(null);
     const [togglingId, setTogglingId] = useState(null);   // wallet id being live-toggled
 
     const [showAdd, setShowAdd] = useState(false);
     const [addForm, setAddForm] = useState({ name: '', method: 'Chime', identifier: '', balance: '', isLive: true });
-    const [addError, setAddError] = useState(null);
+    // const [addError, setAddError] = useState(null);
     const [addLoading, setAddLoading] = useState(false);
 
     const [editWallet, setEditWallet] = useState(null);
     const [editForm, setEditForm] = useState({});
-    const [editError, setEditError] = useState(null);
+    // const [editError, setEditError] = useState(null);
     const [editLoading, setEditLoading] = useState(false);
 
     const [deleteTarget, setDeleteTarget] = useState(null);
@@ -163,11 +166,13 @@ const ManageWalletsPage = () => {
     const loadWallets = useCallback(async (force = false) => {
         try {
             force ? setRefreshing(true) : setLoading(true);
-            setGlobalError(null);
+            // setGlobalError(null);
+
             const res = await api.wallets.getGroupedWallets(force);
             setGrouped(res.data || []);
         } catch (err) {
-            setGlobalError(err.message || 'Failed to load wallets');
+            toast(err.message || 'Failed to load wallets', 'error');
+            // setGlobalError();
         } finally { setLoading(false); setRefreshing(false); }
     }, []);
 
@@ -203,7 +208,10 @@ const ManageWalletsPage = () => {
     }, []);
     useEffect(() => { loadWallets(); }, [loadWallets]);
 
-    const flash = (msg) => { setGlobalSuccess(msg); setTimeout(() => setGlobalSuccess(null), 3000); };
+    const flash = (msg) => {
+        setGlobalSuccess(msg);
+        // setTimeout(() => setGlobalSuccess(null), 3000); 
+    };
 
     // ── inline balance save ──────────────────────────────────────────────────
     const handleInlineBalanceSave = async (walletId, newBalance) => {
@@ -213,20 +221,12 @@ const ManageWalletsPage = () => {
         try {
             await api.wallets.updateWallet(walletId, { balance: val });
             await loadWallets(true); flash('Balance updated');
-        } catch (err) { setGlobalError(err.message || 'Failed to update balance'); }
+        } catch (err) {
+            toast(err.message || 'Failed to update balance', 'error');
+        }
         finally { setSavingId(null); }
     };
 
-    // ── live toggle ──────────────────────────────────────────────────────────
-    // const handleLiveToggle = async (wallet) => {
-    //     setTogglingId(wallet.id);
-    //     try {
-    //         await api.wallets.updateWallet(wallet.id, { isLive: !wallet.isLive });
-    //         await loadWallets(true);
-    //         flash(`${wallet.name} is now ${!wallet.isLive ? 'LIVE' : 'offline'}`);
-    //     } catch (err) { setGlobalError(err.message || 'Failed to update wallet status'); }
-    //     finally { setTogglingId(null); }
-    // };
     const handleLiveToggle = async (wallet) => {
         setTogglingId(wallet.id);
         const newStatus = !wallet.isLive;          // ← capture BEFORE the await
@@ -234,23 +234,27 @@ const ManageWalletsPage = () => {
             await api.wallets.updateWallet(wallet.id, { isLive: newStatus });
             await loadWallets(true);
             flash(`${wallet.name} is now ${newStatus ? 'LIVE' : 'offline'}`);  // ← use captured value
-        } catch (err) { setGlobalError(err.message || 'Failed to update wallet status'); }
+        } catch (err) { toast(err.message || 'Failed to update wallet status', 'error'); }
         finally { setTogglingId(null); }
     };
-const handleToggleShare = async (wallet) => {
-    setGlobalError(null);
-    try {
-        await api.wallets.updateWallet(wallet.id, { isShared: !wallet.isShared });
-        await loadWallets(true);
-        flash(`"${wallet.name}" is now ${!wallet.isShared ? 'shared across all stores' : 'store-private'}.`);
-    } catch (err) {
-        setGlobalError(err.message || 'Failed to update share status.');
-    }
-};
+    const handleToggleShare = async (wallet) => {
+        // setGlobalError(null);
+        try {
+            await api.wallets.updateWallet(wallet.id, { isShared: !wallet.isShared });
+            await loadWallets(true);
+            flash(`"${wallet.name}" is now ${!wallet.isShared ? 'shared across all stores' : 'store-private'}.`);
+        } catch (err) {
+            toast(err.message || 'Failed to update share status', 'error');
+        }
+    };
     // ── add ──────────────────────────────────────────────────────────────────
     const handleAdd = async (e) => {
-        e.preventDefault(); setAddError(null);
-        if (!addForm.name || !addForm.method) { setAddError('Name and method are required.'); return; }
+        e.preventDefault();
+        if (!addForm.name || !addForm.method) {
+            // setAddError(); 
+            toast('Name and method are required.', 'error');
+            return;
+        }
         setAddLoading(true);
         try {
             await api.wallets.createWallet({
@@ -261,8 +265,10 @@ const handleToggleShare = async (wallet) => {
             });
             await loadWallets(true); setShowAdd(false);
             setAddForm({ name: '', method: 'Chime', identifier: '', balance: '', isLive: true });
-            flash('Wallet created successfully');
-        } catch (err) { setAddError(err.message || 'Failed to create wallet'); }
+            // flash('Wallet created successfully');
+            toast('Wallet created successfully', 'success');
+
+        } catch (err) { toast(err.message || 'Failed to create wallet', 'error'); }
         finally { setAddLoading(false); }
     };
 
@@ -276,12 +282,12 @@ const handleToggleShare = async (wallet) => {
             isLive: wallet.isLive !== false,   // default true if not set
             isShared: wallet.isShared === true,
         });
-        setEditError(null);
+        // setEditError(null);
     };
 
     const handleEdit = async (e) => {
-        e.preventDefault(); setEditError(null);
-        if (!editForm.name || !editForm.method) { setEditError('Name and method are required.'); return; }
+        e.preventDefault();
+        if (!editForm.name || !editForm.method) { toast('Name and method are required.', 'error'); return; }
         setEditLoading(true);
         try {
             await api.wallets.updateWallet(editWallet.id, {
@@ -291,8 +297,11 @@ const handleToggleShare = async (wallet) => {
                 isLive: editForm.isLive,
                 isShared: editForm.isShared,
             });
-            await loadWallets(true); setEditWallet(null); flash('Wallet updated successfully');
-        } catch (err) { setEditError(err.message || 'Failed to update wallet'); }
+            await loadWallets(true); setEditWallet(null);
+            toast('Wallet updated successfully', 'success');
+
+            // flash('Wallet updated successfully');
+        } catch (err) { toast(err.message || 'Failed to update wallet', 'error'); }
         finally { setEditLoading(false); }
     };
 
@@ -303,7 +312,7 @@ const handleToggleShare = async (wallet) => {
         try {
             await api.wallets.deleteWallet(deleteTarget.id);
             await loadWallets(true); setDeleteTarget(null); flash('Wallet deleted');
-        } catch (err) { setGlobalError(err.message || 'Failed to delete wallet'); setDeleteTarget(null); }
+        } catch (err) { toast(err.message || 'Failed to delete wallet', 'error'); setDeleteTarget(null); }
         finally { setDeleteLoading(false); }
     };
 
@@ -332,7 +341,7 @@ const handleToggleShare = async (wallet) => {
                         style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', fontWeight: '600', fontSize: '13px', color: '#475569', cursor: 'pointer', opacity: refreshing ? 0.6 : 1 }}>
                         <RefreshCw style={{ width: '14px', height: '14px', animation: refreshing ? 'spin 1s linear infinite' : 'none' }} /> Refresh
                     </button>
-                    <button onClick={() => { setShowAdd(true); setAddError(null); }}
+                    <button onClick={() => { setShowAdd(true); }}
                         style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: SKY, color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>
                         <Plus style={{ width: '14px', height: '14px' }} /> Add New Wallet
                     </button>
@@ -340,8 +349,8 @@ const handleToggleShare = async (wallet) => {
             </div>
 
             {/* ── Global Alerts ── */}
-            <Alert type="error" message={globalError} onDismiss={() => setGlobalError(null)} />
-            <Alert type="success" message={globalSuccess} onDismiss={() => setGlobalSuccess(null)} />
+            {/* <Alert type="error" message={globalError} onDismiss={() => setGlobalError(null)} /> */}
+            {/* <Alert type="success" message={globalSuccess} onDismiss={() => setGlobalSuccess(null)} /> */}
 
             {/* ── Summary Cards ── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
@@ -476,19 +485,19 @@ const handleToggleShare = async (wallet) => {
                                                     {/* Actions */}
                                                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
                                                         <button
-        onClick={() => handleToggleShare(wallet)}
-        title={wallet.isShared ? 'Shared — click to make store-private' : 'Private — click to share across stores'}
-        style={{
-            width: '28px', height: '28px', borderRadius: '6px',
-            border: `1px solid ${wallet.isShared ? '#bfdbfe' : '#e2e8f0'}`,
-            background: wallet.isShared ? '#eff6ff' : '#f8fafc',
-            color: wallet.isShared ? '#2563eb' : '#cbd5e1',
-            cursor: 'pointer', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', fontSize: '12px', padding: 0,
-        }}
-    >
-        🔗
-    </button>
+                                                            onClick={() => handleToggleShare(wallet)}
+                                                            title={wallet.isShared ? 'Shared — click to make store-private' : 'Private — click to share across stores'}
+                                                            style={{
+                                                                width: '28px', height: '28px', borderRadius: '6px',
+                                                                border: `1px solid ${wallet.isShared ? '#bfdbfe' : '#e2e8f0'}`,
+                                                                background: wallet.isShared ? '#eff6ff' : '#f8fafc',
+                                                                color: wallet.isShared ? '#2563eb' : '#cbd5e1',
+                                                                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                                                justifyContent: 'center', fontSize: '12px', padding: 0,
+                                                            }}
+                                                        >
+                                                            🔗
+                                                        </button>
 
                                                         <button onClick={() => openEdit(wallet)}
                                                             style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', background: SKY, color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
@@ -505,7 +514,7 @@ const handleToggleShare = async (wallet) => {
 
                                         {/* Quick-add inside group */}
                                         <div style={{ padding: '12px 24px', borderTop: '1px solid #f1f5f9' }}>
-                                            <button onClick={() => { setAddForm(f => ({ ...f, method: group.method })); setShowAdd(true); setAddError(null); }}
+                                            <button onClick={() => { setAddForm(f => ({ ...f, method: group.method })); setShowAdd(true); }}
                                                 style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: SKY, fontSize: '12px', fontWeight: '600', cursor: 'pointer', padding: 0 }}>
                                                 <Plus style={{ width: '13px', height: '13px' }} /> Add {group.method} wallet
                                             </button>
@@ -545,7 +554,7 @@ const handleToggleShare = async (wallet) => {
                         <LiveToggle isLive={addForm.isLive} loading={false} onToggle={() => setAddForm(f => ({ ...f, isLive: !f.isLive }))} />
                     </div>
 
-                    <Alert type="error" message={addError} />
+                    {/* <Alert type="error" message={addError} /> */}
                     <div style={{ display: 'flex', gap: '12px', paddingTop: '4px', borderTop: '1px solid #f1f5f9', marginTop: '4px' }}>
                         <button type="button" onClick={() => setShowAdd(false)} style={{ flex: 1, padding: '12px', background: '#f1f5f9', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '14px', color: '#475569' }}>Cancel</button>
                         <button type="submit" disabled={addLoading}
@@ -582,8 +591,8 @@ const handleToggleShare = async (wallet) => {
                                 {editForm.isLive ? 'Live — available for transactions' : 'Offline — hidden from transaction forms'}
                             </p>
                         </div> */}
-                        {/* <LiveToggle isLive={editForm.isLive} loading={false} onToggle={() => setEditForm(f => ({ ...f, isLive: !f.isLive }))} /> */}
-                        {/* <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: editForm.isShared ? '#eff6ff' : '#f8fafc', borderRadius: '8px', border: `1px solid ${editForm.isShared ? '#bfdbfe' : '#e2e8f0'}`, transition: 'all .2s' }}>
+                    {/* <LiveToggle isLive={editForm.isLive} loading={false} onToggle={() => setEditForm(f => ({ ...f, isLive: !f.isLive }))} /> */}
+                    {/* <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: editForm.isShared ? '#eff6ff' : '#f8fafc', borderRadius: '8px', border: `1px solid ${editForm.isShared ? '#bfdbfe' : '#e2e8f0'}`, transition: 'all .2s' }}>
                             <div>
                                 <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>Share across all stores</p>
                                 <p style={{ margin: 0, fontSize: '11px', color: editForm.isShared ? '#1d4ed8' : '#94a3b8' }}>
@@ -594,28 +603,28 @@ const handleToggleShare = async (wallet) => {
                         </div>
                     </div> */}
                     {/* Live status */}
-<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: editForm.isLive ? '#f0fdf4' : '#f8fafc', borderRadius: '8px', border: `1px solid ${editForm.isLive ? '#bbf7d0' : '#e2e8f0'}`, transition: 'all .2s' }}>
-    <div>
-        <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>Wallet Status</p>
-        <p style={{ margin: 0, fontSize: '11px', color: editForm.isLive ? '#15803d' : '#94a3b8' }}>
-            {editForm.isLive ? 'Live — available for transactions' : 'Offline — hidden from transaction forms'}
-        </p>
-    </div>
-    <LiveToggle isLive={editForm.isLive} loading={false} onToggle={() => setEditForm(f => ({ ...f, isLive: !f.isLive }))} />
-</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: editForm.isLive ? '#f0fdf4' : '#f8fafc', borderRadius: '8px', border: `1px solid ${editForm.isLive ? '#bbf7d0' : '#e2e8f0'}`, transition: 'all .2s' }}>
+                        <div>
+                            <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>Wallet Status</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: editForm.isLive ? '#15803d' : '#94a3b8' }}>
+                                {editForm.isLive ? 'Live — available for transactions' : 'Offline — hidden from transaction forms'}
+                            </p>
+                        </div>
+                        <LiveToggle isLive={editForm.isLive} loading={false} onToggle={() => setEditForm(f => ({ ...f, isLive: !f.isLive }))} />
+                    </div>
 
-{/* Share across stores */}
-<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: editForm.isShared ? '#eff6ff' : '#f8fafc', borderRadius: '8px', border: `1px solid ${editForm.isShared ? '#bfdbfe' : '#e2e8f0'}`, transition: 'all .2s' }}>
-    <div>
-        <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>Share across all stores</p>
-        <p style={{ margin: 0, fontSize: '11px', color: editForm.isShared ? '#1d4ed8' : '#94a3b8' }}>
-            {editForm.isShared ? 'Visible and usable by all stores' : 'This store only'}
-        </p>
-    </div>
-    <LiveToggle isLive={editForm.isShared} loading={false} onToggle={() => setEditForm(f => ({ ...f, isShared: !f.isShared }))} />
-</div>
+                    {/* Share across stores */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: editForm.isShared ? '#eff6ff' : '#f8fafc', borderRadius: '8px', border: `1px solid ${editForm.isShared ? '#bfdbfe' : '#e2e8f0'}`, transition: 'all .2s' }}>
+                        <div>
+                            <p style={{ margin: '0 0 2px', fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>Share across all stores</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: editForm.isShared ? '#1d4ed8' : '#94a3b8' }}>
+                                {editForm.isShared ? 'Visible and usable by all stores' : 'This store only'}
+                            </p>
+                        </div>
+                        <LiveToggle isLive={editForm.isShared} loading={false} onToggle={() => setEditForm(f => ({ ...f, isShared: !f.isShared }))} />
+                    </div>
 
-                    <Alert type="error" message={editError} />
+                    {/* <Alert type="error" message={editError} /> */}
                     <div style={{ display: 'flex', gap: '12px', paddingTop: '4px', borderTop: '1px solid #f1f5f9', marginTop: '4px' }}>
                         <button type="button" onClick={() => setEditWallet(null)} style={{ flex: 1, padding: '12px', background: '#f1f5f9', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '14px', color: '#475569' }}>Cancel</button>
                         <button type="submit" disabled={editLoading}
