@@ -220,7 +220,10 @@ const ManageWalletsPage = () => {
         setSavingId(walletId);
         try {
             await api.wallets.updateWallet(walletId, { balance: val });
-            await loadWallets(true); flash('Balance updated');
+            await loadWallets(true);
+            toast('Balance updated', 'success');
+
+            // flash('Balance updated');
         } catch (err) {
             toast(err.message || 'Failed to update balance', 'error');
         }
@@ -233,7 +236,8 @@ const ManageWalletsPage = () => {
         try {
             await api.wallets.updateWallet(wallet.id, { isLive: newStatus });
             await loadWallets(true);
-            flash(`${wallet.name} is now ${newStatus ? 'LIVE' : 'offline'}`);  // ← use captured value
+            // flash(`${wallet.name} is now ${newStatus ? 'LIVE' : 'offline'}`);  // ← use captured value
+            toast(`${wallet.name} is now ${newStatus ? 'LIVE' : 'offline'}`, 'success');
         } catch (err) { toast(err.message || 'Failed to update wallet status', 'error'); }
         finally { setTogglingId(null); }
     };
@@ -242,7 +246,10 @@ const ManageWalletsPage = () => {
         try {
             await api.wallets.updateWallet(wallet.id, { isShared: !wallet.isShared });
             await loadWallets(true);
-            flash(`"${wallet.name}" is now ${!wallet.isShared ? 'shared across all stores' : 'store-private'}.`);
+            // flash(`"${wallet.name}" is now ${!wallet.isShared ? 'shared across all stores' : 'store-private'}.`);
+            toast(`"${wallet.name}" is now ${!wallet.isShared ? 'shared across all stores' : 'store-private'}`, 'success');
+
+            // handleDelete
         } catch (err) {
             toast(err.message || 'Failed to update share status', 'error');
         }
@@ -311,7 +318,7 @@ const ManageWalletsPage = () => {
         setDeleteLoading(true);
         try {
             await api.wallets.deleteWallet(deleteTarget.id);
-            await loadWallets(true); setDeleteTarget(null); flash('Wallet deleted');
+            await loadWallets(true); setDeleteTarget(null); toast('Wallet deleted', 'success');
         } catch (err) { toast(err.message || 'Failed to delete wallet', 'error'); setDeleteTarget(null); }
         finally { setDeleteLoading(false); }
     };
