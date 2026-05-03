@@ -1011,7 +1011,8 @@ const hasFees     = totalFees > 0.001;
 // `;
 const expectedWalletChange  = r2(deposits - cashouts - totalFees);
 const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
-const expectedGameChange    = Math.round(-expectedGameDeduction);
+// const expectedGameChange    = Math.round(-expectedGameDeduction);
+  const expectedGameChange = Math.round(-expectedGameDeduction + shiftPointsAdded);
   // const deposits = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.amount ?? 0), 0));
   // const cashouts = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.amount ?? 0), 0));
   // const bonuses = r2(shiftTxns.filter(t => BONUS_TYPES.includes(t.type)).reduce((s, t) => s + (t.amount ?? 0), 0));
@@ -1119,6 +1120,7 @@ const expectedGameChange    = Math.round(-expectedGameDeduction);
 
   const totalShiftExpenses = shiftExpenses.reduce((s, e) => s + (e.amount ?? 0), 0);
   const totalShiftTakeouts = shiftTakeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+  const shiftPointsAdded = shiftExpenses.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -1460,6 +1462,7 @@ const expectedGameChange    = Math.round(-expectedGameDeduction);
                 { label: 'Net Profit (D−C)', val: `${netProfit >= 0 ? '+' : ''}$${netProfit.toFixed(2)}`, color: netProfit >= 0 ? '#16a34a' : '#dc2626', bg: netProfit >= 0 ? '#f0fdf4' : '#fef2f2' },
                 { label: 'Expenses', val: `-$${totalShiftExpenses.toFixed(2)}`, color: '#b45309', bg: '#fffbeb' },
                 { label: 'Takeouts', val: `-$${totalShiftTakeouts.toFixed(2)}`, color: '#991b1b', bg: '#fff1f2' },
+      ...(shiftPointsAdded > 0 ? [{ label: 'Pts Reloaded', val: `+${shiftPointsAdded} pts`, color: '#7c3aed', bg: '#f5f3ff' }] : []),
               ].map(({ label, val, color, bg }) => (
                 <div key={label} style={{ padding: '12px', background: bg, borderRadius: '10px', textAlign: 'center' }}>
                   <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '.4px' }}>{label}</p>
