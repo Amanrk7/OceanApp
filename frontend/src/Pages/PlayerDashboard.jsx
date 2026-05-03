@@ -405,7 +405,8 @@ function DailyMilestoneBar({ todayDeposits, pendingBonuses, transactionHistory =
                                 {/* Row 2: Bonus amount or placeholder */}
                                 <div style={{ fontSize: '20px', fontWeight: '800', color: stateStyles.amtColor, lineHeight: 1 }}>
                                     {state === 'pending' && bonusAmt != null
-                                        ? `+$${parseFloat(bonusAmt).toFixed(2)}`
+                                        // ? `+$${parseFloat(bonusAmt).toFixed(2)}`
+                                        ? ''
                                         : state === 'claimed' && bonusAmt != null
                                             ? `+$${parseFloat(bonusAmt).toFixed(2)}`
                                             : state === 'locked' || state === 'reached'
