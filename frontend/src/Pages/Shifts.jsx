@@ -934,18 +934,84 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
       .finally(() => setLoading(false));
   }, [shift]);
 
-  // ── Reconciliation math ────────────────────────────────────────────────────
+  useEffect(() => {
+  if (!shift?.startTime) return;
+  const token = localStorage.getItem('authToken');
+  const es = new EventSource(`${API_BASE}/tasks/events?token=${token}`, { withCredentials: true });
+
+  es.onmessage = (e) => {
+    try {
+      const { type } = JSON.parse(e.data);
+      if (type === 'shared_game_updated' || type === 'shared_wallet_updated') {
+        const from = encodeURIComponent(new Date(shift.startTime).toISOString());
+        const to   = encodeURIComponent(new Date().toISOString());
+        fj(`/shifts/shared-resource-usage?fromDate=${from}&toDate=${to}`)
+          .then(r => setCrossStoreData(r?.data ?? null))
+          .catch(() => {});
+      }
+    } catch (_) {}
+  };
+  return () => es.close();
+}, [shift?.startTime]);
+
+//   // ── Reconciliation math ────────────────────────────────────────────────────
+//   const hasStartSnapshot = startSnapshot != null;
+//   const startWallets = startSnapshot?.walletSnapshot ?? [];
+//   const startGames = startSnapshot?.gameSnapshot ?? [];
+//   const startTotalW = r2(startSnapshot?.totalWallet ?? 0);
+//   const startTotalG = Math.round(startSnapshot?.totalGames ?? 0);
+//   const endTotalW = r2(endWallets.reduce((s, w) => s + (w.balance ?? 0), 0));
+//   const endTotalG = endGames.reduce((s, g) => s + Math.round(g.pointStock ?? 0), 0);
+//   const walletChange = hasStartSnapshot ? r2(endTotalW - startTotalW) : 0;
+//   const gameChange = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
+
+//   // const BONUS_TYPES = ['Match Bonus', 'Special Bonus', 'Streak Bonus', 'Referral Bonus', 'Bonus'];
+//   // Any transaction that's not a Deposit or Cashout counts as a game deduction
+// const isBonus = (t) => t.type !== 'Deposit' && t.type !== 'Cashout';
+
+// const deposits    = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.amount ?? 0), 0));
+// const cashouts    = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.amount ?? 0), 0));
+// const bonuses     = r2(shiftTxns.filter(isBonus).reduce((s,t) => s + (t.amount ?? 0), 0));
+// const netProfit   = r2(deposits - cashouts);
+// const depositFees = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.fee ?? 0), 0));
+// const cashoutFees = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.fee ?? 0), 0));
+// const totalFees   = r2(depositFees + cashoutFees);
+// const hasFees     = totalFees > 0.001;
+  export const RECONCILIATION_MATH_BLOCK = `
+  // ── Reconciliation math ──────────────────────────────────────
   const hasStartSnapshot = startSnapshot != null;
   const startWallets = startSnapshot?.walletSnapshot ?? [];
-  const startGames = startSnapshot?.gameSnapshot ?? [];
-  const startTotalW = r2(startSnapshot?.totalWallet ?? 0);
-  const startTotalG = Math.round(startSnapshot?.totalGames ?? 0);
-  const endTotalW = r2(endWallets.reduce((s, w) => s + (w.balance ?? 0), 0));
-  const endTotalG = endGames.reduce((s, g) => s + Math.round(g.pointStock ?? 0), 0);
+  const startGames   = startSnapshot?.gameSnapshot ?? [];
+  const startTotalW  = r2(startSnapshot?.totalWallet ?? 0);
+  const startTotalG  = Math.round(startSnapshot?.totalGames ?? 0);
+  const endTotalW    = r2(endWallets.reduce((s, w) => s + (w.balance ?? 0), 0));
+  const endTotalG    = endGames.reduce((s, g) => s + Math.round(g.pointStock ?? 0), 0);
   const walletChange = hasStartSnapshot ? r2(endTotalW - startTotalW) : 0;
-  const gameChange = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
-
-  const BONUS_TYPES = ['Match Bonus', 'Special Bonus', 'Streak Bonus', 'Referral Bonus', 'Bonus'];
+  const gameChange   = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
+ 
+  // ✅ FIX: Treat ANY non-Deposit, non-Cashout transaction as a bonus/deduction.
+  //         This catches "random bonus", "loyalty bonus", "Player no 1x2", etc.
+  const isBonus = (t) => t.type !== 'Deposit' && t.type !== 'Cashout';
+ 
+  const deposits     = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.amount ?? 0), 0));
+  const cashouts     = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.amount ?? 0), 0));
+  const bonuses      = r2(shiftTxns.filter(isBonus).reduce((s,t) => s + (t.amount ?? 0), 0));
+  const netProfit    = r2(deposits - cashouts);
+ 
+  const depositFees  = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.fee ?? 0), 0));
+  const cashoutFees  = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.fee ?? 0), 0));
+  const totalFees    = r2(depositFees + cashoutFees);
+  const hasFees      = totalFees > 0.001;
+ 
+  // Expected wallet change = Deposits − Cashouts − fees (fees leave the wallet)
+  const expectedWalletChange  = r2(deposits - cashouts - totalFees);
+  // Expected game deduction  = Deposits + fees + all bonuses − Cashouts
+  const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
+  const expectedGameChange    = Math.round(-expectedGameDeduction);
+`;
+const expectedWalletChange  = r2(deposits - cashouts - totalFees);
+const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
+const expectedGameChange    = Math.round(-expectedGameDeduction);
   const deposits = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.amount ?? 0), 0));
   const cashouts = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.amount ?? 0), 0));
   const bonuses = r2(shiftTxns.filter(t => BONUS_TYPES.includes(t.type)).reduce((s, t) => s + (t.amount ?? 0), 0));
@@ -1736,34 +1802,51 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                 borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '12px'
               }}>
                 <AlertCircle size={18} color="#dc2626" style={{ flexShrink: 0, marginTop: '1px' }} />
-                <div>
-                  <p style={{ margin: '0 0 4px', fontWeight: '700', fontSize: '14px', color: '#991b1b' }}>
-                    {[
-                      !crossAdjWalletBalanced ? `⚠️ Cash discrepancy $${Math.abs(crossAdjWalletDisc).toFixed(2)}` : '',
-                      !crossAdjGameBalanced ? `⚠️ Game pts off ${Math.abs(crossAdjGameDisc)} pts` : '',
-                    ].filter(Boolean).join(' · ')}
-                  </p>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#991b1b', lineHeight: 1.6 }}>
-                    {/* Already subtracted cross-store usage — this is a genuine mismatch */}
-                    After accounting for cross-store shared resource activity,
-                    your store still has an unresolved discrepancy.
-                    Please review your transactions and contact your admin.
-                  </p>
-                  <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#64748b' }}>
-                    {!crossAdjWalletBalanced && (
-                      `Wallet: actual ${walletChange >= 0 ? '+' : ''}$${walletChange.toFixed(2)}, 
-           expected $${expectedWalletChange.toFixed(2)}, 
-           cross-store accounted for $${Math.abs(totalCrossWalletAmt).toFixed(2)} — 
-           still $${Math.abs(crossAdjWalletDisc).toFixed(2)} off. `
-                    )}
-                    {!crossAdjGameBalanced && (
-                      `Game: actual ${gameChange >= 0 ? '+' : ''}${gameChange} pts, 
-           expected ${expectedGameChange} pts, 
-           cross-store accounted for ~${Math.round(totalCrossGamePts)} pts — 
-           still ${Math.abs(crossAdjGameDisc)} pts off.`
-                    )}
-                  </p>
-                </div>
+<div>
+  <p style={{ margin: '0 0 4px', fontWeight: '700', fontSize: '14px', color: '#991b1b' }}>
+    {[
+      !crossAdjWalletBalanced ? `⚠️ Cash discrepancy $${Math.abs(crossAdjWalletDisc).toFixed(2)}` : '',
+      !crossAdjGameBalanced ? `⚠️ Game pts off ${Math.abs(crossAdjGameDisc)} pts` : '',
+    ].filter(Boolean).join(' · ')}
+  </p>
+
+  <p style={{ margin: 0, fontSize: '12px', color: '#991b1b', lineHeight: 1.6 }}>
+    {!crossAdjGameBalanced && (
+      <span style={{ display: 'block' }}>
+        🎮 Points: actual {gameChange >= 0 ? '+' : ''}{gameChange} pts, expected {expectedGameChange} pts
+        {' '}(deposits ${deposits.toFixed(2)} + fees ${totalFees.toFixed(2)} + bonuses ${bonuses.toFixed(2)} − cashouts ${cashouts.toFixed(2)})
+        {totalCrossGamePts > 0
+          ? ` — ~${Math.round(totalCrossGamePts)} pts from other stores excluded`
+          : ' — no cross-store game activity'}.
+        {' '}Still {Math.abs(crossAdjGameDisc)} pts unaccounted.
+      </span>
+    )}
+    {!crossAdjWalletBalanced && (
+      <span style={{ display: 'block', marginTop: !crossAdjGameBalanced ? '4px' : '0' }}>
+        💳 Wallet: actual {walletChange >= 0 ? '+' : ''}${walletChange.toFixed(2)}, expected ${expectedWalletChange.toFixed(2)}
+        {Math.abs(totalCrossWalletAmt) > 0.01
+          ? ` — $${Math.abs(totalCrossWalletAmt).toFixed(2)} from other stores excluded`
+          : ' — no cross-store wallet activity'}.
+        {' '}Still ${Math.abs(crossAdjWalletDisc).toFixed(2)} unaccounted.
+      </span>
+    )}
+  </p>
+
+  <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#64748b' }}>
+    {!crossAdjWalletBalanced && (
+      `Wallet: actual ${walletChange >= 0 ? '+' : ''}$${walletChange.toFixed(2)}, 
+       expected $${expectedWalletChange.toFixed(2)}, 
+       cross-store accounted for $${Math.abs(totalCrossWalletAmt).toFixed(2)} — 
+       still $${Math.abs(crossAdjWalletDisc).toFixed(2)} off. `
+    )}
+    {!crossAdjGameBalanced && (
+      `Game: actual ${gameChange >= 0 ? '+' : ''}${gameChange} pts, 
+       expected ${expectedGameChange} pts, 
+       cross-store accounted for ~${Math.round(totalCrossGamePts)} pts — 
+       still ${Math.abs(crossAdjGameDisc)} pts off.`
+    )}
+  </p>
+</div>
               </div>
             )}
 
