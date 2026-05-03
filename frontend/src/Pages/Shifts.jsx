@@ -1462,7 +1462,8 @@ const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
                 { label: 'Net Profit (D−C)', val: `${netProfit >= 0 ? '+' : ''}$${netProfit.toFixed(2)}`, color: netProfit >= 0 ? '#16a34a' : '#dc2626', bg: netProfit >= 0 ? '#f0fdf4' : '#fef2f2' },
                 { label: 'Expenses', val: `-$${totalShiftExpenses.toFixed(2)}`, color: '#b45309', bg: '#fffbeb' },
                 { label: 'Takeouts', val: `-$${totalShiftTakeouts.toFixed(2)}`, color: '#991b1b', bg: '#fff1f2' },
-      ...(shiftPointsAdded > 0 ? [{ label: 'Pts Reloaded', val: `+${shiftPointsAdded} pts`, color: '#7c3aed', bg: '#f5f3ff' }] : []),
+      // ...(shiftPointsAdded > 0 ? [{ label: 'Pts Reloaded', val: `+${shiftPointsAdded} pts`, color: '#7c3aed', bg: '#f5f3ff' }] : []),
+      { label: 'Pts Reloaded', val: shiftPointsAdded > 0 ? `+${shiftPointsAdded} pts` : '0 pts', color: '#7c3aed', bg: '#f5f3ff' },
               ].map(({ label, val, color, bg }) => (
                 <div key={label} style={{ padding: '12px', background: bg, borderRadius: '10px', textAlign: 'center' }}>
                   <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '.4px' }}>{label}</p>
