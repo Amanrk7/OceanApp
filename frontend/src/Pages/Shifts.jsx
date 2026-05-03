@@ -1012,7 +1012,8 @@ const hasFees     = totalFees > 0.001;
 const expectedWalletChange  = r2(deposits - cashouts - totalFees);
 const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
 // const expectedGameChange    = Math.round(-expectedGameDeduction);
-  const expectedGameChange = Math.round(-expectedGameDeduction + shiftPointsAdded);
+  // const expectedGameChange = Math.round(-expectedGameDeduction + shiftPointsAdded);
+  const expectedGameChange = Math.round(-expectedGameDeduction);
   // const deposits = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.amount ?? 0), 0));
   // const cashouts = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.amount ?? 0), 0));
   // const bonuses = r2(shiftTxns.filter(t => BONUS_TYPES.includes(t.type)).reduce((s, t) => s + (t.amount ?? 0), 0));
@@ -1118,9 +1119,14 @@ const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
       });
   });
 
+  // const totalShiftExpenses = shiftExpenses.reduce((s, e) => s + (e.amount ?? 0), 0);
+  // const totalShiftTakeouts = shiftTakeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+  // const shiftPointsAdded = shiftExpenses.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
+
   const totalShiftExpenses = shiftExpenses.reduce((s, e) => s + (e.amount ?? 0), 0);
-  const totalShiftTakeouts = shiftTakeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
-  const shiftPointsAdded = shiftExpenses.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
+const totalShiftTakeouts = shiftTakeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+const shiftPointsAdded = shiftExpenses.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
+const expectedGameChange = Math.round(-expectedGameDeduction + shiftPointsAdded);
 
   const handleSubmit = async () => {
     setSubmitting(true);
