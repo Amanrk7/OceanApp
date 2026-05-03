@@ -955,75 +955,75 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
 }, [shift?.startTime]);
 
 //   // ── Reconciliation math ────────────────────────────────────────────────────
-//   const hasStartSnapshot = startSnapshot != null;
-//   const startWallets = startSnapshot?.walletSnapshot ?? [];
-//   const startGames = startSnapshot?.gameSnapshot ?? [];
-//   const startTotalW = r2(startSnapshot?.totalWallet ?? 0);
-//   const startTotalG = Math.round(startSnapshot?.totalGames ?? 0);
-//   const endTotalW = r2(endWallets.reduce((s, w) => s + (w.balance ?? 0), 0));
-//   const endTotalG = endGames.reduce((s, g) => s + Math.round(g.pointStock ?? 0), 0);
-//   const walletChange = hasStartSnapshot ? r2(endTotalW - startTotalW) : 0;
-//   const gameChange = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
-
-//   // const BONUS_TYPES = ['Match Bonus', 'Special Bonus', 'Streak Bonus', 'Referral Bonus', 'Bonus'];
-//   // Any transaction that's not a Deposit or Cashout counts as a game deduction
-// const isBonus = (t) => t.type !== 'Deposit' && t.type !== 'Cashout';
-
-// const deposits    = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.amount ?? 0), 0));
-// const cashouts    = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.amount ?? 0), 0));
-// const bonuses     = r2(shiftTxns.filter(isBonus).reduce((s,t) => s + (t.amount ?? 0), 0));
-// const netProfit   = r2(deposits - cashouts);
-// const depositFees = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.fee ?? 0), 0));
-// const cashoutFees = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.fee ?? 0), 0));
-// const totalFees   = r2(depositFees + cashoutFees);
-// const hasFees     = totalFees > 0.001;
-  export const RECONCILIATION_MATH_BLOCK = `
-  // ── Reconciliation math ──────────────────────────────────────
   const hasStartSnapshot = startSnapshot != null;
   const startWallets = startSnapshot?.walletSnapshot ?? [];
-  const startGames   = startSnapshot?.gameSnapshot ?? [];
-  const startTotalW  = r2(startSnapshot?.totalWallet ?? 0);
-  const startTotalG  = Math.round(startSnapshot?.totalGames ?? 0);
-  const endTotalW    = r2(endWallets.reduce((s, w) => s + (w.balance ?? 0), 0));
-  const endTotalG    = endGames.reduce((s, g) => s + Math.round(g.pointStock ?? 0), 0);
+  const startGames = startSnapshot?.gameSnapshot ?? [];
+  const startTotalW = r2(startSnapshot?.totalWallet ?? 0);
+  const startTotalG = Math.round(startSnapshot?.totalGames ?? 0);
+  const endTotalW = r2(endWallets.reduce((s, w) => s + (w.balance ?? 0), 0));
+  const endTotalG = endGames.reduce((s, g) => s + Math.round(g.pointStock ?? 0), 0);
   const walletChange = hasStartSnapshot ? r2(endTotalW - startTotalW) : 0;
-  const gameChange   = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
+  const gameChange = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
+
+  // const BONUS_TYPES = ['Match Bonus', 'Special Bonus', 'Streak Bonus', 'Referral Bonus', 'Bonus'];
+  // Any transaction that's not a Deposit or Cashout counts as a game deduction
+const isBonus = (t) => t.type !== 'Deposit' && t.type !== 'Cashout';
+
+const deposits    = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.amount ?? 0), 0));
+const cashouts    = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.amount ?? 0), 0));
+const bonuses     = r2(shiftTxns.filter(isBonus).reduce((s,t) => s + (t.amount ?? 0), 0));
+const netProfit   = r2(deposits - cashouts);
+const depositFees = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.fee ?? 0), 0));
+const cashoutFees = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.fee ?? 0), 0));
+const totalFees   = r2(depositFees + cashoutFees);
+const hasFees     = totalFees > 0.001;
+//   export const RECONCILIATION_MATH_BLOCK = `
+//   // ── Reconciliation math ──────────────────────────────────────
+//   const hasStartSnapshot = startSnapshot != null;
+//   const startWallets = startSnapshot?.walletSnapshot ?? [];
+//   const startGames   = startSnapshot?.gameSnapshot ?? [];
+//   const startTotalW  = r2(startSnapshot?.totalWallet ?? 0);
+//   const startTotalG  = Math.round(startSnapshot?.totalGames ?? 0);
+//   const endTotalW    = r2(endWallets.reduce((s, w) => s + (w.balance ?? 0), 0));
+//   const endTotalG    = endGames.reduce((s, g) => s + Math.round(g.pointStock ?? 0), 0);
+//   const walletChange = hasStartSnapshot ? r2(endTotalW - startTotalW) : 0;
+//   const gameChange   = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
  
-  // ✅ FIX: Treat ANY non-Deposit, non-Cashout transaction as a bonus/deduction.
-  //         This catches "random bonus", "loyalty bonus", "Player no 1x2", etc.
-  const isBonus = (t) => t.type !== 'Deposit' && t.type !== 'Cashout';
+//   // ✅ FIX: Treat ANY non-Deposit, non-Cashout transaction as a bonus/deduction.
+//   //         This catches "random bonus", "loyalty bonus", "Player no 1x2", etc.
+//   const isBonus = (t) => t.type !== 'Deposit' && t.type !== 'Cashout';
  
-  const deposits     = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.amount ?? 0), 0));
-  const cashouts     = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.amount ?? 0), 0));
-  const bonuses      = r2(shiftTxns.filter(isBonus).reduce((s,t) => s + (t.amount ?? 0), 0));
-  const netProfit    = r2(deposits - cashouts);
+//   const deposits     = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.amount ?? 0), 0));
+//   const cashouts     = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.amount ?? 0), 0));
+//   const bonuses      = r2(shiftTxns.filter(isBonus).reduce((s,t) => s + (t.amount ?? 0), 0));
+//   const netProfit    = r2(deposits - cashouts);
  
-  const depositFees  = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.fee ?? 0), 0));
-  const cashoutFees  = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.fee ?? 0), 0));
-  const totalFees    = r2(depositFees + cashoutFees);
-  const hasFees      = totalFees > 0.001;
+//   const depositFees  = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s,t) => s + (t.fee ?? 0), 0));
+//   const cashoutFees  = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s,t) => s + (t.fee ?? 0), 0));
+//   const totalFees    = r2(depositFees + cashoutFees);
+//   const hasFees      = totalFees > 0.001;
  
-  // Expected wallet change = Deposits − Cashouts − fees (fees leave the wallet)
-  const expectedWalletChange  = r2(deposits - cashouts - totalFees);
-  // Expected game deduction  = Deposits + fees + all bonuses − Cashouts
-  const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
-  const expectedGameChange    = Math.round(-expectedGameDeduction);
-`;
+//   // Expected wallet change = Deposits − Cashouts − fees (fees leave the wallet)
+//   const expectedWalletChange  = r2(deposits - cashouts - totalFees);
+//   // Expected game deduction  = Deposits + fees + all bonuses − Cashouts
+//   const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
+//   const expectedGameChange    = Math.round(-expectedGameDeduction);
+// `;
 const expectedWalletChange  = r2(deposits - cashouts - totalFees);
 const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
 const expectedGameChange    = Math.round(-expectedGameDeduction);
-  const deposits = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.amount ?? 0), 0));
-  const cashouts = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.amount ?? 0), 0));
-  const bonuses = r2(shiftTxns.filter(t => BONUS_TYPES.includes(t.type)).reduce((s, t) => s + (t.amount ?? 0), 0));
-  const netProfit = r2(deposits - cashouts);
-  const depositFees = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.fee ?? 0), 0));
-  const cashoutFees = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.fee ?? 0), 0));
-  const totalFees = r2(depositFees + cashoutFees);
-  const hasFees = totalFees > 0.001;
+  // const deposits = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.amount ?? 0), 0));
+  // const cashouts = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.amount ?? 0), 0));
+  // const bonuses = r2(shiftTxns.filter(t => BONUS_TYPES.includes(t.type)).reduce((s, t) => s + (t.amount ?? 0), 0));
+  // const netProfit = r2(deposits - cashouts);
+  // const depositFees = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.fee ?? 0), 0));
+  // const cashoutFees = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.fee ?? 0), 0));
+  // const totalFees = r2(depositFees + cashoutFees);
+  // const hasFees = totalFees > 0.001;
 
-  const expectedWalletChange = r2(deposits - cashouts - totalFees);
-  const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
-  const expectedGameChange = Math.round(-expectedGameDeduction);
+  // const expectedWalletChange = r2(deposits - cashouts - totalFees);
+  // const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
+  // const expectedGameChange = Math.round(-expectedGameDeduction);
 
   // ── Cross-store adjustments ────────────────────────────────────────────────
   // For each shared game, sum what OTHER stores deducted during this shift window.
@@ -1879,7 +1879,9 @@ const expectedGameChange    = Math.round(-expectedGameDeduction);
                     <tbody>
                       {shiftTxns.map(t => {
                         const isD = t.type === 'Deposit', isCO = t.type === 'Cashout';
-                        const isB = BONUS_TYPES.includes(t.type);
+                        // const isB = BONUS_TYPES.includes(t.type);
+                const isB = isBonus(t);
+
                         const amtColor = isD ? '#16a34a' : isCO ? '#dc2626' : isB ? '#c2410c' : '#475569';
                         const pts = t.gameStockAfter != null && t.gameStockBefore != null
                           ? Math.round(t.gameStockAfter - t.gameStockBefore) : null;
