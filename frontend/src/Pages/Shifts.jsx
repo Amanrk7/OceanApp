@@ -1454,23 +1454,56 @@ const expectedGameDeduction = r2(deposits + totalFees + bonuses - cashouts);
           ) : activeTab === 'reconciliation' ? <>
 
             {/* KPIs */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px,1fr))', gap: '10px' }}>
+            {/* <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px,1fr))', gap: '10px' }}>
               {[
                 { label: 'Deposits', val: `+$${deposits.toFixed(2)}`, color: '#16a34a', bg: '#f0fdf4' },
                 { label: 'Cashouts', val: `-$${cashouts.toFixed(2)}`, color: '#dc2626', bg: '#fef2f2' },
                 { label: 'Bonuses', val: `-$${bonuses.toFixed(2)}`, color: '#d97706', bg: '#fffbeb' },
                 { label: 'Net Profit (D−C)', val: `${netProfit >= 0 ? '+' : ''}$${netProfit.toFixed(2)}`, color: netProfit >= 0 ? '#16a34a' : '#dc2626', bg: netProfit >= 0 ? '#f0fdf4' : '#fef2f2' },
                 { label: 'Expenses', val: `-$${totalShiftExpenses.toFixed(2)}`, color: '#b45309', bg: '#fffbeb' },
-                { label: 'Takeouts', val: `-$${totalShiftTakeouts.toFixed(2)}`, color: '#991b1b', bg: '#fff1f2' },
-      // ...(shiftPointsAdded > 0 ? [{ label: 'Pts Reloaded', val: `+${shiftPointsAdded} pts`, color: '#7c3aed', bg: '#f5f3ff' }] : []),
-      { label: 'Pts Reloaded', val: shiftPointsAdded > 0 ? `+${shiftPointsAdded} pts` : '0 pts', color: '#7c3aed', bg: '#f5f3ff' },
-              ].map(({ label, val, color, bg }) => (
-                <div key={label} style={{ padding: '12px', background: bg, borderRadius: '10px', textAlign: 'center' }}>
-                  <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '.4px' }}>{label}</p>
-                  <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color }}>{val}</p>
-                </div>
-              ))}
-            </div>
+                { label: 'Takeouts', val: `-$${totalShiftTakeouts.toFixed(2)}`, color: '#991b1b', bg: '#fff1f2' }, */}
+      {/* // ...(shiftPointsAdded > 0 ? [{ label: 'Pts Reloaded', val: `+${shiftPointsAdded} pts`, color: '#7c3aed', bg: '#f5f3ff' }] : []),
+      // { label: 'Pts Reloaded', val: shiftPointsAdded > 0 ? `+${shiftPointsAdded} pts` : '0 pts', color: '#7c3aed', bg: '#f5f3ff' },
+      //         ].map(({ label, val, color, bg }) => (
+      //           <div key={label} style={{ padding: '12px', background: bg, borderRadius: '10px', textAlign: 'center' }}>
+      //             <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '.4px' }}>{label}</p>
+      //             <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color }}>{val}</p>
+      //           </div>
+      //         ))}
+      //       </div> */}
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px,1fr))', gap: '10px' }}>
+  <div style={{ padding: '12px', background: '#f0fdf4', borderRadius: '10px', textAlign: 'center' }}>
+    <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Deposits</p>
+    <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#16a34a' }}>+${deposits.toFixed(2)}</p>
+  </div>
+  <div style={{ padding: '12px', background: '#fef2f2', borderRadius: '10px', textAlign: 'center' }}>
+    <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Cashouts</p>
+    <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#dc2626' }}>-${cashouts.toFixed(2)}</p>
+  </div>
+  <div style={{ padding: '12px', background: '#fffbeb', borderRadius: '10px', textAlign: 'center' }}>
+    <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Bonuses</p>
+    <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#d97706' }}>-${bonuses.toFixed(2)}</p>
+  </div>
+  <div style={{ padding: '12px', background: netProfit >= 0 ? '#f0fdf4' : '#fef2f2', borderRadius: '10px', textAlign: 'center' }}>
+    <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Net Profit (D−C)</p>
+    <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: netProfit >= 0 ? '#16a34a' : '#dc2626' }}>{netProfit >= 0 ? '+' : ''}${netProfit.toFixed(2)}</p>
+  </div>
+  <div style={{ padding: '12px', background: '#fffbeb', borderRadius: '10px', textAlign: 'center' }}>
+    <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Expenses</p>
+    <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#b45309' }}>-${totalShiftExpenses.toFixed(2)}</p>
+  </div>
+  <div style={{ padding: '12px', background: '#fff1f2', borderRadius: '10px', textAlign: 'center' }}>
+    <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Takeouts</p>
+    <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#991b1b' }}>-${totalShiftTakeouts.toFixed(2)}</p>
+  </div>
+  {shiftPointsAdded > 0 && (
+    <div style={{ padding: '12px', background: '#f5f3ff', borderRadius: '10px', textAlign: 'center' }}>
+      <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: '600', textTransform: 'uppercase' }}>Pts Reloaded</p>
+      <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#7c3aed' }}>+{shiftPointsAdded} pts</p>
+    </div>
+  )}
+</div>
 
             {hasFees && (
               <div style={{
