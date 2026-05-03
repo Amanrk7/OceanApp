@@ -4,7 +4,8 @@ import {
     TrendingDown, Gift, CheckCircle, Clock, AlertCircle,
     Activity, ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp,
     DollarSign, BarChart2, Target, Wallet, Gamepad2, MessageSquare,
-    ShieldCheck, AlertTriangle, ArrowLeft, Zap, Star, List
+    ShieldCheck, AlertTriangle, ArrowLeft, Zap, Star, List,
+    CalendarRange, ToggleLeft, ToggleRight, ChevronRight
 } from "lucide-react";
 import { useToast } from '../Context/toastContext';
 import { api } from "../api";
@@ -53,6 +54,8 @@ const fmtTime = (iso) =>
     iso ? new Date(iso).toLocaleTimeString("en-US", { timeZone: "America/Chicago", hour: "2-digit", minute: "2-digit", hour12: true }) : "—";
 const fmtDate = (iso) =>
     iso ? new Date(iso).toLocaleDateString("en-US", { timeZone: "America/Chicago", weekday: "long", month: "long", day: "numeric", year: "numeric" }) : "—";
+const fmtDateShort = (iso) =>
+    iso ? new Date(iso).toLocaleDateString("en-US", { timeZone: "America/Chicago", month: "short", day: "numeric", year: "numeric" }) : "—";
 const toDateInput = (d) => {
     const dt = new Date(d);
     return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
@@ -158,7 +161,6 @@ function CashFlowAudit({ startSnapshot, endSnapshot, transactions }) {
     const endWallets = endSnapshot.walletSnapshot ?? [];
     const allIds = [...new Set([...startWallets.map(w => w.id), ...endWallets.map(w => w.id)])];
 
-    // 1. In the Cash Flow Audit calculation
     const rows = allIds.map(id => {
         const sw = startWallets.find(w => w.id === id);
         const ew = endWallets.find(w => w.id === id);
@@ -172,7 +174,6 @@ function CashFlowAudit({ startSnapshot, endSnapshot, transactions }) {
         };
     });
 
-    // 'aggr' is now properly defined as the first argument
     const totalRevenue = transactions.reduce((aggr, tx) => {
         const amt = tx.amount || 0;
         const type = (tx.type || "").toUpperCase();
@@ -181,7 +182,6 @@ function CashFlowAudit({ startSnapshot, endSnapshot, transactions }) {
         return aggr;
     }, 0);
 
-    // 3. Fix the Bonus calculation
     const totalBonuses = transactions.reduce((aggr, tx) => {
         const type = (tx.type || "").toUpperCase();
         if (type.includes("BONUS")) return aggr + (tx.amount || 0);
@@ -298,7 +298,7 @@ function GamePointAudit({ startSnapshot, endSnapshot }) {
     );
 }
 
-// ── Full Shift Transactions Table (replaces ShiftActivityLog) ──
+// ── Full Shift Transactions Table ─────────────────────────────
 function ShiftTransactionsTable({ transactions }) {
     if (!transactions?.length) return (
         <div style={{ ...CARD, padding: "28px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>
@@ -338,58 +338,34 @@ function ShiftTransactionsTable({ transactions }) {
                                     onMouseLeave={e => e.currentTarget.style.background = ""}
                                     style={{ opacity: isPending ? 0.75 : 1 }}
                                 >
-                                    <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap" }}>
-                                        {fmtTime(t.createdAt)}
-                                    </td>
+                                    <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap" }}>{fmtTime(t.createdAt)}</td>
                                     <td style={TD}>
-                                        <div style={{ fontWeight: "600", fontSize: "12px" }}>
-                                            {t.user?.name || t.playerName || `#${t.userId}`}
-                                        </div>
+                                        <div style={{ fontWeight: "600", fontSize: "12px" }}>{t.user?.name || t.playerName || `#${t.userId}`}</div>
                                         {t.user?.email && <div style={{ fontSize: "10px", color: "#94a3b8" }}>{t.user.email}</div>}
                                     </td>
-                                    <td style={TD}>
-                                        <DisplayTypeBadge type={t.displayType || t.type} />
-                                    </td>
+                                    <td style={TD}><DisplayTypeBadge type={t.displayType || t.type} /></td>
                                     <td style={TD}>
                                         {t.bonusType
-                                            ? <span style={{ padding: "2px 7px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", background: "#f5f3ff", color: "#7c3aed" }}>
-                                                {t.bonusType.toUpperCase()}
-                                            </span>
+                                            ? <span style={{ padding: "2px 7px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", background: "#f5f3ff", color: "#7c3aed" }}>{t.bonusType.toUpperCase()}</span>
                                             : <span style={{ color: "#cbd5e1" }}>—</span>}
                                     </td>
                                     <td style={{ ...TD, fontSize: "11px" }}>
                                         {t.gameName && <div style={{ fontWeight: "600", color: "#0f172a" }}>{t.gameName}</div>}
-                                        {t.walletMethod && (
-                                            <div style={{ color: "#64748b" }}>
-                                                {t.walletMethod}{t.walletName ? ` · ${t.walletName}` : ""}
-                                            </div>
-                                        )}
+                                        {t.walletMethod && <div style={{ color: "#64748b" }}>{t.walletMethod}{t.walletName ? ` · ${t.walletName}` : ""}</div>}
                                         {!t.gameName && !t.walletMethod && <span style={{ color: "#cbd5e1" }}>—</span>}
                                     </td>
                                     <td style={{ ...TD, fontSize: "11px" }}>
                                         {pts !== null
-                                            ? <span style={{ color: "#64748b" }}>
-                                                {t.gameStockBefore?.toFixed(0)} → <b style={{ color: pts < 0 ? "#7c3aed" : "#16a34a" }}>{t.gameStockAfter?.toFixed(0)}</b>
-                                            </span>
+                                            ? <span style={{ color: "#64748b" }}>{t.gameStockBefore?.toFixed(0)} → <b style={{ color: pts < 0 ? "#7c3aed" : "#16a34a" }}>{t.gameStockAfter?.toFixed(0)}</b></span>
                                             : <span style={{ color: "#cbd5e1" }}>—</span>}
                                     </td>
-                                    <td style={{ ...TD, textAlign: "right", fontWeight: "800", fontSize: "13px", color: amtColor }}>
-                                        {fmtMoney(t.amount)}
-                                    </td>
+                                    <td style={{ ...TD, textAlign: "right", fontWeight: "800", fontSize: "13px", color: amtColor }}>{fmtMoney(t.amount)}</td>
                                     <td style={{ ...TD, textAlign: "right" }}>
-                                        {t.fee > 0
-                                            ? <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "11px" }}>−{fmtMoney(t.fee)}</span>
-                                            : <span style={{ color: "#cbd5e1" }}>—</span>}
+                                        {t.fee > 0 ? <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "11px" }}>−{fmtMoney(t.fee)}</span> : <span style={{ color: "#cbd5e1" }}>—</span>}
                                     </td>
-                                    <td style={{ ...TD, textAlign: "right", fontSize: "12px", color: "#64748b" }}>
-                                        {t.balanceAfter != null ? fmtMoney(t.balanceAfter) : "—"}
-                                    </td>
+                                    <td style={{ ...TD, textAlign: "right", fontSize: "12px", color: "#64748b" }}>{t.balanceAfter != null ? fmtMoney(t.balanceAfter) : "—"}</td>
                                     <td style={TD}>
-                                        <Badge
-                                            label={isPending ? "PENDING" : "DONE"}
-                                            bg={isPending ? "#fef3c7" : "#dcfce7"}
-                                            color={isPending ? "#b45309" : "#166534"}
-                                        />
+                                        <Badge label={isPending ? "PENDING" : "DONE"} bg={isPending ? "#fef3c7" : "#dcfce7"} color={isPending ? "#b45309" : "#166534"} />
                                     </td>
                                 </tr>
                             );
@@ -399,15 +375,9 @@ function ShiftTransactionsTable({ transactions }) {
                         <tr style={{ background: "#f8fafc" }}>
                             <td colSpan={6} style={{ ...TD, fontWeight: "700", fontSize: "12px", color: "#475569" }}>Totals</td>
                             <td style={{ ...TD, textAlign: "right", fontWeight: "800", fontSize: "13px" }}>
-                                <div style={{ color: "#16a34a" }}>
-                                    +{fmtMoney(transactions.filter(t => t.type === "DEPOSIT").reduce((s, t) => s + (t.amount ?? 0), 0))}
-                                </div>
-                                <div style={{ color: "#dc2626", fontSize: "11px" }}>
-                                    −{fmtMoney(transactions.filter(t => t.type === "WITHDRAWAL").reduce((s, t) => s + (t.amount ?? 0), 0))}
-                                </div>
-                                <div style={{ color: "#c2410c", fontSize: "11px" }}>
-                                    −{fmtMoney(transactions.filter(t => t.type === "BONUS").reduce((s, t) => s + (t.amount ?? 0), 0))} bonus
-                                </div>
+                                <div style={{ color: "#16a34a" }}>+{fmtMoney(transactions.filter(t => t.type === "DEPOSIT").reduce((s, t) => s + (t.amount ?? 0), 0))}</div>
+                                <div style={{ color: "#dc2626", fontSize: "11px" }}>−{fmtMoney(transactions.filter(t => t.type === "WITHDRAWAL").reduce((s, t) => s + (t.amount ?? 0), 0))}</div>
+                                <div style={{ color: "#c2410c", fontSize: "11px" }}>−{fmtMoney(transactions.filter(t => t.type === "BONUS").reduce((s, t) => s + (t.amount ?? 0), 0))} bonus</div>
                             </td>
                             <td colSpan={3} style={TD} />
                         </tr>
@@ -421,35 +391,20 @@ function ShiftTransactionsTable({ transactions }) {
 // ── Audit Verification ────────────────────────────────────────
 function AuditVerification({ endSnapshot, transactions }) {
     if (!endSnapshot) return null;
+    const { deposits, cashouts, bonuses, netProfit, walletChange, gameChange } = endSnapshot;
 
-    const { deposits, cashouts, bonuses, netProfit, walletChange, gameChange, isBalanced, totalDiscrepancy } = endSnapshot;
-
-    const depositFees = (transactions || []).filter(t => t.type === "DEPOSIT")
-        .reduce((s, t) => { const m = (t.notes || "").match(/fee:([\d.]+)/); return s + (m ? parseFloat(m[1]) : 0); }, 0);
-    const cashoutFees = (transactions || []).filter(t => t.type === "WITHDRAWAL")
-        .reduce((s, t) => { const m = (t.notes || "").match(/fee:([\d.]+)/); return s + (m ? parseFloat(m[1]) : 0); }, 0);
-    const totalFees = depositFees + cashoutFees;
-
-    const expectedWallet = (deposits ?? 0) - depositFees - (cashouts ?? 0) - cashoutFees;
+    const expectedWallet = (deposits ?? 0) - (cashouts ?? 0);
     const cashDiscrepancy = (walletChange ?? 0) - expectedWallet;
     const ptDiscrepancy = Math.round(endSnapshot.gameDiscrepancy ?? 0);
 
-    // ── NEW: Funds ↔ Game Points Balance ────────────────────────
-    // deposits + bonuses - cashouts should equal |game points deducted|
     const expectedGameDeduction = (deposits ?? 0) + (bonuses ?? 0) - (cashouts ?? 0);
     const actualGameDeduction = Math.abs(gameChange ?? 0);
     const fundsPointsDiscrepancy = Math.round(actualGameDeduction - expectedGameDeduction);
     const fundsPointsOk = Math.abs(fundsPointsDiscrepancy) < 2;
-    // ─────────────────────────────────────────────────────────────
 
     const cashOk = Math.abs(cashDiscrepancy) < 0.02;
     const ptsOk = Math.abs(ptDiscrepancy) < 2;
-    const allOk = cashOk && ptsOk && fundsPointsOk;  // ← include new check
-
-    const iconColor = allOk ? "#16a34a" : "#dc2626";
-    const bgColor = allOk ? "#f0fdf4" : "#fef2f2";
-    const borderColor = allOk ? "#86efac" : "#fca5a5";
-    const leftBorder = allOk ? "#16a34a" : "#dc2626";
+    const allOk = cashOk && ptsOk && fundsPointsOk;
 
     return (
         <div style={{ ...CARD, overflow: "hidden" }}>
@@ -457,140 +412,65 @@ function AuditVerification({ endSnapshot, transactions }) {
                 <ShieldCheck style={{ width: "14px", height: "14px", color: "#64748b" }} />
                 <span style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.4px" }}>Audit Verification</span>
                 <div style={{ marginLeft: "auto" }}>
-                    {allOk
-                        ? <Badge label="✓ All Clear" bg="#f0fdf4" color="#15803d" />
-                        : <Badge label="⚠ Discrepancy Found" bg="#fee2e2" color="#991b1b" />}
+                    {allOk ? <Badge label="✓ All Clear" bg="#f0fdf4" color="#15803d" /> : <Badge label="⚠ Discrepancy Found" bg="#fee2e2" color="#991b1b" />}
                 </div>
             </div>
             <div style={{ padding: "16px" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "12px" }}>
-
-                    {/* Row 1: Cash Flow + Point Stock (existing side-by-side) */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                        {/* Cash Flow Check — unchanged */}
                         <div style={{ border: `1px solid ${cashOk ? "#86efac" : "#fca5a5"}`, borderRadius: "8px", overflow: "hidden" }}>
-                            <div style={{ padding: "8px 12px", background: cashOk ? "#f0fdf4" : "#fef2f2", borderBottom: `1px solid ${cashOk ? "#86efac" : "#fca5a5"}`, fontSize: "11px", fontWeight: "700", color: cashOk ? "#15803d" : "#991b1b", textTransform: "uppercase", letterSpacing: "0.4px" }}>
-                                Cash Flow Check
-                            </div>
+                            <div style={{ padding: "8px 12px", background: cashOk ? "#f0fdf4" : "#fef2f2", borderBottom: `1px solid ${cashOk ? "#86efac" : "#fca5a5"}`, fontSize: "11px", fontWeight: "700", color: cashOk ? "#15803d" : "#991b1b", textTransform: "uppercase" }}>Cash Flow Check</div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
                                 {[
-                                    { label: "Actual Change (Snapshots)", val: signNum(walletChange ?? 0), color: clrNum(walletChange) },
-                                    { label: "Expected Change (Activities)", val: signNum(expectedWallet), color: clrNum(expectedWallet) },
-                                    { label: "Cash Discrepancy", val: cashOk ? "$0.00" : signNum(cashDiscrepancy), color: cashOk ? "#16a34a" : "#dc2626" },
+                                    { label: "Actual Change", val: signNum(walletChange ?? 0), color: clrNum(walletChange) },
+                                    { label: "Expected Change", val: signNum(expectedWallet), color: clrNum(expectedWallet) },
+                                    { label: "Discrepancy", val: cashOk ? "$0.00" : signNum(cashDiscrepancy), color: cashOk ? "#16a34a" : "#dc2626" },
                                 ].map(({ label, val, color }) => (
                                     <div key={label} style={{ padding: "10px 12px", textAlign: "center", borderRight: "1px solid #f1f5f9" }}>
-                                        <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.3px", marginBottom: "4px" }}>{label}</div>
+                                        <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase", marginBottom: "4px" }}>{label}</div>
                                         <div style={{ fontSize: "15px", fontWeight: "800", color }}>{val}</div>
                                     </div>
                                 ))}
                             </div>
                         </div>
-
-                        {/* Point Stock Check — unchanged */}
                         <div style={{ border: `1px solid ${ptsOk ? "#86efac" : "#fca5a5"}`, borderRadius: "8px", overflow: "hidden" }}>
-                            <div style={{ padding: "8px 12px", background: ptsOk ? "#f0fdf4" : "#fef2f2", borderBottom: `1px solid ${ptsOk ? "#86efac" : "#fca5a5"}`, fontSize: "11px", fontWeight: "700", color: ptsOk ? "#15803d" : "#991b1b", textTransform: "uppercase", letterSpacing: "0.4px" }}>
-                                Point Stock Check
-                            </div>
+                            <div style={{ padding: "8px 12px", background: ptsOk ? "#f0fdf4" : "#fef2f2", borderBottom: `1px solid ${ptsOk ? "#86efac" : "#fca5a5"}`, fontSize: "11px", fontWeight: "700", color: ptsOk ? "#15803d" : "#991b1b", textTransform: "uppercase" }}>Point Stock Check</div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
                                 {[
-                                    { label: "Actual Change (Snapshots)", val: signPts(gameChange ?? 0) + " pts", color: clrNum(gameChange, true) },
-                                    { label: "Expected Change (Activities)", val: signPts(-(deposits + bonuses - cashouts)) + " pts", color: "#475569" },
-                                    { label: "Point Discrepancy", val: ptsOk ? "0 pts" : signPts(ptDiscrepancy) + " pts", color: ptsOk ? "#16a34a" : "#dc2626" },
+                                    { label: "Actual Change", val: signPts(gameChange ?? 0) + " pts", color: clrNum(gameChange, true) },
+                                    { label: "Expected Change", val: signPts(-(deposits + bonuses - cashouts)) + " pts", color: "#475569" },
+                                    { label: "Discrepancy", val: ptsOk ? "0 pts" : signPts(ptDiscrepancy) + " pts", color: ptsOk ? "#16a34a" : "#dc2626" },
                                 ].map(({ label, val, color }) => (
                                     <div key={label} style={{ padding: "10px 12px", textAlign: "center", borderRight: "1px solid #f1f5f9" }}>
-                                        <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.3px", marginBottom: "4px" }}>{label}</div>
+                                        <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase", marginBottom: "4px" }}>{label}</div>
                                         <div style={{ fontSize: "15px", fontWeight: "800", color }}>{val}</div>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                    </div>
-
-                    {/* ── NEW Row 2: Funds ↔ Game Points Balance (full width) ── */}
-                    <div style={{ border: `1px solid ${fundsPointsOk ? "#86efac" : "#fca5a5"}`, borderRadius: "8px", overflow: "hidden" }}>
-                        <div style={{ padding: "8px 12px", background: fundsPointsOk ? "#f0fdf4" : "#fef2f2", borderBottom: `1px solid ${fundsPointsOk ? "#86efac" : "#fca5a5"}`, fontSize: "11px", fontWeight: "700", color: fundsPointsOk ? "#15803d" : "#991b1b", textTransform: "uppercase", letterSpacing: "0.4px", display: "flex", alignItems: "center", gap: "6px" }}>
-                            Funds ↔ Game Points Balance
-                            <span style={{ fontSize: "10px", fontWeight: "500", textTransform: "none", opacity: 0.8 }}>
-                                (Deposits + Bonuses − Cashouts = |Game Pts Deducted|)
-                            </span>
-                        </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr" }}>
-                            {[
-                                {
-                                    label: "Expected Game Deduction",
-                                    val: `${expectedGameDeduction.toFixed(0)} pts`,
-                                    sub: `$${(deposits ?? 0).toFixed(0)} + $${(bonuses ?? 0).toFixed(0)} − $${(cashouts ?? 0).toFixed(0)}`,
-                                    color: "#475569",
-                                },
-                                {
-                                    label: "Actual Game Deduction",
-                                    val: `${actualGameDeduction.toFixed(0)} pts`,
-                                    sub: `from snapshots`,
-                                    color: clrNum(gameChange, true),
-                                },
-                                {
-                                    label: "Funds↔Points Discrepancy",
-                                    val: fundsPointsOk ? "0 pts" : `${fundsPointsDiscrepancy >= 0 ? "+" : ""}${fundsPointsDiscrepancy} pts`,
-                                    sub: fundsPointsOk ? "Balanced ✓" : "Mismatch ⚠",
-                                    color: fundsPointsOk ? "#16a34a" : "#dc2626",
-                                },
-                                {
-                                    label: "Formula Breakdown",
-                                    val: `${expectedGameDeduction.toFixed(0)}`,
-                                    sub: `${(deposits ?? 0).toFixed(0)}+${(bonuses ?? 0).toFixed(0)}−${(cashouts ?? 0).toFixed(0)}=${expectedGameDeduction.toFixed(0)}`,
-                                    color: "#7c3aed",
-                                },
-                            ].map(({ label, val, sub, color }) => (
-                                <div key={label} style={{ padding: "10px 12px", textAlign: "center", borderRight: "1px solid #f1f5f9" }}>
-                                    <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.3px", marginBottom: "4px" }}>{label}</div>
-                                    <div style={{ fontSize: "15px", fontWeight: "800", color }}>{val}</div>
-                                    {sub && <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "2px" }}>{sub}</div>}
-                                </div>
-                            ))}
-                        </div>
-                        {!fundsPointsOk && (
-                            <div style={{ padding: "8px 12px", background: "#fef2f2", borderTop: "1px solid #fca5a5", fontSize: "11px", color: "#991b1b", display: "flex", alignItems: "center", gap: "6px" }}>
-                                <AlertTriangle style={{ width: "12px", height: "12px", flexShrink: 0 }} />
-                                Game point deduction ({actualGameDeduction.toFixed(0)} pts) does not match expected
-                                ({expectedGameDeduction.toFixed(0)} pts = Deposits ${(deposits ?? 0).toFixed(2)} +
-                                Bonuses ${(bonuses ?? 0).toFixed(2)} − Cashouts ${(cashouts ?? 0).toFixed(2)}).
-                                Discrepancy: {Math.abs(fundsPointsDiscrepancy)} pts.
-                            </div>
-                        )}
                     </div>
                 </div>
-
-                {/* Summary formula row — add fundsPointsOk status */}
                 <div style={{ padding: "10px 14px", background: allOk ? "#f0fdf4" : "#fef2f2", border: `1px solid ${allOk ? "#86efac" : "#fca5a5"}`, borderLeft: `4px solid ${allOk ? "#16a34a" : "#dc2626"}`, borderRadius: "8px", fontSize: "12px" }}>
                     {!allOk && (
                         <div style={{ fontWeight: "700", color: "#991b1b", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
                             <AlertTriangle style={{ width: "13px", height: "13px" }} />
                             {!cashOk && `Cash discrepancy: ${fmtMoney(Math.abs(cashDiscrepancy))}. `}
                             {!ptsOk && `Point discrepancy: ${Math.abs(ptDiscrepancy)} pts. `}
-                            {!fundsPointsOk && `Funds↔Points mismatch: ${Math.abs(fundsPointsDiscrepancy)} pts. `}
-                            Please review the activity log.
                         </div>
                     )}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", color: "#475569" }}>
                         <span>Deposits: <b style={{ color: "#16a34a" }}>{fmtMoney(deposits)}</b></span>
                         <span>Cashouts: <b style={{ color: "#dc2626" }}>−{fmtMoney(cashouts)}</b></span>
                         <span>Bonuses: <b style={{ color: "#c2410c" }}>−{fmtMoney(bonuses)}</b></span>
-                        <span>Net Profit (D−C): <b style={{ color: (netProfit ?? 0) >= 0 ? "#16a34a" : "#dc2626" }}>{fmtMoney(netProfit)}</b></span>
-                        {totalFees > 0 && <span>Fees: <b style={{ color: "#b45309" }}>−{fmtMoney(totalFees)}</b></span>}
+                        <span>Net Profit: <b style={{ color: (netProfit ?? 0) >= 0 ? "#16a34a" : "#dc2626" }}>{fmtMoney(netProfit)}</b></span>
                         <span>Wallet Δ: <b style={{ color: clrNum(walletChange) }}>{signNum(walletChange)}</b></span>
                         <span>Game Δ: <b style={{ color: "#7c3aed" }}>{signPts(gameChange)} pts</b></span>
-                        <span>Funds↔Pts: <b style={{ color: fundsPointsOk ? "#16a34a" : "#dc2626" }}>{fundsPointsOk ? "✓ Balanced" : `⚠ ${Math.abs(fundsPointsDiscrepancy)} pts off`}</b></span>
-                    </div>
-                    <div style={{ marginTop: "6px", fontSize: "11px", color: "#94a3b8", fontStyle: "italic" }}>
-                        Verification: Cash Actual = Cash Expected · Points Actual = Points Expected · Deposits+Bonuses−Cashouts = |Game Pts Change|
                     </div>
                 </div>
             </div>
         </div>
     );
 }
-
-
 
 // ── Member Feedback Panel ─────────────────────────────────────
 function FeedbackPanel({ shift }) {
@@ -636,12 +516,6 @@ function FeedbackPanel({ shift }) {
                         <p style={{ margin: 0, fontSize: "12px", color: "#0f172a", lineHeight: 1.5 }}>{effortReason}</p>
                     </div>
                 )}
-                {improvements && (
-                    <div style={{ padding: "11px 13px", background: "#fffbeb", borderRadius: "8px", border: "1px solid #fde68a" }}>
-                        <div style={{ fontSize: "10px", fontWeight: "700", color: "#92400e", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "5px" }}>Could do better</div>
-                        <p style={{ margin: 0, fontSize: "12px", color: "#0f172a", lineHeight: 1.5 }}>{improvements}</p>
-                    </div>
-                )}
                 {workSummary && (
                     <div style={{ padding: "11px 13px", background: "#f0fdf4", borderRadius: "8px", border: "1px solid #86efac" }}>
                         <div style={{ fontSize: "10px", fontWeight: "700", color: "#166534", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "5px" }}>Work summary</div>
@@ -669,9 +543,7 @@ function ExpensesTable({ expenses }) {
             <div style={{ padding: '12px 16px', background: '#fffbeb', borderBottom: '1px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <DollarSign style={{ width: '14px', height: '14px', color: '#b45309' }} />
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#b45309', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                        Expenses ({expenses.length})
-                    </span>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#b45309', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Expenses ({expenses.length})</span>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', fontSize: '12px' }}>
                     <span style={{ fontWeight: '800', color: '#b45309' }}>−${total.toFixed(2)}</span>
@@ -680,47 +552,20 @@ function ExpensesTable({ expenses }) {
             </div>
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr>
-                            {['Details', 'Category', 'Game', 'Amount', 'Points Added', 'Payment', 'Notes'].map(h => (
-                                <th key={h} style={{ ...TH }}>{h}</th>
-                            ))}
-                        </tr>
-                    </thead>
+                    <thead><tr>{['Details', 'Category', 'Game', 'Amount', 'Points Added', 'Payment', 'Notes'].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
                     <tbody>
                         {expenses.map(e => (
-                            <tr key={e.id}
-                                onMouseEnter={ev => ev.currentTarget.style.background = '#fefce8'}
-                                onMouseLeave={ev => ev.currentTarget.style.background = ''}
-                            >
-                                <td style={{ ...TD, fontWeight: '600', maxWidth: '200px' }}>
-                                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.details}</div>
-                                </td>
-                                <td style={TD}>
-                                    <Badge label={e.category?.replace('_', ' ')} bg="#fffbeb" color="#b45309" />
-                                </td>
+                            <tr key={e.id} onMouseEnter={ev => ev.currentTarget.style.background = '#fefce8'} onMouseLeave={ev => ev.currentTarget.style.background = ''}>
+                                <td style={{ ...TD, fontWeight: '600' }}>{e.details}</td>
+                                <td style={TD}><Badge label={e.category?.replace('_', ' ')} bg="#fffbeb" color="#b45309" /></td>
                                 <td style={{ ...TD, fontSize: '12px', color: '#64748b' }}>{e.game?.name || '—'}</td>
                                 <td style={{ ...TD, fontWeight: '700', color: '#b45309' }}>${(e.amount ?? 0).toFixed(2)}</td>
                                 <td style={{ ...TD, color: '#7c3aed' }}>{e.pointsAdded > 0 ? `+${e.pointsAdded} pts` : '—'}</td>
-                                <td style={{ ...TD, color: '#64748b', fontSize: '12px' }}>
-                                    {e.paymentMade > 0 ? `$${parseFloat(e.paymentMade).toFixed(2)}` : '—'}
-                                </td>
-                                <td style={{ ...TD, fontSize: '11px', color: '#94a3b8', maxWidth: '160px' }}>
-                                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.notes || '—'}</div>
-                                </td>
+                                <td style={{ ...TD, color: '#64748b', fontSize: '12px' }}>{e.paymentMade > 0 ? `$${parseFloat(e.paymentMade).toFixed(2)}` : '—'}</td>
+                                <td style={{ ...TD, fontSize: '11px', color: '#94a3b8' }}>{e.notes || '—'}</td>
                             </tr>
                         ))}
                     </tbody>
-                    <tfoot>
-                        <tr style={{ background: '#fffbeb', borderTop: '2px solid #fde68a' }}>
-                            <td colSpan={3} style={{ ...TD, fontWeight: '700', fontSize: '12px', color: '#b45309' }}>Total</td>
-                            <td style={{ ...TD, fontWeight: '800', color: '#b45309' }}>${total.toFixed(2)}</td>
-                            <td style={{ ...TD, fontWeight: '700', color: '#7c3aed' }}>
-                                {totalPts > 0 ? `+${totalPts} pts` : '—'}
-                            </td>
-                            <td colSpan={2} style={TD} />
-                        </tr>
-                    </tfoot>
                 </table>
             </div>
         </div>
@@ -736,51 +581,30 @@ function ProfitTakeoutsTable({ takeouts }) {
             <div style={{ padding: '12px 16px', background: '#fff1f2', borderBottom: '1px solid #fecdd3', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <TrendingDown style={{ width: '14px', height: '14px', color: '#991b1b' }} />
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#991b1b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                        Profit Takeouts ({takeouts.length})
-                    </span>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#991b1b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Profit Takeouts ({takeouts.length})</span>
                 </div>
                 <span style={{ fontSize: '12px', fontWeight: '800', color: '#991b1b' }}>−${total.toFixed(2)}</span>
             </div>
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr>
-                            {['Taken By', 'Method', 'Amount', 'Notes'].map(h => (
-                                <th key={h} style={{ ...TH }}>{h}</th>
-                            ))}
-                        </tr>
-                    </thead>
+                    <thead><tr>{['Taken By', 'Method', 'Amount', 'Notes'].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
                     <tbody>
                         {takeouts.map(t => (
-                            <tr key={t.id}
-                                onMouseEnter={ev => ev.currentTarget.style.background = '#fff5f5'}
-                                onMouseLeave={ev => ev.currentTarget.style.background = ''}
-                            >
+                            <tr key={t.id} onMouseEnter={ev => ev.currentTarget.style.background = '#fff5f5'} onMouseLeave={ev => ev.currentTarget.style.background = ''}>
                                 <td style={{ ...TD, fontWeight: '600' }}>{t.takenBy}</td>
-                                <td style={TD}>
-                                    <Badge label={t.method} bg="#fff1f2" color="#991b1b" />
-                                </td>
+                                <td style={TD}><Badge label={t.method} bg="#fff1f2" color="#991b1b" /></td>
                                 <td style={{ ...TD, fontWeight: '800', color: '#991b1b' }}>${parseFloat(t.amount).toFixed(2)}</td>
                                 <td style={{ ...TD, fontSize: '12px', color: '#64748b' }}>{t.notes || '—'}</td>
                             </tr>
                         ))}
                     </tbody>
-                    <tfoot>
-                        <tr style={{ background: '#fff1f2', borderTop: '2px solid #fecdd3' }}>
-                            <td style={{ ...TD, fontWeight: '700', fontSize: '12px', color: '#991b1b' }}>Total</td>
-                            <td style={TD} />
-                            <td style={{ ...TD, fontWeight: '800', color: '#991b1b' }}>${total.toFixed(2)}</td>
-                            <td style={TD} />
-                        </tr>
-                    </tfoot>
                 </table>
             </div>
         </div>
     );
 }
 
-// ── Single Shift Detail (main redesign) ───────────────────────
+// ── Single Shift Detail ───────────────────────────────────────
 function ShiftDetail({ shift, index, total, memberName, teamRole }) {
     const [activeTab, setActiveTab] = useState("overview");
     const isLast = index === total - 1;
@@ -811,54 +635,32 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
 
     return (
         <div style={{ borderBottom: isLast ? "none" : "1px solid #e2e8f0" }}>
-            {/* ── Shift header bar ── */}
             <div style={{ padding: "14px 20px", background: shift.isActive ? "#f0fdf4" : "#fafbfc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: shift.isActive ? "#22c55e" : "#94a3b8", boxShadow: shift.isActive ? "0 0 0 3px rgba(34,197,94,.25)" : "none", flexShrink: 0 }} />
+                    <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: shift.isActive ? "#22c55e" : "#94a3b8", flexShrink: 0 }} />
                     <div>
                         <div style={{ fontWeight: "700", fontSize: "14px", color: "#0f172a" }}>
                             {fmtTime(shift.startTime)} — {shift.isActive ? <span style={{ color: "#22c55e" }}>Active Now</span> : fmtTime(shift.endTime)}
                         </div>
                         <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "1px" }}>
                             {shift.duration != null ? `${shift.duration} min` : "Ongoing"}
-                            {shift.isActive && <span style={{ marginLeft: "6px", color: "#22c55e", fontWeight: "600" }}>● LIVE</span>}
-                            {hasReconciliation && (
-                                <span style={{ marginLeft: "8px" }}>
-                                    <Badge label={endSnapshot.isBalanced ? "✓ Balanced" : "⚠ Discrepancy"} bg={endSnapshot.isBalanced ? "#f0fdf4" : "#fee2e2"} color={endSnapshot.isBalanced ? "#16a34a" : "#dc2626"} />
-                                </span>
-                            )}
                         </div>
                     </div>
                 </div>
-                {/* KPI chips */}
                 <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginLeft: "8px" }}>
                     {[
                         { label: "Deposits", val: fmtMoney(s.totalDeposits), color: "#16a34a", bg: "#f0fdf4" },
                         { label: "Cashouts", val: fmtMoney(s.totalCashouts), color: "#dc2626", bg: "#fee2e2" },
                         { label: "Bonuses", val: fmtMoney(s.totalBonuses), color: "#c2410c", bg: "#fff7ed" },
                         { label: "Profit", val: fmtMoney(netProfit), color: netProfit >= 0 ? "#16a34a" : "#dc2626", bg: netProfit >= 0 ? "#f0fdf4" : "#fee2e2" },
-                        { label: "Players", val: s.playersAdded ?? 0, color: "#6d28d9", bg: "#f5f3ff" },
-                        { label: "Tasks", val: s.tasksCompleted ?? 0, color: "#475569", bg: "#f1f5f9" },
-                        ...(s.totalExpenses > 0 ? [{ label: "Expenses", val: fmtMoney(s.totalExpenses), color: "#b45309", bg: "#fffbeb" }] : []),
-                        ...(s.totalTakeouts > 0 ? [{ label: "Takeouts", val: fmtMoney(s.totalTakeouts), color: "#991b1b", bg: "#fff1f2" }] : []),
                     ].map(({ label, val, color, bg }) => (
                         <div key={label} style={{ padding: "5px 10px", borderRadius: "7px", background: bg, display: "flex", alignItems: "baseline", gap: "5px" }}>
                             <span style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" }}>{label}</span>
                             <span style={{ fontSize: "13px", fontWeight: "800", color }}>{val}</span>
                         </div>
                     ))}
-                    {shift.checkin?.effortRating && (
-                        <div style={{ padding: "5px 10px", borderRadius: "7px", background: shift.checkin.effortRating >= 8 ? "#f0fdf4" : shift.checkin.effortRating >= 5 ? "#fffbeb" : "#fee2e2", display: "flex", alignItems: "baseline", gap: "5px" }}>
-                            <span style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" }}>Effort</span>
-                            <span style={{ fontSize: "13px", fontWeight: "800", color: shift.checkin.effortRating >= 8 ? "#16a34a" : shift.checkin.effortRating >= 5 ? "#d97706" : "#dc2626" }}>
-                                {shift.checkin.effortRating}/10
-                            </span>
-                        </div>
-                    )}
                 </div>
             </div>
-
-            {/* ── Tab bar ── */}
             <div style={{ display: "flex", gap: "1px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc", overflowX: "auto" }}>
                 {tabs.map(t => (
                     <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ padding: "9px 16px", border: "none", fontSize: "12px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit", background: activeTab === t.id ? "#fff" : "transparent", color: activeTab === t.id ? "#0f172a" : "#94a3b8", borderBottom: `2px solid ${activeTab === t.id ? "#0f172a" : "transparent"}`, whiteSpace: "nowrap" }}>
@@ -867,135 +669,49 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
                 ))}
             </div>
 
-            {/* ═══ OVERVIEW / SHIFT REPORT TAB ═══ */}
             {activeTab === "overview" && (
                 <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "18px" }}>
-
-                    {/* Header line mimicking screenshot */}
-                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
-                        <div>
-                            <div style={{ fontSize: "16px", fontWeight: "800", color: "#0f172a" }}>Shift Report</div>
-                            <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
-                                {fmtTime(shift.startTime)} – {shift.isActive ? "Active now" : fmtTime(shift.endTime)}
-                                {memberName && <span style={{ marginLeft: "8px", padding: "1px 7px", borderRadius: "5px", background: rc.bg, color: rc.text, fontWeight: "700", fontSize: "11px", border: `1px solid ${rc.border}` }}>{memberName}</span>}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* 4 KPI cards */}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "10px" }}>
                         <StatCard label="Player Deposits" value={`+${fmtMoney(s.totalDeposits)}`} valueColor="#16a34a" icon={ArrowUpRight} accentColor="#16a34a" />
                         <StatCard label="Player Cashouts" value={`−${fmtMoney(s.totalCashouts)}`} valueColor="#dc2626" icon={ArrowDownRight} accentColor="#dc2626" />
                         <StatCard label="Bonuses Given" value={`−${fmtMoney(s.totalBonuses)}`} valueColor="#c2410c" icon={Gift} accentColor="#c2410c" />
                         <StatCard label="Shift Net Profit" value={(netProfit >= 0 ? "+" : "") + fmtMoney(netProfit)} valueColor={netProfit >= 0 ? "#16a34a" : "#dc2626"} icon={netProfit >= 0 ? TrendingUp : TrendingDown} accentColor={netProfit >= 0 ? "#16a34a" : "#dc2626"} />
-
-                        {s.totalExpenses > 0 && <StatCard label="Expenses" value={`−${fmtMoney(s.totalExpenses)}`} valueColor="#b45309" icon={DollarSign} accentColor="#b45309" sub={`${s.expenseCount} records`} />}
-                        {s.totalTakeouts > 0 && <StatCard label="Profit Takeouts" value={`−${fmtMoney(s.totalTakeouts)}`} valueColor="#991b1b" icon={TrendingDown} accentColor="#991b1b" sub={`${s.takeoutCount} takeouts`} />}
                     </div>
-
-                    {/* Opening notes */}
-                    {startSnapshot?.notes && (
-                        <div style={{ padding: "10px 14px", background: "#f8fafc", border: "1px solid #e2e8f0", borderLeft: "3px solid #94a3b8", borderRadius: "0 8px 8px 0", fontSize: "12px", color: "#475569" }}>
-                            <span style={{ fontWeight: "700", color: "#374151" }}>Opening notes: </span>{startSnapshot.notes}
-                        </div>
-                    )}
-
-                    {/* Cash Flow + Game Point Audits side by side */}
                     {hasReconciliation && (
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                             <CashFlowAudit startSnapshot={startSnapshot} endSnapshot={endSnapshot} transactions={transactions} />
                             <GamePointAudit startSnapshot={startSnapshot} endSnapshot={endSnapshot} />
                         </div>
                     )}
-
-                    {/* Activity Log */}
-                    {/* <ShiftActivityLog transactions={transactions} /> */}
                     <ShiftTransactionsTable transactions={transactions} />
-
-
-                    {/* Expenses & Takeouts */}
                     {shift.expenses?.length > 0 && <ExpensesTable expenses={shift.expenses} />}
                     {shift.profitTakeouts?.length > 0 && <ProfitTakeoutsTable takeouts={shift.profitTakeouts} />}
-
-                    {/* Audit Verification */}
                     {hasReconciliation && <AuditVerification endSnapshot={endSnapshot} transactions={transactions} />}
-
-                    {/* No snapshots notice */}
-                    {!hasReconciliation && (
-                        <div style={{ padding: "14px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #e2e8f0", textAlign: "center", fontSize: "12px", color: "#94a3b8" }}>
-                            No balance snapshots recorded for this shift (shift may have started before snapshot feature was enabled)
-                        </div>
-                    )}
-
-                    {/* Member Feedback */}
                     <div style={{ ...CARD, overflow: "hidden" }}>
                         <div style={{ padding: "12px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "8px" }}>
                             <MessageSquare style={{ width: "14px", height: "14px", color: "#64748b" }} />
                             <span style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.4px" }}>Member Feedback</span>
                         </div>
-                        <div style={{ padding: "16px" }}>
-                            <FeedbackPanel shift={shift} />
-                        </div>
+                        <div style={{ padding: "16px" }}><FeedbackPanel shift={shift} /></div>
                     </div>
-
-                    {/* Top depositing players */}
-                    {shift.playerDepositBreakdown?.length > 0 && (
-                        <div style={{ ...CARD, padding: "16px" }}>
-                            <div style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "12px" }}>Top Players by Deposits</div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                {shift.playerDepositBreakdown.sort((a, b) => b.total - a.total).slice(0, 5).map((p, i) => (
-                                    <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", padding: "6px 0", borderBottom: "1px solid #f1f5f9" }}>
-                                        <span style={{ width: "22px", height: "22px", borderRadius: "50%", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "800", color: "#64748b", flexShrink: 0 }}>
-                                            {i + 1}
-                                        </span>
-                                        <span style={{ flex: 1, fontWeight: "600" }}>{p.name}</span>
-                                        <span style={{ color: "#94a3b8", fontSize: "11px" }}>{p.count} txns</span>
-                                        <span style={{ fontWeight: "800", color: "#16a34a" }}>{fmtMoney(p.total)}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
                 </div>
             )}
 
-            {/* ═══ TRANSACTIONS TAB ═══ */}
             {activeTab === "transactions" && (
                 <div style={{ overflowX: "auto" }}>
                     {!transactions.length
                         ? <div style={{ padding: "28px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No transactions this shift</div>
                         : (
                             <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                                <thead>
-                                    <tr>{["Time", "Player", "Type", "Bonus Type", "Game", "Game Pts", "Wallet", "Amount", "Fee", "Balance After"].map(h => <th key={h} style={{ ...TH }}>{h}</th>)}</tr>
-                                </thead>
+                                <thead><tr>{["Time", "Player", "Type", "Game", "Amount", "Balance After"].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
                                 <tbody>
                                     {transactions.map(t => (
                                         <tr key={t.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
-                                            <td style={{ ...TD, fontSize: "11px", color: "#94a3b8", whiteSpace: "nowrap" }}>{fmtTime(t.createdAt)}</td>
-                                            <td style={TD}>
-                                                <div style={{ fontWeight: "600", fontSize: "12px" }}>{t.user?.name || t.playerName || `#${t.userId}`}</div>
-                                                {t.user?.email && <div style={{ fontSize: "10px", color: "#94a3b8" }}>{t.user.email}</div>}
-                                            </td>
+                                            <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{fmtTime(t.createdAt)}</td>
+                                            <td style={TD}><div style={{ fontWeight: "600", fontSize: "12px" }}>{t.user?.name || `#${t.userId}`}</div></td>
                                             <td style={TD}><DisplayTypeBadge type={t.displayType || t.type} /></td>
-                                            <td style={TD}>
-                                                {t.bonusType ? <span style={{ padding: "2px 7px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", background: "#f5f3ff", color: "#7c3aed" }}>{t.bonusType}</span> : <span style={{ color: "#cbd5e1" }}>—</span>}
-                                            </td>
-                                            <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{t.gameName || t.game?.name || "—"}</td>
-                                            <td style={TD}>
-                                                {t.gameStockBefore != null
-                                                    ? <span style={{ color: "#64748b", fontSize: "11px" }}>{t.gameStockBefore.toFixed(0)} → <b style={{ color: t.gameStockAfter < t.gameStockBefore ? "#dc2626" : "#16a34a" }}>{t.gameStockAfter?.toFixed(0)}</b></span>
-                                                    : <span style={{ color: "#cbd5e1" }}>—</span>}
-                                            </td>
-                                            <td style={{ ...TD, fontSize: "11px" }}>
-                                                {t.walletName ? <span>{t.walletMethod}<br /><span style={{ color: "#94a3b8" }}>{t.walletName}</span></span> : <span style={{ color: "#cbd5e1" }}>—</span>}
-                                            </td>
-                                            <td style={{ ...TD, fontWeight: "700", fontSize: "13px", color: t.type === "DEPOSIT" ? "#16a34a" : t.type === "WITHDRAWAL" ? "#dc2626" : "#c2410c" }}>
-                                                {fmtMoney(t.amount)}
-                                            </td>
-                                            <td style={TD}>
-                                                {t.fee > 0 ? <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "11px" }}>−{fmtMoney(t.fee)}</span> : <span style={{ color: "#cbd5e1" }}>—</span>}
-                                            </td>
+                                            <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{t.gameName || "—"}</td>
+                                            <td style={{ ...TD, fontWeight: "700", fontSize: "13px", color: t.type === "DEPOSIT" ? "#16a34a" : t.type === "WITHDRAWAL" ? "#dc2626" : "#c2410c" }}>{fmtMoney(t.amount)}</td>
                                             <td style={{ ...TD, fontSize: "12px", color: "#64748b" }}>{t.balanceAfter != null ? fmtMoney(t.balanceAfter) : "—"}</td>
                                         </tr>
                                     ))}
@@ -1005,85 +721,53 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
                 </div>
             )}
 
-            {/* ═══ TASKS TAB ═══ */}
             {activeTab === "tasks" && (
                 <div style={{ padding: "16px 20px" }}>
                     {!shift.tasks?.length
-                        ? <div style={{ padding: "20px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No tasks completed this shift</div>
-                        : (
-                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                                {shift.tasks.map(t => {
-                                    const pct = t.targetValue > 0 ? Math.min(100, Math.round(((t.currentValue ?? 0) / t.targetValue) * 100)) : null;
-                                    const checklist = t.checklistItems || [];
-                                    const doneItems = checklist.filter(i => i.done).length;
-                                    return (
-                                        <div key={t.id} style={{ padding: "12px 16px", border: "1px solid #e2e8f0", borderLeft: `3px solid ${t.status === "COMPLETED" ? "#22c55e" : "#f59e0b"}`, borderRadius: "0 8px 8px 0" }}>
-                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px", flexWrap: "wrap" }}>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "6px" }}>
-                                                        <span style={{ fontSize: "13px", fontWeight: "700", color: "#0f172a" }}>{t.title}</span>
-                                                        <TaskTypeBadge taskType={t.taskType} />
-                                                        <PriorityBadge priority={t.priority} />
-                                                    </div>
-                                                    {pct !== null && (
-                                                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                                                            <div style={{ flex: 1 }}><ProgressBar pct={pct} /></div>
-                                                            <span style={{ fontSize: "12px", fontWeight: "700" }}>{pct}%</span>
-                                                        </div>
-                                                    )}
-                                                    {checklist.length > 0 && <div style={{ fontSize: "11px", color: "#64748b" }}>{doneItems}/{checklist.length} checklist items done</div>}
-                                                </div>
-                                                <Badge label={t.status?.replace("_", " ")} bg={t.status === "COMPLETED" ? "#dcfce7" : "#eff6ff"} color={t.status === "COMPLETED" ? "#166634" : "#1d4ed8"} />
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
+                        ? <div style={{ padding: "20px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No tasks this shift</div>
+                        : <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                            {shift.tasks.map(t => (
+                                <div key={t.id} style={{ padding: "12px 16px", border: "1px solid #e2e8f0", borderLeft: `3px solid ${t.status === "COMPLETED" ? "#22c55e" : "#f59e0b"}`, borderRadius: "0 8px 8px 0" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <span style={{ fontSize: "13px", fontWeight: "700" }}>{t.title}</span>
+                                        <Badge label={t.status?.replace("_", " ")} bg={t.status === "COMPLETED" ? "#dcfce7" : "#eff6ff"} color={t.status === "COMPLETED" ? "#166634" : "#1d4ed8"} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>}
                 </div>
             )}
 
-            {/* ═══ PLAYERS ADDED TAB ═══ */}
             {activeTab === "players" && (
                 <div style={{ padding: "16px 20px" }}>
                     {!shift.playersAdded?.length
                         ? <div style={{ padding: "20px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No players added this shift</div>
-                        : (
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "10px" }}>
-                                {shift.playersAdded.map(p => (
-                                    <div key={p.id} style={{ padding: "12px 14px", border: "1px solid #ddd6fe", borderRadius: "9px", background: "#f5f3ff" }}>
-                                        <div style={{ fontWeight: "700", fontSize: "13px" }}>{p.name}</div>
-                                        <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>@{p.username}</div>
-                                        <div style={{ marginTop: "6px" }}>
-                                            <Badge label={p.tier} bg="#fffbeb" color="#92400e" />
-                                        </div>
-                                        <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "4px" }}>{fmtTime(p.createdAt)}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "10px" }}>
+                            {shift.playersAdded.map(p => (
+                                <div key={p.id} style={{ padding: "12px 14px", border: "1px solid #ddd6fe", borderRadius: "9px", background: "#f5f3ff" }}>
+                                    <div style={{ fontWeight: "700", fontSize: "13px" }}>{p.name}</div>
+                                    <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>@{p.username}</div>
+                                    <div style={{ marginTop: "6px" }}><Badge label={p.tier} bg="#fffbeb" color="#92400e" /></div>
+                                </div>
+                            ))}
+                        </div>}
                 </div>
             )}
 
-            {/* ═══ BONUSES TAB ═══ */}
             {activeTab === "bonuses" && (
                 <div style={{ overflowX: "auto" }}>
                     {!shift.bonusesGranted?.length
-                        ? <div style={{ padding: "28px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No bonuses granted this shift</div>
+                        ? <div style={{ padding: "28px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No bonuses this shift</div>
                         : (
                             <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                                <thead>
-                                    <tr>{["Time", "Player", "Bonus Type", "Game", "Amount", "Granted By"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
-                                </thead>
+                                <thead><tr>{["Time", "Player", "Game", "Amount"].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
                                 <tbody>
                                     {shift.bonusesGranted.map(b => (
                                         <tr key={b.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
                                             <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{fmtTime(b.createdAt)}</td>
                                             <td style={{ ...TD, fontSize: "12px", fontWeight: "600" }}>{b.user?.name || "—"}</td>
-                                            <td style={TD}><Badge label="BONUS" bg="#fff7ed" color="#c2410c" /></td>
                                             <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{b.game?.name || "—"}</td>
-                                            <td style={{ ...TD, fontWeight: "700", fontSize: "13px", color: "#c2410c" }}>{fmtMoney(b.amount)}</td>
-                                            <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{b.grantedBy?.name || "System"}</td>
+                                            <td style={{ ...TD, fontWeight: "700", color: "#c2410c" }}>{fmtMoney(b.amount)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -1099,12 +783,7 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
 function MemberShiftSection({ team }) {
     const [expanded, setExpanded] = useState(true);
     const rc = ROLE_COLORS[team.role] || ROLE_COLORS.TEAM1;
-
-    // const memberName = shift.displayMember?.name || "Unassigned";
-    const memberName = team.member?.name
-        || team.shifts[0]?.displayMember?.name
-        || team.shifts[0]?.checkin?.user?.name
-        || "Unassigned";
+    const memberName = team.member?.name || team.shifts[0]?.displayMember?.name || team.shifts[0]?.checkin?.user?.name || "Unassigned";
 
     const aggr = team.shifts.reduce((acc, s) => {
         const st = s.stats || {};
@@ -1112,19 +791,14 @@ function MemberShiftSection({ team }) {
         acc.cashouts += st.totalCashouts || 0;
         acc.bonuses += st.totalBonuses || 0;
         acc.profit += st.netProfit || 0;
-        acc.txns += st.transactionCount || 0;
-        acc.tasks += st.tasksCompleted || 0;
         acc.players += st.playersAdded || 0;
+        acc.tasks += st.tasksCompleted || 0;
         acc.duration += s.duration || 0;
-        acc.expenses += st.totalExpenses || 0;
-        acc.takeouts += st.totalTakeouts || 0;
         return acc;
-    }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, txns: 0, tasks: 0, players: 0, duration: 0, expenses: 0, takeouts: 0 });
-
+    }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, players: 0, tasks: 0, duration: 0 });
 
     return (
         <div style={{ ...CARD, overflow: "hidden" }}>
-            {/* Member header */}
             <div onClick={() => setExpanded(v => !v)} style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: "14px", cursor: "pointer", background: "#fafbfc", borderBottom: expanded ? "1px solid #e2e8f0" : "none", flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                     <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: rc.bg, border: `2px solid ${rc.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontWeight: "800", color: rc.text, flexShrink: 0 }}>
@@ -1136,9 +810,7 @@ function MemberShiftSection({ team }) {
                             <span style={{ padding: "2px 8px", borderRadius: "5px", fontSize: "11px", fontWeight: "700", background: rc.bg, color: rc.text, border: `1px solid ${rc.border}` }}>
                                 {ROLE_LABEL[team.role] || team.role}
                             </span>
-                            <span style={{ fontSize: "11px", color: "#94a3b8" }}>
-                                {team.shifts.length} shift{team.shifts.length !== 1 ? "s" : ""} · {aggr.duration} min
-                            </span>
+                            <span style={{ fontSize: "11px", color: "#94a3b8" }}>{team.shifts.length} shift{team.shifts.length !== 1 ? "s" : ""} · {aggr.duration} min</span>
                         </div>
                     </div>
                 </div>
@@ -1146,10 +818,8 @@ function MemberShiftSection({ team }) {
                     {[
                         { label: "Deposits", val: fmtMoney(aggr.deposits), color: "#16a34a", bg: "#f0fdf4" },
                         { label: "Cashouts", val: fmtMoney(aggr.cashouts), color: "#dc2626", bg: "#fee2e2" },
-                        { label: "Bonuses", val: fmtMoney(aggr.bonuses), color: "#c2410c", bg: "#fff7ed" },
                         { label: "Profit", val: fmtMoney(aggr.profit), color: aggr.profit >= 0 ? "#16a34a" : "#dc2626", bg: aggr.profit >= 0 ? "#f0fdf4" : "#fee2e2" },
                         { label: "Players", val: aggr.players, color: "#6d28d9", bg: "#f5f3ff" },
-                        { label: "Tasks", val: aggr.tasks, color: "#475569", bg: "#f1f5f9" },
                     ].map(({ label, val, color, bg }) => (
                         <div key={label} style={{ padding: "4px 10px", borderRadius: "7px", background: bg, display: "flex", alignItems: "baseline", gap: "4px" }}>
                             <span style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600" }}>{label}</span>
@@ -1159,573 +829,294 @@ function MemberShiftSection({ team }) {
                     {expanded ? <ChevronUp style={{ width: "15px", height: "15px", color: "#94a3b8" }} /> : <ChevronDown style={{ width: "15px", height: "15px", color: "#94a3b8" }} />}
                 </div>
             </div>
+            {expanded && team.shifts.map((shift, si) => (
+                <ShiftDetail key={shift.id} shift={shift} index={si} total={team.shifts.length} memberName={shift.displayMember?.name} teamRole={team.role} />
+            ))}
+        </div>
+    );
+}
+
+// ── Day Report Block (used in range view) ─────────────────────
+function DayReportBlock({ report, defaultExpanded = false }) {
+    const [expanded, setExpanded] = useState(defaultExpanded);
+    const s = report.summary || {};
+    const dayLabel = fmtDate(report.date + "T12:00:00");
+
+    return (
+        <div style={{ ...CARD, overflow: "hidden" }}>
+            {/* Day header — clickable to expand/collapse */}
+            <div
+                onClick={() => setExpanded(v => !v)}
+                style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: "14px", cursor: "pointer", background: "#f8fafc", borderBottom: expanded ? "1px solid #e2e8f0" : "none", flexWrap: "wrap" }}
+            >
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0 }}>
+                    <div style={{ width: "38px", height: "38px", borderRadius: "10px", background: "#eff6ff", border: "1px solid #bfdbfe", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Calendar style={{ width: "17px", height: "17px", color: "#2563eb" }} />
+                    </div>
+                    <div>
+                        <div style={{ fontWeight: "800", fontSize: "15px", color: "#0f172a" }}>{dayLabel}</div>
+                        <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>
+                            {s.totalShifts ?? 0} shift{s.totalShifts !== 1 ? "s" : ""} · {s.transactionCount ?? 0} transactions
+                            {s.activeShifts > 0 && <span style={{ marginLeft: "6px", color: "#22c55e", fontWeight: "700" }}>● {s.activeShifts} live</span>}
+                        </div>
+                    </div>
+                </div>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                    {[
+                        { label: "Deposits", val: fmtMoney(s.totalDeposits), color: "#16a34a", bg: "#f0fdf4" },
+                        { label: "Cashouts", val: fmtMoney(s.totalCashouts), color: "#dc2626", bg: "#fee2e2" },
+                        { label: "Bonuses", val: fmtMoney(s.totalBonuses), color: "#c2410c", bg: "#fff7ed" },
+                        { label: "Profit", val: fmtMoney(s.netProfit), color: (s.netProfit ?? 0) >= 0 ? "#16a34a" : "#dc2626", bg: (s.netProfit ?? 0) >= 0 ? "#f0fdf4" : "#fee2e2" },
+                    ].map(({ label, val, color, bg }) => (
+                        <div key={label} style={{ padding: "5px 11px", borderRadius: "7px", background: bg, display: "flex", alignItems: "baseline", gap: "5px" }}>
+                            <span style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" }}>{label}</span>
+                            <span style={{ fontSize: "13px", fontWeight: "800", color }}>{val}</span>
+                        </div>
+                    ))}
+                    {expanded ? <ChevronUp style={{ width: "15px", height: "15px", color: "#94a3b8" }} /> : <ChevronDown style={{ width: "15px", height: "15px", color: "#94a3b8" }} />}
+                </div>
+            </div>
+
+            {/* Expanded: full day content */}
             {expanded && (
-                team.shifts.length === 0
-                    ? <div style={{ padding: "32px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No shifts recorded</div>
-                    : team.shifts.map((shift, si) => (
-                        <ShiftDetail key={shift.id} shift={shift} index={si} total={team.shifts.length} memberName={shift.displayMember?.name} teamRole={team.role} />
-                    ))
+                <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                    {/* Day Summary Cards */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "10px" }}>
+                        <StatCard label="Total Deposits" value={fmtMoney(s.totalDeposits)} valueColor="#16a34a" icon={ArrowUpRight} accentColor="#16a34a" />
+                        <StatCard label="Total Cashouts" value={fmtMoney(s.totalCashouts)} valueColor="#dc2626" icon={ArrowDownRight} accentColor="#dc2626" />
+                        <StatCard label="Total Bonuses" value={fmtMoney(s.totalBonuses)} valueColor="#c2410c" icon={Gift} accentColor="#c2410c" />
+                        <StatCard label="Net Profit" value={fmtMoney(s.netProfit)} valueColor={(s.netProfit ?? 0) >= 0 ? "#16a34a" : "#dc2626"} icon={(s.netProfit ?? 0) >= 0 ? TrendingUp : TrendingDown} accentColor={(s.netProfit ?? 0) >= 0 ? "#16a34a" : "#dc2626"} />
+                        <StatCard label="Tasks Done" value={s.tasksCompleted ?? 0} icon={CheckCircle} accentColor="#16a34a" />
+                        <StatCard label="Transactions" value={s.transactionCount ?? 0} icon={Activity} accentColor="#2563eb" />
+                        <StatCard label="Shifts" value={s.totalShifts ?? 0} sub={`${s.activeShifts ?? 0} active`} icon={Clock} accentColor="#475569" />
+                    </div>
+
+                    {/* Team Shifts */}
+                    <div>
+                        <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+                            <Users style={{ width: "12px", height: "12px" }} /> Team Shifts
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                            {(report.teams || []).map(team => <MemberShiftSection key={team.role} team={team} />)}
+                        </div>
+                    </div>
+
+                    {/* Tasks */}
+                    {report.dayTasks?.length > 0 && (
+                        <div style={{ ...CARD, overflow: "hidden" }}>
+                            <div style={{ padding: "12px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "8px" }}>
+                                <CheckCircle style={{ width: "14px", height: "14px", color: "#64748b" }} />
+                                <span style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a", textTransform: "uppercase" }}>Tasks ({report.dayTasks.length})</span>
+                            </div>
+                            <div style={{ overflowX: "auto" }}>
+                                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                    <thead><tr>{["Task", "Type", "Assigned To", "Status", "Priority"].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
+                                    <tbody>
+                                        {report.dayTasks.map(t => (
+                                            <tr key={t.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
+                                                <td style={TD}><div style={{ fontWeight: "600" }}>{t.title}</div></td>
+                                                <td style={TD}><TaskTypeBadge taskType={t.taskType} /></td>
+                                                <td style={{ ...TD, fontSize: "12px" }}>{t.assignToAll ? <Badge label="All Members" bg="#f5f3ff" color="#7c3aed" /> : t.assignedTo?.name || "—"}</td>
+                                                <td style={TD}><Badge label={t.status?.replace("_", " ")} bg={t.status === "COMPLETED" ? "#dcfce7" : "#eff6ff"} color={t.status === "COMPLETED" ? "#166634" : "#1d4ed8"} /></td>
+                                                <td style={TD}><PriorityBadge priority={t.priority} /></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Wallets */}
+                    {report.wallets?.length > 0 && (
+                        <div style={{ ...CARD, padding: "16px 20px" }}>
+                            <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>Wallet Balances (End of Day)</div>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "10px" }}>
+                                {report.wallets.map(w => (
+                                    <div key={w.id} style={{ padding: "12px 14px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fafbfc" }}>
+                                        <div style={{ fontSize: "10px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.4px", fontWeight: "700" }}>{w.method}</div>
+                                        <div style={{ fontSize: "16px", fontWeight: "800", color: "#0f172a", marginTop: "3px" }}>{fmtMoney(w.balance)}</div>
+                                        <div style={{ fontSize: "11px", color: "#64748b" }}>{w.name}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
             )}
         </div>
     );
 }
 
-// ══════════════════════════════════════════════════════════════
-// PDF PRINT — full audit detail per shift
-// ══════════════════════════════════════════════════════════════
-function buildShiftAuditHtml(team, shift) {
-    const s = shift.stats || {};
-    const memberName = shift.displayMember?.name || "Unassigned";
-    const roleLabel = ROLE_LABEL[team.role] || team.role;
-    const netProfit = s.netProfit ?? 0;
+// ── Range Aggregated Summary ──────────────────────────────────
+function RangeSummaryCards({ reports }) {
+    const totals = reports.reduce((acc, r) => {
+        const s = r.summary || {};
+        acc.deposits += s.totalDeposits || 0;
+        acc.cashouts += s.totalCashouts || 0;
+        acc.bonuses += s.totalBonuses || 0;
+        acc.profit += s.netProfit || 0;
+        acc.shifts += s.totalShifts || 0;
+        acc.transactions += s.transactionCount || 0;
+        acc.tasks += s.tasksCompleted || 0;
+        return acc;
+    }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, shifts: 0, transactions: 0, tasks: 0 });
 
-    // ── Parse snapshots ────────────────────────────────────────
-    let startSnapshot = shift.startSnapshot ?? null;
-    let endSnapshot = shift.endSnapshot ?? null;
-    if (!startSnapshot && shift.checkin?.balanceNote) {
-        try { startSnapshot = JSON.parse(shift.checkin.balanceNote); } catch (_) { }
-    }
-    if (!endSnapshot && shift.checkin?.additionalNotes) {
-        try { const p = JSON.parse(shift.checkin.additionalNotes); endSnapshot = p.endSnapshot ?? null; } catch (_) { }
-    }
-
-    const effortReason = shift.effortReason ?? null;
-    const improvements = shift.improvements ?? null;
-    const workSummary = shift.checkin?.workSummary ?? null;
-    const issues = shift.checkin?.issuesEncountered ?? null;
-    const effort = shift.checkin?.effortRating ?? null;
-
-    // ── KPI cards row ──────────────────────────────────────────
-    const kpiCards = `
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
-      <div class="kpi-card"><div class="kpi-val green">+${fmtMoney(s.totalDeposits)}</div><div class="kpi-lbl">Player Deposits</div></div>
-      <div class="kpi-card"><div class="kpi-val red">−${fmtMoney(s.totalCashouts)}</div><div class="kpi-lbl">Player Cashouts</div></div>
-      <div class="kpi-card"><div class="kpi-val amber">−${fmtMoney(s.totalBonuses)}</div><div class="kpi-lbl">Bonuses Given</div></div>
-      <div class="kpi-card"><div class="kpi-val ${netProfit >= 0 ? "green" : "red"}">${netProfit >= 0 ? "+" : ""}${fmtMoney(netProfit)}</div><div class="kpi-lbl">Shift Net Profit</div></div>
-    </div>`;
-
-    // ── Cash Flow Audit ────────────────────────────────────────
-    let cashFlowHtml = "";
-    if (startSnapshot && endSnapshot) {
-        const startWs = startSnapshot.walletSnapshot ?? [];
-        const endWs = endSnapshot.walletSnapshot ?? [];
-        const allIds = [...new Set([...startWs.map(w => w.id), ...endWs.map(w => w.id)])];
-        const wRows = allIds.map(id => {
-            const sw = startWs.find(w => w.id === id);
-            const ew = endWs.find(w => w.id === id);
-            const delta = (ew?.balance ?? 0) - (sw?.balance ?? 0);
-            const dColor = delta > 0.01 ? "#16a34a" : delta < -0.01 ? "#dc2626" : "#94a3b8";
-            const dStr = delta === 0 ? "$0.00" : (delta > 0 ? "+" : "−") + fmtMoney(Math.abs(delta));
-            return `<tr>
-              <td>${sw?.method ?? ew?.method ?? ""}${sw?.name && sw.name !== sw?.method ? ` — ${sw.name}` : ""}</td>
-              <td class="ta-r gray">${fmtMoney(sw?.balance ?? 0)}</td>
-              <td class="ta-r b">${fmtMoney(ew?.balance ?? 0)}</td>
-              <td class="ta-r b" style="color:${dColor}">${dStr}</td>
-            </tr>`;
-        }).join("");
-        const wTotal = (endSnapshot.totalWallet ?? 0) - (startSnapshot.totalWallet ?? 0);
-        const wTColor = wTotal > 0.01 ? "#16a34a" : wTotal < -0.01 ? "#dc2626" : "#94a3b8";
-        cashFlowHtml = `
-        <div class="audit-section">
-          <div class="audit-header blue-hdr">💵 Cash Flow Audit</div>
-          <table>
-            <thead><tr><th>Method / Account</th><th class="ta-r">Start</th><th class="ta-r">End</th><th class="ta-r">Change</th></tr></thead>
-            <tbody>
-              ${wRows}
-              <tr class="total-row">
-                <td><b>Total</b></td>
-                <td class="ta-r b">${fmtMoney(startSnapshot.totalWallet ?? 0)}</td>
-                <td class="ta-r b">${fmtMoney(endSnapshot.totalWallet ?? 0)}</td>
-                <td class="ta-r b" style="color:${wTColor}">${wTotal >= 0 ? "+" : "−"}${fmtMoney(Math.abs(wTotal))}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>`;
-    }
-
-    // ── Game Point Audit ───────────────────────────────────────
-    let gameAuditHtml = "";
-    if (startSnapshot && endSnapshot) {
-        const startGs = startSnapshot.gameSnapshot ?? [];
-        const endGs = endSnapshot.gameSnapshot ?? [];
-        const allIds = [...new Set([...startGs.map(g => g.id), ...endGs.map(g => g.id)])];
-        const gRows = allIds.map(id => {
-            const sg = startGs.find(g => g.id === id);
-            const eg = endGs.find(g => g.id === id);
-            const delta = Math.round((eg?.pointStock ?? 0) - (sg?.pointStock ?? 0));
-            const dColor = delta < 0 ? "#16a34a" : delta > 0 ? "#dc2626" : "#94a3b8";
-            return `<tr>
-              <td>${sg?.name ?? eg?.name ?? id}</td>
-              <td class="ta-r gray">${(sg?.pointStock ?? 0).toFixed(0)}</td>
-              <td class="ta-r b">${(eg?.pointStock ?? 0).toFixed(0)}</td>
-              <td class="ta-r b" style="color:${dColor}">${delta >= 0 ? "+" : ""}${delta}</td>
-            </tr>`;
-        }).join("");
-        const gTotal = Math.round((endSnapshot.totalGames ?? 0) - (startSnapshot.totalGames ?? 0));
-        const gTColor = gTotal < 0 ? "#16a34a" : gTotal > 0 ? "#dc2626" : "#94a3b8";
-        gameAuditHtml = `
-        <div class="audit-section">
-          <div class="audit-header purple-hdr">🎮 Game Point Audit</div>
-          <table>
-            <thead><tr><th>Game</th><th class="ta-r">Start (pts)</th><th class="ta-r">End (pts)</th><th class="ta-r">Change</th></tr></thead>
-            <tbody>
-              ${gRows}
-              <tr class="total-row">
-                <td><b>Total</b></td>
-                <td class="ta-r b">${(startSnapshot.totalGames ?? 0).toFixed(0)}</td>
-                <td class="ta-r b">${(endSnapshot.totalGames ?? 0).toFixed(0)}</td>
-                <td class="ta-r b" style="color:${gTColor}">${gTotal >= 0 ? "+" : ""}${gTotal}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>`;
-    }
-
-    // ── Full Transactions Table (PDF) ─────────────────────────────
-    const txns = shift.transactions || [];
-
-    const txRows = txns.map(t => {
-        const isD = t.type === "DEPOSIT";
-        const isCO = t.type === "WITHDRAWAL";
-        const isB = t.type === "BONUS";
-        const isPending = t.status === "PENDING";
-        const amtColor = isD ? "#16a34a" : isCO ? "#dc2626" : isB ? "#c2410c" : "#475569";
-        const amtSign = isD ? "+" : isCO ? "−" : isB ? "−" : "";
-        const typeLabel = t.displayType || (isD ? "DEPOSIT" : isCO ? "CASHOUT" : isB ? "BONUS" : t.type);
-        const typeBg = isD ? "#dcfce7" : isCO ? "#fee2e2" : isB ? "#fff7ed" : "#f1f5f9";
-        const typeClr = isD ? "#166534" : isCO ? "#991b1b" : isB ? "#c2410c" : "#475569";
-
-        const pts = t.gameStockAfter != null && t.gameStockBefore != null
-            ? Math.round(t.gameStockAfter - t.gameStockBefore) : null;
-
-        const detail = [
-            t.gameName || t.game?.name,
-            t.walletMethod,
-            t.walletName,
-        ].filter(Boolean).join(" · ") || "—";
-
-        const ptsBefore = t.gameStockBefore != null ? t.gameStockBefore.toFixed(0) : null;
-        const ptsAfter = t.gameStockAfter != null ? t.gameStockAfter.toFixed(0) : null;
-        const ptsStr = ptsBefore != null
-            ? `${ptsBefore} → <b style="color:${pts < 0 ? "#7c3aed" : "#16a34a"}">${ptsAfter}</b>`
-            : "—";
-
-        const statusBg = isPending ? "#fef3c7" : "#dcfce7";
-        const statusClr = isPending ? "#b45309" : "#166534";
-        const statusLbl = isPending ? "PENDING" : "DONE";
-
-        return `<tr>
-        <td class="gray" style="white-space:nowrap;font-size:11px">${fmtTime(t.createdAt)}</td>
-        <td><b style="font-size:12px">${t.user?.name || t.playerName || `#${t.userId}`}</b>${t.user?.email ? `<br><span style="font-size:10px;color:#94a3b8">${t.user.email}</span>` : ""}</td>
-        <td><span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:${typeBg};color:${typeClr}">${typeLabel}</span></td>
-        <td style="font-size:11px">${t.bonusType ? `<span style="padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700;background:#f5f3ff;color:#7c3aed">${t.bonusType.toUpperCase()}</span>` : '<span style="color:#cbd5e1">—</span>'}</td>
-        <td class="gray" style="font-size:11px">${detail}</td>
-        <td style="font-size:11px">${ptsStr}</td>
-        <td class="ta-r b" style="color:${amtColor};font-size:13px">${amtSign}${fmtMoney(t.amount)}</td>
-        <td class="ta-r" style="font-size:11px">${t.fee > 0 ? `<span style="color:#f59e0b;font-weight:700">−${fmtMoney(t.fee)}</span>` : '<span style="color:#cbd5e1">—</span>'}</td>
-        <td class="ta-r gray" style="font-size:11px">${t.balanceAfter != null ? fmtMoney(t.balanceAfter) : "—"}</td>
-        <td><span style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;background:${statusBg};color:${statusClr}">${statusLbl}</span></td>
-    </tr>`;
-    }).join("");
-
-    // Totals footer row
-    const totalDep = txns.filter(t => t.type === "DEPOSIT").reduce((s, t) => s + (t.amount ?? 0), 0);
-    const totalCO = txns.filter(t => t.type === "WITHDRAWAL").reduce((s, t) => s + (t.amount ?? 0), 0);
-    const totalBonus = txns.filter(t => t.type === "BONUS").reduce((s, t) => s + (t.amount ?? 0), 0);
-
-    const totalsRow = `<tr class="total-row">
-    <td colspan="6" style="font-size:11px;font-weight:700;color:#475569">Totals (${txns.length} transaction${txns.length !== 1 ? "s" : ""})</td>
-    <td class="ta-r" style="font-size:12px">
-        <span style="color:#16a34a;font-weight:800">+${fmtMoney(totalDep)}</span><br>
-        <span style="color:#dc2626;font-weight:700;font-size:10px">−${fmtMoney(totalCO)}</span><br>
-        <span style="color:#c2410c;font-weight:700;font-size:10px">−${fmtMoney(totalBonus)} bonus</span>
-    </td>
-    <td colspan="3"></td>
-</tr>`;
-
-    const activityHtml = `
-<div class="audit-section">
-    <div class="audit-header gray-hdr">Shift Transactions (${txns.length})</div>
-    ${txns.length === 0
-            ? `<p style="padding:16px;text-align:center;color:#94a3b8;font-style:italic">No transactions recorded</p>`
-            : `<table>
-            <thead><tr>
-                <th>Time</th><th>Player</th><th>Type</th><th>Bonus Type</th>
-                <th>Game / Wallet</th><th>Pts Before→After</th>
-                <th class="ta-r">Amount</th><th class="ta-r">Fee</th>
-                <th class="ta-r">Balance After</th><th>Status</th>
-            </tr></thead>
-            <tbody>${txRows}</tbody>
-            <tfoot>${totalsRow}</tfoot>
-        </table>`}
-</div>`;
-
-    const expenses = shift.expenses || [];
-    const takeouts = shift.profitTakeouts || [];
-    const totalExpAmt = expenses.reduce((s, e) => s + (e.amount ?? 0), 0);
-    const totalTakeAmt = takeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
-
-    const expRows = expenses.map(e => `<tr>
-    <td><b>${e.details}</b></td>
-    <td>${e.category?.replace('_', ' ') || '—'}</td>
-    <td>${e.game?.name || '—'}</td>
-    <td class="ta-r b amber">$${(e.amount ?? 0).toFixed(2)}</td>
-    <td class="ta-r" style="color:#7c3aed">${e.pointsAdded > 0 ? `+${e.pointsAdded} pts` : '—'}</td>
-    <td>${e.notes || '—'}</td>
-</tr>`).join('');
-
-    const expensesHtml = expenses.length > 0 ? `
-<div class="audit-section">
-  <div class="audit-header" style="background:#fffbeb;border-bottom:1px solid #fde68a;color:#b45309">
-    📋 Expenses (${expenses.length}) — Total: $${totalExpAmt.toFixed(2)}
-  </div>
-  <table>
-    <thead><tr><th>Details</th><th>Category</th><th>Game</th><th class="ta-r">Amount</th><th class="ta-r">Pts Added</th><th>Notes</th></tr></thead>
-    <tbody>${expRows}</tbody>
-    <tfoot><tr class="total-row"><td colspan="3"><b>Total</b></td><td class="ta-r b amber">$${totalExpAmt.toFixed(2)}</td><td colspan="2"></td></tr></tfoot>
-  </table>
-</div>` : '';
-
-    const takeoutRows = takeouts.map(t => `<tr>
-    <td><b>${t.takenBy}</b></td>
-    <td>${t.method}</td>
-    <td class="ta-r b r">$${parseFloat(t.amount).toFixed(2)}</td>
-    <td>${t.notes || '—'}</td>
-</tr>`).join('');
-
-    const takeoutsHtml = takeouts.length > 0 ? `
-<div class="audit-section">
-  <div class="audit-header" style="background:#fff1f2;border-bottom:1px solid #fecdd3;color:#991b1b">
-    💸 Profit Takeouts (${takeouts.length}) — Total: $${totalTakeAmt.toFixed(2)}
-  </div>
-  <table>
-    <thead><tr><th>Taken By</th><th>Method</th><th class="ta-r">Amount</th><th>Notes</th></tr></thead>
-    <tbody>${takeoutRows}</tbody>
-    <tfoot><tr class="total-row"><td colspan="2"><b>Total</b></td><td class="ta-r b r">$${totalTakeAmt.toFixed(2)}</td><td></td></tr></tfoot>
-  </table>
-</div>` : '';
-
-    // ── Audit Verification ─────────────────────────────────────
-    let auditVerHtml = "";
-
-    if (endSnapshot) {
-        const { deposits = 0, cashouts = 0, bonuses = 0, netProfit: np = 0, walletChange = 0, gameChange = 0 } = endSnapshot;
-        const depFees = txns.filter(t => t.type === "DEPOSIT")
-            .reduce((s, t) => { const m = (t.notes || "").match(/fee:([\d.]+)/); return s + (m ? parseFloat(m[1]) : 0); }, 0);
-        const coFees = txns.filter(t => t.type === "WITHDRAWAL")
-            .reduce((s, t) => { const m = (t.notes || "").match(/fee:([\d.]+)/); return s + (m ? parseFloat(m[1]) : 0); }, 0);
-        const expectedW = deposits - depFees - cashouts - coFees;
-        const cashDisc = walletChange - expectedW;
-        const ptDisc = Math.round(endSnapshot.gameDiscrepancy ?? 0);
-        const cashOk = Math.abs(cashDisc) < 0.02;
-        const ptsOk = Math.abs(ptDisc) < 2;
-
-        // ── Funds ↔ Game Points Balance ──────────────────────────────
-        const expectedGameDeduction = deposits + bonuses - cashouts;
-        const actualGameDeduction = Math.abs(gameChange);
-        const fundsPointsDiscrepancy = Math.round(actualGameDeduction - expectedGameDeduction);
-        const fundsPointsOk = Math.abs(fundsPointsDiscrepancy) < 2;
-        // ─────────────────────────────────────────────────────────────
-
-        const allOk = cashOk && ptsOk && fundsPointsOk;
-        const statusColor = allOk ? "#16a34a" : "#dc2626";
-        const statusBg = allOk ? "#f0fdf4" : "#fef2f2";
-        const statusBorder = allOk ? "#86efac" : "#fca5a5";
-        const feesNote = (depFees + coFees) > 0
-            ? ` | Dep fees −${fmtMoney(depFees)}${coFees > 0 ? ` · CO fees −${fmtMoney(coFees)}` : ""}`
-            : "";
-
-        auditVerHtml = `
-        <div class="audit-section">
-          <div class="audit-header" style="background:${statusBg};border-bottom:1px solid ${statusBorder};color:${statusColor}">
-            ${allOk ? "✓" : "⚠"} Audit Verification — ${allOk ? "All Clear" : "Discrepancy Found"}
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 12px 0">
-            <!-- Cash Flow Check -->
-            <div style="border:1px solid ${cashOk ? "#86efac" : "#fca5a5"};border-radius:6px;overflow:hidden">
-              <div style="padding:6px 10px;background:${cashOk ? "#f0fdf4" : "#fef2f2"};font-size:10px;font-weight:700;color:${cashOk ? "#15803d" : "#991b1b"};text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid ${cashOk ? "#86efac" : "#fca5a5"}">Cash Flow Check</div>
-              <table style="margin:0">
-                <tr><td class="gray" style="font-size:10px;width:55%">Actual Change (Snapshots)</td><td class="ta-r b" style="color:${walletChange >= 0 ? "#16a34a" : "#dc2626"}">${walletChange >= 0 ? "+" : "−"}${fmtMoney(Math.abs(walletChange))}</td></tr>
-                <tr><td class="gray" style="font-size:10px">Expected Change (Activities)</td><td class="ta-r b" style="color:${expectedW >= 0 ? "#16a34a" : "#dc2626"}">${expectedW >= 0 ? "+" : "−"}${fmtMoney(Math.abs(expectedW))}</td></tr>
-                <tr style="background:#fafafa"><td class="gray" style="font-size:10px"><b>Cash Discrepancy</b></td><td class="ta-r b" style="color:${cashOk ? "#16a34a" : "#dc2626"}">${cashOk ? "$0.00" : (cashDisc >= 0 ? "+" : "−") + fmtMoney(Math.abs(cashDisc))}</td></tr>
-              </table>
-            </div>
-            <!-- Point Stock Check -->
-            <div style="border:1px solid ${ptsOk ? "#86efac" : "#fca5a5"};border-radius:6px;overflow:hidden">
-              <div style="padding:6px 10px;background:${ptsOk ? "#f0fdf4" : "#fef2f2"};font-size:10px;font-weight:700;color:${ptsOk ? "#15803d" : "#991b1b"};text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid ${ptsOk ? "#86efac" : "#fca5a5"}">Point Stock Check</div>
-              <table style="margin:0">
-                <tr><td class="gray" style="font-size:10px;width:55%">Actual Change (Snapshots)</td><td class="ta-r b" style="color:${gameChange <= 0 ? "#16a34a" : "#dc2626"}">${gameChange >= 0 ? "+" : ""}${Math.round(gameChange)} pts</td></tr>
-                <tr><td class="gray" style="font-size:10px">Expected Change (Activities)</td><td class="ta-r b">${Math.round(-(deposits + bonuses - cashouts)) >= 0 ? "+" : ""}${Math.round(-(deposits + bonuses - cashouts))} pts</td></tr>
-                <tr style="background:#fafafa"><td class="gray" style="font-size:10px"><b>Point Discrepancy</b></td><td class="ta-r b" style="color:${ptsOk ? "#16a34a" : "#dc2626"}">${ptsOk ? "0 pts" : (ptDisc >= 0 ? "+" : "") + ptDisc + " pts"}</td></tr>
-              </table>
-            </div>
-          </div>
-
-          <!-- ── NEW: Funds ↔ Game Points Balance (full width) ── -->
-          <div style="padding:0 12px 0;margin-top:12px">
-            <div style="border:1px solid ${fundsPointsOk ? "#86efac" : "#fca5a5"};border-radius:6px;overflow:hidden">
-              <div style="padding:6px 10px;background:${fundsPointsOk ? "#f0fdf4" : "#fef2f2"};font-size:10px;font-weight:700;color:${fundsPointsOk ? "#15803d" : "#991b1b"};text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid ${fundsPointsOk ? "#86efac" : "#fca5a5"}">
-                Funds ↔ Game Points Balance
-                <span style="font-size:9px;font-weight:500;text-transform:none;opacity:0.8;margin-left:6px">(Deposits + Bonuses − Cashouts = |Game Pts Deducted|)</span>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr">
-                <div style="padding:8px 10px;text-align:center;border-right:1px solid #f1f5f9">
-                  <div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px">Expected Game Deduction</div>
-                  <div style="font-size:13px;font-weight:800;color:#475569">${expectedGameDeduction.toFixed(0)} pts</div>
-                  <div style="font-size:9px;color:#94a3b8;margin-top:2px">$${deposits.toFixed(0)}+$${bonuses.toFixed(0)}−$${cashouts.toFixed(0)}</div>
-                </div>
-                <div style="padding:8px 10px;text-align:center;border-right:1px solid #f1f5f9">
-                  <div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px">Actual Game Deduction</div>
-                  <div style="font-size:13px;font-weight:800;color:${gameChange <= 0 ? "#16a34a" : "#dc2626"}">${actualGameDeduction.toFixed(0)} pts</div>
-                  <div style="font-size:9px;color:#94a3b8;margin-top:2px">from snapshots</div>
-                </div>
-                <div style="padding:8px 10px;text-align:center;border-right:1px solid #f1f5f9">
-                  <div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px">Funds↔Points Discrepancy</div>
-                  <div style="font-size:13px;font-weight:800;color:${fundsPointsOk ? "#16a34a" : "#dc2626"}">${fundsPointsOk ? "0 pts" : `${fundsPointsDiscrepancy >= 0 ? "+" : ""}${fundsPointsDiscrepancy} pts`}</div>
-                  <div style="font-size:9px;color:#94a3b8;margin-top:2px">${fundsPointsOk ? "Balanced ✓" : "Mismatch ⚠"}</div>
-                </div>
-                <div style="padding:8px 10px;text-align:center">
-                  <div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px">Formula Breakdown</div>
-                  <div style="font-size:13px;font-weight:800;color:#7c3aed">${expectedGameDeduction.toFixed(0)}</div>
-                  <div style="font-size:9px;color:#94a3b8;margin-top:2px">${deposits.toFixed(0)}+${bonuses.toFixed(0)}−${cashouts.toFixed(0)}=${expectedGameDeduction.toFixed(0)}</div>
-                </div>
-              </div>
-              ${!fundsPointsOk ? `
-              <div style="padding:7px 10px;background:#fef2f2;border-top:1px solid #fca5a5;font-size:10px;color:#991b1b">
-                ⚠ Game point deduction (${actualGameDeduction.toFixed(0)} pts) does not match expected
-                (${expectedGameDeduction.toFixed(0)} pts = Deposits $${deposits.toFixed(2)} + Bonuses $${bonuses.toFixed(2)} − Cashouts $${cashouts.toFixed(2)}).
-                Discrepancy: ${Math.abs(fundsPointsDiscrepancy)} pts.
-              </div>` : ""}
-            </div>
-          </div>
-          <!-- ── End Funds ↔ Game Points Balance ── -->
-
-          <div style="margin:12px 12px 12px;padding:10px 12px;background:${statusBg};border:1px solid ${statusBorder};border-left:4px solid ${statusColor};border-radius:6px;font-size:11px">
-            ${!allOk ? `<div style="font-weight:700;color:${statusColor};margin-bottom:6px">⚠ ${!cashOk ? `Cash discrepancy: ${fmtMoney(Math.abs(cashDisc))}. ` : ""}${!ptsOk ? `Point discrepancy: ${Math.abs(ptDisc)} pts. ` : ""}${!fundsPointsOk ? `Funds↔Points mismatch: ${Math.abs(fundsPointsDiscrepancy)} pts. ` : ""}Please review the activity log.</div>` : ""}
-            <span style="color:#475569">
-              Deposits <b style="color:#16a34a">${fmtMoney(deposits)}</b> &nbsp;−&nbsp;
-              Cashouts <b style="color:#dc2626">${fmtMoney(cashouts)}</b> &nbsp;=&nbsp;
-              Net Profit <b style="color:${np >= 0 ? "#16a34a" : "#dc2626"}">${fmtMoney(np)}</b> &nbsp;|&nbsp;
-              Bonuses <b style="color:#c2410c">${fmtMoney(bonuses)}</b>${feesNote} &nbsp;|&nbsp;
-              Wallet Δ <b style="color:${walletChange >= 0 ? "#16a34a" : "#dc2626"}">${walletChange >= 0 ? "+" : ""}${fmtMoney(walletChange)}</b> &nbsp;|&nbsp;
-              Game Δ <b style="color:#7c3aed">${gameChange >= 0 ? "+" : ""}${Math.round(gameChange)} pts</b> &nbsp;|&nbsp;
-              Funds↔Pts <b style="color:${fundsPointsOk ? "#16a34a" : "#dc2626"}">${fundsPointsOk ? "✓ Balanced" : `⚠ ${Math.abs(fundsPointsDiscrepancy)} pts off`}</b>
-            </span>
-            <div style="color:#94a3b8;font-style:italic;margin-top:4px;font-size:10px">Verification: Cash Actual = Cash Expected · Points Actual = Points Expected · Deposits+Bonuses−Cashouts = |Game Pts Change|</div>
-          </div>
-        </div>`;
-    }
-
-    // ── Member Feedback ────────────────────────────────────────
-    let feedbackHtml = "";
-    if (effort || effortReason || workSummary || improvements || issues) {
-        const effortColor = !effort ? "#94a3b8" : effort >= 8 ? "#16a34a" : effort >= 5 ? "#d97706" : "#dc2626";
-        feedbackHtml = `
-        <div class="audit-section">
-          <div class="audit-header gray-hdr">💬 Member Feedback</div>
-          <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            ${effort ? `<div style="grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:10px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0">
-              <div style="text-align:center;padding:8px 14px;background:${effortColor}15;border-radius:8px">
-                <div style="font-size:24px;font-weight:900;color:${effortColor}">${effort}</div>
-                <div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase">/ 10</div>
-              </div>
-              <div style="flex:1">
-                <div style="display:flex;gap:3px;margin-bottom:5px">
-                  ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<div style="flex:1;height:6px;border-radius:3px;background:${n <= effort ? effortColor : "#e2e8f0"}"></div>`).join("")}
-                </div>
-                <div style="font-size:11px;color:#64748b">${effort >= 8 ? "Excellent effort" : effort >= 5 ? "Moderate effort" : "Low effort this shift"}</div>
-              </div>
-            </div>` : ""}
-            ${effortReason ? `<div style="padding:10px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0"><div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">Why this rating?</div><p style="margin:0;font-size:11px;color:#0f172a;line-height:1.5">${effortReason}</p></div>` : ""}
-            ${improvements ? `<div style="padding:10px;background:#fffbeb;border-radius:6px;border:1px solid #fde68a"><div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">Could do better</div><p style="margin:0;font-size:11px;color:#0f172a;line-height:1.5">${improvements}</p></div>` : ""}
-            ${workSummary ? `<div style="padding:10px;background:#f0fdf4;border-radius:6px;border:1px solid #86efac"><div style="font-size:9px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">Work summary</div><p style="margin:0;font-size:11px;color:#0f172a;line-height:1.5">${workSummary}</p></div>` : ""}
-            ${issues ? `<div style="padding:10px;background:#fef2f2;border-radius:6px;border:1px solid #fca5a5"><div style="font-size:9px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">Issues encountered</div><p style="margin:0;font-size:11px;color:#0f172a;line-height:1.5">${issues}</p></div>` : ""}
-          </div>
-        </div>`;
-    }
-
-    // ── Players added ──────────────────────────────────────────
-    const addedPlayers = shift.playersAdded || [];
-    const playersHtml = addedPlayers.length > 0 ? `
-    <div class="audit-section">
-      <div class="audit-header gray-hdr">👥 Players Added (${addedPlayers.length})</div>
-      <table><thead><tr><th>Name</th><th>Username</th><th>Tier</th><th>Time</th></tr></thead>
-        <tbody>${addedPlayers.map(p => `<tr><td><b>${p.name}</b></td><td class="gray">@${p.username}</td><td><span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#fffbeb;color:#92400e">${p.tier}</span></td><td class="gray">${fmtTime(p.createdAt)}</td></tr>`).join("")}</tbody>
-      </table>
-    </div>` : "";
-
-    // ── Bonuses granted ────────────────────────────────────────
-    const bonuses = shift.bonusesGranted || [];
-    const bonusesHtml = bonuses.length > 0 ? `
-    <div class="audit-section">
-      <div class="audit-header gray-hdr">🎁 Bonuses Granted (${bonuses.length})</div>
-      <table><thead><tr><th>Time</th><th>Player</th><th>Game</th><th class="ta-r">Amount</th></tr></thead>
-        <tbody>${bonuses.map(b => `<tr><td class="gray">${fmtTime(b.createdAt)}</td><td><b>${b.user?.name || "—"}</b></td><td class="gray">${b.game?.name || "—"}</td><td class="ta-r b amber">+${fmtMoney(b.amount)}</td></tr>`).join("")}</tbody>
-      </table>
-    </div>` : "";
-
-    return `
-  <div class="shift-block">
-    <div class="shift-block-header">
-      <div>
-        <span class="shift-title">${memberName}</span>
-        <span class="shift-role-badge">${roleLabel}</span>
-        ${shift.isActive ? `<span style="margin-left:8px;padding:2px 8px;background:#f0fdf4;color:#16a34a;border-radius:4px;font-size:10px;font-weight:700">● LIVE</span>` : ""}
-      </div>
-      <div class="shift-time">${fmtTime(shift.startTime)} – ${shift.isActive ? "Active Now" : fmtTime(shift.endTime)} &nbsp;·&nbsp; ${shift.duration != null ? shift.duration + " min" : "Ongoing"}</div>
-    </div>
-    ${kpiCards}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-      ${cashFlowHtml}
-      ${gameAuditHtml}
-    </div>
-    ${activityHtml}
-    ${activityHtml}
-${expensesHtml}
-   ${takeoutsHtml}
-   ${auditVerHtml}
-    ${auditVerHtml}
-    ${feedbackHtml}
-    ${playersHtml}
-    ${bonusesHtml}
-  </div>`;
+    return (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(175px, 1fr))", gap: "10px" }}>
+            <StatCard label="Total Deposits" value={fmtMoney(totals.deposits)} valueColor="#16a34a" icon={ArrowUpRight} accentColor="#16a34a" sub={`across ${reports.length} days`} />
+            <StatCard label="Total Cashouts" value={fmtMoney(totals.cashouts)} valueColor="#dc2626" icon={ArrowDownRight} accentColor="#dc2626" />
+            <StatCard label="Total Bonuses" value={fmtMoney(totals.bonuses)} valueColor="#c2410c" icon={Gift} accentColor="#c2410c" />
+            <StatCard label="Net Profit" value={fmtMoney(totals.profit)} valueColor={totals.profit >= 0 ? "#16a34a" : "#dc2626"} icon={totals.profit >= 0 ? TrendingUp : TrendingDown} accentColor={totals.profit >= 0 ? "#16a34a" : "#dc2626"} sub="Deposits − Cashouts − Bonuses" />
+            <StatCard label="Total Shifts" value={totals.shifts} icon={Clock} accentColor="#475569" />
+            <StatCard label="Transactions" value={totals.transactions} icon={Activity} accentColor="#2563eb" />
+            <StatCard label="Tasks Done" value={totals.tasks} icon={CheckCircle} accentColor="#16a34a" />
+            <StatCard label="Days Covered" value={reports.length} icon={CalendarRange} accentColor="#7c3aed" />
+        </div>
+    );
 }
 
+// ── printReport (single day) ──────────────────────────────────
 function printReport(report, date) {
     const win = window.open("", "_blank");
     const { summary, teams, wallets, dayTasks } = report;
+    const s = summary || {};
 
-    // ── Per-shift audit blocks ─────────────────────────────────
-    const shiftAuditBlocks = teams.flatMap(team =>
-        team.shifts.map(shift => buildShiftAuditHtml(team, shift))
-    ).join("");
-
-    // ── Summary table rows ─────────────────────────────────────
-    const memberRows = teams.flatMap(team =>
+    const memberRows = (teams || []).flatMap(team =>
         team.shifts.map(shift => {
-            const s = shift.stats || {};
+            const st = shift.stats || {};
             const effort = shift.checkin?.effortRating ?? null;
-            const balanced = s.isBalanced;
             return `<tr>
               <td><strong>${shift.displayMember?.name || "—"}</strong><br/><span style="font-size:10px;color:#64748b">${ROLE_LABEL[team.role] || team.role}</span></td>
               <td>${fmtTime(shift.startTime)}</td>
               <td>${shift.isActive ? "<span style='color:#16a34a;font-weight:700'>ACTIVE</span>" : fmtTime(shift.endTime)}</td>
               <td>${shift.duration != null ? shift.duration + " min" : "—"}</td>
-              <td>${s.transactionCount ?? 0}</td>
-              <td style="color:#16a34a;font-weight:700">${fmtMoney(s.totalDeposits)}</td>
-              <td style="color:#dc2626;font-weight:700">${fmtMoney(s.totalCashouts)}</td>
-              <td style="color:#c2410c;font-weight:700">${fmtMoney(s.totalBonuses)}</td>
-              <td style="font-weight:800;color:${(s.netProfit || 0) >= 0 ? "#16a34a" : "#dc2626"}">${fmtMoney(s.netProfit)}</td>
-              <td>${s.playersAdded ?? 0}</td>
-              <td>${s.tasksCompleted ?? 0}</td>
+              <td>${st.transactionCount ?? 0}</td>
+              <td style="color:#16a34a;font-weight:700">${fmtMoney(st.totalDeposits)}</td>
+              <td style="color:#dc2626;font-weight:700">${fmtMoney(st.totalCashouts)}</td>
+              <td style="color:#c2410c;font-weight:700">${fmtMoney(st.totalBonuses)}</td>
+              <td style="font-weight:800;color:${(st.netProfit || 0) >= 0 ? "#16a34a" : "#dc2626"}">${fmtMoney(st.netProfit)}</td>
+              <td>${st.playersAdded ?? 0}</td>
               <td style="font-weight:700;color:${effort >= 8 ? "#16a34a" : effort >= 5 ? "#d97706" : "#dc2626"}">${effort != null ? `${effort}/10` : "—"}</td>
-              <td style="font-weight:700;color:${balanced === true ? "#16a34a" : balanced === false ? "#dc2626" : "#94a3b8"}">${balanced === true ? "✓" : balanced === false ? "⚠" : "—"}</td>
             </tr>`;
         })
     ).join("");
 
-    const taskRows = (dayTasks || []).map(t => {
-        const pct = t.targetValue > 0 ? Math.round(((t.currentValue ?? 0) / t.targetValue) * 100) : null;
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/>
+<title>Operations Report — ${date}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}body{font-family:"Segoe UI",Arial,sans-serif;font-size:12px;color:#0f172a;padding:28px}
+  h1{font-size:20px;font-weight:800;margin-bottom:3px}h2{font-size:13px;font-weight:700;margin:24px 0 10px;color:#374151;border-bottom:2px solid #e2e8f0;padding-bottom:5px;text-transform:uppercase}
+  .meta{font-size:11px;color:#64748b;margin-bottom:20px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+  .box{border:1px solid #e2e8f0;border-radius:7px;padding:12px 14px}.val{font-size:18px;font-weight:800}.lbl{font-size:9px;color:#64748b;margin-top:1px;text-transform:uppercase}
+  .green{color:#16a34a}.red{color:#dc2626}table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:14px}
+  th{background:#f8fafc;text-align:left;padding:7px 10px;font-weight:700;color:#64748b;font-size:10px;text-transform:uppercase;border-bottom:2px solid #e2e8f0}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}button{padding:9px 18px;background:#0f172a;color:#fff;border:none;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer}
+  @media print{button{display:none}body{padding:16px}}
+</style></head><body>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+    <div><h1>Daily Operations Report</h1><p class="meta">Generated ${new Date().toLocaleString("en-US", { timeZone: "America/Chicago" })} · Report Date: ${fmtDate(date + "T12:00:00")}</p></div>
+    <button onclick="window.print()">Print / Save PDF</button>
+  </div>
+  <h2>Day Summary</h2>
+  <div class="grid4">
+    <div class="box"><div class="val green">${fmtMoney(s.totalDeposits)}</div><div class="lbl">Total Deposits</div></div>
+    <div class="box"><div class="val red">${fmtMoney(s.totalCashouts)}</div><div class="lbl">Total Cashouts</div></div>
+    <div class="box"><div class="val" style="color:#c2410c">${fmtMoney(s.totalBonuses)}</div><div class="lbl">Total Bonuses</div></div>
+    <div class="box"><div class="val ${(s.netProfit || 0) >= 0 ? "green" : "red"}">${fmtMoney(s.netProfit)}</div><div class="lbl">Net Profit</div></div>
+    <div class="box"><div class="val">${s.totalShifts}</div><div class="lbl">Shifts Logged</div></div>
+    <div class="box"><div class="val">${s.tasksCompleted}</div><div class="lbl">Tasks Completed</div></div>
+    <div class="box"><div class="val">${s.transactionCount}</div><div class="lbl">Transactions</div></div>
+  </div>
+  <h2>Member Shift Summary</h2>
+  <table><thead><tr><th>Member</th><th>Start</th><th>End</th><th>Duration</th><th>Txns</th><th>Deposits</th><th>Cashouts</th><th>Bonuses</th><th>Net Profit</th><th>Players</th><th>Effort</th></tr></thead>
+    <tbody>${memberRows || '<tr><td colspan="11" style="text-align:center;color:#94a3b8;padding:16px">No shifts today</td></tr>'}</tbody>
+  </table>
+  <p style="margin-top:28px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:12px">Confidential · Generated by Operations Dashboard · ${new Date().toISOString()}</p>
+</body></html>`);
+    win.document.close();
+}
+
+// ── printRangeReport (multi-day) ──────────────────────────────
+function printRangeReport(reports, startDate, endDate) {
+    const win = window.open("", "_blank");
+
+    const totals = reports.reduce((acc, r) => {
+        const s = r.summary || {};
+        acc.deposits += s.totalDeposits || 0;
+        acc.cashouts += s.totalCashouts || 0;
+        acc.bonuses += s.totalBonuses || 0;
+        acc.profit += s.netProfit || 0;
+        acc.shifts += s.totalShifts || 0;
+        acc.transactions += s.transactionCount || 0;
+        acc.tasks += s.tasksCompleted || 0;
+        return acc;
+    }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, shifts: 0, transactions: 0, tasks: 0 });
+
+    const dayRows = reports.map(r => {
+        const s = r.summary || {};
         return `<tr>
-          <td>${fmtTime(t.completedAt || t.updatedAt)}</td>
-          <td><strong>${t.title}</strong>${t.description ? `<br><span style="font-size:10px;color:#64748b">${t.description}</span>` : ""}</td>
-          <td>${t.taskType?.replace("_", " ") || "STANDARD"}</td>
-          <td>${t.assignedTo?.name || (t.assignToAll ? "All Members" : "—")}</td>
-          <td>${t.status?.replace("_", " ")}</td>
-          <td>${pct !== null ? `${t.currentValue} / ${t.targetValue} (${Math.min(100, pct)}%)` : (t.checklistItems ? `${t.checklistItems.filter(i => i.done).length}/${t.checklistItems.length} items` : "—")}</td>
-          <td>${t.priority}</td>
+          <td><b>${fmtDate(r.date + "T12:00:00")}</b></td>
+          <td style="color:#16a34a;font-weight:700">${fmtMoney(s.totalDeposits)}</td>
+          <td style="color:#dc2626;font-weight:700">${fmtMoney(s.totalCashouts)}</td>
+          <td style="color:#c2410c;font-weight:700">${fmtMoney(s.totalBonuses)}</td>
+          <td style="font-weight:800;color:${(s.netProfit || 0) >= 0 ? "#16a34a" : "#dc2626"}">${fmtMoney(s.netProfit)}</td>
+          <td>${s.totalShifts ?? 0}</td>
+          <td>${s.transactionCount ?? 0}</td>
+          <td>${s.tasksCompleted ?? 0}</td>
         </tr>`;
     }).join("");
 
-    const walletRows = (wallets || []).map(w =>
-        `<tr><td><b>${w.name}</b></td><td>${w.method}</td><td style="font-weight:700;color:#16a34a;text-align:right">${fmtMoney(w.balance || 0)}</td></tr>`
-    ).join("");
-
-    win.document.write(`<!DOCTYPE html>
-<html><head><meta charset="utf-8"/>
-<title>Operations Report — ${date}</title>
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/>
+<title>Range Report — ${startDate} to ${endDate}</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:"Segoe UI",Arial,sans-serif;font-size:12px;color:#0f172a;background:#fff;padding:28px}
-  h1{font-size:20px;font-weight:800;margin-bottom:3px}
-  h2{font-size:13px;font-weight:700;margin:28px 0 10px;color:#374151;border-bottom:2px solid #e2e8f0;padding-bottom:5px;text-transform:uppercase;letter-spacing:0.4px}
-  .meta{font-size:11px;color:#64748b;margin-bottom:20px}
-  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
-  .box{border:1px solid #e2e8f0;border-radius:7px;padding:12px 14px}
-  .val{font-size:18px;font-weight:800}.lbl{font-size:9px;color:#64748b;margin-top:1px;text-transform:uppercase;letter-spacing:0.4px}
-  .green{color:#16a34a}.red{color:#dc2626}.amber{color:#c2410c}.purple{color:#7c3aed}.gray{color:#64748b}.b{font-weight:700}.ta-r{text-align:right}
-  table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:14px}
-  th{background:#f8fafc;text-align:left;padding:7px 10px;font-weight:700;color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:0.4px;border-bottom:2px solid #e2e8f0}
+  *{box-sizing:border-box;margin:0;padding:0}body{font-family:"Segoe UI",Arial,sans-serif;font-size:12px;color:#0f172a;padding:28px}
+  h1{font-size:20px;font-weight:800;margin-bottom:3px}h2{font-size:13px;font-weight:700;margin:24px 0 10px;color:#374151;border-bottom:2px solid #e2e8f0;padding-bottom:5px;text-transform:uppercase}
+  .meta{font-size:11px;color:#64748b;margin-bottom:20px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+  .box{border:1px solid #e2e8f0;border-radius:7px;padding:12px 14px}.val{font-size:18px;font-weight:800}.lbl{font-size:9px;color:#64748b;margin-top:1px;text-transform:uppercase}
+  .green{color:#16a34a}.red{color:#dc2626}table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:14px}
+  th{background:#f8fafc;text-align:left;padding:7px 10px;font-weight:700;color:#64748b;font-size:10px;text-transform:uppercase;border-bottom:2px solid #e2e8f0}
   td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}
-  tr:hover td{background:#fafbfc}
   .total-row td{background:#f8fafc;font-weight:700}
-  /* Shift blocks */
-  .shift-block{border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:28px;page-break-inside:avoid}
-  .shift-block-header{padding:12px 16px;background:#f8fafc;border-bottom:2px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
-  .shift-title{font-size:15px;font-weight:800;color:#0f172a}
-  .shift-role-badge{margin-left:10px;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
-  .shift-time{font-size:11px;color:#64748b}
-  .kpi-card{border:1px solid #e2e8f0;border-radius:7px;padding:10px 12px}
-  .kpi-val{font-size:17px;font-weight:800}.kpi-lbl{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;margin-top:1px}
-  .audit-section{border:1px solid #e2e8f0;border-radius:7px;overflow:hidden;margin:0 12px 14px}
-  .audit-header{padding:8px 12px;font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.4px}
-  .blue-hdr{background:#eff6ff;color:#1d4ed8;border-bottom:1px solid #bfdbfe}
-  .purple-hdr{background:#f5f3ff;color:#6d28d9;border-bottom:1px solid #ddd6fe}
-  .gray-hdr{background:#f8fafc;color:#374151;border-bottom:1px solid #e2e8f0}
   button{padding:9px 18px;background:#0f172a;color:#fff;border:none;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer}
-  @media print{button{display:none}body{padding:16px}.shift-block{margin-bottom:20px}}
-</style></head>
-<body>
+  @media print{button{display:none}body{padding:16px}}
+</style></head><body>
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
     <div>
-      <h1>Daily Operations Report</h1>
-      <p class="meta">Generated ${new Date().toLocaleString("en-US", { timeZone: "America/Chicago" })} &nbsp;·&nbsp; Report Date: ${fmtDate(date + "T12:00:00")}</p>
+      <h1>Range Operations Report</h1>
+      <p class="meta">Generated ${new Date().toLocaleString("en-US", { timeZone: "America/Chicago" })} · ${fmtDateShort(startDate + "T12:00:00")} – ${fmtDateShort(endDate + "T12:00:00")} (${reports.length} days)</p>
     </div>
     <button onclick="window.print()">Print / Save PDF</button>
   </div>
-
-  <h2>Day Summary</h2>
+  <h2>Range Totals</h2>
   <div class="grid4">
-    <div class="box"><div class="val green">${fmtMoney(summary.totalDeposits)}</div><div class="lbl">Total Deposits</div></div>
-    <div class="box"><div class="val red">${fmtMoney(summary.totalCashouts)}</div><div class="lbl">Total Cashouts</div></div>
-    <div class="box"><div class="val amber">${fmtMoney(summary.totalBonuses)}</div><div class="lbl">Total Bonuses</div></div>
-    <div class="box"><div class="val ${summary.netProfit >= 0 ? "green" : "red"}">${fmtMoney(summary.netProfit)}</div><div class="lbl">Net Profit</div></div>
-    <div class="box"><div class="val">${summary.totalShifts}</div><div class="lbl">Shifts Logged</div></div>
-    <div class="box"><div class="val">${summary.activeShifts}</div><div class="lbl">Active Shifts</div></div>
-    <div class="box"><div class="val">${summary.tasksCompleted}</div><div class="lbl">Tasks Completed</div></div>
-    <div class="box"><div class="val">${summary.transactionCount}</div><div class="lbl">Transactions</div></div>
+    <div class="box"><div class="val green">${fmtMoney(totals.deposits)}</div><div class="lbl">Total Deposits</div></div>
+    <div class="box"><div class="val red">${fmtMoney(totals.cashouts)}</div><div class="lbl">Total Cashouts</div></div>
+    <div class="box"><div class="val" style="color:#c2410c">${fmtMoney(totals.bonuses)}</div><div class="lbl">Total Bonuses</div></div>
+    <div class="box"><div class="val ${totals.profit >= 0 ? "green" : "red"}">${fmtMoney(totals.profit)}</div><div class="lbl">Net Profit</div></div>
+    <div class="box"><div class="val">${totals.shifts}</div><div class="lbl">Total Shifts</div></div>
+    <div class="box"><div class="val">${totals.transactions}</div><div class="lbl">Total Transactions</div></div>
+    <div class="box"><div class="val">${totals.tasks}</div><div class="lbl">Tasks Completed</div></div>
+    <div class="box"><div class="val" style="color:#7c3aed">${reports.length}</div><div class="lbl">Days Covered</div></div>
   </div>
-
-  <h2>Member Shift Summary</h2>
+  <h2>Day-by-Day Breakdown</h2>
   <table>
-    <thead><tr>
-      <th>Member</th><th>Start</th><th>End</th><th>Duration</th><th>Txns</th>
-      <th>Deposits</th><th>Cashouts</th><th>Bonuses</th><th>Net Profit</th>
-      <th>Players</th><th>Tasks</th><th>Effort</th><th>Balanced</th>
-    </tr></thead>
-    <tbody>${memberRows || '<tr><td colspan="13" style="text-align:center;color:#94a3b8;padding:16px">No shifts today</td></tr>'}</tbody>
+    <thead><tr><th>Date</th><th>Deposits</th><th>Cashouts</th><th>Bonuses</th><th>Net Profit</th><th>Shifts</th><th>Transactions</th><th>Tasks</th></tr></thead>
+    <tbody>${dayRows}</tbody>
+    <tfoot>
+      <tr class="total-row">
+        <td><b>TOTAL (${reports.length} days)</b></td>
+        <td style="color:#16a34a;font-weight:800">${fmtMoney(totals.deposits)}</td>
+        <td style="color:#dc2626;font-weight:800">${fmtMoney(totals.cashouts)}</td>
+        <td style="color:#c2410c;font-weight:800">${fmtMoney(totals.bonuses)}</td>
+        <td style="font-weight:800;color:${totals.profit >= 0 ? "#16a34a" : "#dc2626"}">${fmtMoney(totals.profit)}</td>
+        <td>${totals.shifts}</td>
+        <td>${totals.transactions}</td>
+        <td>${totals.tasks}</td>
+      </tr>
+    </tfoot>
   </table>
-
-  <h2>Detailed Shift Audit Reports</h2>
-  ${shiftAuditBlocks || `<p style="color:#94a3b8;font-style:italic;padding:16px 0">No shifts recorded for this day.</p>`}
-
-  ${(dayTasks || []).length > 0 ? `
-  <h2>All Tasks (${dayTasks.length})</h2>
-  <table>
-    <thead><tr><th>Time</th><th>Task</th><th>Type</th><th>Assigned To</th><th>Status</th><th>Progress</th><th>Priority</th></tr></thead>
-    <tbody>${taskRows}</tbody>
-  </table>` : ""}
-
-  ${(wallets || []).length > 0 ? `
-  <h2>Current Wallet Balances</h2>
-  <table>
-    <thead><tr><th>Name</th><th>Method</th><th class="ta-r">Balance</th></tr></thead>
-    <tbody>${walletRows}</tbody>
-  </table>` : ""}
-
-  <p style="margin-top:28px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:12px">
-    Confidential &nbsp;·&nbsp; Generated by Operations Dashboard &nbsp;·&nbsp; ${new Date().toISOString()}
-  </p>
+  <p style="margin-top:28px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:12px">Confidential · Generated by Operations Dashboard · ${new Date().toISOString()}</p>
 </body></html>`);
     win.document.close();
 }
@@ -1736,18 +1127,27 @@ function printReport(report, date) {
 export default function AdminReportPage() {
     const { add: toast } = useToast();
     const todayStr = toDateInput(new Date());
+
+    // Mode: "single" | "range"
+    const [mode, setMode] = useState("single");
     const [selectedDate, setSelectedDate] = useState(todayStr);
-    const [report, setReport] = useState(null);
+    const [startDate, setStartDate] = useState(todayStr);
+    const [endDate, setEndDate] = useState(todayStr);
+
+    const [report, setReport] = useState(null);        // single-day report
+    const [rangeReports, setRangeReports] = useState([]); // array of daily reports for range
     const [loading, setLoading] = useState(false);
     const [teamFilter, setTeamFilter] = useState("ALL");
 
-    const fetchReport = useCallback(async (date, role) => {
+    // ── Fetch single day ──
+    const fetchSingleReport = useCallback(async (date, role) => {
         setLoading(true);
         try {
             const opts = { date };
             if (role && role !== "ALL") opts.teamRole = role;
             const data = await api.reports.getDailyReport(opts);
             setReport(data);
+            setRangeReports([]);
         } catch (e) {
             toast(e.message || "Failed to load report", "error");
         } finally {
@@ -1755,9 +1155,80 @@ export default function AdminReportPage() {
         }
     }, []);
 
-    useEffect(() => { fetchReport(selectedDate, teamFilter); }, [selectedDate, teamFilter, fetchReport]);
+    // ── Fetch date range: fire parallel requests per day ──
+    const fetchRangeReports = useCallback(async (start, end, role) => {
+        if (!start || !end || start > end) {
+            toast("Please select a valid date range (start ≤ end)", "error");
+            return;
+        }
 
+        // Build list of dates in range
+        const dates = [];
+        const cur = new Date(start + "T12:00:00");
+        const last = new Date(end + "T12:00:00");
+        while (cur <= last) {
+            dates.push(toDateInput(cur));
+            cur.setDate(cur.getDate() + 1);
+        }
+
+        if (dates.length > 31) {
+            toast("Date range cannot exceed 31 days", "error");
+            return;
+        }
+
+        setLoading(true);
+        setReport(null);
+        try {
+            const results = await Promise.all(
+                dates.map(date => {
+                    const opts = { date };
+                    if (role && role !== "ALL") opts.teamRole = role;
+                    return api.reports.getDailyReport(opts).catch(() => null);
+                })
+            );
+            // Filter out failed fetches and sort chronologically
+            const valid = results.filter(Boolean).sort((a, b) => a.date > b.date ? 1 : -1);
+            setRangeReports(valid);
+        } catch (e) {
+            toast(e.message || "Failed to load range report", "error");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // ── Auto-fetch on change ──
+    useEffect(() => {
+        if (mode === "single") {
+            fetchSingleReport(selectedDate, teamFilter);
+        } else {
+            fetchRangeReports(startDate, endDate, teamFilter);
+        }
+    }, [mode, selectedDate, startDate, endDate, teamFilter]);
+
+    const handleRefresh = () => {
+        if (mode === "single") fetchSingleReport(selectedDate, teamFilter);
+        else fetchRangeReports(startDate, endDate, teamFilter);
+    };
+
+    const handleExport = () => {
+        if (mode === "single" && report) {
+            printReport(report, report.date);
+        } else if (mode === "range" && rangeReports.length > 0) {
+            printRangeReport(rangeReports, startDate, endDate);
+        }
+    };
+
+    const canExport = mode === "single" ? !!report : rangeReports.length > 0;
     const s = report?.summary || {};
+
+    // Determine the header subtitle
+    const headerSubtitle = loading
+        ? "Loading…"
+        : mode === "single"
+            ? (report ? fmtDate(report.date + "T12:00:00") : "—")
+            : rangeReports.length > 0
+                ? `${fmtDateShort(startDate + "T12:00:00")} – ${fmtDateShort(endDate + "T12:00:00")} (${rangeReports.length} days)`
+                : "Select a date range";
 
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -1770,19 +1241,69 @@ export default function AdminReportPage() {
                             <FileText style={{ width: "20px", height: "20px", color: "#fff" }} />
                         </div>
                         <div>
-                            <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "800", color: "#0f172a" }}>Daily Operations Report</h2>
-                            <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>{report ? fmtDate(report.date + "T12:00:00") : "Loading…"}</p>
+                            <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "800", color: "#0f172a" }}>Operations Report</h2>
+                            <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>{headerSubtitle}</p>
                         </div>
                     </div>
+
                     <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                        {/* Date picker */}
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 11px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff" }}>
-                            <Calendar style={{ width: "13px", height: "13px", color: "#64748b" }} />
-                            <input type="date" value={selectedDate} max={todayStr} onChange={e => setSelectedDate(e.target.value)} style={{ border: "none", outline: "none", fontSize: "12px", color: "#0f172a", fontFamily: "inherit", background: "transparent" }} />
+
+                        {/* ── Mode Toggle ── */}
+                        <div style={{ display: "flex", border: "1px solid #e2e8f0", borderRadius: "8px", overflow: "hidden", background: "#f8fafc" }}>
+                            {[
+                                { id: "single", label: "Single Day", icon: Calendar },
+                                { id: "range", label: "Date Range", icon: CalendarRange },
+                            ].map(({ id, label, icon: Icon }) => (
+                                <button
+                                    key={id}
+                                    onClick={() => setMode(id)}
+                                    style={{
+                                        display: "flex", alignItems: "center", gap: "5px",
+                                        padding: "8px 13px", border: "none", fontSize: "12px", fontWeight: "600",
+                                        cursor: "pointer", fontFamily: "inherit",
+                                        background: mode === id ? "#0f172a" : "transparent",
+                                        color: mode === id ? "#fff" : "#64748b",
+                                        transition: "all .15s",
+                                    }}
+                                >
+                                    <Icon style={{ width: "13px", height: "13px" }} />{label}
+                                </button>
+                            ))}
                         </div>
+
+                        {/* ── Date Inputs ── */}
+                        {mode === "single" ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 11px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff" }}>
+                                <Calendar style={{ width: "13px", height: "13px", color: "#64748b" }} />
+                                <input
+                                    type="date" value={selectedDate} max={todayStr}
+                                    onChange={e => setSelectedDate(e.target.value)}
+                                    style={{ border: "none", outline: "none", fontSize: "12px", color: "#0f172a", fontFamily: "inherit", background: "transparent" }}
+                                />
+                            </div>
+                        ) : (
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 11px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff" }}>
+                                <CalendarRange style={{ width: "13px", height: "13px", color: "#64748b" }} />
+                                <input
+                                    type="date" value={startDate} max={endDate}
+                                    onChange={e => setStartDate(e.target.value)}
+                                    style={{ border: "none", outline: "none", fontSize: "12px", color: "#0f172a", fontFamily: "inherit", background: "transparent" }}
+                                />
+                                <span style={{ fontSize: "12px", color: "#94a3b8", margin: "0 2px" }}>→</span>
+                                <input
+                                    type="date" value={endDate} min={startDate} max={todayStr}
+                                    onChange={e => setEndDate(e.target.value)}
+                                    style={{ border: "none", outline: "none", fontSize: "12px", color: "#0f172a", fontFamily: "inherit", background: "transparent" }}
+                                />
+                            </div>
+                        )}
+
                         {/* Team filter */}
                         <div style={{ position: "relative" }}>
-                            <select value={teamFilter} onChange={e => setTeamFilter(e.target.value)} style={{ padding: "8px 30px 8px 11px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", fontSize: "12px", color: "#0f172a", fontFamily: "inherit", cursor: "pointer", appearance: "none" }}>
+                            <select
+                                value={teamFilter} onChange={e => setTeamFilter(e.target.value)}
+                                style={{ padding: "8px 30px 8px 11px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", fontSize: "12px", color: "#0f172a", fontFamily: "inherit", cursor: "pointer", appearance: "none" }}
+                            >
                                 <option value="ALL">All Teams</option>
                                 <option value="TEAM1">Team 1</option>
                                 <option value="TEAM2">Team 2</option>
@@ -1791,30 +1312,40 @@ export default function AdminReportPage() {
                             </select>
                             <ChevronDown style={{ position: "absolute", right: "9px", top: "50%", transform: "translateY(-50%)", width: "13px", height: "13px", color: "#94a3b8", pointerEvents: "none" }} />
                         </div>
+
                         {/* Refresh */}
-                        <button onClick={() => fetchReport(selectedDate, teamFilter)} disabled={loading} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 13px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", color: "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
+                        <button
+                            onClick={handleRefresh} disabled={loading}
+                            style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 13px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", color: "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}
+                        >
                             <RefreshCw style={{ width: "13px", height: "13px", animation: loading ? "spin 1s linear infinite" : "none" }} /> Refresh
                         </button>
-                        {/* Export PDF */}
-                        <button onClick={() => report && printReport(report, report.date)} disabled={!report || loading} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "9px 16px", border: "none", borderRadius: "8px", background: "#0ea5e9", color: "#fff", fontSize: "12px", fontWeight: "700", cursor: report ? "pointer" : "not-allowed", opacity: report ? 1 : 0.5 }}>
-                            <Download style={{ width: "13px", height: "13px" }} /> Export PDF
+
+                        {/* Export */}
+                        <button
+                            onClick={handleExport} disabled={!canExport || loading}
+                            style={{ display: "flex", alignItems: "center", gap: "5px", padding: "9px 16px", border: "none", borderRadius: "8px", background: "#0ea5e9", color: "#fff", fontSize: "12px", fontWeight: "700", cursor: canExport ? "pointer" : "not-allowed", opacity: canExport ? 1 : 0.5 }}
+                        >
+                            <Download style={{ width: "13px", height: "13px" }} />
+                            {mode === "range" ? "Export Range PDF" : "Export PDF"}
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Loading skeleton */}
-            {loading && !report && (
-
-                <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
+            {/* ── Loading ── */}
+            {loading && (
+                <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>
                     <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "spin .8s linear infinite" }} />
-                    Generating report…
+                    {mode === "range" ? `Fetching reports for date range…` : "Generating report…"}
                 </div>
             )}
 
-            {report && (
+            {/* ══════════════════════════════════════════════════════ */}
+            {/* SINGLE DAY VIEW                                        */}
+            {/* ══════════════════════════════════════════════════════ */}
+            {!loading && mode === "single" && report && (
                 <>
-                    {/* ── Day Summary ── */}
                     <div>
                         <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
                             <BarChart2 style={{ width: "12px", height: "12px" }} /> Day Summary
@@ -1827,28 +1358,9 @@ export default function AdminReportPage() {
                             <StatCard label="Tasks Completed" value={s.tasksCompleted} icon={CheckCircle} accentColor="#16a34a" />
                             <StatCard label="Transactions" value={s.transactionCount} icon={Activity} accentColor="#2563eb" />
                             <StatCard label="Shifts Logged" value={s.totalShifts} sub={`${s.activeShifts} active`} icon={Clock} accentColor="#475569" />
-
-                            {(report.teams?.flatMap(t => t.shifts).reduce((s, sh) => s + (sh.stats?.totalExpenses ?? 0), 0) > 0) && (
-                                <StatCard
-                                    label="Day Expenses"
-                                    value={fmtMoney(report.teams.flatMap(t => t.shifts).reduce((s, sh) => s + (sh.stats?.totalExpenses ?? 0), 0))}
-                                    valueColor="#b45309"
-                                    icon={DollarSign} accentColor="#b45309"
-                                />
-                            )}
-                            {(report.teams?.flatMap(t => t.shifts).reduce((s, sh) => s + (sh.stats?.totalTakeouts ?? 0), 0) > 0) && (
-                                <StatCard
-                                    label="Day Takeouts"
-                                    value={fmtMoney(report.teams.flatMap(t => t.shifts).reduce((s, sh) => s + (sh.stats?.totalTakeouts ?? 0), 0))}
-                                    valueColor="#991b1b"
-                                    icon={TrendingDown}
-                                    accentColor="#991b1b"
-                                />
-                            )}
                         </div>
                     </div>
 
-                    {/* ── Team Shift Reports ── */}
                     <div>
                         <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
                             <Users style={{ width: "12px", height: "12px" }} /> Team Shift Reports
@@ -1858,7 +1370,6 @@ export default function AdminReportPage() {
                         </div>
                     </div>
 
-                    {/* ── All Tasks Today ── */}
                     {report.dayTasks?.length > 0 && (
                         <div style={{ ...CARD, overflow: "hidden" }}>
                             <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1867,54 +1378,24 @@ export default function AdminReportPage() {
                             </div>
                             <div style={{ overflowX: "auto" }}>
                                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                                    <thead>
-                                        <tr>{["Time", "Task", "Type", "Assigned To", "Status", "Progress", "Priority"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
-                                    </thead>
+                                    <thead><tr>{["Time", "Task", "Type", "Assigned To", "Status", "Priority"].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
                                     <tbody>
-                                        {report.dayTasks.map(t => {
-                                            const pct = t.targetValue > 0 ? Math.min(100, Math.round(((t.currentValue ?? 0) / t.targetValue) * 100)) : null;
-                                            const checklist = t.checklistItems || [];
-                                            const doneItems = checklist.filter(i => i.done).length;
-                                            return (
-                                                <tr key={t.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
-                                                    <td style={{ ...TD, color: "#94a3b8", fontSize: "12px" }}>{fmtTime(t.completedAt || t.updatedAt)}</td>
-                                                    <td style={TD}>
-                                                        <div style={{ fontWeight: "600" }}>{t.title}</div>
-                                                        {t.description && <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>{t.description}</div>}
-                                                    </td>
-                                                    <td style={TD}><TaskTypeBadge taskType={t.taskType} /></td>
-                                                    <td style={{ ...TD, fontSize: "12px" }}>
-                                                        {t.assignToAll
-                                                            ? <Badge label="All Members" bg="#f5f3ff" color="#7c3aed" />
-                                                            : t.assignedTo?.name || "—"}
-                                                    </td>
-                                                    <td style={TD}>
-                                                        <Badge label={t.status?.replace("_", " ")} bg={t.status === "COMPLETED" ? "#dcfce7" : "#eff6ff"} color={t.status === "COMPLETED" ? "#166634" : "#1d4ed8"} />
-                                                    </td>
-                                                    <td style={{ ...TD, minWidth: "150px" }}>
-                                                        {pct !== null ? (
-                                                            <div>
-                                                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "3px" }}>
-                                                                    <span>{t.taskType === "REVENUE_TARGET" ? `${fmtMoney(t.currentValue)} / ${fmtMoney(t.targetValue)}` : `${t.currentValue} / ${t.targetValue}`}</span>
-                                                                    <span style={{ fontWeight: "700" }}>{pct}%</span>
-                                                                </div>
-                                                                <ProgressBar pct={pct} />
-                                                            </div>
-                                                        ) : checklist.length > 0
-                                                            ? <span style={{ fontSize: "12px", color: "#64748b" }}>{doneItems}/{checklist.length} items</span>
-                                                            : <span style={{ color: "#cbd5e1", fontSize: "12px" }}>—</span>}
-                                                    </td>
-                                                    <td style={TD}><PriorityBadge priority={t.priority} /></td>
-                                                </tr>
-                                            );
-                                        })}
+                                        {report.dayTasks.map(t => (
+                                            <tr key={t.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
+                                                <td style={{ ...TD, color: "#94a3b8", fontSize: "12px" }}>{fmtTime(t.completedAt || t.updatedAt)}</td>
+                                                <td style={TD}><div style={{ fontWeight: "600" }}>{t.title}</div></td>
+                                                <td style={TD}><TaskTypeBadge taskType={t.taskType} /></td>
+                                                <td style={{ ...TD, fontSize: "12px" }}>{t.assignToAll ? <Badge label="All Members" bg="#f5f3ff" color="#7c3aed" /> : t.assignedTo?.name || "—"}</td>
+                                                <td style={TD}><Badge label={t.status?.replace("_", " ")} bg={t.status === "COMPLETED" ? "#dcfce7" : "#eff6ff"} color={t.status === "COMPLETED" ? "#166634" : "#1d4ed8"} /></td>
+                                                <td style={TD}><PriorityBadge priority={t.priority} /></td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     )}
 
-                    {/* ── Wallet Balances ── */}
                     {report.wallets?.length > 0 && (
                         <div style={{ ...CARD, overflow: "hidden" }}>
                             <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1933,6 +1414,106 @@ export default function AdminReportPage() {
                         </div>
                     )}
                 </>
+            )}
+
+            {/* ══════════════════════════════════════════════════════ */}
+            {/* DATE RANGE VIEW                                        */}
+            {/* ══════════════════════════════════════════════════════ */}
+            {!loading && mode === "range" && rangeReports.length > 0 && (
+                <>
+                    {/* Range totals summary */}
+                    <div>
+                        <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+                            <BarChart2 style={{ width: "12px", height: "12px" }} /> Range Totals — {rangeReports.length} Days
+                        </div>
+                        <RangeSummaryCards reports={rangeReports} />
+                    </div>
+
+                    {/* Quick day-by-day table */}
+                    <div style={{ ...CARD, overflow: "hidden" }}>
+                        <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "10px" }}>
+                            <CalendarRange style={{ width: "15px", height: "15px", color: "#64748b" }} />
+                            <h3 style={{ margin: 0, fontSize: "14px", fontWeight: "700", color: "#0f172a" }}>Day-by-Day Breakdown</h3>
+                        </div>
+                        <div style={{ overflowX: "auto" }}>
+                            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                <thead>
+                                    <tr>
+                                        {["Date", "Deposits", "Cashouts", "Bonuses", "Net Profit", "Shifts", "Transactions", "Tasks"].map(h => (
+                                            <th key={h} style={{ ...TH, textAlign: h === "Date" ? "left" : "right" }}>{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {rangeReports.map(r => {
+                                        const s = r.summary || {};
+                                        const profit = s.netProfit ?? 0;
+                                        return (
+                                            <tr key={r.date} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
+                                                <td style={TD}><span style={{ fontWeight: "600" }}>{fmtDate(r.date + "T12:00:00")}</span></td>
+                                                <td style={{ ...TD, textAlign: "right", color: "#16a34a", fontWeight: "700" }}>{fmtMoney(s.totalDeposits)}</td>
+                                                <td style={{ ...TD, textAlign: "right", color: "#dc2626", fontWeight: "700" }}>{fmtMoney(s.totalCashouts)}</td>
+                                                <td style={{ ...TD, textAlign: "right", color: "#c2410c", fontWeight: "700" }}>{fmtMoney(s.totalBonuses)}</td>
+                                                <td style={{ ...TD, textAlign: "right", fontWeight: "800", color: profit >= 0 ? "#16a34a" : "#dc2626" }}>{fmtMoney(profit)}</td>
+                                                <td style={{ ...TD, textAlign: "right", color: "#64748b" }}>{s.totalShifts ?? 0}</td>
+                                                <td style={{ ...TD, textAlign: "right", color: "#64748b" }}>{s.transactionCount ?? 0}</td>
+                                                <td style={{ ...TD, textAlign: "right", color: "#64748b" }}>{s.tasksCompleted ?? 0}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                                <tfoot>
+                                    <tr style={{ background: "#f8fafc", borderTop: "2px solid #e2e8f0" }}>
+                                        {(() => {
+                                            const t = rangeReports.reduce((acc, r) => {
+                                                const s = r.summary || {};
+                                                acc.deposits += s.totalDeposits || 0;
+                                                acc.cashouts += s.totalCashouts || 0;
+                                                acc.bonuses += s.totalBonuses || 0;
+                                                acc.profit += s.netProfit || 0;
+                                                acc.shifts += s.totalShifts || 0;
+                                                acc.transactions += s.transactionCount || 0;
+                                                acc.tasks += s.tasksCompleted || 0;
+                                                return acc;
+                                            }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, shifts: 0, transactions: 0, tasks: 0 });
+                                            return (
+                                                <>
+                                                    <td style={{ ...TD, fontWeight: "700", color: "#475569" }}>TOTAL ({rangeReports.length} days)</td>
+                                                    <td style={{ ...TD, textAlign: "right", color: "#16a34a", fontWeight: "800" }}>{fmtMoney(t.deposits)}</td>
+                                                    <td style={{ ...TD, textAlign: "right", color: "#dc2626", fontWeight: "800" }}>{fmtMoney(t.cashouts)}</td>
+                                                    <td style={{ ...TD, textAlign: "right", color: "#c2410c", fontWeight: "800" }}>{fmtMoney(t.bonuses)}</td>
+                                                    <td style={{ ...TD, textAlign: "right", fontWeight: "800", color: t.profit >= 0 ? "#16a34a" : "#dc2626" }}>{fmtMoney(t.profit)}</td>
+                                                    <td style={{ ...TD, textAlign: "right", fontWeight: "700" }}>{t.shifts}</td>
+                                                    <td style={{ ...TD, textAlign: "right", fontWeight: "700" }}>{t.transactions}</td>
+                                                    <td style={{ ...TD, textAlign: "right", fontWeight: "700" }}>{t.tasks}</td>
+                                                </>
+                                            );
+                                        })()}
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Per-day collapsible detailed reports */}
+                    <div>
+                        <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+                            <FileText style={{ width: "12px", height: "12px" }} /> Detailed Daily Reports (click to expand)
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                            {rangeReports.map((r, idx) => (
+                                <DayReportBlock key={r.date} report={r} defaultExpanded={idx === 0 && rangeReports.length === 1} />
+                            ))}
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {!loading && mode === "range" && rangeReports.length === 0 && !loading && (
+                <div style={{ ...CARD, padding: "40px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>
+                    <CalendarRange style={{ width: "28px", height: "28px", margin: "0 auto 10px", display: "block", opacity: 0.4 }} />
+                    No data found for the selected date range. Try adjusting your dates.
+                </div>
             )}
 
             <style>{`
