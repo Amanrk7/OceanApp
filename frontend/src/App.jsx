@@ -687,29 +687,27 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 
         <nav className="ob-nav">
           {NAV_ITEMS.map(item => {
-            // const disabled = item.adminsOnly && !isAdmin;
-      if (item.adminsOnly && !isAdmin) return null; // inside the .map()
+  const hidden = item.adminsOnly && !isAdmin;
 
-            return (
-              <div key={item.id}>
-                <div
-                  className="ob-nav-item"
-                  onMouseEnter={e => handleMouseEnter(e, item.label)}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  <button
-                    className={`ob-navlink${activePage === item.id ? ' active' : ''}`}
-                    onClick={() => !disabled && handleNav(item.id)}
-                    disabled={disabled}
-                    aria-label={item.label}
-                  >
-                    <HugeiconsIcon icon={item.icon} size={20} />
-                  </button>
-                </div>
-                {item.dividerAfter && <div className="ob-nav-divider" />}
-              </div>
-            );
-          })}
+  return (
+    <div key={item.id} style={{ display: hidden ? 'none' : undefined }}>
+      <div
+        className="ob-nav-item"
+        onMouseEnter={e => handleMouseEnter(e, item.label)}
+        onMouseLeave={handleMouseLeave}
+      >
+        <button
+          className={`ob-navlink${activePage === item.id ? ' active' : ''}`}
+          onClick={() => handleNav(item.id)}
+          aria-label={item.label}
+        >
+          <HugeiconsIcon icon={item.icon} size={20} />
+        </button>
+      </div>
+      {item.dividerAfter && <div className="ob-nav-divider" />}
+    </div>
+  );
+})}
         </nav>
 
         <div className="ob-sidebar-footer">
