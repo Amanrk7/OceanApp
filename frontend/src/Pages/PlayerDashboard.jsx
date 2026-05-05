@@ -1027,10 +1027,23 @@ export default function PlayerDashboard() {
     const todayDeposits = todayTransactions.filter(tx => tx.type === 'deposit').reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
     const todayCashouts = todayTransactions.filter(tx => tx.type === 'cashout').reduce((s, tx) => s + parseFloat(tx.amount || 0), 0);
 
+    // const grantedBonuses = (player.transactionHistory || []).filter(tx => {
+    //     const t = (tx.type || '').toLowerCase();
+    //     return t.includes('bonus') || t.includes('referral') || t.includes('streak') || t.includes('match') || t.includes('special');
+    // }).slice(0, 12);
+
     const grantedBonuses = (player.transactionHistory || []).filter(tx => {
-        const t = (tx.type || '').toLowerCase();
-        return t.includes('bonus') || t.includes('referral') || t.includes('streak') || t.includes('match') || t.includes('special');
-    }).slice(0, 12);
+    const t = (tx.type || '').toLowerCase();
+    return t.includes('bonus') || t.includes('referral') || t.includes('streak') || t.includes('match') || t.includes('special');
+}).slice(0, 12).map(tx => ({
+    ...tx,
+    detail: (() => {
+        const desc = tx.description || '';
+        const dashIdx = desc.indexOf(' — ');
+        if (dashIdx > -1) return desc.slice(dashIdx + 3).trim();
+        return null;
+    })(),
+}));
 
     const txMap = {};
     (player.transactionHistory || []).forEach(tx => {
