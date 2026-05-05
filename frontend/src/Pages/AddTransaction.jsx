@@ -444,7 +444,7 @@ function AddTransactionsPage() {
     const [form, setForm] = useState(EMPTY);
     const [player, setPlayer] = useState(null);
     const [eligLoading, setEligLoading] = useState(false);
-    const [matchUsedToday, setMatchUsedToday] = useState(false);
+    // const [matchUsedToday, setMatchUsedToday] = useState(false);
     const [games, setGames] = useState([]);
     const [wallets, setWallets] = useState([]);
     const [ledger, setLedger] = useState([]);
@@ -507,13 +507,33 @@ function AddTransactionsPage() {
         return () => document.removeEventListener("mousedown", fn);
     }, []);
 
+    // const computeEligibility = (fullPlayer) => {
+    //     const history = fullPlayer?.transactionHistory || [];
+    //     const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    //     const usedMatchToday = history.some(tx => tx.date === todayStr && tx.type === "Match Bonus");
+    //     setMatchUsedToday(usedMatchToday);
+    //     if (usedMatchToday) setForm(f => ({ ...f, bonusMatch: false }));
+    // };
     const computeEligibility = (fullPlayer) => {
-        const history = fullPlayer?.transactionHistory || [];
-        const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-        const usedMatchToday = history.some(tx => tx.date === todayStr && tx.type === "Match Bonus");
-        setMatchUsedToday(usedMatchToday);
-        if (usedMatchToday) setForm(f => ({ ...f, bonusMatch: false }));
-    };
+  const history = fullPlayer?.transactionHistory || [];
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const usedMatchToday = history.some(tx => {
+    const d = new Date(tx.createdAtISO || tx.date);
+    return d >= todayStart && tx.type === "Match Bonus" && tx.status === "COMPLETED";
+  });
+  // setMatchUsedToday(usedMatchToday);
+  // if (usedMatchToday) setForm(f => ({ ...f, bonusMatch: false }));
+};
+    const matchUsedToday = (() => {
+  if (!player) return false;
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  return (player.transactionHistory || []).some(tx => {
+    const d = new Date(tx.createdAtISO || tx.date);
+    return d >= todayStart && tx.type === "Match Bonus" && tx.status === "COMPLETED";
+  });
+})();
 
     const checkReferralStatus = async (fullPlayer) => {
         if (!fullPlayer?.id || !fullPlayer?.referredBy) {
@@ -538,7 +558,9 @@ function AddTransactionsPage() {
 
     const selectPlayer = async (p) => {
         setQuery(p.name); setShowDrop(false); setResults([]);
-        setPlayer(null); setMatchUsedToday(false); setReferralAlreadyRecorded(false);
+        setPlayer(null); 
+        // setMatchUsedToday(false);
+        setReferralAlreadyRecorded(false);
         setForm(f => ({ ...EMPTY, txType: f.txType }));
         setBonusReferral(false);
         setEligLoading(true);
@@ -556,7 +578,9 @@ function AddTransactionsPage() {
     };
 
     const clearPlayer = () => {
-        setPlayer(null); setQuery(""); setMatchUsedToday(false); setBonusReferral(false);
+        setPlayer(null); setQuery(""); 
+        // setMatchUsedToday(false);
+        setBonusReferral(false);
         setReferralAlreadyRecorded(false); setEligibleBonuses([]);
         setForm(f => ({ ...EMPTY, txType: f.txType }));
     };
@@ -580,11 +604,24 @@ function AddTransactionsPage() {
     const stockOk = !selGame || !isDeposit || stockNeeded <= selGame.pointStock;
 
     const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    // const todayCashoutTotal = (!isDeposit && player)
+    //     ? (player.transactionHistory || [])
+    //         .filter(t => t.date === todayStr && ["cashout", "Cashout"].includes(t.type) && t.status === "COMPLETED")
+    //         .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0)
+    //     : 0;
     const todayCashoutTotal = (!isDeposit && player)
-        ? (player.transactionHistory || [])
-            .filter(t => t.date === todayStr && ["cashout", "Cashout"].includes(t.type) && t.status === "COMPLETED")
-            .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0)
-        : 0;
+  ? (() => {
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      return (player.transactionHistory || [])
+        .filter(tx => {
+          const d = new Date(tx.createdAtISO || tx.date);
+          return d >= todayStart
+            && ["cashout", "Cashout"].includes(tx.type)
+            && ["COMPLETED", "PENDING"].includes(tx.status); // ← include PENDING
+        })
+        .reduce((sum, tx) => sum + (parseFloat(tx.amount) || 0), 0);
+    })()
+  : 0;
     const cashoutOverLimit = !isDeposit && !streakWaived && cashoutLimit > 0 && (todayCashoutTotal + amt) > cashoutLimit;
 
     const playerHasReferrer = !!(player?.referredBy);
@@ -638,7 +675,8 @@ function AddTransactionsPage() {
             toast(`${msg}`, 'success');
 
             setForm(EMPTY); setQuery(""); setPlayer(null);
-            setMatchUsedToday(false); setBonusReferral(false); setReferralAlreadyRecorded(false);
+            // setMatchUsedToday(false); 
+            setBonusReferral(false); setReferralAlreadyRecorded(false);
             api.clearCache?.();
             await Promise.all([loadLedger(), loadGames(true), loadWallets()]);
         } catch (err) {
