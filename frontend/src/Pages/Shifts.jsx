@@ -1010,7 +1010,9 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   //   const expectedGameChange    = Math.round(-expectedGameDeduction);
   // `;
   const expectedWalletChange = r2(deposits - cashouts - totalFees);
-  const expectedGameDeduction = r2(deposits - totalFees + bonuses - cashouts);
+  // const expectedGameDeduction = r2(deposits - totalFees + bonuses - cashouts);
+    const expectedGameDeduction = r2(deposits + bonuses - cashouts);
+
   const totalShiftExpenses = shiftExpenses.reduce((s, e) => s + (e.amount ?? 0), 0);
   const totalShiftTakeouts = shiftTakeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
   const shiftPointsAdded = shiftExpenses.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
