@@ -964,24 +964,24 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   );
 
   // WALLET: expected net change
-  const expectedWalletChange = r2(
-    deposits
-    - completedCashoutAmt
-    - totalFees               // depositFees + cashoutFees
-    - expenseWalletDeductions
-    - takeoutWalletDeductions
-  );
+  // const expectedWalletChange = r2(
+  //   deposits
+  //   - completedCashoutAmt
+  //   - totalFees               // depositFees + cashoutFees
+  //   - expenseWalletDeductions
+  //   - takeoutWalletDeductions
+  // );
 
   // GAME POINTS: expected net change  
   // Deposits deduct pts, cashouts return pts, bonuses deduct pts, reloads add pts
-  const expectedGameDeduction = r2(
-    deposits
-    + totalFees               // fees come out of game stock too
-    + bonuses
-    - completedCashoutAmt
-    - pointsReloadedThisShift // reloads restored pts
-  );
-  const expectedGameChange = Math.round(-expectedGameDeduction);
+  // const expectedGameDeduction = r2(
+  //   deposits
+  //   + totalFees               // fees come out of game stock too
+  //   + bonuses
+  //   - completedCashoutAmt
+  //   - pointsReloadedThisShift // reloads restored pts
+  // );
+  // const expectedGameChange = Math.round(-expectedGameDeduction);
 
   // Pending cashouts: deducted from game stock at approval but not wallet
   // So game should already show those pts returned; wallet has not paid out yet
