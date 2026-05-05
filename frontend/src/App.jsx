@@ -687,7 +687,9 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 
         <nav className="ob-nav">
           {NAV_ITEMS.map(item => {
-            const disabled = item.adminsOnly && !isAdmin;
+            // const disabled = item.adminsOnly && !isAdmin;
+      if (item.adminsOnly && !isAdmin) return null; // inside the .map()
+
             return (
               <div key={item.id}>
                 <div
