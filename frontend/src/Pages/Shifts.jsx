@@ -677,57 +677,57 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
 
   // ... rest of component unchanged (crossGameInfo, crossWalletInfo,
   //     walletRows, gameRows, handleSubmit, etc.)
-  const startWallets = startSnapshot?.walletSnapshot ?? [];
-  const startGames = startSnapshot?.gameSnapshot ?? [];
+  // const startWallets = startSnapshot?.walletSnapshot ?? [];
+  // const startGames = startSnapshot?.gameSnapshot ?? [];
 
-  // const startTotalW = r2(startSnapshot?.totalWallet ?? 0);
-  // const startTotalG = Math.round(startSnapshot?.totalGames ?? 0);
-  // const endTotalW = r2(endWallets.reduce((s, w) => s + (w.balance ?? 0), 0));
-  // const endTotalG = endGames.reduce((s, g) => s + Math.round(g.pointStock ?? 0), 0);
-  // const walletChange = hasStartSnapshot ? r2(endTotalW - startTotalW) : 0;
-  // const gameChange = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
+  // // const startTotalW = r2(startSnapshot?.totalWallet ?? 0);
+  // // const startTotalG = Math.round(startSnapshot?.totalGames ?? 0);
+  // // const endTotalW = r2(endWallets.reduce((s, w) => s + (w.balance ?? 0), 0));
+  // // const endTotalG = endGames.reduce((s, g) => s + Math.round(g.pointStock ?? 0), 0);
+  // // const walletChange = hasStartSnapshot ? r2(endTotalW - startTotalW) : 0;
+  // // const gameChange = hasStartSnapshot ? Math.round(endTotalG - startTotalG) : 0;
 
-  // Pull values from recon hook instead of computing locally
-  const bd = recon?.breakdown ?? {};
-  const deposits = bd.deposits ?? 0;
-  const cashouts = bd.completedCashouts ?? 0;
-  const bonuses = bd.bonuses ?? 0;
-  const totalFees = bd.totalFees ?? 0;
-  const netProfit = parseFloat((deposits - cashouts).toFixed(2));
+  // // Pull values from recon hook instead of computing locally
+  // const bd = recon?.breakdown ?? {};
+  // const deposits = bd.deposits ?? 0;
+  // const cashouts = bd.completedCashouts ?? 0;
+  // const bonuses = bd.bonuses ?? 0;
+  // const totalFees = bd.totalFees ?? 0;
+  // const netProfit = parseFloat((deposits - cashouts).toFixed(2));
 
-  const expectedWalletChange = recon?.expectedWalletChange ?? 0;
-  const expectedGameChange = recon?.expectedGameChange ?? 0;
-  const walletDiscrepancy = recon?.walletDiscrepancy ?? null;
-  const gameDiscrepancy = recon?.gameDiscrepancy ?? null;
-  const isBalanced = recon?.isBalanced ?? null;
+  // const expectedWalletChange = recon?.expectedWalletChange ?? 0;
+  // const expectedGameChange = recon?.expectedGameChange ?? 0;
+  // const walletDiscrepancy = recon?.walletDiscrepancy ?? null;
+  // const gameDiscrepancy = recon?.gameDiscrepancy ?? null;
+  // const isBalanced = recon?.isBalanced ?? null;
 
-  const endTotalW = recon?.endWalletTotal ?? 0;
-  const endTotalG = recon?.endGameTotal ?? 0;
-  const startTotalW = recon?.startWalletTotal ?? 0;
-  const startTotalG = recon?.startGameTotal ?? 0;
-  const walletChange = recon?.actualWalletChange ?? 0;
-  const gameChange = recon?.actualGameChange ?? 0;
+  // const endTotalW = recon?.endWalletTotal ?? 0;
+  // const endTotalG = recon?.endGameTotal ?? 0;
+  // const startTotalW = recon?.startWalletTotal ?? 0;
+  // const startTotalG = recon?.startGameTotal ?? 0;
+  // const walletChange = recon?.actualWalletChange ?? 0;
+  // const gameChange = recon?.actualGameChange ?? 0;
 
-  // Show a live indicator when hook is loading
-  const isLiveRefreshing = reconLoading;
+  // // Show a live indicator when hook is loading
+  // const isLiveRefreshing = reconLoading;
 
-  // const BONUS_TYPES = ['Match Bonus', 'Special Bonus', 'Streak Bonus', 'Referral Bonus', 'Bonus'];
-  // Any transaction that's not a Deposit or Cashout counts as a game deduction
-  const isBonus = (t) => t.type !== 'Deposit' && t.type !== 'Cashout';
+  // // const BONUS_TYPES = ['Match Bonus', 'Special Bonus', 'Streak Bonus', 'Referral Bonus', 'Bonus'];
+  // // Any transaction that's not a Deposit or Cashout counts as a game deduction
+  // const isBonus = (t) => t.type !== 'Deposit' && t.type !== 'Cashout';
 
-  const deposits = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.amount ?? 0), 0));
-  const cashouts = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.amount ?? 0), 0));
-  const bonuses = r2(shiftTxns.filter(isBonus).reduce((s, t) => s + (t.amount ?? 0), 0));
-  const netProfit = r2(deposits - cashouts);
-  const depositFees = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.fee ?? 0), 0));
-  const cashoutFees = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.fee ?? 0), 0));
-  const totalFees = r2(depositFees + cashoutFees);
-  const hasFees = totalFees > 0.001;
+  // const deposits = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.amount ?? 0), 0));
+  // const cashouts = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.amount ?? 0), 0));
+  // const bonuses = r2(shiftTxns.filter(isBonus).reduce((s, t) => s + (t.amount ?? 0), 0));
+  // const netProfit = r2(deposits - cashouts);
+  // const depositFees = r2(shiftTxns.filter(t => t.type === 'Deposit').reduce((s, t) => s + (t.fee ?? 0), 0));
+  // const cashoutFees = r2(shiftTxns.filter(t => t.type === 'Cashout').reduce((s, t) => s + (t.fee ?? 0), 0));
+  // const totalFees = r2(depositFees + cashoutFees);
+  // const hasFees = totalFees > 0.001;
 
 
-  const totalShiftExpenses = shiftExpenses.reduce((s, e) => s + (e.amount ?? 0), 0);
-  const totalShiftTakeouts = shiftTakeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
-  const shiftPointsAdded = shiftExpenses.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
+  // const totalShiftExpenses = shiftExpenses.reduce((s, e) => s + (e.amount ?? 0), 0);
+  // const totalShiftTakeouts = shiftTakeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+  // const shiftPointsAdded = shiftExpenses.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
 
   // ── DiscrepancyPanel — insert in CheckoutModal reconciliation tab ────────────
   function DiscrepancyPanel({ recon }) {
