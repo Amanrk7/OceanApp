@@ -1512,6 +1512,11 @@ export default function PlayerDashboard() {
                                             {bonus.gameName && <span style={{ fontSize: '10px', padding: '1px 6px', background: 'rgba(0,0,0,0.06)', borderRadius: '5px', color: C.gray }}>🎮 {bonus.gameName}</span>}
                                             <span style={{ fontSize: '11px', color: C.grayLt, marginLeft: 'auto' }}>{bonus.date || '—'}</span>
                                         </div>
+                                        {bonus.detail && (
+        <div style={{ fontSize: '10px', color: info.text, opacity: 0.7, marginTop: 2 }}>
+            {bonus.detail}
+        </div>
+    )}
                                     </div>
                                 );
                             })}
