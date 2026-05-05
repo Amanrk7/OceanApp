@@ -849,7 +849,7 @@ function ReferralPanel({ player, eligLoading, eligibleBonuses, selectedRbId, set
                                         value: false,
                                         emoji: "👤",
                                         label: "Referrer only",
-                                        sub: `${player?.name} || "Referrer"} receives $${computedAmt.toFixed(2)}`,
+                                        sub: `${rb?.counterpartName|| "Referrer"} receives $${computedAmt.toFixed(2)}`,
                                         deduction: `${computedAmt.toFixed(2)} pts deducted`,
                                         accent: "#0ea5e9",
                                         bg: "#f0f9ff",
