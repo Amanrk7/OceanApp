@@ -1854,7 +1854,7 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                     {!crossAdjGameBalanced && (
                       <span style={{ display: 'block' }}>
                         🎮 Points: actual {gameChange >= 0 ? '+' : ''}{gameChange} pts, expected {expectedGameChange} pts
-                        {' '}(deposits ${deposits.toFixed(2)} + fees ${totalFees.toFixed(2)} + bonuses ${bonuses.toFixed(2)} − cashouts ${cashouts.toFixed(2)})
+                        {' '}(deposits ${deposits.toFixed(2)} - fees ${totalFees.toFixed(2)} + bonuses ${bonuses.toFixed(2)} − cashouts ${cashouts.toFixed(2)})
                         {totalCrossGamePts > 0
                           ? ` — ~${Math.round(totalCrossGamePts)} pts from other stores excluded`
                           : ' — no cross-store game activity'}.
