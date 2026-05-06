@@ -319,70 +319,6 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
                 </table>
               </div>
             </section>
-
-            {/* ── Game Points ── */}
-            {/* <section>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Gamepad2 size={14} color="#7c3aed" /> Game Points
-                  <span style={{ fontSize: '11px', fontWeight: '400', color: '#94a3b8' }}>(enter actual)</span>
-                </h3>
-                <span style={{ fontSize: '16px', fontWeight: '800', color: '#7c3aed' }}>{totalGames} pts total</span>
-              </div>
-              <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      <th style={T.th}>Game</th>
-                      <th style={{ ...T.th, textAlign: 'center' }}>Status</th>
-                      <th style={{ ...T.th, textAlign: 'right' }}>System</th>
-                      <th style={{ ...T.th, textAlign: 'right', color: '#0f172a', minWidth: '130px' }}>Actual ✏️</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {games.map(g => {
-                      const entered = parseFloat(gameInputs[g.id]);
-                      const fetched = Math.round(g.pointStock ?? 0);
-                      const hasDisc = !isNaN(entered) && Math.abs(Math.round(entered) - fetched) > 0;
-                      return (
-                        <tr key={g.id} style={{ background: hasDisc ? '#fefce8' : 'transparent' }}>
-                          <td style={T.td}><b>{g.name}</b></td>
-                          <td style={{ ...T.td, textAlign: 'center' }}>
-                            <Badge
-                              label={g.status}
-                              color={g.status === 'HEALTHY' ? '#16a34a' : g.status === 'LOW_STOCK' ? '#854d0e' : '#991b1b'}
-                              bg={g.status === 'HEALTHY' ? '#dcfce7' : g.status === 'LOW_STOCK' ? '#fef9c3' : '#fee2e2'}
-                            />
-                          </td>
-                          <td style={{ ...T.td, textAlign: 'right', color: '#94a3b8', fontSize: '12px' }}>{fetched} pts</td>
-                          <td style={{ ...T.td, textAlign: 'right' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                              <input
-                                type="number" step="1" min="0"
-                                value={gameInputs[g.id] ?? ''}
-                                onChange={e => setGameInputs(prev => ({ ...prev, [g.id]: e.target.value }))}
-                                style={inputStyle(hasDisc)}
-                              />
-                              <span style={{ fontSize: '12px', color: '#94a3b8' }}>pts</span>
-                              {hasDisc && <span style={{ fontSize: '10px', color: '#f59e0b', fontWeight: '700' }}>⚠️</span>}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {games.length === 0 && (
-                      <tr><td colSpan={4} style={{ ...T.td, textAlign: 'center', color: '#94a3b8' }}>No games found</td></tr>
-                    )}
-                    <tr style={{ background: '#f5f3ff' }}>
-                      <td colSpan={2} style={{ ...T.td, fontWeight: '700', color: '#5b21b6' }}>Combined Total</td>
-                      <td style={{ ...T.td, textAlign: 'right', color: '#94a3b8', fontSize: '12px' }}>{Math.round(games.reduce((s, g) => s + (g.pointStock ?? 0), 0))} pts</td>
-                      <td style={{ ...T.td, textAlign: 'right', fontWeight: '800', color: '#7c3aed', fontSize: '14px' }}>{totalGames} pts</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </section> */}
-
             {/* ── Game Points Reconciliation ── */}
             {/* ── Game Points ── */}
             <section>
@@ -1515,159 +1451,655 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
 // ═══════════════════════════════════════════════════════════════
 // PDF GENERATOR for past shift
 // ═══════════════════════════════════════════════════════════════
-function printShiftPDF(shift) {
-  const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString('en-US', { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit', hour12: true }) : '—';
-  const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('en-US', { timeZone: 'America/Chicago', month: 'long', day: 'numeric', year: 'numeric' }) : '—';
+// ═══════════════════════════════════════════════════════════════
+// PDF GENERATOR — Full Detail Version
+// Drop this in place of the old printShiftPDF function.
+// Also update the PDF button onClick (see bottom of this file).
+// ═══════════════════════════════════════════════════════════════
+
+async function printShiftPDF(shift) {
+  // ── 1. Helpers ────────────────────────────────────────────────
+  const r2 = v => Math.round((v ?? 0) * 100) / 100;
   const fmtMoney = v => `$${Math.abs(r2(v ?? 0)).toFixed(2)}`;
+  const fmtTime = iso =>
+    iso
+      ? new Date(iso).toLocaleTimeString('en-US', {
+          timeZone: 'America/Chicago',
+          hour: '2-digit', minute: '2-digit', hour12: true,
+        })
+      : '—';
+  const fmtDate = iso =>
+    iso
+      ? new Date(iso).toLocaleDateString('en-US', {
+          timeZone: 'America/Chicago',
+          weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+        })
+      : '—';
+  const fmtDateTime = iso =>
+    iso
+      ? new Date(iso).toLocaleString('en-US', {
+          timeZone: 'America/Chicago',
+          month: 'short', day: 'numeric',
+          hour: '2-digit', minute: '2-digit', hour12: true,
+        })
+      : '—';
 
-  let startSnapshot = null, endSnapshot = null, effortReason = null, improvements = null;
-  if (shift.checkin?.balanceNote) { try { startSnapshot = JSON.parse(shift.checkin.balanceNote); } catch (_) { } }
-  if (shift.checkin?.additionalNotes) {
-    try {
-      const p = JSON.parse(shift.checkin.additionalNotes);
+  const sign = (v, suffix = '') =>
+    `${r2(v) >= 0 ? '+' : '−'}${fmtMoney(v)}${suffix}`;
+
+  const signPts = v =>
+    `${v >= 0 ? '+' : ''}${v} pts`;
+
+  // ── 2. Parse stored snapshots & feedback ──────────────────────
+  let startSnapshot = null;
+  let endSnapshot   = null;
+  let feedback      = {};
+
+  try { startSnapshot = JSON.parse(shift.checkin?.balanceNote ?? 'null'); } catch (_) {}
+  try {
+    const p = JSON.parse(shift.checkin?.additionalNotes ?? 'null');
+    if (p) {
       endSnapshot = p.endSnapshot ?? null;
-      effortReason = p.effortReason ?? null;
-      improvements = p.improvements ?? null;
-    } catch (_) { }
-  }
+      feedback = {
+        effortReason:             p.effortReason             ?? '',
+        improvements:             p.improvements             ?? '',
+        workSummary:              p.workSummary              ?? shift.checkin?.workSummary ?? '',
+        issuesEncountered:        p.issuesEncountered        ?? shift.checkin?.issuesEncountered ?? '',
+        shiftWorkDescription:     p.shiftWorkDescription     ?? '',
+        recommendationsLastShift: p.recommendationsLastShift ?? '',
+        recommendationsOverall:   p.recommendationsOverall   ?? '',
+      };
+    }
+  } catch (_) {}
 
-  const es = endSnapshot;
-  const deposits = r2(es?.deposits ?? 0);
-  const cashouts = r2(es?.cashouts ?? 0);
-  const bonuses = r2(es?.bonuses ?? 0);
-  const netProfit = r2(deposits - cashouts);
-  const walletChange = r2(es?.walletChange ?? 0);
-  const gameChange = Math.round(es?.gameChange ?? 0);
-  const depositFees = r2(es?.depositFees ?? 0);
-  const cashoutFees = r2(es?.cashoutFees ?? 0);
-  // const expectedWallet = r2((deposits - depositFees) - (cashouts + cashoutFees));
-  // const expectedGame = Math.round(-(deposits + bonuses - cashouts));
+  const es  = endSnapshot ?? {};
+  const ss  = startSnapshot ?? {};
+  const stx = shift.stats ?? {};
 
-  // const walletDisc = r2((es?.walletDiscrepancy) ?? r2(walletChange - expectedWallet));
-  // const gameDisc = Math.round((es?.gameDiscrepancy) ?? (gameChange - expectedGame));
+  // ── 3. Financial values ───────────────────────────────────────
+  const deposits          = r2(es.deposits        ?? stx.totalDeposits  ?? 0);
+  const cashouts          = r2(es.cashouts         ?? stx.totalCashouts  ?? 0);
+  const bonuses           = r2(es.bonuses          ?? stx.totalBonuses   ?? 0);
+  const depositFees       = r2(es.depositFees      ?? 0);
+  const cashoutFees       = r2(es.cashoutFees      ?? 0);
+  const totalFees         = r2(depositFees + cashoutFees);
+  const expenseWalletPaid = r2(es.expenseWalletPaid ?? 0);
+  const takeoutWalletPaid = r2(es.takeoutWalletPaid ?? 0);
+  const pointsReloaded    = Math.round(es.pointsReloaded ?? 0);
+  const netProfit         = r2(deposits - cashouts);
+  const walletChange      = r2(es.walletChange ?? 0);
+  const gameChange        = Math.round(es.gameChange ?? 0);
 
-  // Wallet formula: D − CO − fees
-  const expectedWallet = r2(deposits - cashouts - depositFees - cashoutFees);
-  // Game formula:   expected deduction = D + fees + bonus − CO
-  const expectedGameDeductionPdf = r2(deposits + depositFees + cashoutFees + bonuses - cashouts);
-  const expectedGame = Math.round(-expectedGameDeductionPdf);
-  const walletDisc = r2((es?.walletDiscrepancy) ?? r2(walletChange - expectedWallet));
-  const gameDisc = Math.round((es?.gameDiscrepancy) ?? (gameChange - expectedGame));
-  // Detect shared games from the end snapshot (if available)
-  const endGameSnap = es?.gameSnapshot ?? [];
-  // We flag shared games via a "shared" property if it was stored; otherwise show a generic note
-  const sharedGameNoteForPdf = endGameSnap.some(g => g.isShared)
-    ? 'Note: some games are shared across stores — game discrepancies may include cross-store activity.'
-    : '';
-  const walletOk = Math.abs(walletDisc) < 0.02;
-  const gameOk = Math.abs(gameDisc) < 2;
-  const allOk = walletOk && gameOk;
+  // Expected formula
+  const expectedWallet = r2(deposits - cashouts - depositFees - cashoutFees - expenseWalletPaid - takeoutWalletPaid);
+  const expectedGameDeduction = deposits + depositFees + cashoutFees + bonuses - cashouts;
+  const expectedGame   = Math.round(-expectedGameDeduction + pointsReloaded);
 
-  const startWalletRows = (startSnapshot?.walletSnapshot ?? []).map(w => {
-    const ew = (endSnapshot?.walletSnapshot ?? []).find(e => e.id === w.id);
-    const δ = r2((ew?.balance ?? 0) - w.balance);
-    return `<tr><td><b>${w.method}</b> — ${w.name}</td><td class="tr">${fmtMoney(w.balance)}</td><td class="tr b">${fmtMoney(ew?.balance ?? 0)}</td><td class="tr b" style="color:${δ >= 0 ? '#16a34a' : '#dc2626'}">${δ >= 0 ? '+' : '−'}${fmtMoney(δ)}</td></tr>`;
-  }).join('');
+  const walletDisc = r2(es.walletDiscrepancy ?? r2(walletChange - expectedWallet));
+  const gameDisc   = Math.round(es.gameDiscrepancy   ?? (gameChange - expectedGame));
+  const crossWalletDisc = r2(es.crossAdjWalletDiscrepancy ?? walletDisc);
+  const crossGameDisc   = Math.round(es.crossAdjGameDiscrepancy ?? gameDisc);
+  const walletOk   = Math.abs(crossWalletDisc) < 0.02;
+  const gameOk     = Math.abs(crossGameDisc) < 2;
+  const allOk      = walletOk && gameOk;
+  const isCrossAdj = es.isCrossAdjBalanced ?? null;
 
-  const gameRows = (startSnapshot?.gameSnapshot ?? []).map(g => {
-    const eg = (endSnapshot?.gameSnapshot ?? []).find(e => e.id === g.id);
-    const δ = Math.round((eg?.pointStock ?? 0) - g.pointStock);
-    return `<tr><td><b>${g.name}</b></td><td class="tr">${Math.round(g.pointStock)} pts</td><td class="tr b">${Math.round(eg?.pointStock ?? 0)} pts</td><td class="tr b" style="color:${δ <= 0 ? '#16a34a' : '#dc2626'}">${δ >= 0 ? '+' : ''}${δ} pts</td></tr>`;
-  }).join('');
-
-  const effort = shift.checkin?.effortRating ?? shift.stats?.effortRating;
+  const effort = shift.checkin?.effortRating ?? stx.effortRating ?? null;
   const effortColor = !effort ? '#94a3b8' : effort >= 8 ? '#16a34a' : effort >= 5 ? '#d97706' : '#dc2626';
 
+  // ── 4. Fetch live data (transactions, expenses, takeouts) ─────
+  const API_BASE = (typeof import !== 'undefined' && import.meta?.env?.VITE_API_URL) || 'http://localhost:3001/api';
+  const getStoreId = () => parseInt(localStorage.getItem('__obStoreId') || '1', 10);
+  const fj = async (path) => {
+    const token = localStorage.getItem('authToken');
+    const r = await fetch(`${API_BASE}${path}`, {
+      credentials: 'include', cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Store-Id': String(getStoreId()),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    if (!r.ok) return null;
+    return r.json();
+  };
+
+  const fromDate   = encodeURIComponent(new Date(shift.startTime).toISOString());
+  const toDate     = shift.endTime ? encodeURIComponent(new Date(shift.endTime).toISOString()) : '';
+  const toParam    = toDate ? `&toDate=${toDate}` : '';
+
+  let transactions = [];
+  let expenses     = [];
+  let takeouts     = [];
+
+  try {
+    const [txRes, expRes, toRes] = await Promise.all([
+      fj(`/transactions?limit=500&fromDate=${fromDate}${toParam}`),
+      fj(`/expenses?fromDate=${fromDate}${toParam}`),
+      fj(`/profit-takeouts?fromDate=${fromDate}${toParam}&limit=200`),
+    ]);
+
+    const shiftStart = new Date(shift.startTime);
+    const shiftEnd   = shift.endTime ? new Date(shift.endTime) : new Date();
+
+    transactions = (txRes?.data ?? []).filter(t => {
+      const d = new Date(t.createdAtISO ?? t.createdAt ?? t.date ?? 0);
+      return d >= shiftStart && d <= shiftEnd;
+    });
+
+    expenses = expRes?.data ?? [];
+    takeouts = toRes?.data ?? [];
+  } catch (e) {
+    console.warn('printShiftPDF: fetch failed', e);
+  }
+
+  // ── 5. Wallet / game snapshot rows ───────────────────────────
+  const startWalletSnap = ss.walletSnapshot ?? [];
+  const endWalletSnap   = es.walletSnapshot ?? [];
+  const startGameSnap   = ss.gameSnapshot   ?? [];
+  const endGameSnap     = es.gameSnapshot   ?? [];
+
+  const startWalletMap = Object.fromEntries(startWalletSnap.map(w => [String(w.id), w]));
+  const endWalletMap   = Object.fromEntries(endWalletSnap.map(w => [String(w.id), w]));
+  const startGameMap   = Object.fromEntries(startGameSnap.map(g => [String(g.id), g]));
+  const endGameMap     = Object.fromEntries(endGameSnap.map(g => [String(g.id), g]));
+
+  const allWalletIds = [...new Set([...Object.keys(startWalletMap), ...Object.keys(endWalletMap)])];
+  const allGameIds   = [...new Set([...Object.keys(startGameMap),  ...Object.keys(endGameMap)])];
+
+  const walletRows = allWalletIds.map(id => {
+    const sw = startWalletMap[id];
+    const ew = endWalletMap[id];
+    const isNew     = !sw && !!ew;
+    const isRemoved = !!sw && !ew;
+    const startBal  = r2(sw?.balance ?? 0);
+    const endBal    = r2(ew?.balance ?? 0);
+    const delta     = r2(endBal - startBal);
+    const name      = (ew ?? sw);
+    return { id, name: name?.name ?? '?', method: name?.method ?? '?', startBal, endBal, delta, isNew, isRemoved };
+  });
+
+  const gameRows = allGameIds.map(id => {
+    const sg = startGameMap[id];
+    const eg = endGameMap[id];
+    const isNew     = !sg && !!eg;
+    const isRemoved = !!sg && !eg;
+    const startPts  = Math.round(sg?.pointStock ?? 0);
+    const endPts    = Math.round(eg?.pointStock ?? 0);
+    const delta     = endPts - startPts;
+    const name      = (eg ?? sg);
+    return { id, name: name?.name ?? '?', startPts, endPts, delta, isNew, isRemoved, isShared: name?.isShared };
+  });
+
+  const newWallets = walletRows.filter(r => r.isNew);
+  const newGames   = gameRows.filter(r => r.isNew);
+
+  // ── 6. Build HTML ─────────────────────────────────────────────
+  const css = `
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Segoe UI",Arial,sans-serif;font-size:12px;color:#0f172a;background:#fff;padding:32px 36px}
+    h1{font-size:22px;font-weight:800;color:#0f172a}
+    .subtitle{font-size:11px;color:#64748b;margin-top:3px;margin-bottom:20px}
+    h2{font-size:11px;font-weight:800;color:#374151;border-bottom:2px solid #e2e8f0;
+       padding-bottom:5px;margin:24px 0 10px;text-transform:uppercase;letter-spacing:0.5px}
+    table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:0}
+    th{background:#f8fafc;text-align:left;padding:7px 10px;font-weight:700;color:#64748b;
+       font-size:10px;text-transform:uppercase;letter-spacing:0.4px;
+       border-bottom:2px solid #e2e8f0;white-space:nowrap}
+    td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+    tr:last-child td{border-bottom:none}
+    .tr{text-align:right} .tc{text-align:center} .b{font-weight:700} .bb{font-weight:800}
+    .mono{font-family:monospace}
+    .section{border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:16px}
+    .sHdr{padding:8px 12px;font-size:10.5px;font-weight:800;color:#374151;
+          text-transform:uppercase;letter-spacing:0.4px;background:#f8fafc;
+          border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}
+    .kpiGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+    .kpi{border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;text-align:center}
+    .kpiVal{font-size:16px;font-weight:800}
+    .kpiLbl{font-size:9px;color:#64748b;margin-top:2px;text-transform:uppercase;letter-spacing:0.4px}
+    .g{color:#16a34a} .r{color:#dc2626} .a{color:#c2410c}
+    .p{color:#7c3aed} .o{color:#d97706} .b45{color:#b45309}
+    .banner{padding:12px 16px;border-radius:8px;border:1px solid;margin-bottom:16px;font-size:11.5px}
+    .bannerG{background:#f0fdf4;border-color:#86efac;border-left:4px solid #16a34a}
+    .bannerR{background:#fef2f2;border-color:#fca5a5;border-left:4px solid #dc2626}
+    .bannerO{background:#fffbeb;border-color:#fde68a;border-left:4px solid #f59e0b}
+    .bannerP{background:#f5f3ff;border-color:#c4b5fd;border-left:4px solid #7c3aed}
+    .bannerB{background:#eff6ff;border-color:#bfdbfe;border-left:4px solid #2563eb}
+    .badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700}
+    .badgeG{background:#dcfce7;color:#16a34a}
+    .badgeR{background:#fee2e2;color:#991b1b}
+    .badgeO{background:#fffbeb;color:#b45309}
+    .badgeP{background:#ede9fe;color:#4c1d95}
+    .badgeB{background:#dbeafe;color:#1d4ed8}
+    .badgeY{background:#fef9c3;color:#854d0e}
+    .footRow td{background:#f8fafc;font-weight:800;border-top:2px solid #e2e8f0}
+    .midRow td{background:#eff6ff}
+    .midGameRow td{background:#f5f3ff}
+    .removedRow td{background:#fef2f2}
+    .newRow td{background:#f0fdf4}
+    .discRow td{background:#fef2f2}
+    .crossRow td{background:#faf5ff;font-style:italic}
+    button{padding:9px 18px;background:#0f172a;color:#fff;border:none;border-radius:7px;
+           font-weight:700;font-size:12px;cursor:pointer}
+    @media print{button{display:none}body{padding:18px}}
+    .twoCol{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  `;
+
+  // ── KPI cards ─────────────────────────────────────────────────
+  const kpis = [
+    { label: 'Deposits',      val: `+${fmtMoney(deposits)}`,   cls: 'g' },
+    { label: 'Cashouts',      val: `-${fmtMoney(cashouts)}`,   cls: 'r' },
+    { label: 'Net Profit',    val: `${netProfit>=0?'+':'−'}${fmtMoney(netProfit)}`, cls: netProfit>=0?'g':'r' },
+    ...(totalFees > 0 ? [{ label: 'Total Fees', val: `-${fmtMoney(totalFees)}`, cls: 'o' }] : []),
+    ...(bonuses > 0 ? [{ label: 'Bonuses', val: `-${fmtMoney(bonuses)}`, cls: 'a' }] : []),
+    ...(expenseWalletPaid > 0 ? [{ label: 'Expenses Paid', val: `-${fmtMoney(expenseWalletPaid)}`, cls: 'b45' }] : []),
+    ...(takeoutWalletPaid > 0 ? [{ label: 'Takeouts',      val: `-${fmtMoney(takeoutWalletPaid)}`, cls: 'r' }] : []),
+    ...(pointsReloaded > 0 ? [{ label: 'Pts Reloaded', val: `+${pointsReloaded} pts`, cls: 'p' }] : []),
+    { label: 'Transactions',  val: `${transactions.length || stx.transactionCount ?? '—'}`, cls: 'b' },
+    ...(effort ? [{ label: 'Effort Rating', val: `${effort}/10`, cls: effort>=8?'g':effort>=5?'o':'r' }] : []),
+  ];
+
+  const kpiHtml = `<div class="kpiGrid">
+    ${kpis.map(k => `
+      <div class="kpi">
+        <div class="kpiVal ${k.cls}">${k.val}</div>
+        <div class="kpiLbl">${k.label}</div>
+      </div>`).join('')}
+  </div>`;
+
+  // ── Mid-shift banners ─────────────────────────────────────────
+  const midShiftHtml = [
+    newWallets.length > 0 && `
+      <div class="banner bannerB">
+        <b>🆕 New wallets added mid-shift:</b>
+        ${newWallets.map(w => `${w.method} — ${w.name} ($${w.endBal.toFixed(2)})`).join(', ')}.
+        Opening balances not captured — included in end totals only.
+      </div>`,
+    newGames.length > 0 && `
+      <div class="banner bannerP">
+        <b>🆕 New games added mid-shift:</b>
+        ${newGames.map(g => g.name).join(', ')}.
+        No start stock captured — included in end totals only.
+      </div>`,
+  ].filter(Boolean).join('');
+
+  // ── Wallet table ──────────────────────────────────────────────
+  const startWalletTotal = r2(ss.totalWallet ?? startWalletSnap.reduce((s,w)=>s+w.balance,0));
+  const endWalletTotal   = r2(es.totalWallet ?? endWalletSnap.reduce((s,w)=>s+w.balance,0));
+
+  const walletTableHtml = walletRows.length > 0 ? `
+    <div class="section">
+      <div class="sHdr">
+        <span>💳 Wallet Balances</span>
+        <span style="font-weight:400;color:#64748b">Start: $${startWalletTotal.toFixed(2)} → End: $${endWalletTotal.toFixed(2)}</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Method</th><th>Account</th>
+          <th class="tr">Start</th><th class="tr">End</th><th class="tr">Change</th>
+          <th class="tc">Note</th>
+        </tr></thead>
+        <tbody>
+          ${walletRows.map(w => `
+            <tr class="${w.isNew?'newRow':w.isRemoved?'removedRow':''}">
+              <td><b>${w.method}</b></td>
+              <td>${w.name}</td>
+              <td class="tr mono">${w.isNew ? 'N/A' : `$${w.startBal.toFixed(2)}`}</td>
+              <td class="tr mono b">${w.isRemoved ? 'N/A' : `$${w.endBal.toFixed(2)}`}</td>
+              <td class="tr mono bb" style="color:${w.isNew||w.isRemoved?'#94a3b8':w.delta>=0?'#16a34a':'#dc2626'}">
+                ${w.isNew||w.isRemoved ? 'N/A' : `${w.delta>=0?'+':'−'}$${Math.abs(w.delta).toFixed(2)}`}
+              </td>
+              <td class="tc">
+                ${w.isNew ? '<span class="badge badgeB">new mid-shift</span>' : w.isRemoved ? '<span class="badge badgeR">removed</span>' : ''}
+              </td>
+            </tr>`).join('')}
+          <tr class="footRow">
+            <td colspan="2"><b>Total</b></td>
+            <td class="tr mono">$${startWalletTotal.toFixed(2)}</td>
+            <td class="tr mono b">$${endWalletTotal.toFixed(2)}</td>
+            <td class="tr mono bb" style="color:${walletChange>=0?'#16a34a':'#dc2626'}">
+              ${walletChange>=0?'+':'−'}$${Math.abs(walletChange).toFixed(2)}
+            </td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>` : '';
+
+  // ── Game table ────────────────────────────────────────────────
+  const startGameTotal = Math.round(ss.totalGames ?? startGameSnap.reduce((s,g)=>s+g.pointStock,0));
+  const endGameTotal   = Math.round(es.totalGames ?? endGameSnap.reduce((s,g)=>s+g.pointStock,0));
+
+  const gameTableHtml = gameRows.length > 0 ? `
+    <div class="section">
+      <div class="sHdr">
+        <span>🎮 Game Points</span>
+        <span style="font-weight:400;color:#64748b">Start: ${startGameTotal} pts → End: ${endGameTotal} pts</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Game</th>
+          <th class="tr">Start (pts)</th><th class="tr">End (pts)</th><th class="tr">Change</th>
+          <th class="tc">Note</th>
+        </tr></thead>
+        <tbody>
+          ${gameRows.map(g => `
+            <tr class="${g.isNew?'midGameRow':g.isRemoved?'removedRow':''}">
+              <td>
+                <b>${g.name}</b>
+                ${g.isShared ? ' <span class="badge badgeP">shared</span>' : ''}
+              </td>
+              <td class="tr mono">${g.isNew ? 'N/A' : `${g.startPts} pts`}</td>
+              <td class="tr mono b">${g.isRemoved ? 'N/A' : `${g.endPts} pts`}</td>
+              <td class="tr mono bb" style="color:${g.isNew||g.isRemoved?'#94a3b8':g.delta<=0?'#16a34a':'#dc2626'}">
+                ${g.isNew||g.isRemoved ? 'N/A' : `${g.delta>=0?'+':''}${g.delta} pts`}
+              </td>
+              <td class="tc">
+                ${g.isNew ? '<span class="badge badgeP">new mid-shift</span>' : g.isRemoved ? '<span class="badge badgeR">removed</span>' : ''}
+              </td>
+            </tr>`).join('')}
+          <tr class="footRow">
+            <td><b>Total</b></td>
+            <td class="tr mono">${startGameTotal} pts</td>
+            <td class="tr mono b">${endGameTotal} pts</td>
+            <td class="tr mono bb" style="color:${gameChange<=0?'#16a34a':'#dc2626'}">
+              ${gameChange>=0?'+':''}${gameChange} pts
+            </td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>` : '';
+
+  // ── Discrepancy section ───────────────────────────────────────
+  const formulaRows = [
+    { label: '+ Deposits', wallet: `+$${deposits.toFixed(2)}`,         pts: `−${deposits.toFixed(0)} pts` },
+    { label: '− Cashouts completed', wallet: `−$${cashouts.toFixed(2)}`, pts: `+${cashouts.toFixed(0)} pts` },
+    ...(totalFees > 0 ? [{ label: '− Fees (deposit + cashout)', wallet: `−$${totalFees.toFixed(2)}`, pts: `−${totalFees.toFixed(0)} pts` }] : []),
+    ...(bonuses > 0 ? [{ label: '− Bonuses granted', wallet: '—', pts: `−${bonuses.toFixed(0)} pts` }] : []),
+    ...(pointsReloaded > 0 ? [{ label: '+ Points reloaded (expenses)', wallet: '—', pts: `+${pointsReloaded} pts` }] : []),
+    ...(expenseWalletPaid > 0 ? [{ label: '− Expense wallet payments', wallet: `−$${expenseWalletPaid.toFixed(2)}`, pts: '—' }] : []),
+    ...(takeoutWalletPaid > 0 ? [{ label: '− Profit takeouts (wallet)', wallet: `−$${takeoutWalletPaid.toFixed(2)}`, pts: '—' }] : []),
+  ];
+
+  const discrepancyHtml = `
+    <div class="banner ${allOk ? 'bannerG' : 'bannerR'}" style="border-left:4px solid ${allOk?'#16a34a':'#dc2626'}">
+      <div style="font-weight:800;font-size:13.5px;color:${allOk?'#166534':'#991b1b'};margin-bottom:6px">
+        ${allOk
+          ? (isCrossAdj ? '✓ Balanced — cross-store activity accounts for all changes' : '✓ Fully Balanced')
+          : `⚠️ Discrepancy Detected: ${!walletOk?`Cash off by $${Math.abs(crossWalletDisc).toFixed(2)}`:''}${!walletOk&&!gameOk?' | ':''}${!gameOk?`Points off by ${Math.abs(crossGameDisc)} pts`:''}`}
+      </div>
+      <table style="font-size:11px">
+        <thead>
+          <tr>
+            <th style="width:50%">Formula Item</th>
+            <th class="tr">Wallet $</th>
+            <th class="tr">Game pts</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${formulaRows.map(r => `
+            <tr>
+              <td style="color:#475569">${r.label}</td>
+              <td class="tr mono b">${r.wallet}</td>
+              <td class="tr mono b" style="color:#7c3aed">${r.pts}</td>
+            </tr>`).join('')}
+          <tr style="background:#f8fafc;border-top:2px solid #e2e8f0">
+            <td class="b">Expected Change</td>
+            <td class="tr mono bb" style="color:${expectedWallet>=0?'#16a34a':'#dc2626'}">${expectedWallet>=0?'+':'−'}$${Math.abs(expectedWallet).toFixed(2)}</td>
+            <td class="tr mono bb" style="color:#7c3aed">${expectedGame>=0?'+':''}${expectedGame} pts</td>
+          </tr>
+          <tr style="background:#f8fafc">
+            <td class="b">Actual Change</td>
+            <td class="tr mono bb" style="color:${walletChange>=0?'#16a34a':'#dc2626'}">${walletChange>=0?'+':'−'}$${Math.abs(walletChange).toFixed(2)}</td>
+            <td class="tr mono bb" style="color:#7c3aed">${gameChange>=0?'+':''}${gameChange} pts</td>
+          </tr>
+          ${!allOk ? `
+          <tr class="discRow">
+            <td class="b" style="color:#991b1b">⚠️ Real Discrepancy</td>
+            <td class="tr mono bb" style="color:${walletOk?'#16a34a':'#dc2626'}">
+              ${walletOk ? '✓ balanced' : `$${Math.abs(crossWalletDisc).toFixed(2)} off`}
+            </td>
+            <td class="tr mono bb" style="color:${gameOk?'#16a34a':'#dc2626'}">
+              ${gameOk ? '✓ balanced' : `${Math.abs(crossGameDisc)} pts off`}
+            </td>
+          </tr>` : `
+          <tr style="background:#f0fdf4">
+            <td class="b" style="color:#166534">✓ Verified</td>
+            <td class="tr mono b" style="color:#16a34a">balanced</td>
+            <td class="tr mono b" style="color:#16a34a">balanced</td>
+          </tr>`}
+        </tbody>
+      </table>
+      ${(es.notes || ss.notes) ? `<div style="margin-top:10px;font-size:11px;color:#475569;border-top:1px solid #e2e8f0;padding-top:8px"><b>Notes:</b> ${es.notes || ss.notes}</div>` : ''}
+    </div>`;
+
+  // ── Transactions table ────────────────────────────────────────
+  const txnHtml = transactions.length > 0 ? `
+    <div class="section">
+      <div class="sHdr">
+        <span>💳 Transactions (${transactions.length})</span>
+        <span style="font-weight:400;color:#64748b">
+          Deposits: $${r2(transactions.filter(t=>t.type==='Deposit').reduce((s,t)=>s+t.amount,0)).toFixed(2)}
+          · Cashouts: $${r2(transactions.filter(t=>t.type==='Cashout').reduce((s,t)=>s+t.amount,0)).toFixed(2)}
+        </span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Time</th><th>Player</th><th>Type</th>
+          <th>Game / Wallet</th><th class="tr">Amount</th>
+          <th class="tr">Fee</th><th class="tc">Status</th>
+          <th class="tr">Pts Before→After</th>
+        </tr></thead>
+        <tbody>
+          ${transactions.map(t => {
+            const isD = t.type==='Deposit', isCO = t.type==='Cashout';
+            const pts = t.gameStockBefore!=null && t.gameStockAfter!=null
+              ? `${Math.round(t.gameStockBefore)} → ${Math.round(t.gameStockAfter)}` : '—';
+            const typeCls = isD ? 'badgeG' : isCO ? 'badgeR' : 'badgeO';
+            return `<tr>
+              <td style="font-size:10px;color:#64748b;white-space:nowrap">${fmtDateTime(t.createdAtISO??t.date)}</td>
+              <td class="b">${t.playerName||`#${t.playerId}`}</td>
+              <td><span class="badge ${typeCls}">${t.type}</span></td>
+              <td style="font-size:10.5px">
+                ${t.gameName?`<b>${t.gameName}</b>`:''}
+                ${t.walletMethod?`<span style="color:#64748b">${t.walletMethod}${t.walletName?` · ${t.walletName}`:''}</span>`:''}
+                ${!t.gameName&&!t.walletMethod?'—':''}
+              </td>
+              <td class="tr mono bb" style="color:${isD?'#16a34a':isCO?'#dc2626':'#c2410c'}">
+                $${(t.amount??0).toFixed(2)}
+              </td>
+              <td class="tr mono" style="color:${t.fee>0?'#f59e0b':'#cbd5e1'}">
+                ${t.fee>0?`−$${t.fee.toFixed(2)}`:'—'}
+              </td>
+              <td class="tc">
+                <span class="badge ${t.status==='PENDING'?'badgeY':'badgeG'}">
+                  ${t.status==='PENDING'?'PENDING':'DONE'}
+                </span>
+              </td>
+              <td class="tr mono" style="font-size:10.5px;color:#64748b">${pts}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>` : `
+    <div class="section">
+      <div class="sHdr"><span>💳 Transactions</span></div>
+      <div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px">
+        ${transactions.length === 0 ? 'No transactions found for this shift' : 'Transaction data unavailable'}
+      </div>
+    </div>`;
+
+  // ── Expenses table ────────────────────────────────────────────
+  const totalExpAmt = r2(expenses.reduce((s,e)=>s+(e.amount??0),0));
+  const expHtml = expenses.length > 0 ? `
+    <div class="section">
+      <div class="sHdr">
+        <span>📋 Expenses (${expenses.length})</span>
+        <span style="font-weight:400;color:#64748b">Total: $${totalExpAmt.toFixed(2)} · Wallet paid: $${expenseWalletPaid.toFixed(2)} · Pts added: +${pointsReloaded} pts</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Time</th><th>Details</th><th>Category</th><th>Game</th>
+          <th class="tr">Amount</th><th class="tr">Wallet Paid</th><th class="tr">Pts Added</th>
+        </tr></thead>
+        <tbody>
+          ${expenses.map(e => `
+            <tr>
+              <td style="font-size:10px;color:#64748b;white-space:nowrap">${fmtDateTime(e.createdAt)}</td>
+              <td class="b">${e.details||'—'}</td>
+              <td><span class="badge badgeO">${(e.category||'').replace('_',' ')||'—'}</span></td>
+              <td style="color:#64748b">${e.game?.name||'—'}</td>
+              <td class="tr mono b" style="color:#b45309">$${(e.amount??0).toFixed(2)}</td>
+              <td class="tr mono" style="color:#dc2626">
+                ${(e.paymentMade??0)>0?`−$${parseFloat(e.paymentMade).toFixed(2)}`:'—'}
+              </td>
+              <td class="tr mono" style="color:#16a34a">
+                ${(e.pointsAdded??0)>0?`+${e.pointsAdded} pts`:'—'}
+              </td>
+            </tr>`).join('')}
+          <tr class="footRow">
+            <td colspan="4"><b>Total</b></td>
+            <td class="tr mono bb" style="color:#b45309">$${totalExpAmt.toFixed(2)}</td>
+            <td class="tr mono bb" style="color:#dc2626">${expenseWalletPaid>0?`−$${expenseWalletPaid.toFixed(2)}`:'—'}</td>
+            <td class="tr mono bb" style="color:#16a34a">${pointsReloaded>0?`+${pointsReloaded} pts`:'—'}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>` : '';
+
+  // ── Takeouts table ────────────────────────────────────────────
+  const totalTakeoutAmt = r2(takeouts.reduce((s,t)=>s+parseFloat(t.amount??0),0));
+  const takeoutHtml = takeouts.length > 0 ? `
+    <div class="section">
+      <div class="sHdr">
+        <span>💸 Profit Takeouts (${takeouts.length})</span>
+        <span style="font-weight:400;color:#64748b">Total: $${totalTakeoutAmt.toFixed(2)}</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Time</th><th>Taken By</th><th>Method</th>
+          <th class="tr">Amount</th><th>Wallet Used</th><th>Notes</th>
+        </tr></thead>
+        <tbody>
+          ${takeouts.map(t => `
+            <tr>
+              <td style="font-size:10px;color:#64748b;white-space:nowrap">${fmtDateTime(t.createdAt)}</td>
+              <td class="b">${t.takenBy||'—'}</td>
+              <td><span class="badge badgeR">${t.method||'—'}</span></td>
+              <td class="tr mono bb" style="color:#dc2626">−$${parseFloat(t.amount??0).toFixed(2)}</td>
+              <td>${t.walletId?'<span style="color:#dc2626">wallet deducted</span>':'<span style="color:#94a3b8">cash/external</span>'}</td>
+              <td style="color:#64748b;font-size:10.5px">${t.notes||'—'}</td>
+            </tr>`).join('')}
+          <tr class="footRow">
+            <td colspan="3"><b>Total</b></td>
+            <td class="tr mono bb" style="color:#dc2626">−$${totalTakeoutAmt.toFixed(2)}</td>
+            <td colspan="2" style="color:#64748b;font-size:10.5px">Wallet-deducted: −$${takeoutWalletPaid.toFixed(2)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>` : '';
+
+  // ── Opening-shift notes ───────────────────────────────────────
+  const openingNotes = ss.notes ?? '';
+  const openingNotesHtml = openingNotes ? `
+    <div class="banner bannerO">
+      <b>📝 Opening Notes:</b> ${openingNotes}
+      ${ss.hasDiscrepancies ? `<span style="margin-left:8px;color:#f59e0b">⚠️ ${ss.walletDiscrepancyCount??0} wallet + ${ss.gameDiscrepancyCount??0} game discrepancies at start</span>` : ''}
+    </div>` : '';
+
+  // ── Feedback ──────────────────────────────────────────────────
+  const fbRows = [
+    { label: 'Effort Reason',            val: feedback.effortReason },
+    { label: 'Shift Work Description',   val: feedback.shiftWorkDescription },
+    { label: 'Work Summary',             val: feedback.workSummary },
+    { label: 'Issues Encountered',       val: feedback.issuesEncountered },
+    { label: 'Could Do Better',          val: feedback.improvements },
+    { label: 'Recommendations (prev shift)', val: feedback.recommendationsLastShift },
+    { label: 'Overall Recommendations',  val: feedback.recommendationsOverall },
+  ].filter(r => r.val && r.val.trim());
+
+  const feedbackHtml = fbRows.length > 0 ? `
+    <h2>Member Feedback</h2>
+    <div class="section">
+      <table>
+        ${fbRows.map(r => `
+          <tr>
+            <td style="width:28%;font-weight:700;color:#64748b;vertical-align:top">${r.label}</td>
+            <td style="line-height:1.55">${r.val}</td>
+          </tr>`).join('')}
+      </table>
+    </div>` : '';
+
+  // ── Rating ────────────────────────────────────────────────────
+  const ratingHtml = shift.rating ? `
+    <div class="banner bannerG" style="margin-bottom:16px">
+      <b>⭐ Manager Rating: ${['★','★','★','★','★'].map((_,i) => i < Math.round(shift.rating.overallRating) ? '★' : '☆').join('')}</b>
+      ${shift.rating.feedback ? `<div style="margin-top:4px;color:#166534;font-size:11px">${shift.rating.feedback}</div>` : ''}
+    </div>` : '';
+
+  // ── Assemble full document ────────────────────────────────────
+  const html = `<!DOCTYPE html><html><head>
+  <meta charset="utf-8"/>
+  <title>Shift Report — ${fmtDate(shift.startTime)}</title>
+  <style>${css}</style>
+  </head><body>
+
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+    <div>
+      <h1>Shift Report — ${fmtDate(shift.startTime)}</h1>
+      <p class="subtitle">
+        ${fmtTime(shift.startTime)} → ${fmtTime(shift.endTime)}
+        ${shift.duration != null ? ` · ${shift.duration} min` : ''}
+        ${shift.teamRole ? ` · ${shift.teamRole}` : ''}
+        ${shift.memberName ? ` · ${shift.memberName}` : ''}
+        · Generated ${new Date().toLocaleString('en-US',{timeZone:'America/Chicago'})}
+      </p>
+    </div>
+    <button onclick="window.print()">Print / Save PDF</button>
+  </div>
+
+  ${ratingHtml}
+  ${openingNotesHtml}
+
+  <h2>Activity Summary</h2>
+  ${kpiHtml}
+
+  ${midShiftHtml}
+
+  <h2>Audit Verification</h2>
+  ${discrepancyHtml}
+
+  ${walletTableHtml ? `<h2>Cash Flow Audit</h2>${walletTableHtml}` : ''}
+  ${gameTableHtml  ? `<h2>Game Point Audit</h2>${gameTableHtml}` : ''}
+
+  <h2>Transactions (${transactions.length})</h2>
+  ${txnHtml}
+
+  ${(expenses.length > 0 || takeouts.length > 0) ? `<h2>Expenses & Profit Takeouts</h2>${expHtml}${takeoutHtml}` : ''}
+
+  ${feedbackHtml}
+
+  <p style="margin-top:24px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:10px">
+    Confidential · Shift Report · Generated ${new Date().toISOString()}
+  </p>
+  </body></html>`;
+
   const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/>
-<title>Shift Report — ${fmtDate(shift.startTime)}</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"Segoe UI",Arial,sans-serif;font-size:12px;color:#0f172a;background:#fff;padding:28px}
-h1{font-size:20px;font-weight:800;margin-bottom:3px}
-h2{font-size:12px;font-weight:700;margin:22px 0 8px;color:#374151;border-bottom:2px solid #e2e8f0;padding-bottom:4px;text-transform:uppercase;letter-spacing:0.4px}
-.meta{font-size:11px;color:#64748b;margin-bottom:18px}
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
-.box{border:1px solid #e2e8f0;border-radius:7px;padding:12px 14px}
-.val{font-size:17px;font-weight:800}.lbl{font-size:9px;color:#64748b;margin-top:1px;text-transform:uppercase;letter-spacing:0.4px}
-.g{color:#16a34a}.r{color:#dc2626}.a{color:#c2410c}.p{color:#7c3aed}
-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px}
-th{background:#f8fafc;text-align:left;padding:7px 10px;font-weight:700;color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:0.4px;border-bottom:2px solid #e2e8f0}
-td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}
-.tr{text-align:right}.b{font-weight:700}
-.section{border:1px solid #e2e8f0;border-radius:7px;overflow:hidden;margin-bottom:14px}
-.section-hdr{padding:8px 12px;font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.4px;background:#f8fafc;border-bottom:1px solid #e2e8f0}
-.banner{padding:10px 14px;border-radius:7px;border:1px solid #e2e8f0;margin-bottom:14px;font-size:11px}
-button{padding:9px 18px;background:#0f172a;color:#fff;border:none;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer}
-@media print{button{display:none}body{padding:16px}}
-</style></head><body>
-<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-<div>
-  <h1>Shift Report — ${fmtDate(shift.startTime)}</h1>
-  <p class="meta">${fmtTime(shift.startTime)} – ${fmtTime(shift.endTime)} · ${shift.duration ?? '—'} min · Generated ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })}</p>
-</div>
-<button onclick="window.print()">Print / Save PDF</button>
-</div>
-
-<h2>Activity Summary</h2>
-<div class="grid4">
-  <div class="box"><div class="val g">+${fmtMoney(deposits)}</div><div class="lbl">Deposits</div></div>
-  <div class="box"><div class="val r">−${fmtMoney(cashouts)}</div><div class="lbl">Cashouts</div></div>
-  <div class="box"><div class="val a">−${fmtMoney(bonuses)}</div><div class="lbl">Bonuses</div></div>
-  <div class="box"><div class="val ${netProfit >= 0 ? 'g' : 'r'}">${netProfit >= 0 ? '+' : ''}${fmtMoney(netProfit)}</div><div class="lbl">Net Profit (D−C)</div></div>
-  ${(depositFees + cashoutFees) > 0 ? `<div class="box"><div class="val a">−${fmtMoney(depositFees + cashoutFees)}</div><div class="lbl">Total Fees</div></div>` : ''}
-  ${effort ? `<div class="box"><div class="val" style="color:${effortColor}">${effort}/10</div><div class="lbl">Effort Rating</div></div>` : ''}
-</div>
-
-${startWalletRows ? `<h2>Cash Flow Audit</h2>
-<div class="section">
-  <table>
-    <thead><tr><th>Method / Account</th><th class="tr">Start</th><th class="tr">End</th><th class="tr">Change</th></tr></thead>
-    <tbody>
-      ${startWalletRows}
-      <tr style="background:#f8fafc"><td><b>Total</b></td><td class="tr b">${fmtMoney(startSnapshot?.totalWallet ?? 0)}</td><td class="tr b">${fmtMoney(endSnapshot?.totalWallet ?? 0)}</td><td class="tr b" style="color:${walletChange >= 0 ? '#16a34a' : '#dc2626'}">${walletChange >= 0 ? '+' : '−'}${fmtMoney(walletChange)}</td></tr>
-    </tbody>
-  </table>
-</div>` : ''}
-
-${gameRows ? `<h2>Game Point Audit</h2>
-<div class="section">
-  <table>
-    <thead><tr><th>Game</th><th class="tr">Start (pts)</th><th class="tr">End (pts)</th><th class="tr">Change</th></tr></thead>
-    <tbody>
-      ${gameRows}
-      <tr style="background:#f8fafc"><td><b>Total</b></td><td class="tr b">${Math.round(startSnapshot?.totalGames ?? 0)} pts</td><td class="tr b">${Math.round(endSnapshot?.totalGames ?? 0)} pts</td><td class="tr b" style="color:${gameChange <= 0 ? '#16a34a' : '#dc2626'}">${gameChange >= 0 ? '+' : ''}${gameChange} pts</td></tr>
-    </tbody>
-  </table>
-</div>` : ''}
-
-${es ? `<h2>Audit Verification</h2>
-<div class="banner" style="background:${allOk ? '#f0fdf4' : '#fef2f2'};border-color:${allOk ? '#86efac' : '#fca5a5'};border-left:4px solid ${allOk ? '#16a34a' : '#dc2626'}">
-  <b style="color:${allOk ? '#16a34a' : '#dc2626'}">${allOk ? '✓ Fully Balanced' : `⚠ Discrepancy: ${!walletOk ? `Cash $${Math.abs(walletDisc).toFixed(2)}` : ''}${!walletOk && !gameOk ? ' | ' : ''}${!gameOk ? `Points ${Math.abs(gameDisc)} pts` : ''}`}</b><br>
-    <span style="color:#475569;font-size:11px">
-      Wallet expected: D ${fmtMoney(deposits)} − CO ${fmtMoney(cashouts)} − fees ${fmtMoney(depositFees + cashoutFees)} = ${fmtMoney(expectedWallet)} · Actual Δ ${fmtMoney(walletChange)}<br>
-      Game expected removal: D+fees+bonus−CO = ${expectedGameDeductionPdf.toFixed(0)} pts · Actual Δ ${gameChange} pts
-      ${sharedGameNoteForPdf ? `<br><em style="color:#7c3aed">${sharedGameNoteForPdf}</em>` : ''}
-    </span>
-</div>` : ''}
-
-${effortReason || improvements || shift.checkin?.workSummary ? `<h2>Member Feedback</h2>
-<div class="section">
-  <table>
-    ${effortReason ? `<tr><td style="width:30%;font-weight:700;color:#64748b">Effort Reason</td><td>${effortReason}</td></tr>` : ''}
-    ${shift.checkin?.workSummary ? `<tr><td style="width:30%;font-weight:700;color:#64748b">Work Summary</td><td>${shift.checkin.workSummary}</td></tr>` : ''}
-    ${shift.checkin?.issuesEncountered ? `<tr><td style="width:30%;font-weight:700;color:#64748b">Issues Encountered</td><td>${shift.checkin.issuesEncountered}</td></tr>` : ''}
-    ${improvements ? `<tr><td style="width:30%;font-weight:700;color:#64748b">Could Do Better</td><td>${improvements}</td></tr>` : ''}
-  </table>
-</div>` : ''}
-
-<p style="margin-top:24px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:10px">
-  Confidential · Shift Report · Generated ${new Date().toISOString()}
-</p>
-</body></html>`);
+  win.document.write(html);
   win.document.close();
 }
 
+// ═══════════════════════════════════════════════════════════════
+// UPDATE THE PDF BUTTON onClick IN ShiftsPage:
+// ─────────────────────────────────────────────────────────────
+// Old:
+//   onClick={() => printShiftPDF(shift)}
+//
+// New (because the function is now async):
+//   onClick={() => { printShiftPDF(shift).catch(console.error); }}
+// ═══════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════
 // TASK TYPE META (mirroring MemberTasksSection)
 // ═══════════════════════════════════════════════════════════════
@@ -2119,7 +2551,8 @@ export const ShiftsPage = () => {
                         </td>
                         <td style={{ ...T.TD, textAlign: 'center' }}>
                           <button
-                            onClick={() => printShiftPDF(shift)}
+                            {/* onClick={() => printShiftPDF(shift)} */}
+                            onClick={() => { printShiftPDF(shift).catch(console.error); }}
                             title="Download PDF"
                             style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 10px', background: '#eff6ff', color: '#2563eb', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
                           >
