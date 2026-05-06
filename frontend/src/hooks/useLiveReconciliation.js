@@ -1,61 +1,139 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { api } from '../api';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-export function useLiveReconciliation(shiftId) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const lastFetchRef = useRef(0);
-  const debounceRef = useRef(null);
+const getStoreId = () => localStorage.getItem('__obStoreId') || '1';
 
-  const fetch = useCallback(async (force = false) => {
+async function apiFetch(path) {
+  const token = localStorage.getItem('authToken');
+  const res = await window.fetch(`${API_BASE}${path}`, {
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Store-Id': getStoreId(),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+function computeCrossStoreAdjustments(reconData, crossStoreData) {
+  const myStoreId = getStoreId();
+  let totalCrossGamePts = 0;
+  let totalCrossWalletAmt = 0;
+  const crossGameInfo = {};
+  const crossWalletInfo = {};
+
+  if (crossStoreData) {
+    (crossStoreData.games || []).forEach(g => {
+      const myPts = g.usageByStore?.[String(myStoreId)]?.netPtsDeducted ?? 0;
+      const otherPts = g.totalDeducted - myPts;
+      totalCrossGamePts += otherPts;
+      crossGameInfo[g.gameId] = { ...g, myPts, otherPts };
+    });
+
+    (crossStoreData.wallets || []).forEach(w => {
+      const myChange = w.usageByStore?.[String(myStoreId)]?.netWalletChange ?? 0;
+      const otherChange = w.totalNetChange - myChange;
+      totalCrossWalletAmt += otherChange;
+      crossWalletInfo[w.walletId] = { ...w, myChange, otherChange };
+    });
+  }
+
+  // Raw discrepancies from reconciliation
+  const walletDisc = reconData.walletDiscrepancy ?? 0;
+  const gameDisc   = reconData.gameDiscrepancy  ?? 0;
+
+  // Cross-adjusted discrepancies
+  const crossAdjWalletDisc = parseFloat((walletDisc - totalCrossWalletAmt).toFixed(2));
+  const crossAdjGameDisc   = Math.round(gameDisc + totalCrossGamePts);
+
+  const crossAdjWalletBal  = Math.abs(crossAdjWalletDisc) < 0.02;
+  const crossAdjGameBal    = Math.abs(crossAdjGameDisc)   < 2;
+  const crossAdjBalanced   = reconData.hasStartSnapshot
+    ? (crossAdjWalletBal && crossAdjGameBal)
+    : null;
+
+  const hasCrossStore =
+    Math.abs(totalCrossGamePts) > 0 || Math.abs(totalCrossWalletAmt) > 0.01;
+
+  return {
+    hasCrossStore,
+    totalCrossGamePts,
+    totalCrossWalletAmt,
+    crossGameInfo,
+    crossWalletInfo,
+    crossAdjWalletDisc,
+    crossAdjGameDisc,
+    crossAdjWalletBal,
+    crossAdjGameBal,
+    crossAdjBalanced,
+  };
+}
+
+export function useLiveReconciliation(shiftId, shiftStartTime) {
+  const [data, setData]       = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState(null);
+  const lastFetchRef          = useRef(0);
+  const debounceRef           = useRef(null);
+
+  const fetchAll = useCallback(async (force = false) => {
     if (!shiftId) return;
 
-    // Debounce: don't fetch more than once per 2 seconds
     const now = Date.now();
     if (!force && now - lastFetchRef.current < 2000) {
-      // Schedule a deferred fetch
       clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => fetch(true), 2000);
+      debounceRef.current = setTimeout(() => fetchAll(true), 2000);
       return;
     }
-
     lastFetchRef.current = now;
     setLoading(true);
     setError(null);
 
     try {
-      const token = localStorage.getItem('authToken');
-      const storeId = localStorage.getItem('__obStoreId') || '1';
-      const res = await window.fetch(
-        `${API_BASE}/shifts/${shiftId}/live-reconciliation`,
-        {
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Store-Id': storeId,
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        }
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      setData(json.data);
+      // ── 1. Core reconciliation ──────────────────────────────────
+      const reconJson = await apiFetch(`/shifts/${shiftId}/live-reconciliation`);
+      const reconData = reconJson.data;
+
+      // ── 2. Cross-store usage (uses shiftStartTime if provided) ──
+      const startISO = shiftStartTime
+        ? encodeURIComponent(new Date(shiftStartTime).toISOString())
+        : encodeURIComponent(
+            reconData.capturedAt
+              ? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+              : new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+          );
+      const toISO = encodeURIComponent(new Date().toISOString());
+
+      const crossJson = await apiFetch(
+        `/shifts/shared-resource-usage?fromDate=${startISO}&toDate=${toISO}`
+      ).catch(() => ({ data: null }));
+
+      const crossStoreData = crossJson?.data ?? null;
+
+      // ── 3. Merge cross-store adjustments into data ──────────────
+      const crossAdj = computeCrossStoreAdjustments(reconData, crossStoreData);
+
+      setData({
+        ...reconData,
+        crossStoreData,
+        ...crossAdj,
+      });
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [shiftId]);
+  }, [shiftId, shiftStartTime]);
 
   // Initial fetch
   useEffect(() => {
-    if (shiftId) fetch(true);
-  }, [shiftId, fetch]);
+    if (shiftId) fetchAll(true);
+  }, [shiftId, fetchAll]);
 
-  // SSE listener — re-fetch on any balance change
+  // SSE re-fetch on any balance change
   useEffect(() => {
     if (!shiftId) return;
     const token = localStorage.getItem('authToken');
@@ -63,7 +141,6 @@ export function useLiveReconciliation(shiftId) {
       `${API_BASE}/tasks/events?token=${encodeURIComponent(token || '')}`,
       { withCredentials: true }
     );
-
     sse.onmessage = (e) => {
       try {
         const msg = JSON.parse(e.data);
@@ -72,17 +149,14 @@ export function useLiveReconciliation(shiftId) {
           'shared_game_updated',
           'shared_wallet_updated',
         ];
-        if (triggers.includes(msg.type)) {
-          fetch(); // debounced re-fetch
-        }
+        if (triggers.includes(msg.type)) fetchAll();
       } catch (_) {}
     };
-
     return () => {
       sse.close();
       clearTimeout(debounceRef.current);
     };
-  }, [shiftId, fetch]);
+  }, [shiftId, fetchAll]);
 
-  return { data, loading, error, refetch: () => fetch(true) };
+  return { data, loading, error, refetch: () => fetchAll(true) };
 }
