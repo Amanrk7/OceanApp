@@ -1696,7 +1696,8 @@ async function printShiftPDF(shift) {
     ...(expenseWalletPaid > 0 ? [{ label: 'Expenses Paid', val: `-${fmtMoney(expenseWalletPaid)}`, cls: 'b45' }] : []),
     ...(takeoutWalletPaid > 0 ? [{ label: 'Takeouts',      val: `-${fmtMoney(takeoutWalletPaid)}`, cls: 'r' }] : []),
     ...(pointsReloaded > 0 ? [{ label: 'Pts Reloaded', val: `+${pointsReloaded} pts`, cls: 'p' }] : []),
-    { label: 'Transactions',  val: `${transactions.length || stx.transactionCount ?? '—'}`, cls: 'b' },
+    // { label: 'Transactions',  val: `${transactions.length || stx.transactionCount ?? '—'}`, cls: 'b' },
+    { label: 'Transactions',  val: `${transactions.length || (stx.transactionCount ?? '—')}`, cls: 'b' },
     ...(effort ? [{ label: 'Effort Rating', val: `${effort}/10`, cls: effort>=8?'g':effort>=5?'o':'r' }] : []),
   ];
 
