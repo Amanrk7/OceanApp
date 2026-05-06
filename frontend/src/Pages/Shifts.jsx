@@ -497,7 +497,9 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
 // ═══════════════════════════════════════════════════════════════
 // DISCREPANCY PANEL — cross-store aware
 // ═══════════════════════════════════════════════════════════════
-function DiscrepancyPanel({ recon }) {
+// function DiscrepancyPanel({ recon }) {
+  function DiscrepancyPanel({ recon, manualAdjBalanced }) {
+
   if (!recon) return null;
 
   if (!recon.hasStartSnapshot) {
