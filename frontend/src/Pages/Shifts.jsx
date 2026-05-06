@@ -2551,7 +2551,6 @@ export const ShiftsPage = () => {
                         </td>
                         <td style={{ ...T.TD, textAlign: 'center' }}>
                           <button
-                            {/* onClick={() => printShiftPDF(shift)} */}
                             onClick={() => { printShiftPDF(shift).catch(console.error); }}
                             title="Download PDF"
                             style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 10px', background: '#eff6ff', color: '#2563eb', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
