@@ -867,49 +867,7 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   const newWalletsDuringShift = endWallets.filter(w => !startWalletIds.has(String(w.id)));
   const newGamesDuringShift = endGames.filter(g => !startGameIds.has(String(g.id)));
 
-  // Detect which wallets/games have actual transactions referencing them
-const walletIdsWithTxns = useMemo(() => {
-  const s = new Set();
-  shiftTxns.forEach(t => {
-    if (t.walletMethod && t.walletName) {
-      const w = endWallets.find(w => w.method === t.walletMethod && w.name === t.walletName);
-      if (w) s.add(String(w.id));
-    }
-  });
-  return s;
-}, [shiftTxns, endWallets]);
 
-const gameIdsWithTxns = useMemo(() => {
-  const s = new Set();
-  shiftTxns.forEach(t => {
-    if (t.gameName) {
-      const g = endGames.find(g => g.name === t.gameName);
-      if (g) s.add(String(g.id));
-    }
-  });
-  return s;
-}, [shiftTxns, endGames]);
-
-// Wallets that existed at shift start, have a nonzero delta, but NO transactions
-const manuallyEditedWallets = walletRows.filter(w =>
-  !w.isNew && !w.isRemoved &&
-  Math.abs(w.delta) > 0.01 &&
-  !walletIdsWithTxns.has(String(w.id))
-);
-
-// Games that existed at shift start, have a nonzero delta, but NO transactions
-const manuallyEditedGames = gameRows.filter(g =>
-  !g.isNew && !g.isRemoved &&
-  Math.abs(g.delta) > 0 &&
-  !gameIdsWithTxns.has(String(g.id))
-);
-
-// How much of the discrepancy is explained by manual edits
-const manualWalletAdj = r2(manuallyEditedWallets.reduce((s, w) => s + w.delta, 0));
-const manualGameAdj   = Math.round(manuallyEditedGames.reduce((s, g) => s + g.delta, 0));
-const adjWalletDisc   = r2(walletDisc - manualWalletAdj);
-const adjGameDisc     = Math.round(gameDisc - manualGameAdj);
-const manualAdjBalanced = Math.abs(adjWalletDisc) < 0.02 && Math.abs(adjGameDisc) < 2;
 
   // ── 6. Local discrepancy values (for wallet/game table cells) ─
   const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
@@ -959,6 +917,50 @@ const manualAdjBalanced = Math.abs(adjWalletDisc) < 0.02 && Math.abs(adjGameDisc
       .map(sg => ({ ...sg, startPts: Math.round(sg.pointStock), endPts: 0, isRemoved: true })),
   ];
 
+  // Detect which wallets/games have actual transactions referencing them
+const walletIdsWithTxns = useMemo(() => {
+  const s = new Set();
+  shiftTxns.forEach(t => {
+    if (t.walletMethod && t.walletName) {
+      const w = endWallets.find(w => w.method === t.walletMethod && w.name === t.walletName);
+      if (w) s.add(String(w.id));
+    }
+  });
+  return s;
+}, [shiftTxns, endWallets]);
+
+const gameIdsWithTxns = useMemo(() => {
+  const s = new Set();
+  shiftTxns.forEach(t => {
+    if (t.gameName) {
+      const g = endGames.find(g => g.name === t.gameName);
+      if (g) s.add(String(g.id));
+    }
+  });
+  return s;
+}, [shiftTxns, endGames]);
+
+// Wallets that existed at shift start, have a nonzero delta, but NO transactions
+const manuallyEditedWallets = walletRows.filter(w =>
+  !w.isNew && !w.isRemoved &&
+  Math.abs(w.delta) > 0.01 &&
+  !walletIdsWithTxns.has(String(w.id))
+);
+
+// Games that existed at shift start, have a nonzero delta, but NO transactions
+const manuallyEditedGames = gameRows.filter(g =>
+  !g.isNew && !g.isRemoved &&
+  Math.abs(g.delta) > 0 &&
+  !gameIdsWithTxns.has(String(g.id))
+);
+
+// How much of the discrepancy is explained by manual edits
+const manualWalletAdj = r2(manuallyEditedWallets.reduce((s, w) => s + w.delta, 0));
+const manualGameAdj   = Math.round(manuallyEditedGames.reduce((s, g) => s + g.delta, 0));
+const adjWalletDisc   = r2(walletDisc - manualWalletAdj);
+const adjGameDisc     = Math.round(gameDisc - manualGameAdj);
+const manualAdjBalanced = Math.abs(adjWalletDisc) < 0.02 && Math.abs(adjGameDisc) < 2;
+  
   // ── Submit ────────────────────────────────────────────────────
   const handleSubmit = async () => {
     setSubmitting(true);
