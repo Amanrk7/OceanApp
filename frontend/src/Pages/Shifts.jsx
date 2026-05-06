@@ -592,7 +592,11 @@ function DiscrepancyPanel({ recon }) {
             )}
           </div>
         )}
-
+{!effectiveAllOk && manualAdjBalanced && (
+    <div style={{ marginTop: '6px', fontSize: '11px', color: '#16a34a', fontWeight: '600' }}>
+      ✓ Discrepancy is fully explained by direct admin edits to wallet/game balances mid-shift.
+    </div>
+  )}
         {/* Real discrepancy detail */}
         {!effectiveAllOk && (
           <div style={{ fontSize: '11px', color: '#dc2626', lineHeight: 1.7 }}>
@@ -863,6 +867,50 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   const newWalletsDuringShift = endWallets.filter(w => !startWalletIds.has(String(w.id)));
   const newGamesDuringShift = endGames.filter(g => !startGameIds.has(String(g.id)));
 
+  // Detect which wallets/games have actual transactions referencing them
+const walletIdsWithTxns = useMemo(() => {
+  const s = new Set();
+  shiftTxns.forEach(t => {
+    if (t.walletMethod && t.walletName) {
+      const w = endWallets.find(w => w.method === t.walletMethod && w.name === t.walletName);
+      if (w) s.add(String(w.id));
+    }
+  });
+  return s;
+}, [shiftTxns, endWallets]);
+
+const gameIdsWithTxns = useMemo(() => {
+  const s = new Set();
+  shiftTxns.forEach(t => {
+    if (t.gameName) {
+      const g = endGames.find(g => g.name === t.gameName);
+      if (g) s.add(String(g.id));
+    }
+  });
+  return s;
+}, [shiftTxns, endGames]);
+
+// Wallets that existed at shift start, have a nonzero delta, but NO transactions
+const manuallyEditedWallets = walletRows.filter(w =>
+  !w.isNew && !w.isRemoved &&
+  Math.abs(w.delta) > 0.01 &&
+  !walletIdsWithTxns.has(String(w.id))
+);
+
+// Games that existed at shift start, have a nonzero delta, but NO transactions
+const manuallyEditedGames = gameRows.filter(g =>
+  !g.isNew && !g.isRemoved &&
+  Math.abs(g.delta) > 0 &&
+  !gameIdsWithTxns.has(String(g.id))
+);
+
+// How much of the discrepancy is explained by manual edits
+const manualWalletAdj = r2(manuallyEditedWallets.reduce((s, w) => s + w.delta, 0));
+const manualGameAdj   = Math.round(manuallyEditedGames.reduce((s, g) => s + g.delta, 0));
+const adjWalletDisc   = r2(walletDisc - manualWalletAdj);
+const adjGameDisc     = Math.round(gameDisc - manualGameAdj);
+const manualAdjBalanced = Math.abs(adjWalletDisc) < 0.02 && Math.abs(adjGameDisc) < 2;
+
   // ── 6. Local discrepancy values (for wallet/game table cells) ─
   const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
   const gameDisc = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
@@ -1031,6 +1079,53 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                   No start stock captured — included in end totals only.
                 </div>
               )}
+              {/* ── Manually edited wallet banner ── */}
+{manuallyEditedWallets.length > 0 && (
+  <div style={{
+    padding: '10px 14px',
+    background: '#eff6ff',
+    border: '1px solid #bfdbfe',
+    borderLeft: '4px solid #2563eb',
+    borderRadius: '8px',
+    fontSize: '12px',
+    color: '#1e40af',
+  }}>
+    <strong>⚙️ Wallet balance edited mid-shift:</strong>{' '}
+    {manuallyEditedWallets.map(w =>
+      `${w.method} — ${w.name} (${w.delta >= 0 ? '+' : ''}$${Math.abs(w.delta).toFixed(2)})`
+    ).join(', ')}.{' '}
+    This appears to be a direct admin balance edit — it is <em>not</em> counted in transaction totals.
+    {manualAdjBalanced && (
+      <span style={{ marginLeft: '8px', color: '#16a34a', fontWeight: '700' }}>
+        ✓ Accounts for the wallet discrepancy.
+      </span>
+    )}
+  </div>
+)}
+
+{/* ── Manually edited game banner ── */}
+{manuallyEditedGames.length > 0 && (
+  <div style={{
+    padding: '10px 14px',
+    background: '#f5f3ff',
+    border: '1px solid #c4b5fd',
+    borderLeft: '4px solid #7c3aed',
+    borderRadius: '8px',
+    fontSize: '12px',
+    color: '#4c1d95',
+  }}>
+    <strong>⚙️ Game stock edited mid-shift:</strong>{' '}
+    {manuallyEditedGames.map(g =>
+      `${g.name} (${g.delta >= 0 ? '+' : ''}${g.delta} pts)`
+    ).join(', ')}.{' '}
+    This appears to be a direct admin stock edit — it is <em>not</em> counted in transaction totals.
+    {manualAdjBalanced && (
+      <span style={{ marginLeft: '8px', color: '#16a34a', fontWeight: '700' }}>
+        ✓ Accounts for the points discrepancy.
+      </span>
+    )}
+  </div>
+)}
 
               {/* Cross-store notice */}
               {hasCrossStore && (
@@ -1111,6 +1206,9 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                                 {w.isNew && <Badge label="new mid-shift" color="#1d4ed8" bg="#dbeafe" />}
                                 {w.isRemoved && <Badge label="removed" color="#991b1b" bg="#fee2e2" />}
                                 {ci && !w.isNew && <Badge label="shared" color="#1d4ed8" bg="#dbeafe" />}
+                                {!w.isNew && !w.isRemoved && manuallyEditedWallets.find(mw => String(mw.id) === String(w.id)) && (
+    <Badge label="⚙️ manually edited" color="#1d4ed8" bg="#dbeafe" />
+  )}
                               </td>
                               {hasStartSnapshot && <td style={{ ...T.td, textAlign: 'right', color: '#64748b' }}>{w.isNew ? 'N/A' : `$${w.startBal.toFixed(2)}`}</td>}
                               <td style={{ ...T.td, textAlign: 'right', fontWeight: '600' }}>${w.endBal.toFixed(2)}</td>
@@ -1186,6 +1284,9 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                                 {g.isShared && <Badge label="shared" color="#7c3aed" bg="#ede9fe" />}
                                 {g.isNew && <Badge label="new mid-shift" color="#4c1d95" bg="#ede9fe" />}
                                 {g.isRemoved && <Badge label="removed" color="#991b1b" bg="#fee2e2" />}
+                                {!g.isNew && !g.isRemoved && manuallyEditedGames.find(mg => String(mg.id) === String(g.id)) && (
+    <Badge label="⚙️ manually edited" color="#4c1d95" bg="#ede9fe" />
+  )}
                               </td>
                               {hasStartSnapshot && <td style={{ ...T.td, textAlign: 'right', color: '#64748b' }}>{g.isNew ? 'N/A' : `${g.startPts} pts`}</td>}
                               <td style={{ ...T.td, textAlign: 'right', fontWeight: '600' }}>{g.endPts} pts</td>
@@ -1226,7 +1327,9 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
               </section>
 
               {/* Full discrepancy panel — reads cross-store from recon directly */}
-              <DiscrepancyPanel recon={recon} />
+              {/* <DiscrepancyPanel recon={recon} /> */}
+              <DiscrepancyPanel recon={recon} manualAdjBalanced={manualAdjBalanced} />
+
             </>
           ) : activeTab === 'transactions' ? (
             <>
