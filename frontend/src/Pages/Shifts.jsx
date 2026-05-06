@@ -1548,8 +1548,8 @@ async function printShiftPDF(shift) {
   const effortColor = !effort ? '#94a3b8' : effort >= 8 ? '#16a34a' : effort >= 5 ? '#d97706' : '#dc2626';
 
   // ── 4. Fetch live data (transactions, expenses, takeouts) ─────
-  const API_BASE = (typeof import !== 'undefined' && import.meta?.env?.VITE_API_URL) || 'http://localhost:3001/api';
-  const getStoreId = () => parseInt(localStorage.getItem('__obStoreId') || '1', 10);
+  // const API_BASE = (typeof import !== 'undefined' && import.meta?.env?.VITE_API_URL) || 'http://localhost:3001/api';
+  // const getStoreId = () => parseInt(localStorage.getItem('__obStoreId') || '1', 10);
   const fj = async (path) => {
     const token = localStorage.getItem('authToken');
     const r = await fetch(`${API_BASE}${path}`, {
