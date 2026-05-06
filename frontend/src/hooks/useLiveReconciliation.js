@@ -148,6 +148,8 @@ export function useLiveReconciliation(shiftId, shiftStartTime) {
           'reconciliation_changed',
           'shared_game_updated',
           'shared_wallet_updated',
+            'wallet_updated',   // ← ADD: fires when admin patches a wallet balance
+  'game_updated', 
         ];
         if (triggers.includes(msg.type)) fetchAll();
       } catch (_) {}
