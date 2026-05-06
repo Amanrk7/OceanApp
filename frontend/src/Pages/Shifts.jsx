@@ -1385,7 +1385,6 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
               Review your shift balances and submit your closing report
             </p>
           </div>
-          // Inside the modal header div, after the subtitle:
           {isLiveRefreshing && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: '5px',
