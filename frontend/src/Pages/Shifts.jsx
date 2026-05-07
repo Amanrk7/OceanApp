@@ -888,18 +888,32 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   }, [shiftTxns, endGames]);
 
   // Wallets that existed at shift start, have a nonzero delta, but NO transactions
-  const manuallyEditedWallets = walletRows.filter(w =>
-    !w.isNew && !w.isRemoved &&
-    Math.abs(w.delta) > 0.01 &&
-    !walletIdsWithTxns.has(String(w.id))
-  );
+  // const manuallyEditedWallets = walletRows.filter(w =>
+  //   !w.isNew && !w.isRemoved &&
+  //   Math.abs(w.delta) > 0.01 &&
+  //   !walletIdsWithTxns.has(String(w.id))
+  // );
 
-  // Games that existed at shift start, have a nonzero delta, but NO transactions
-  const manuallyEditedGames = gameRows.filter(g =>
-    !g.isNew && !g.isRemoved &&
-    Math.abs(g.delta) > 0 &&
-    !gameIdsWithTxns.has(String(g.id))
-  );
+  // // Games that existed at shift start, have a nonzero delta, but NO transactions
+  // const manuallyEditedGames = gameRows.filter(g =>
+  //   !g.isNew && !g.isRemoved &&
+  //   Math.abs(g.delta) > 0 &&
+  //   !gameIdsWithTxns.has(String(g.id))
+  // );
+
+  const manuallyEditedWallets = walletRows.filter(w =>
+  !w.isNew && !w.isRemoved &&
+  Math.abs(w.delta) > 0.01 &&
+  !walletIdsWithTxns.has(String(w.id)) &&
+  !crossWalletInfo[String(w.id)]   // ← cross-store activity explains it; NOT an admin edit
+);
+
+const manuallyEditedGames = gameRows.filter(g =>
+  !g.isNew && !g.isRemoved &&
+  Math.abs(g.delta) > 0 &&
+  !gameIdsWithTxns.has(String(g.id)) &&
+  !crossGameInfo[String(g.id)]     // ← cross-store activity explains it; NOT an admin edit
+);
 
   // How much of the discrepancy is explained by manual edits
   const manualWalletAdj = r2(manuallyEditedWallets.reduce((s, w) => s + w.delta, 0));
