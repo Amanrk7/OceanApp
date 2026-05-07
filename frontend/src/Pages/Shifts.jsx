@@ -525,7 +525,9 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
 
   // Use cross-adjusted values when cross-store activity is present
   // const effectiveAllOk = hasCrossStore ? (recon.crossAdjBalanced ?? false) : recon.isBalanced;
-    const displayAsOk = (hasCrossStore ? (recon.crossAdjBalanced ?? false) : recon.isBalanced) || manualAdjBalanced;
+    // const displayAsOk = (hasCrossStore ? (recon.crossAdjBalanced ?? false) : recon.isBalanced) || manualAdjBalanced;
+    const effectiveAllOk = ((hasCrossStore ? (recon.crossAdjBalanced ?? false) : recon.isBalanced) || manualAdjBalanced) ?? false;
+
 
   const effectiveWalletOk = hasCrossStore ? crossAdjWalletBal : recon.walletBalanced;
   const effectiveGameOk = hasCrossStore ? crossAdjGameBal : recon.gameBalanced;
