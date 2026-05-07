@@ -1253,50 +1253,57 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                         const ci = crossGameInfo[g.id];
                         return (
                           <React.Fragment key={g.id}>
-                            <tr style={{ background: g.isNew ? '#f5f3ff' : g.isRemoved ? '#fef2f2' : g.isShared ? '#faf5ff' : 'transparent' }}>
+                            <tr style={{ background: g.isNew ? '#f5f3ff' : g.isRemoved ? '#fef2f2' : ci ? '#f5f0ff' : 'transparent' }}>
                               <td style={T.td}>
                                 <b>{g.name}</b>
-                                {g.isShared && <Badge label="shared" color="#7c3aed" bg="#ede9fe" />}
                                 {g.isNew && <Badge label="new mid-shift" color="#4c1d95" bg="#ede9fe" />}
                                 {g.isRemoved && <Badge label="removed" color="#991b1b" bg="#fee2e2" />}
+                                {ci && !g.isNew && <Badge label="shared" color="#7c3aed" bg="#ede9fe" />}
                                 {!g.isNew && !g.isRemoved && manuallyEditedGames.find(mg => String(mg.id) === String(g.id)) && (
                                   <Badge label="⚙️ manually edited" color="#4c1d95" bg="#ede9fe" />
                                 )}
                               </td>
-                              {hasStartSnapshot && <td style={{ ...T.td, textAlign: 'right', color: '#64748b' }}>{g.isNew ? 'N/A' : `${g.startPts} pts`}</td>}
+                              {hasStartSnapshot && (
+                                <td style={{ ...T.td, textAlign: 'right', color: '#64748b' }}>
+                                  {g.isNew ? 'N/A' : `${g.startPts} pts`}
+                                </td>
+                              )}
                               <td style={{ ...T.td, textAlign: 'right', fontWeight: '600' }}>{g.endPts} pts</td>
                               {hasStartSnapshot && (
-  <td style={{ ...T.td, textAlign: 'right', fontWeight: '700' }}>
-    {g.isNew ? (
-      <span style={{ fontSize: '11px', color: '#94a3b8' }}>new</span>
-    ) : (() => {
-      const isManualG = manuallyEditedGames.find(mg => String(mg.id) === String(g.id));
-      return (
-        <div>
-          <span style={{ color: clrPts(delta), fontFamily: 'monospace' }}>
-            {delta < 0 ? '↓ ' : delta > 0 ? '↑ +' : '→ '}
-            {Math.abs(delta)} pts
-          </span>
-          {isManualG && (
-            <div style={{ fontSize: '10px', color: '#7c3aed', marginTop: '2px' }}>⚙️ edited directly</div>
-          )}
-          {ci && ci.otherPts > 0 && (
-            <div style={{ fontSize: '10px', color: '#7c3aed', marginTop: '1px' }}>
-              yours: {ci.myPts} pts · other: {Math.round(ci.otherPts)} pts
-            </div>
-          )}
-        </div>
-      );
-    })()}
-  </td>
-)}
+                                <td style={{ ...T.td, textAlign: 'right', fontWeight: '700' }}>
+                                  {g.isNew ? (
+                                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>new</span>
+                                  ) : (() => {
+                                    const isManualG = manuallyEditedGames.find(mg => String(mg.id) === String(g.id));
+                                    return (
+                                      <div>
+                                        <span style={{ color: clrPts(delta), fontFamily: 'monospace' }}>
+                                          {delta < 0 ? '↓ ' : delta > 0 ? '↑ +' : '→ '}
+                                          {Math.abs(delta)} pts
+                                        </span>
+                                        {isManualG && (
+                                          <div style={{ fontSize: '10px', color: '#7c3aed', marginTop: '2px' }}>⚙️ edited directly</div>
+                                        )}
+                                        {ci && !g.isNew && (
+                                          <div style={{ fontSize: '10px', color: '#7c3aed', marginTop: '1px' }}>
+                                            yours: {ci.myPts >= 0 ? '+' : ''}{ci.myPts} pts
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+                                </td>
+                              )}
                             </tr>
                           </React.Fragment>
                         );
                       })}
+
                       <tr style={{ background: '#f8fafc' }}>
                         <td style={{ ...T.td, fontWeight: '700' }}>Total</td>
-                        {hasStartSnapshot && <td style={{ ...T.td, textAlign: 'right', fontWeight: '600' }}>{startTotalG} pts</td>}
+                        {hasStartSnapshot && (
+                          <td style={{ ...T.td, textAlign: 'right', fontWeight: '600' }}>{startTotalG} pts</td>
+                        )}
                         <td style={{ ...T.td, textAlign: 'right', fontWeight: '700' }}>{endTotalG} pts</td>
                         {hasStartSnapshot && (
                           <td style={{ ...T.td, textAlign: 'right', fontWeight: '700', color: clrPts(gameChange) }}>
@@ -2656,38 +2663,38 @@ export const ShiftsPage = () => {
                   const totProf = r2(totDep - totCO);
                   const totDur = completedShifts.reduce((s, sh) => s + (sh.duration ?? 0), 0);
                   return (
-  <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
-    {/* Label — spans Team (admin only) + Date&Time */}
-    <td
-      style={{ ...T.TD, fontWeight: '700', color: '#374151' }}
-      colSpan={isAdmin ? 2 : 1}
-    >
-      Totals ({completedShifts.length} shifts · {totDur} min)
-    </td>
+                    <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
+                      {/* Label — spans Team (admin only) + Date&Time */}
+                      <td
+                        style={{ ...T.TD, fontWeight: '700', color: '#374151' }}
+                        colSpan={isAdmin ? 2 : 1}
+                      >
+                        Totals ({completedShifts.length} shifts · {totDur} min)
+                      </td>
 
-    {/* P&L column — net + breakdown sub-line */}
-    <td style={T.TD}>
-      <p style={{ margin: '0 0 1px', fontSize: '13px', fontWeight: '800', color: totProf >= 0 ? '#16a34a' : '#dc2626' }}>
-        {totProf >= 0 ? '+' : ''}${Math.abs(totProf).toFixed(2)}
-      </p>
-      <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8' }}>
-        ↑${totDep.toFixed(0)} ↓${totCO.toFixed(0)}
-      </p>
-    </td>
+                      {/* P&L column — net + breakdown sub-line */}
+                      <td style={T.TD}>
+                        <p style={{ margin: '0 0 1px', fontSize: '13px', fontWeight: '800', color: totProf >= 0 ? '#16a34a' : '#dc2626' }}>
+                          {totProf >= 0 ? '+' : ''}${Math.abs(totProf).toFixed(2)}
+                        </p>
+                        <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8' }}>
+                          ↑${totDep.toFixed(0)} ↓${totCO.toFixed(0)}
+                        </p>
+                      </td>
 
-    {/* Activity — bonus total if any */}
-    <td style={T.TD}>
-      {totBon > 0 && (
-        <span style={{ padding: '2px 6px', background: '#fff7ed', borderRadius: '5px', fontSize: '10px', fontWeight: '600', color: '#c2410c' }}>
-          ${totBon.toFixed(0)} bonus
-        </span>
-      )}
-    </td>
+                      {/* Activity — bonus total if any */}
+                      <td style={T.TD}>
+                        {totBon > 0 && (
+                          <span style={{ padding: '2px 6px', background: '#fff7ed', borderRadius: '5px', fontSize: '10px', fontWeight: '600', color: '#c2410c' }}>
+                            ${totBon.toFixed(0)} bonus
+                          </span>
+                        )}
+                      </td>
 
-    {/* Effort / Rating / Balance / PDF — empty */}
-    <td style={T.TD} /><td style={T.TD} /><td style={T.TD} /><td style={T.TD} />
-  </tr>
-);
+                      {/* Effort / Rating / Balance / PDF — empty */}
+                      <td style={T.TD} /><td style={T.TD} /><td style={T.TD} /><td style={T.TD} />
+                    </tr>
+                  );
                 })()}
               </table>
             </div>
