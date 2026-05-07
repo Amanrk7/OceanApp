@@ -1266,15 +1266,30 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
                               {hasStartSnapshot && <td style={{ ...T.td, textAlign: 'right', color: '#64748b' }}>{g.isNew ? 'N/A' : `${g.startPts} pts`}</td>}
                               <td style={{ ...T.td, textAlign: 'right', fontWeight: '600' }}>{g.endPts} pts</td>
                               {hasStartSnapshot && (
-                                <td style={{ ...T.td, textAlign: 'right', fontWeight: '700', color: g.isNew ? '#94a3b8' : clrPts(delta) }}>
-                                  {g.isNew ? 'N/A' : `${delta >= 0 ? '+' : ''}${delta} pts`}
-                                  {ci && ci.otherPts > 0 && !g.isNew && (
-                                    <div style={{ fontSize: '10px', color: '#7c3aed' }}>
-                                      this: {ci.myPts} pts · other: {Math.round(ci.otherPts)} pts
-                                    </div>
-                                  )}
-                                </td>
-                              )}
+  <td style={{ ...T.td, textAlign: 'right', fontWeight: '700' }}>
+    {g.isNew ? (
+      <span style={{ fontSize: '11px', color: '#94a3b8' }}>new</span>
+    ) : (() => {
+      const isManualG = manuallyEditedGames.find(mg => String(mg.id) === String(g.id));
+      return (
+        <div>
+          <span style={{ color: clrPts(delta), fontFamily: 'monospace' }}>
+            {delta < 0 ? '↓ ' : delta > 0 ? '↑ +' : '→ '}
+            {Math.abs(delta)} pts
+          </span>
+          {isManualG && (
+            <div style={{ fontSize: '10px', color: '#7c3aed', marginTop: '2px' }}>⚙️ edited directly</div>
+          )}
+          {ci && ci.otherPts > 0 && (
+            <div style={{ fontSize: '10px', color: '#7c3aed', marginTop: '1px' }}>
+              yours: {ci.myPts} pts · other: {Math.round(ci.otherPts)} pts
+            </div>
+          )}
+        </div>
+      );
+    })()}
+  </td>
+)}
                             </tr>
                           </React.Fragment>
                         );
@@ -2641,21 +2656,38 @@ export const ShiftsPage = () => {
                   const totProf = r2(totDep - totCO);
                   const totDur = completedShifts.reduce((s, sh) => s + (sh.duration ?? 0), 0);
                   return (
-                    <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
-                      {/* <td style={{ ...T.TD, fontWeight: '700', color: '#374151' }} colSpan={3}>
-                        Totals ({completedShifts.length} shifts · {totDur} min)
-                      </td> */}
-                      <td style={{ ...T.TD, fontWeight: '700', color: '#374151' }} colSpan={isAdmin ? 4 : 3}>
-                        Totals ({completedShifts.length} shifts · {totDur} min)
-                      </td>
-                      <td style={{ ...T.TD, textAlign: 'right', fontWeight: '800', color: '#16a34a' }}>${totDep.toFixed(2)}</td>
-                      <td style={{ ...T.TD, textAlign: 'right', fontWeight: '800', color: '#dc2626' }}>${totCO.toFixed(2)}</td>
-                      <td style={{ ...T.TD, textAlign: 'right', fontWeight: '800', color: totProf >= 0 ? '#16a34a' : '#dc2626' }}>{totProf >= 0 ? '+' : ''}${Math.abs(totProf).toFixed(2)}</td>
-                      <td style={{ ...T.TD, textAlign: 'right', fontWeight: '800', color: '#c2410c' }}>${totBon.toFixed(2)}</td>
-                      <td colSpan={4} style={T.TD}></td>
+  <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
+    {/* Label — spans Team (admin only) + Date&Time */}
+    <td
+      style={{ ...T.TD, fontWeight: '700', color: '#374151' }}
+      colSpan={isAdmin ? 2 : 1}
+    >
+      Totals ({completedShifts.length} shifts · {totDur} min)
+    </td>
 
-                    </tr>
-                  );
+    {/* P&L column — net + breakdown sub-line */}
+    <td style={T.TD}>
+      <p style={{ margin: '0 0 1px', fontSize: '13px', fontWeight: '800', color: totProf >= 0 ? '#16a34a' : '#dc2626' }}>
+        {totProf >= 0 ? '+' : ''}${Math.abs(totProf).toFixed(2)}
+      </p>
+      <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8' }}>
+        ↑${totDep.toFixed(0)} ↓${totCO.toFixed(0)}
+      </p>
+    </td>
+
+    {/* Activity — bonus total if any */}
+    <td style={T.TD}>
+      {totBon > 0 && (
+        <span style={{ padding: '2px 6px', background: '#fff7ed', borderRadius: '5px', fontSize: '10px', fontWeight: '600', color: '#c2410c' }}>
+          ${totBon.toFixed(0)} bonus
+        </span>
+      )}
+    </td>
+
+    {/* Effort / Rating / Balance / PDF — empty */}
+    <td style={T.TD} /><td style={T.TD} /><td style={T.TD} /><td style={T.TD} />
+  </tr>
+);
                 })()}
               </table>
             </div>
