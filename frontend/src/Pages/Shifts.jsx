@@ -524,7 +524,9 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
   const crossAdjGameBal = recon.crossAdjGameBal ?? recon.gameBalanced;
 
   // Use cross-adjusted values when cross-store activity is present
-  const effectiveAllOk = hasCrossStore ? (recon.crossAdjBalanced ?? false) : recon.isBalanced;
+  // const effectiveAllOk = hasCrossStore ? (recon.crossAdjBalanced ?? false) : recon.isBalanced;
+    const displayAsOk = (hasCrossStore ? (recon.crossAdjBalanced ?? false) : recon.isBalanced) || manualAdjBalanced;
+
   const effectiveWalletOk = hasCrossStore ? crossAdjWalletBal : recon.walletBalanced;
   const effectiveGameOk = hasCrossStore ? crossAdjGameBal : recon.gameBalanced;
   const effectiveWalletDisc = hasCrossStore ? crossAdjWalletDisc : wd;
@@ -594,11 +596,27 @@ const CheckinModal = ({ onConfirm, onCancel }) => {
             )}
           </div>
         )}
+{/* // {!effectiveAllOk && manualAdjBalanced && (
+//     <div style={{ marginTop: '6px', fontSize: '11px', color: '#16a34a', fontWeight: '600' }}>
+//       ✓ Discrepancy is fully explained by direct admin edits to wallet/game balances mid-shift.
+//     </div>
+//   )} */}
+        {/* Inside DiscrepancyPanel, replace the existing manualAdjBalanced inline span with: */}
+
 {!effectiveAllOk && manualAdjBalanced && (
-    <div style={{ marginTop: '6px', fontSize: '11px', color: '#16a34a', fontWeight: '600' }}>
-      ✓ Discrepancy is fully explained by direct admin edits to wallet/game balances mid-shift.
-    </div>
-  )}
+  <div style={{
+    marginTop: '10px', padding: '10px 14px',
+    background: '#f0fdf4', border: '1px solid #86efac',
+    borderLeft: '4px solid #16a34a', borderRadius: '8px',
+    fontSize: '12px', color: '#166534',
+  }}>
+    <b>✓ Discrepancy explained — no real issue.</b>
+    {' '}The balance difference was caused by a direct admin edit to
+    wallet/game balances (not through a transaction). This is expected
+    when an admin manually corrects a balance outside the transaction
+    system. No investigation needed.
+  </div>
+)}
         {/* Real discrepancy detail */}
         {!effectiveAllOk && (
           <div style={{ fontSize: '11px', color: '#dc2626', lineHeight: 1.7 }}>
@@ -899,25 +917,53 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   const startWalletSnap = startSnapshot?.walletSnapshot ?? [];
   const startGameSnap = startSnapshot?.gameSnapshot ?? [];
 
-  const walletRows = [
-    ...endWallets.map(w => {
-      const s = startWalletSnap.find(sw => sw.id === w.id);
-      return { ...w, startBal: r2(s?.balance ?? 0), endBal: r2(w.balance ?? 0), isNew: !s };
-    }),
-    ...startWalletSnap
-      .filter(sw => !endWallets.find(w => w.id === sw.id))
-      .map(sw => ({ ...sw, startBal: r2(sw.balance), endBal: 0, isRemoved: true })),
-  ];
+  // const walletRows = [
+  //   ...endWallets.map(w => {
+  //     const s = startWalletSnap.find(sw => sw.id === w.id);
+  //     return { ...w, startBal: r2(s?.balance ?? 0), endBal: r2(w.balance ?? 0), isNew: !s };
+  //   }),
+  //   ...startWalletSnap
+  //     .filter(sw => !endWallets.find(w => w.id === sw.id))
+  //     .map(sw => ({ ...sw, startBal: r2(sw.balance), endBal: 0, isRemoved: true })),
+  // ];
 
-  const gameRows = [
-    ...endGames.map(g => {
-      const s = startGameSnap.find(sg => sg.id === g.id);
-      return { ...g, startPts: Math.round(s?.pointStock ?? 0), endPts: Math.round(g.pointStock ?? 0), isNew: !s };
-    }),
-    ...startGameSnap
-      .filter(sg => !endGames.find(g => g.id === sg.id))
-      .map(sg => ({ ...sg, startPts: Math.round(sg.pointStock), endPts: 0, isRemoved: true })),
-  ];
+  // const gameRows = [
+  //   ...endGames.map(g => {
+  //     const s = startGameSnap.find(sg => sg.id === g.id);
+  //     return { ...g, startPts: Math.round(s?.pointStock ?? 0), endPts: Math.round(g.pointStock ?? 0), isNew: !s };
+  //   }),
+  //   ...startGameSnap
+  //     .filter(sg => !endGames.find(g => g.id === sg.id))
+  //     .map(sg => ({ ...sg, startPts: Math.round(sg.pointStock), endPts: 0, isRemoved: true })),
+  // ];
+
+  // REPLACE the walletRows / gameRows builders with these:
+
+const walletRows = [
+  ...endWallets.map(w => {
+    const s = startWalletSnap.find(sw => sw.id === w.id);
+    const startBal = r2(s?.balance ?? 0);
+    const endBal   = r2(w.balance ?? 0);
+    return { ...w, startBal, endBal, delta: r2(endBal - startBal), isNew: !s };
+  }),
+  ...startWalletSnap
+    .filter(sw => !endWallets.find(w => w.id === sw.id))
+    .map(sw => ({ ...sw, startBal: r2(sw.balance), endBal: 0,
+                  delta: r2(-sw.balance), isRemoved: true })),
+];
+
+const gameRows = [
+  ...endGames.map(g => {
+    const s = startGameSnap.find(sg => sg.id === g.id);
+    const startPts = Math.round(s?.pointStock ?? 0);
+    const endPts   = Math.round(g.pointStock ?? 0);
+    return { ...g, startPts, endPts, delta: endPts - startPts, isNew: !s };
+  }),
+  ...startGameSnap
+    .filter(sg => !endGames.find(g => g.id === sg.id))
+    .map(sg => ({ ...sg, startPts: Math.round(sg.pointStock), endPts: 0,
+                  delta: -Math.round(sg.pointStock), isRemoved: true })),
+];
 
   // Detect which wallets/games have actual transactions referencing them
 const walletIdsWithTxns = useMemo(() => {
