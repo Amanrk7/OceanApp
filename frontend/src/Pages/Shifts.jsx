@@ -547,16 +547,96 @@ function DiscrepancyPanel({ recon, manualAdjBalanced }) {
   }
 
   // ── Receipt rows
+  const partialPayments = bd.partialPayments ?? 0;
+  const crossPtsReloaded = bd.crossPointsReloaded ?? 0;
+  const crossWalletExpense = bd.crossWalletExpensePaid ?? 0;
+  const crossWalletTakeout = bd.crossWalletTakeoutPaid ?? 0;
+
   const receiptRows = [
-    { label: 'Deposits', wallet: `+$${(bd.deposits ?? 0).toFixed(2)}`, pts: `−${Math.round(bd.deposits ?? 0)} pts`, wc: '#16a34a', gc: '#7c3aed' },
-    { label: 'Cashouts (completed)', wallet: `−$${(bd.completedCashouts ?? 0).toFixed(2)}`, pts: `+${Math.round(bd.completedCashouts ?? 0)} pts`, wc: '#dc2626', gc: '#16a34a' },
-    ...(bd.totalFees > 0.001 ? [{ label: 'Fees', wallet: `−$${(bd.totalFees ?? 0).toFixed(2)}`, pts: '—', wc: '#f59e0b', gc: '#94a3b8' }] : []),
-    ...(bd.bonuses > 0.001 ? [{ label: 'Bonuses granted', wallet: '—', pts: `−${Math.round(bd.bonuses ?? 0)} pts`, wc: '#94a3b8', gc: '#c2410c' }] : []),
-    ...(bd.pointsReloaded > 0.001 ? [{ label: 'Points reloaded', wallet: '—', pts: `+${Math.round(bd.pointsReloaded ?? 0)} pts`, wc: '#94a3b8', gc: '#16a34a' }] : []),
-    ...(bd.expenseWalletPaid > 0.001 ? [{ label: 'Expenses paid', wallet: `−$${(bd.expenseWalletPaid ?? 0).toFixed(2)}`, pts: '—', wc: '#b45309', gc: '#94a3b8' }] : []),
-    ...(bd.takeoutWalletPaid > 0.001 ? [{ label: 'Profit takeouts', wallet: `−$${(bd.takeoutWalletPaid ?? 0).toFixed(2)}`, pts: '—', wc: '#991b1b', gc: '#94a3b8' }] : []),
-    ...(hasCrossStore && Math.abs(totalCrossWalletAmt) > 0.01 ? [{ label: 'Other stores (shared wallets)', wallet: `${totalCrossWalletAmt >= 0 ? '+' : ''}$${Math.abs(totalCrossWalletAmt).toFixed(2)}`, pts: '—', wc: '#7c3aed', gc: '#94a3b8', cross: true }] : []),
-    ...(hasCrossStore && Math.abs(totalCrossGamePts) >= 1 ? [{ label: 'Other stores (shared games)', wallet: '—', pts: `−${Math.round(totalCrossGamePts)} pts`, wc: '#94a3b8', gc: '#7c3aed', cross: true }] : []),
+    {
+      label: 'Deposits',
+      wallet: `+$${(bd.deposits ?? 0).toFixed(2)}`,
+      pts: `−${Math.round(bd.deposits ?? 0)} pts`,
+      wc: '#16a34a', gc: '#7c3aed',
+    },
+    {
+      label: 'Cashouts (completed)',
+      wallet: `−$${(bd.completedCashouts ?? 0).toFixed(2)}`,
+      pts: `+${Math.round(bd.completedCashouts ?? 0)} pts`,
+      wc: '#dc2626', gc: '#16a34a',
+    },
+    ...(partialPayments > 0 ? [{
+      label: `Partial payments (${(bd.partiallyPaidCashouts ?? []).length} cashouts)`,
+      wallet: `−$${partialPayments.toFixed(2)}`,
+      pts: `+${Math.round(partialPayments)} pts`,
+      wc: '#dc2626', gc: '#16a34a',
+      info: true,
+    }] : []),
+    ...(bd.totalFees > 0.001 ? [{
+      label: 'Fees',
+      wallet: `−$${(bd.totalFees ?? 0).toFixed(2)}`,
+      pts: '—',
+      wc: '#f59e0b', gc: '#94a3b8',
+    }] : []),
+    ...(bd.bonuses > 0.001 ? [{
+      label: 'Bonuses granted',
+      wallet: '—',
+      pts: `−${Math.round(bd.bonuses ?? 0)} pts`,
+      wc: '#94a3b8', gc: '#c2410c',
+    }] : []),
+    ...(bd.pointsReloaded > 0.001 ? [{
+      label: 'Points reloaded (this store)',
+      wallet: '—',
+      pts: `+${Math.round(bd.pointsReloaded ?? 0)} pts`,
+      wc: '#94a3b8', gc: '#16a34a',
+    }] : []),
+    ...(crossPtsReloaded > 0 ? [{
+      label: 'Points reloaded (other stores — shared game)',
+      wallet: '—',
+      pts: `+${crossPtsReloaded} pts`,
+      wc: '#94a3b8', gc: '#7c3aed',
+      cross: true,
+    }] : []),
+    ...(bd.expenseWalletPaid > 0.001 ? [{
+      label: 'Expense payments (this store)',
+      wallet: `−$${(bd.expenseWalletPaid ?? 0).toFixed(2)}`,
+      pts: '—',
+      wc: '#b45309', gc: '#94a3b8',
+    }] : []),
+    ...(crossWalletExpense > 0 ? [{
+      label: 'Expense payments (other stores — shared wallet)',
+      wallet: `−$${crossWalletExpense.toFixed(2)}`,
+      pts: '—',
+      wc: '#b45309', gc: '#94a3b8',
+      cross: true,
+    }] : []),
+    ...(bd.takeoutWalletPaid > 0.001 ? [{
+      label: 'Profit takeouts (this store)',
+      wallet: `−$${(bd.takeoutWalletPaid ?? 0).toFixed(2)}`,
+      pts: '—',
+      wc: '#991b1b', gc: '#94a3b8',
+    }] : []),
+    ...(crossWalletTakeout > 0 ? [{
+      label: 'Profit takeouts (other stores — shared wallet)',
+      wallet: `−$${crossWalletTakeout.toFixed(2)}`,
+      pts: '—',
+      wc: '#991b1b', gc: '#94a3b8',
+      cross: true,
+    }] : []),
+    ...(hasCrossStore && Math.abs(totalCrossWalletAmt) > 0.01 ? [{
+      label: 'Other store transactions (shared wallets)',
+      wallet: `${totalCrossWalletAmt >= 0 ? '+' : ''}$${Math.abs(totalCrossWalletAmt).toFixed(2)}`,
+      pts: '—',
+      wc: '#7c3aed', gc: '#94a3b8',
+      cross: true,
+    }] : []),
+    ...(hasCrossStore && Math.abs(totalCrossGamePts) >= 1 ? [{
+      label: 'Other store transactions (shared games)',
+      wallet: '—',
+      pts: `−${Math.round(totalCrossGamePts)} pts`,
+      wc: '#94a3b8', gc: '#7c3aed',
+      cross: true,
+    }] : []),
   ];
 
   const expTotal = (bd.expenseWalletPaid ?? 0) + (bd.takeoutWalletPaid ?? 0);
@@ -690,6 +770,26 @@ function DiscrepancyPanel({ recon, manualAdjBalanced }) {
             </tbody>
           </table>
         </details>
+      )}
+
+      {/* Partial payment detail */}
+      {(bd.partiallyPaidCashouts ?? []).length > 0 && (
+        <div style={{ padding: '12px 16px', background: '#fef9c3', border: '1px solid #fde68a', borderLeft: '4px solid #f59e0b', borderRadius: '8px', fontSize: '12px', color: '#854d0e' }}>
+          <div style={{ fontWeight: '700', marginBottom: '6px' }}>
+            ⏳ {bd.partiallyPaidCashouts.length} partially paid cashout{bd.partiallyPaidCashouts.length > 1 ? 's' : ''} — wallet already debited
+          </div>
+          {bd.partiallyPaidCashouts.map(c => (
+            <div key={c.id} style={{ display: 'flex', gap: '16px', fontSize: '11px', padding: '4px 0', borderTop: '1px solid #fde68a', flexWrap: 'wrap' }}>
+              <span style={{ color: '#92400e' }}>TXN #{c.id}</span>
+              <span>Total: <b>${c.amount.toFixed(2)}</b></span>
+              <span style={{ color: '#dc2626' }}>Paid: <b>−${c.paidAmount.toFixed(2)}</b></span>
+              <span style={{ color: '#16a34a' }}>Remaining: <b>${c.remaining.toFixed(2)}</b></span>
+            </div>
+          ))}
+          <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#92400e' }}>
+            These are included in the formula above. The remaining ${(bd.partiallyPaidCashouts.reduce((s, c) => s + c.remaining, 0)).toFixed(2)} will show when fully approved.
+          </p>
+        </div>
       )}
 
       {/* ── Pending cashout ── */}
@@ -902,18 +1002,18 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   // );
 
   const manuallyEditedWallets = walletRows.filter(w =>
-  !w.isNew && !w.isRemoved &&
-  Math.abs(w.delta) > 0.01 &&
-  !walletIdsWithTxns.has(String(w.id)) &&
-  !crossWalletInfo[String(w.id)]   // ← cross-store activity explains it; NOT an admin edit
-);
+    !w.isNew && !w.isRemoved &&
+    Math.abs(w.delta) > 0.01 &&
+    !walletIdsWithTxns.has(String(w.id)) &&
+    !crossWalletInfo[String(w.id)]   // ← cross-store activity explains it; NOT an admin edit
+  );
 
-const manuallyEditedGames = gameRows.filter(g =>
-  !g.isNew && !g.isRemoved &&
-  Math.abs(g.delta) > 0 &&
-  !gameIdsWithTxns.has(String(g.id)) &&
-  !crossGameInfo[String(g.id)]     // ← cross-store activity explains it; NOT an admin edit
-);
+  const manuallyEditedGames = gameRows.filter(g =>
+    !g.isNew && !g.isRemoved &&
+    Math.abs(g.delta) > 0 &&
+    !gameIdsWithTxns.has(String(g.id)) &&
+    !crossGameInfo[String(g.id)]     // ← cross-store activity explains it; NOT an admin edit
+  );
 
   // How much of the discrepancy is explained by manual edits
   const manualWalletAdj = r2(manuallyEditedWallets.reduce((s, w) => s + w.delta, 0));
@@ -1028,18 +1128,46 @@ const manuallyEditedGames = gameRows.filter(g =>
           ) : activeTab === 'reconciliation' ? (
             <>
               {/* Mid-shift banners */}
-              {newWalletsDuringShift.length > 0 && (
-                <div style={{ padding: '10px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderLeft: '4px solid #2563eb', borderRadius: '8px', fontSize: '12px', color: '#1e40af' }}>
-                  <strong>🆕 New wallets added mid-shift:</strong>{' '}
-                  {newWalletsDuringShift.map(w => `${w.method} — ${w.name} ($${r2(w.balance).toFixed(2)})`).join(', ')}.
-                  Their opening balances were not captured — included in current totals only.
-                </div>
-              )}
-              {newGamesDuringShift.length > 0 && (
-                <div style={{ padding: '10px 14px', background: '#f5f3ff', border: '1px solid #c4b5fd', borderLeft: '4px solid #7c3aed', borderRadius: '8px', fontSize: '12px', color: '#4c1d95' }}>
-                  <strong>🆕 New games added mid-shift:</strong>{' '}
-                  {newGamesDuringShift.map(g => `${g.name} (${Math.round(g.pointStock)} pts)`).join(', ')}.
-                  No start stock captured — included in end totals only.
+              {(newWalletsDuringShift.length > 0 || newGamesDuringShift.length > 0) && (
+                <div style={{ border: '1px solid #bfdbfe', borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{ padding: '10px 14px', background: '#eff6ff', borderBottom: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px' }}>🆕</span>
+                    <span style={{ fontWeight: '700', fontSize: '12.5px', color: '#1e40af' }}>
+                      Resources added mid-shift — not in opening snapshot
+                    </span>
+                  </div>
+                  <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0f7ff' }}>
+                    {newWalletsDuringShift.map(w => (
+                      <div key={w.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', padding: '6px 10px', background: '#fff', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
+                        <span>
+                          <b style={{ color: '#1e40af' }}>💳 {w.method} — {w.name}</b>
+                        </span>
+                        <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#64748b' }}>
+                          <span>Current balance: <b style={{ color: '#16a34a' }}>${r2(w.balance).toFixed(2)}</b></span>
+                          <span style={{ color: '#2563eb', fontWeight: '600' }}>
+                            ⚠️ Adding ${r2(w.balance).toFixed(2)} to end wallet total only
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    {newGamesDuringShift.map(g => (
+                      <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', padding: '6px 10px', background: '#fff', borderRadius: '6px', border: '1px solid #c4b5fd' }}>
+                        <span>
+                          <b style={{ color: '#4c1d95' }}>🎮 {g.name}</b>
+                          {g.isShared && <span style={{ marginLeft: '6px', fontSize: '10px', background: '#ede9fe', color: '#7c3aed', padding: '1px 5px', borderRadius: '4px' }}>shared</span>}
+                        </span>
+                        <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#64748b' }}>
+                          <span>Current stock: <b style={{ color: '#7c3aed' }}>{Math.round(g.pointStock)} pts</b></span>
+                          <span style={{ color: '#7c3aed', fontWeight: '600' }}>
+                            ⚠️ Adding {Math.round(g.pointStock)} pts to end total only
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    <p style={{ margin: 0, padding: '4px 0 0', fontSize: '11px', color: '#1e40af' }}>
+                      These resources have no start balance — the reconciliation formula treats their current value as the baseline and they do NOT count as a discrepancy.
+                    </p>
+                  </div>
                 </div>
               )}
               {/* ── Manually edited wallet banner ── */}
