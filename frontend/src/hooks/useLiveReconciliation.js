@@ -45,9 +45,19 @@ function computeCrossStoreAdjustments(reconData, crossStoreData) {
   const walletDisc = reconData.walletDiscrepancy ?? 0;
   const gameDisc   = reconData.gameDiscrepancy  ?? 0;
 
-  // Cross-adjusted discrepancies
-  const crossAdjWalletDisc = parseFloat((walletDisc - totalCrossWalletAmt).toFixed(2));
-  const crossAdjGameDisc   = Math.round(gameDisc + totalCrossGamePts);
+   // ✅ ADD: pull cross-store expense/takeout/reload totals
+  const summary = crossStoreData?.crossStoreSummary ?? {};
+  const crossExpenseWallet  = summary.totalCrossWalletExpenses  ?? 0;
+  const crossTakeoutWallet  = summary.totalCrossWalletTakeouts  ?? 0;
+  const crossPtsReloaded    = summary.totalCrossPointsReloaded  ?? 0;
+
+  // Adjust expected wallet change: subtract what other stores took out of shared wallets
+  const crossAdjWalletDisc = parseFloat(
+    (walletDisc - totalCrossWalletAmt - crossExpenseWallet - crossTakeoutWallet).toFixed(2)
+  );
+
+  // Adjust expected game change: add back points other stores reloaded into shared games
+  const crossAdjGameDisc = Math.round(gameDisc + totalCrossGamePts - crossPtsReloaded);
 
   const crossAdjWalletBal  = Math.abs(crossAdjWalletDisc) < 0.02;
   const crossAdjGameBal    = Math.abs(crossAdjGameDisc)   < 2;
