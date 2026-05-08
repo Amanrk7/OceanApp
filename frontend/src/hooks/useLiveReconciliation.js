@@ -20,48 +20,47 @@ async function apiFetch(path) {
 
 function computeCrossStoreAdjustments(reconData, crossStoreData) {
   const myStoreId = getStoreId();
-  let totalCrossGamePts = 0;
-  let totalCrossWalletAmt = 0;
-  const crossGameInfo = {};
+  let totalCrossGamePts    = 0;
+  let totalCrossWalletAmt  = 0;
+  const crossGameInfo   = {};
   const crossWalletInfo = {};
 
   if (crossStoreData) {
+    // ── Existing transaction-based cross-store logic ─────────────────
     (crossStoreData.games || []).forEach(g => {
-      const myPts = g.usageByStore?.[String(myStoreId)]?.netPtsDeducted ?? 0;
+      const myPts   = g.usageByStore?.[String(myStoreId)]?.netPtsDeducted ?? 0;
       const otherPts = g.totalDeducted - myPts;
       totalCrossGamePts += otherPts;
       crossGameInfo[g.gameId] = { ...g, myPts, otherPts };
     });
 
     (crossStoreData.wallets || []).forEach(w => {
-      const myChange = w.usageByStore?.[String(myStoreId)]?.netWalletChange ?? 0;
+      const myChange    = w.usageByStore?.[String(myStoreId)]?.netWalletChange ?? 0;
       const otherChange = w.totalNetChange - myChange;
       totalCrossWalletAmt += otherChange;
       crossWalletInfo[w.walletId] = { ...w, myChange, otherChange };
     });
+
+    // ── NEW: Also account for cross-store expenses, takeouts, reloads ─
+    const summary = crossStoreData.crossStoreSummary ?? {};
+    const crossExpenseWallet  = summary.totalCrossWalletExpenses  ?? 0;
+    const crossTakeoutWallet  = summary.totalCrossWalletTakeouts  ?? 0;
+    const crossPtsReloaded    = summary.totalCrossPointsReloaded  ?? 0;
+
+    // These reduce shared wallet balances and game stock — include in adjustment
+    totalCrossWalletAmt -= (crossExpenseWallet + crossTakeoutWallet);
+    totalCrossGamePts   -= crossPtsReloaded;  // reloads by others INCREASE stock (reduce deduction)
   }
 
-  // Raw discrepancies from reconciliation
   const walletDisc = reconData.walletDiscrepancy ?? 0;
-  const gameDisc   = reconData.gameDiscrepancy  ?? 0;
+  const gameDisc   = reconData.gameDiscrepancy   ?? 0;
 
-   // ✅ ADD: pull cross-store expense/takeout/reload totals
-  const summary = crossStoreData?.crossStoreSummary ?? {};
-  const crossExpenseWallet  = summary.totalCrossWalletExpenses  ?? 0;
-  const crossTakeoutWallet  = summary.totalCrossWalletTakeouts  ?? 0;
-  const crossPtsReloaded    = summary.totalCrossPointsReloaded  ?? 0;
+  const crossAdjWalletDisc = parseFloat((walletDisc - totalCrossWalletAmt).toFixed(2));
+  const crossAdjGameDisc   = Math.round(gameDisc + totalCrossGamePts);
 
-  // Adjust expected wallet change: subtract what other stores took out of shared wallets
-  const crossAdjWalletDisc = parseFloat(
-    (walletDisc - totalCrossWalletAmt - crossExpenseWallet - crossTakeoutWallet).toFixed(2)
-  );
-
-  // Adjust expected game change: add back points other stores reloaded into shared games
-  const crossAdjGameDisc = Math.round(gameDisc + totalCrossGamePts - crossPtsReloaded);
-
-  const crossAdjWalletBal  = Math.abs(crossAdjWalletDisc) < 0.02;
-  const crossAdjGameBal    = Math.abs(crossAdjGameDisc)   < 2;
-  const crossAdjBalanced   = reconData.hasStartSnapshot
+  const crossAdjWalletBal = Math.abs(crossAdjWalletDisc) < 0.02;
+  const crossAdjGameBal   = Math.abs(crossAdjGameDisc)   < 2;
+  const crossAdjBalanced  = reconData.hasStartSnapshot
     ? (crossAdjWalletBal && crossAdjGameBal)
     : null;
 
@@ -155,12 +154,15 @@ export function useLiveReconciliation(shiftId, shiftStartTime) {
       try {
         const msg = JSON.parse(e.data);
         const triggers = [
-          'reconciliation_changed',
-          'shared_game_updated',
-          'shared_wallet_updated',
-            'wallet_updated',   // ← ADD: fires when admin patches a wallet balance
-  'game_updated', 
-        ];
+  'reconciliation_changed',
+  'shared_game_updated',
+  'shared_wallet_updated',
+  'wallet_updated',
+  'game_updated',
+  'transaction_approved',   // cashout partial/full approval
+  'expense_updated',        // expense payment recorded
+  'takeout_updated',        // profit takeout added/edited
+];
         if (triggers.includes(msg.type)) fetchAll();
       } catch (_) {}
     };
