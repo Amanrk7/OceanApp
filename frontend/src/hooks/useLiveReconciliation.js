@@ -50,6 +50,21 @@ function computeCrossStoreAdjustments(reconData, crossStoreData) {
     // These reduce shared wallet balances and game stock — include in adjustment
     totalCrossWalletAmt -= (crossExpenseWallet + crossTakeoutWallet);
     totalCrossGamePts   -= crossPtsReloaded;  // reloads by others INCREASE stock (reduce deduction)
+    // ── NEW: mark wallets/games touched by cross-store expenses & takeouts
+    // so they are NOT misidentified as admin-edited ──────────────────────
+    (summary.affectedWalletIds ?? []).forEach(wId => {
+      const key = String(wId);
+      if (!crossWalletInfo[key]) {
+        crossWalletInfo[key] = { walletId: wId, myChange: 0, otherChange: 0 };
+      }
+    });
+
+    (summary.affectedGameIds ?? []).forEach(gId => {
+      const key = String(gId);
+      if (!crossGameInfo[key]) {
+        crossGameInfo[key] = { gameId: gId, myPts: 0, otherPts: 0 };
+      }
+    });
   }
 
   const walletDisc = reconData.walletDiscrepancy ?? 0;
