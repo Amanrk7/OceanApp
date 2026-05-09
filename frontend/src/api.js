@@ -737,6 +737,29 @@ export const profitTakeoutsAPI = {
   update: (id, body) => fetchAPI(`/profit-takeouts/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   remove: (id) => fetchAPI(`/profit-takeouts/${id}`, { method: 'DELETE' }),
 };
+
+export const playerEditRequestsAPI = {
+  getAll: (status = 'PENDING') =>
+    fetchAPI(`/player-edit-requests?status=${status}`),
+
+  approve: (id, note = '') =>
+    fetchAPI(`/player-edit-requests/${id}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ note }),
+    }),
+
+  reject: (id, note = '') =>
+    fetchAPI(`/player-edit-requests/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ note }),
+    }),
+};
+
+// Add to the api object:
+export const api = {
+  // ... existing entries ...
+  editRequests: playerEditRequestsAPI,
+};
 // ═══════════════════════════════════════════════════════════════
 // CONSOLIDATED API EXPORT
 // ═══════════════════════════════════════════════════════════════
@@ -758,6 +781,7 @@ export const api = {
   reports: reportsAPI,
   referralBonuses: referralBonusAPI,
   profitTakeouts: profitTakeoutsAPI,
+  editRequests: playerEditRequestsAPI,
   clearCache: () => cache.clearAll(),
   getCacheStatus: () => ({ items: Object.keys(cache.data).length, keys: Object.keys(cache.data) })
 };
