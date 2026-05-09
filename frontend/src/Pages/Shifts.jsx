@@ -898,37 +898,8 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   // ── 5. Mid-shift wallet/game detection ───────────────────────
   const startWalletIds = new Set((startSnapshot?.walletSnapshot ?? []).map(w => String(w.id)));
   const startGameIds = new Set((startSnapshot?.gameSnapshot ?? []).map(g => String(g.id)));
-  const newWalletsDuringShift = endWallets.filter(w => !startWalletIds.has(String(w.id)));
-  const newGamesDuringShift = endGames.filter(g => !startGameIds.has(String(g.id)));
 
-
-
-  // ── 6. Local discrepancy values (for wallet/game table cells) ─
-  const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
-  const gameDisc = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
-  const walletBal = Math.abs(walletDisc) < 0.02;
-  const gameBal = Math.abs(gameDisc) < 2;
-  const balanced = hasStartSnapshot ? (walletBal && gameBal) : null;
-
-  // ── 7. Fetch transactions only ───────────────────────────────
-  useEffect(() => {
-    if (!shift) { setTxnLoading(false); return; }
-    const fromDate = encodeURIComponent(new Date(shift.startTime).toISOString());
-    fj(`/transactions?limit=500&fromDate=${fromDate}`)
-      .then(txns => {
-        const start = new Date(shift.startTime);
-        setShiftTxns(
-          (txns.data ?? []).filter(t => t.createdAtISO ? new Date(t.createdAtISO) >= start : true)
-        );
-      })
-      .catch(err => console.error('CheckoutModal txn fetch:', err))
-      .finally(() => setTxnLoading(false));
-  }, [shift]);
-
-  const loading = txnLoading || (reconLoading && !recon);
-
-  // ── Snapshot rows ─────────────────────────────────────────────
-  const startWalletSnap = startSnapshot?.walletSnapshot ?? [];
+const startWalletSnap = startSnapshot?.walletSnapshot ?? [];
   const startGameSnap = startSnapshot?.gameSnapshot ?? [];
 
   // const walletRows = [
@@ -982,6 +953,38 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
         delta: -Math.round(sg.pointStock), isRemoved: true
       })),
   ];
+  
+  const newWalletsDuringShift = endWallets.filter(w => !startWalletIds.has(String(w.id)));
+  const newGamesDuringShift = endGames.filter(g => !startGameIds.has(String(g.id)));
+
+
+
+  // ── 6. Local discrepancy values (for wallet/game table cells) ─
+  const walletDisc = hasStartSnapshot ? r2(walletChange - expectedWalletChange) : 0;
+  const gameDisc = hasStartSnapshot ? Math.round(gameChange - expectedGameChange) : 0;
+  const walletBal = Math.abs(walletDisc) < 0.02;
+  const gameBal = Math.abs(gameDisc) < 2;
+  const balanced = hasStartSnapshot ? (walletBal && gameBal) : null;
+
+  // ── 7. Fetch transactions only ───────────────────────────────
+  useEffect(() => {
+    if (!shift) { setTxnLoading(false); return; }
+    const fromDate = encodeURIComponent(new Date(shift.startTime).toISOString());
+    fj(`/transactions?limit=500&fromDate=${fromDate}`)
+      .then(txns => {
+        const start = new Date(shift.startTime);
+        setShiftTxns(
+          (txns.data ?? []).filter(t => t.createdAtISO ? new Date(t.createdAtISO) >= start : true)
+        );
+      })
+      .catch(err => console.error('CheckoutModal txn fetch:', err))
+      .finally(() => setTxnLoading(false));
+  }, [shift]);
+
+  const loading = txnLoading || (reconLoading && !recon);
+
+  // ── Snapshot rows ─────────────────────────────────────────────
+  
 
   // Detect which wallets/games have actual transactions referencing them
   const walletIdsWithTxns = useMemo(() => {
