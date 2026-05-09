@@ -42,6 +42,7 @@ import PendingTransactionsBanner from "./Components/Pendingtransactionsbanner.js
 import ProfitTakeoutsPage from "./Pages/ProfitTakeoutsPage.jsx";
 import AddNewPlayer from "./Pages/AddNewPlayer.jsx";
 import { setStoreId } from './api';
+import PlayerEditRequestPanel from "./Pages/PlayerEditRequestPanel.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────
 const SIDEBAR_W = 62;
@@ -410,6 +411,7 @@ const NAV_ITEMS = [
   { id: "memberDashboard", label: "Member Dashboard", icon: CheckListIcon },
   { id: "players", label: "Players", icon: UserGroup03Icon },
   { id: "dailyCheckups", label: "Daily Checkups", icon: FolderOpenIcon },
+  { id: "playerEditRequests", label: "Player Edit Requests", icon: UserEditIcon },
   { id: "playTime", label: "Play Time", icon: TimeQuarter02Icon },
   { id: "games", label: "Games", icon: GameboyIcon },
   { id: "attendance", label: "Attendance", icon: Notebook02Icon },
@@ -687,27 +689,27 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 
         <nav className="ob-nav">
           {NAV_ITEMS.map(item => {
-  const hidden = item.adminsOnly && !isAdmin;
+            const hidden = item.adminsOnly && !isAdmin;
 
-  return (
-    <div key={item.id} style={{ display: hidden ? 'none' : undefined }}>
-      <div
-        className="ob-nav-item"
-        onMouseEnter={e => handleMouseEnter(e, item.label)}
-        onMouseLeave={handleMouseLeave}
-      >
-        <button
-          className={`ob-navlink${activePage === item.id ? ' active' : ''}`}
-          onClick={() => handleNav(item.id)}
-          aria-label={item.label}
-        >
-          <HugeiconsIcon icon={item.icon} size={20} />
-        </button>
-      </div>
-      {item.dividerAfter && <div className="ob-nav-divider" />}
-    </div>
-  );
-})}
+            return (
+              <div key={item.id} style={{ display: hidden ? 'none' : undefined }}>
+                <div
+                  className="ob-nav-item"
+                  onMouseEnter={e => handleMouseEnter(e, item.label)}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <button
+                    className={`ob-navlink${activePage === item.id ? ' active' : ''}`}
+                    onClick={() => handleNav(item.id)}
+                    aria-label={item.label}
+                  >
+                    <HugeiconsIcon icon={item.icon} size={20} />
+                  </button>
+                </div>
+                {item.dividerAfter && <div className="ob-nav-divider" />}
+              </div>
+            );
+          })}
         </nav>
 
         <div className="ob-sidebar-footer">
@@ -772,11 +774,11 @@ function AdminDashboard({ user }) {
   // }, [location.search]);
 
   useEffect(() => {
-  const params = new URLSearchParams(location.search);
-  const urlPage = params.get('page') || 'dashboard';
-  setPage(urlPage);
-  setAddPlayer(false); // ← always reset, remove the conditional
-}, [location.search]);
+    const params = new URLSearchParams(location.search);
+    const urlPage = params.get('page') || 'dashboard';
+    setPage(urlPage);
+    setAddPlayer(false); // ← always reset, remove the conditional
+  }, [location.search]);
 
   const handleLogout = async () => {
     await api.auth.logout();
@@ -794,6 +796,7 @@ function AdminDashboard({ user }) {
       case "memberDashboard": return <TeamDashboard user={user} />;
       case "players": return <Players />;
       case "dailyCheckups": return <MissingPlayersPage currentUser={user} />;
+      case "playerEditRequests": return <PlayerEditRequests />;
       case "playTime": return <Playtimepage />;
       case "attendance": return <Attendance />;
       case "games": return <Games user={user} />;
@@ -817,7 +820,7 @@ function AdminDashboard({ user }) {
       <Sidebar user={user} activePage={page} onNavigate={handleNavigate} onLogout={handleLogout} />
       <main className="ob-main">
         <div className="ob-container">
-           <PendingTransactionsBanner currentPage={page} onNavigate={handleNavigate} /> 
+          <PendingTransactionsBanner currentPage={page} onNavigate={handleNavigate} />
           <div className="ob-header">
             <h1>
               {page.charAt(0).toUpperCase() + page.slice(1).replace(/([A-Z])/g, ' $1')}
@@ -1269,7 +1272,7 @@ export default function App() {
                     <Route path="/" element={
                       user
                         // ? <ShiftStartGate><AdminDashboard user={user} /></ShiftStartGate>
-                      ? <AdminDashboard user={user} />
+                        ? <AdminDashboard user={user} />
                         : <LoginPage />
                     } />
                     <Route path="/PlayerDashboard/:playerId" element={
