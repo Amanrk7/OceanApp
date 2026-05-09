@@ -517,6 +517,7 @@ function DiscrepancyPanel({ recon, manualAdjBalanced }) {
   const hasCrossStore = recon.hasCrossStore ?? false;
   const totalCrossWalletAmt = recon.totalCrossWalletAmt ?? 0;
   const totalCrossGamePts = recon.totalCrossGamePts ?? 0;
+  const rawCrossWalletAmt = recon.rawCrossWalletAmt ?? totalCrossWalletAmt;
   const crossAdjWalletDisc = recon.crossAdjWalletDisc ?? (recon.walletDiscrepancy ?? 0);
   const crossAdjGameDisc = recon.crossAdjGameDisc ?? (recon.gameDiscrepancy ?? 0);
   const crossAdjWalletBal = recon.crossAdjWalletBal ?? recon.walletBalanced;
@@ -626,6 +627,13 @@ function DiscrepancyPanel({ recon, manualAdjBalanced }) {
     ...(hasCrossStore && Math.abs(totalCrossWalletAmt) > 0.01 ? [{
       label: 'Other store transactions (shared wallets)',
       wallet: `${totalCrossWalletAmt >= 0 ? '+' : ''}$${Math.abs(totalCrossWalletAmt).toFixed(2)}`,
+      pts: '—',
+      wc: '#7c3aed', gc: '#94a3b8',
+      cross: true,
+    }] : []),
+    ...(hasCrossStore && Math.abs(rawCrossWalletAmt) > 0.01 ? [{   // ← rawCrossWalletAmt here
+      label: 'Other store transactions (shared wallets)',
+      wallet: `${rawCrossWalletAmt >= 0 ? '+' : ''}$${Math.abs(rawCrossWalletAmt).toFixed(2)}`,
       pts: '—',
       wc: '#7c3aed', gc: '#94a3b8',
       cross: true,
