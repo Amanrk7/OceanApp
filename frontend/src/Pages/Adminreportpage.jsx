@@ -6,7 +6,8 @@ import {
     DollarSign, BarChart2, Target, Wallet, Gamepad2, MessageSquare,
     ShieldCheck, AlertTriangle, ArrowLeft, Zap, Star, List,
     CalendarRange, ToggleLeft, ToggleRight, ChevronRight, Receipt,
-    PiggyBank, Database, TrendingDown as TakeoutIcon, RefreshCcw
+    PiggyBank, Database, TrendingDown as TakeoutIcon, RefreshCcw,
+    Filter, CreditCard, SlidersHorizontal, Eye,
 } from "lucide-react";
 import { useToast } from '../Context/toastContext';
 import { api } from "../api";
@@ -96,8 +97,19 @@ function aggregateDayTakeouts(report) {
     return all;
 }
 
+function aggregateDayTransactions(report) {
+    const all = [];
+    (report.teams || []).forEach(team => {
+        (team.shifts || []).forEach(shift => {
+            (shift.transactions || []).forEach(t => {
+                all.push({ ...t, _teamRole: team.role, _shiftId: shift.id, _shiftTime: shift.startTime });
+            });
+        });
+    });
+    return all.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
 function aggregateDayGameChanges(report) {
-    // Collect all game snapshots from shift start/end
     const gameMap = {};
     (report.teams || []).forEach(team => {
         (team.shifts || []).forEach(shift => {
@@ -315,10 +327,17 @@ function DayExpensesSection({ expenses }) {
     );
 }
 
-// ── Day-level Profit Takeouts Table ──────────────────────────
+// ── Day-level Profit Takeouts Table (Enhanced) ────────────────
 function DayTakeoutsSection({ takeouts }) {
     if (!takeouts?.length) return null;
     const total = takeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+
+    // Group by method for summary
+    const byMethod = takeouts.reduce((acc, t) => {
+        const m = t.method || "Cash";
+        acc[m] = (acc[m] || 0) + parseFloat(t.amount ?? 0);
+        return acc;
+    }, {});
 
     return (
         <div style={{ ...CARD, overflow: "hidden" }}>
@@ -329,7 +348,16 @@ function DayTakeoutsSection({ takeouts }) {
                         Profit Takeouts — Day Total ({takeouts.length})
                     </span>
                 </div>
-                <span style={{ fontSize: "12px", fontWeight: "800", color: "#991b1b" }}>−{fmtMoney(total)}</span>
+                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
+                    {Object.entries(byMethod).map(([method, amt]) => (
+                        <span key={method} style={{ fontSize: "11px", color: "#64748b" }}>
+                            {method}: <b style={{ color: "#991b1b" }}>−{fmtMoney(amt)}</b>
+                        </span>
+                    ))}
+                    <span style={{ fontSize: "12px", fontWeight: "800", color: "#991b1b", borderLeft: "1px solid #fecdd3", paddingLeft: "12px" }}>
+                        Total: −{fmtMoney(total)}
+                    </span>
+                </div>
             </div>
             <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -384,7 +412,6 @@ function DayGameChangesSection({ gameChanges, wallets }) {
 
     return (
         <div style={{ display: "grid", gridTemplateColumns: hasGameData && hasWalletData ? "1fr 1fr" : "1fr", gap: "14px" }}>
-            {/* Game Balance Changes */}
             {hasGameData && (
                 <div style={{ ...CARD, overflow: "hidden" }}>
                     <div style={{ padding: "12px 16px", background: "#f5f3ff", borderBottom: "1px solid #e9d5ff", display: "flex", alignItems: "center", gap: "8px" }}>
@@ -426,8 +453,6 @@ function DayGameChangesSection({ gameChanges, wallets }) {
                     </div>
                 </div>
             )}
-
-            {/* Wallet Balance Changes */}
             {hasWalletData && (
                 <div style={{ ...CARD, overflow: "hidden" }}>
                     <div style={{ padding: "12px 16px", background: "#eff6ff", borderBottom: "1px solid #bfdbfe", display: "flex", alignItems: "center", gap: "8px" }}>
@@ -477,27 +502,17 @@ function DayGameChangesSection({ gameChanges, wallets }) {
     );
 }
 
-// ── Cash Flow Audit table (wallet snapshots) ──────────────────
-function CashFlowAudit({ startSnapshot, endSnapshot, transactions }) {
+// ── Cash Flow Audit ───────────────────────────────────────────
+function CashFlowAudit({ startSnapshot, endSnapshot }) {
     if (!startSnapshot || !endSnapshot) return null;
-
     const startWallets = startSnapshot.walletSnapshot ?? [];
     const endWallets = endSnapshot.walletSnapshot ?? [];
     const allIds = [...new Set([...startWallets.map(w => w.id), ...endWallets.map(w => w.id)])];
-
     const rows = allIds.map(id => {
         const sw = startWallets.find(w => w.id === id);
         const ew = endWallets.find(w => w.id === id);
-        const delta = (ew?.balance ?? 0) - (sw?.balance ?? 0);
-        return {
-            name: sw?.name ?? ew?.name ?? id,
-            method: sw?.method ?? ew?.method ?? "",
-            start: sw?.balance ?? 0,
-            end: ew?.balance ?? 0,
-            delta
-        };
+        return { name: sw?.name ?? ew?.name ?? id, method: sw?.method ?? ew?.method ?? "", start: sw?.balance ?? 0, end: ew?.balance ?? 0, delta: (ew?.balance ?? 0) - (sw?.balance ?? 0) };
     });
-
     return (
         <div style={{ ...CARD, overflow: "hidden" }}>
             <div style={{ padding: "12px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "8px" }}>
@@ -506,39 +521,26 @@ function CashFlowAudit({ startSnapshot, endSnapshot, transactions }) {
             </div>
             <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                        <tr>
-                            {["Method", "Start", "End", "Change"].map(h => (
-                                <th key={h} style={{ ...TH, textAlign: h === "Method" ? "left" : "right" }}>{h}</th>
-                            ))}
-                        </tr>
-                    </thead>
+                    <thead><tr>{["Method", "Start", "End", "Change"].map(h => <th key={h} style={{ ...TH, textAlign: h === "Method" ? "left" : "right" }}>{h}</th>)}</tr></thead>
                     <tbody>
                         {rows.map((r, i) => (
                             <tr key={i} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
                                 <td style={TD}>
                                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                        <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: r.method === "Bitcoin" ? "#f7931a" : r.method === "CashApp" ? "#00d632" : r.method === "Chime" ? "#8ac341" : r.method === "PayPal" ? "#003087" : "#94a3b8", flexShrink: 0 }} />
-                                        <div>
-                                            <div style={{ fontWeight: "600", fontSize: "13px" }}>{r.method || r.name}</div>
-                                            {r.method && r.name !== r.method && <div style={{ fontSize: "11px", color: "#94a3b8" }}>{r.name}</div>}
-                                        </div>
+                                        <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: r.method === "Bitcoin" ? "#f7931a" : "#94a3b8", flexShrink: 0 }} />
+                                        <div><div style={{ fontWeight: "600", fontSize: "13px" }}>{r.method || r.name}</div>{r.method && r.name !== r.method && <div style={{ fontSize: "11px", color: "#94a3b8" }}>{r.name}</div>}</div>
                                     </div>
                                 </td>
                                 <td style={{ ...TD, textAlign: "right", color: "#64748b" }}>{fmtMoney(r.start)}</td>
                                 <td style={{ ...TD, textAlign: "right", fontWeight: "600" }}>{fmtMoney(r.end)}</td>
-                                <td style={{ ...TD, textAlign: "right", fontWeight: "800", color: clrNum(r.delta) }}>
-                                    {r.delta === 0 ? <span style={{ color: "#94a3b8" }}>$0.00</span> : signNum(r.delta)}
-                                </td>
+                                <td style={{ ...TD, textAlign: "right", fontWeight: "800", color: clrNum(r.delta) }}>{r.delta === 0 ? <span style={{ color: "#94a3b8" }}>$0.00</span> : signNum(r.delta)}</td>
                             </tr>
                         ))}
                         <tr style={{ background: "#f8fafc" }}>
                             <td style={{ ...TD, fontWeight: "700", fontSize: "12px", color: "#475569" }}>Total</td>
                             <td style={{ ...TD, textAlign: "right", fontWeight: "700" }}>{fmtMoney(startSnapshot.totalWallet ?? 0)}</td>
                             <td style={{ ...TD, textAlign: "right", fontWeight: "700" }}>{fmtMoney(endSnapshot.totalWallet ?? 0)}</td>
-                            <td style={{ ...TD, textAlign: "right", fontWeight: "800", color: clrNum(endSnapshot.walletChange) }}>
-                                {signNum(endSnapshot.walletChange ?? 0)}
-                            </td>
+                            <td style={{ ...TD, textAlign: "right", fontWeight: "800", color: clrNum(endSnapshot.walletChange) }}>{signNum(endSnapshot.walletChange ?? 0)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -547,21 +549,17 @@ function CashFlowAudit({ startSnapshot, endSnapshot, transactions }) {
     );
 }
 
-// ── Game Point Audit table ────────────────────────────────────
+// ── Game Point Audit ──────────────────────────────────────────
 function GamePointAudit({ startSnapshot, endSnapshot }) {
     if (!startSnapshot || !endSnapshot) return null;
-
     const startGames = startSnapshot.gameSnapshot ?? [];
     const endGames = endSnapshot.gameSnapshot ?? [];
     const allIds = [...new Set([...startGames.map(g => g.id), ...endGames.map(g => g.id)])];
-
     const rows = allIds.map(id => {
         const sg = startGames.find(g => g.id === id);
         const eg = endGames.find(g => g.id === id);
-        const delta = (eg?.pointStock ?? 0) - (sg?.pointStock ?? 0);
-        return { name: sg?.name ?? eg?.name ?? id, start: sg?.pointStock ?? 0, end: eg?.pointStock ?? 0, delta };
+        return { name: sg?.name ?? eg?.name ?? id, start: sg?.pointStock ?? 0, end: eg?.pointStock ?? 0, delta: (eg?.pointStock ?? 0) - (sg?.pointStock ?? 0) };
     });
-
     return (
         <div style={{ ...CARD, overflow: "hidden" }}>
             <div style={{ padding: "12px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "8px" }}>
@@ -570,36 +568,24 @@ function GamePointAudit({ startSnapshot, endSnapshot }) {
             </div>
             <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                        <tr>
-                            {["Game", "Start", "End", "Change"].map(h => (
-                                <th key={h} style={{ ...TH, textAlign: h === "Game" ? "left" : "right" }}>{h}</th>
-                            ))}
-                        </tr>
-                    </thead>
+                    <thead><tr>{["Game", "Start", "End", "Change"].map(h => <th key={h} style={{ ...TH, textAlign: h === "Game" ? "left" : "right" }}>{h}</th>)}</tr></thead>
                     <tbody>
                         {rows.map((r, i) => (
                             <tr key={i} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
                                 <td style={{ ...TD, display: "flex", alignItems: "center", gap: "8px" }}>
-                                    <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                        <Gamepad2 style={{ width: "13px", height: "13px", color: "#7c3aed" }} />
-                                    </div>
+                                    <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Gamepad2 style={{ width: "13px", height: "13px", color: "#7c3aed" }} /></div>
                                     <span style={{ fontWeight: "600" }}>{r.name}</span>
                                 </td>
                                 <td style={{ ...TD, textAlign: "right", color: "#64748b" }}>{r.start.toFixed(0)}</td>
                                 <td style={{ ...TD, textAlign: "right", fontWeight: "600" }}>{r.end.toFixed(0)}</td>
-                                <td style={{ ...TD, textAlign: "right", fontWeight: "800", color: clrNum(r.delta, true) }}>
-                                    {r.delta === 0 ? <span style={{ color: "#94a3b8" }}>0</span> : <span>{signPts(r.delta)}</span>}
-                                </td>
+                                <td style={{ ...TD, textAlign: "right", fontWeight: "800", color: clrNum(r.delta, true) }}>{r.delta === 0 ? <span style={{ color: "#94a3b8" }}>0</span> : <span>{signPts(r.delta)}</span>}</td>
                             </tr>
                         ))}
                         <tr style={{ background: "#f8fafc" }}>
                             <td style={{ ...TD, fontWeight: "700", fontSize: "12px", color: "#475569" }}>Total</td>
                             <td style={{ ...TD, textAlign: "right", fontWeight: "700" }}>{(startSnapshot.totalGames ?? 0).toFixed(0)}</td>
                             <td style={{ ...TD, textAlign: "right", fontWeight: "700" }}>{(endSnapshot.totalGames ?? 0).toFixed(0)}</td>
-                            <td style={{ ...TD, textAlign: "right", fontWeight: "800", color: clrNum(endSnapshot.gameChange, true) }}>
-                                {signPts(endSnapshot.gameChange ?? 0)}
-                            </td>
+                            <td style={{ ...TD, textAlign: "right", fontWeight: "800", color: clrNum(endSnapshot.gameChange, true) }}>{signPts(endSnapshot.gameChange ?? 0)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -611,72 +597,44 @@ function GamePointAudit({ startSnapshot, endSnapshot }) {
 // ── Full Shift Transactions Table ─────────────────────────────
 function ShiftTransactionsTable({ transactions }) {
     if (!transactions?.length) return (
-        <div style={{ ...CARD, padding: "28px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>
-            No transactions recorded for this shift
-        </div>
+        <div style={{ ...CARD, padding: "28px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No transactions recorded for this shift</div>
     );
     return (
         <div style={{ ...CARD, overflow: "hidden" }}>
             <div style={{ padding: "12px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "8px" }}>
                 <List style={{ width: "14px", height: "14px", color: "#64748b" }} />
-                <span style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.4px" }}>
-                    Shift Transactions ({transactions.length})
-                </span>
+                <span style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.4px" }}>Shift Transactions ({transactions.length})</span>
             </div>
             <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
-                        <tr>
-                            {["Time", "Player", "Type", "Bonus Type", "Game / Wallet", "Pts Before → After", "Amount", "Fee", "Balance After", "Status"].map(h => (
-                                <th key={h} style={{ ...TH, textAlign: h === "Amount" || h === "Fee" || h === "Balance After" ? "right" : "left" }}>{h}</th>
-                            ))}
-                        </tr>
+                        <tr>{["Time", "Player", "Type", "Bonus Type", "Game / Wallet", "Pts Before → After", "Amount", "Fee", "Balance After", "Status"].map(h => (
+                            <th key={h} style={{ ...TH, textAlign: h === "Amount" || h === "Fee" || h === "Balance After" ? "right" : "left" }}>{h}</th>
+                        ))}</tr>
                     </thead>
                     <tbody>
                         {transactions.map(t => {
                             const isDeposit = t.type === "DEPOSIT";
                             const isCashout = t.type === "WITHDRAWAL";
-                            const isBonus = t.type === "BONUS";
                             const isPending = t.status === "PENDING";
-                            const amtColor = isDeposit ? "#16a34a" : isCashout ? "#dc2626" : isBonus ? "#c2410c" : "#475569";
-                            const pts = t.gameStockAfter != null && t.gameStockBefore != null
-                                ? Math.round(t.gameStockAfter - t.gameStockBefore) : null;
-
+                            const amtColor = isDeposit ? "#16a34a" : isCashout ? "#dc2626" : "#c2410c";
+                            const pts = t.gameStockAfter != null && t.gameStockBefore != null ? Math.round(t.gameStockAfter - t.gameStockBefore) : null;
                             return (
-                                <tr key={t.id}
-                                    onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"}
-                                    onMouseLeave={e => e.currentTarget.style.background = ""}
-                                    style={{ opacity: isPending ? 0.75 : 1 }}
-                                >
+                                <tr key={t.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""} style={{ opacity: isPending ? 0.75 : 1 }}>
                                     <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap" }}>{fmtTime(t.createdAt)}</td>
-                                    <td style={TD}>
-                                        <div style={{ fontWeight: "600", fontSize: "12px" }}>{t.user?.name || t.playerName || `#${t.userId}`}</div>
-                                        {t.user?.email && <div style={{ fontSize: "10px", color: "#94a3b8" }}>{t.user.email}</div>}
-                                    </td>
+                                    <td style={TD}><div style={{ fontWeight: "600", fontSize: "12px" }}>{t.user?.name || t.playerName || `#${t.userId}`}</div>{t.user?.email && <div style={{ fontSize: "10px", color: "#94a3b8" }}>{t.user.email}</div>}</td>
                                     <td style={TD}><DisplayTypeBadge type={t.displayType || t.type} /></td>
-                                    <td style={TD}>
-                                        {t.bonusType
-                                            ? <span style={{ padding: "2px 7px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", background: "#f5f3ff", color: "#7c3aed" }}>{t.bonusType.toUpperCase()}</span>
-                                            : <span style={{ color: "#cbd5e1" }}>—</span>}
-                                    </td>
+                                    <td style={TD}>{t.bonusType ? <span style={{ padding: "2px 7px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", background: "#f5f3ff", color: "#7c3aed" }}>{t.bonusType.toUpperCase()}</span> : <span style={{ color: "#cbd5e1" }}>—</span>}</td>
                                     <td style={{ ...TD, fontSize: "11px" }}>
                                         {t.gameName && <div style={{ fontWeight: "600", color: "#0f172a" }}>{t.gameName}</div>}
                                         {t.walletMethod && <div style={{ color: "#64748b" }}>{t.walletMethod}{t.walletName ? ` · ${t.walletName}` : ""}</div>}
                                         {!t.gameName && !t.walletMethod && <span style={{ color: "#cbd5e1" }}>—</span>}
                                     </td>
-                                    <td style={{ ...TD, fontSize: "11px" }}>
-                                        {pts !== null
-                                            ? <span style={{ color: "#64748b" }}>{t.gameStockBefore?.toFixed(0)} → <b style={{ color: pts < 0 ? "#7c3aed" : "#16a34a" }}>{t.gameStockAfter?.toFixed(0)}</b></span>
-                                            : <span style={{ color: "#cbd5e1" }}>—</span>}
-                                    </td>
+                                    <td style={{ ...TD, fontSize: "11px" }}>{pts !== null ? <span style={{ color: "#64748b" }}>{t.gameStockBefore?.toFixed(0)} → <b style={{ color: pts < 0 ? "#7c3aed" : "#16a34a" }}>{t.gameStockAfter?.toFixed(0)}</b></span> : <span style={{ color: "#cbd5e1" }}>—</span>}</td>
                                     <td style={{ ...TD, textAlign: "right", fontWeight: "800", fontSize: "13px", color: amtColor }}>{fmtMoney(t.amount)}</td>
-                                    <td style={{ ...TD, textAlign: "right" }}>
-                                        {t.fee > 0 ? <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "11px" }}>−{fmtMoney(t.fee)}</span> : <span style={{ color: "#cbd5e1" }}>—</span>}
-                                    </td>
+                                    <td style={{ ...TD, textAlign: "right" }}>{t.fee > 0 ? <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "11px" }}>−{fmtMoney(t.fee)}</span> : <span style={{ color: "#cbd5e1" }}>—</span>}</td>
                                     <td style={{ ...TD, textAlign: "right", fontSize: "12px", color: "#64748b" }}>{t.balanceAfter != null ? fmtMoney(t.balanceAfter) : "—"}</td>
-                                    <td style={TD}>
-                                        <Badge label={isPending ? "PENDING" : "DONE"} bg={isPending ? "#fef3c7" : "#dcfce7"} color={isPending ? "#b45309" : "#166534"} />
-                                    </td>
+                                    <td style={TD}><Badge label={isPending ? "PENDING" : "DONE"} bg={isPending ? "#fef3c7" : "#dcfce7"} color={isPending ? "#b45309" : "#166534"} /></td>
                                 </tr>
                             );
                         })}
@@ -687,7 +645,6 @@ function ShiftTransactionsTable({ transactions }) {
                             <td style={{ ...TD, textAlign: "right", fontWeight: "800", fontSize: "13px" }}>
                                 <div style={{ color: "#16a34a" }}>+{fmtMoney(transactions.filter(t => t.type === "DEPOSIT").reduce((s, t) => s + (t.amount ?? 0), 0))}</div>
                                 <div style={{ color: "#dc2626", fontSize: "11px" }}>−{fmtMoney(transactions.filter(t => t.type === "WITHDRAWAL").reduce((s, t) => s + (t.amount ?? 0), 0))}</div>
-                                <div style={{ color: "#c2410c", fontSize: "11px" }}>−{fmtMoney(transactions.filter(t => t.type === "BONUS").reduce((s, t) => s + (t.amount ?? 0), 0))} bonus</div>
                             </td>
                             <td colSpan={3} style={TD} />
                         </tr>
@@ -699,37 +656,28 @@ function ShiftTransactionsTable({ transactions }) {
 }
 
 // ── Audit Verification ────────────────────────────────────────
-function AuditVerification({ endSnapshot, transactions }) {
+function AuditVerification({ endSnapshot }) {
     if (!endSnapshot) return null;
     const { deposits, cashouts, bonuses, netProfit, walletChange, gameChange } = endSnapshot;
-
     const expectedWallet = (deposits ?? 0) - (cashouts ?? 0);
     const cashDiscrepancy = (walletChange ?? 0) - expectedWallet;
     const ptDiscrepancy = Math.round(endSnapshot.gameDiscrepancy ?? 0);
-
     const cashOk = Math.abs(cashDiscrepancy) < 0.02;
     const ptsOk = Math.abs(ptDiscrepancy) < 2;
     const allOk = cashOk && ptsOk;
-
     return (
         <div style={{ ...CARD, overflow: "hidden" }}>
             <div style={{ padding: "12px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "8px" }}>
                 <ShieldCheck style={{ width: "14px", height: "14px", color: "#64748b" }} />
                 <span style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.4px" }}>Audit Verification</span>
-                <div style={{ marginLeft: "auto" }}>
-                    {allOk ? <Badge label="✓ All Clear" bg="#f0fdf4" color="#15803d" /> : <Badge label="⚠ Discrepancy Found" bg="#fee2e2" color="#991b1b" />}
-                </div>
+                <div style={{ marginLeft: "auto" }}>{allOk ? <Badge label="✓ All Clear" bg="#f0fdf4" color="#15803d" /> : <Badge label="⚠ Discrepancy Found" bg="#fee2e2" color="#991b1b" />}</div>
             </div>
             <div style={{ padding: "16px" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
                     <div style={{ border: `1px solid ${cashOk ? "#86efac" : "#fca5a5"}`, borderRadius: "8px", overflow: "hidden" }}>
                         <div style={{ padding: "8px 12px", background: cashOk ? "#f0fdf4" : "#fef2f2", borderBottom: `1px solid ${cashOk ? "#86efac" : "#fca5a5"}`, fontSize: "11px", fontWeight: "700", color: cashOk ? "#15803d" : "#991b1b", textTransform: "uppercase" }}>Cash Flow Check</div>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
-                            {[
-                                { label: "Actual Change", val: signNum(walletChange ?? 0), color: clrNum(walletChange) },
-                                { label: "Expected Change", val: signNum(expectedWallet), color: clrNum(expectedWallet) },
-                                { label: "Discrepancy", val: cashOk ? "$0.00" : signNum(cashDiscrepancy), color: cashOk ? "#16a34a" : "#dc2626" },
-                            ].map(({ label, val, color }) => (
+                            {[{ label: "Actual Change", val: signNum(walletChange ?? 0), color: clrNum(walletChange) }, { label: "Expected Change", val: signNum(expectedWallet), color: clrNum(expectedWallet) }, { label: "Discrepancy", val: cashOk ? "$0.00" : signNum(cashDiscrepancy), color: cashOk ? "#16a34a" : "#dc2626" }].map(({ label, val, color }) => (
                                 <div key={label} style={{ padding: "10px 12px", textAlign: "center", borderRight: "1px solid #f1f5f9" }}>
                                     <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase", marginBottom: "4px" }}>{label}</div>
                                     <div style={{ fontSize: "15px", fontWeight: "800", color }}>{val}</div>
@@ -740,11 +688,7 @@ function AuditVerification({ endSnapshot, transactions }) {
                     <div style={{ border: `1px solid ${ptsOk ? "#86efac" : "#fca5a5"}`, borderRadius: "8px", overflow: "hidden" }}>
                         <div style={{ padding: "8px 12px", background: ptsOk ? "#f0fdf4" : "#fef2f2", borderBottom: `1px solid ${ptsOk ? "#86efac" : "#fca5a5"}`, fontSize: "11px", fontWeight: "700", color: ptsOk ? "#15803d" : "#991b1b", textTransform: "uppercase" }}>Point Stock Check</div>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
-                            {[
-                                { label: "Actual Change", val: signPts(gameChange ?? 0) + " pts", color: clrNum(gameChange, true) },
-                                { label: "Expected Change", val: signPts(-(deposits + bonuses - cashouts)) + " pts", color: "#475569" },
-                                { label: "Discrepancy", val: ptsOk ? "0 pts" : signPts(ptDiscrepancy) + " pts", color: ptsOk ? "#16a34a" : "#dc2626" },
-                            ].map(({ label, val, color }) => (
+                            {[{ label: "Actual Change", val: signPts(gameChange ?? 0) + " pts", color: clrNum(gameChange, true) }, { label: "Expected Change", val: signPts(-(deposits + bonuses - cashouts)) + " pts", color: "#475569" }, { label: "Discrepancy", val: ptsOk ? "0 pts" : signPts(ptDiscrepancy) + " pts", color: ptsOk ? "#16a34a" : "#dc2626" }].map(({ label, val, color }) => (
                                 <div key={label} style={{ padding: "10px 12px", textAlign: "center", borderRight: "1px solid #f1f5f9" }}>
                                     <div style={{ fontSize: "10px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase", marginBottom: "4px" }}>{label}</div>
                                     <div style={{ fontSize: "15px", fontWeight: "800", color }}>{val}</div>
@@ -754,20 +698,12 @@ function AuditVerification({ endSnapshot, transactions }) {
                     </div>
                 </div>
                 <div style={{ padding: "10px 14px", background: allOk ? "#f0fdf4" : "#fef2f2", border: `1px solid ${allOk ? "#86efac" : "#fca5a5"}`, borderLeft: `4px solid ${allOk ? "#16a34a" : "#dc2626"}`, borderRadius: "8px", fontSize: "12px" }}>
-                    {!allOk && (
-                        <div style={{ fontWeight: "700", color: "#991b1b", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
-                            <AlertTriangle style={{ width: "13px", height: "13px" }} />
-                            {!cashOk && `Cash discrepancy: ${fmtMoney(Math.abs(cashDiscrepancy))}. `}
-                            {!ptsOk && `Point discrepancy: ${Math.abs(ptDiscrepancy)} pts. `}
-                        </div>
-                    )}
+                    {!allOk && (<div style={{ fontWeight: "700", color: "#991b1b", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}><AlertTriangle style={{ width: "13px", height: "13px" }} />{!cashOk && `Cash discrepancy: ${fmtMoney(Math.abs(cashDiscrepancy))}. `}{!ptsOk && `Point discrepancy: ${Math.abs(ptDiscrepancy)} pts. `}</div>)}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", color: "#475569" }}>
                         <span>Deposits: <b style={{ color: "#16a34a" }}>{fmtMoney(deposits)}</b></span>
                         <span>Cashouts: <b style={{ color: "#dc2626" }}>−{fmtMoney(cashouts)}</b></span>
                         <span>Bonuses: <b style={{ color: "#c2410c" }}>−{fmtMoney(bonuses)}</b></span>
                         <span>Net Profit: <b style={{ color: (netProfit ?? 0) >= 0 ? "#16a34a" : "#dc2626" }}>{fmtMoney(netProfit)}</b></span>
-                        <span>Wallet Δ: <b style={{ color: clrNum(walletChange) }}>{signNum(walletChange)}</b></span>
-                        <span>Game Δ: <b style={{ color: "#7c3aed" }}>{signPts(gameChange)} pts</b></span>
                     </div>
                 </div>
             </div>
@@ -775,62 +711,31 @@ function AuditVerification({ endSnapshot, transactions }) {
     );
 }
 
-// ── Member Feedback Panel ─────────────────────────────────────
+// ── Member Feedback ───────────────────────────────────────────
 function FeedbackPanel({ shift }) {
     const effort = shift.checkin?.effortRating ?? null;
     const effortReason = shift.effortReason ?? shift.checkin?.additionalNotes ?? null;
-    const improvements = shift.improvements ?? null;
     const workSummary = shift.checkin?.workSummary ?? null;
     const issues = shift.checkin?.issuesEncountered ?? null;
-
-    if (!effort && !effortReason && !workSummary) return (
-        <div style={{ padding: "18px", textAlign: "center", color: "#94a3b8", fontSize: "13px", fontStyle: "italic" }}>
-            No feedback submitted for this shift
-        </div>
-    );
-
+    if (!effort && !effortReason && !workSummary) return <div style={{ padding: "18px", textAlign: "center", color: "#94a3b8", fontSize: "13px", fontStyle: "italic" }}>No feedback submitted for this shift</div>;
     const effortColor = !effort ? "#94a3b8" : effort >= 8 ? "#16a34a" : effort >= 5 ? "#d97706" : "#dc2626";
     const effortBg = !effort ? "#f1f5f9" : effort >= 8 ? "#f0fdf4" : effort >= 5 ? "#fffbeb" : "#fee2e2";
-
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {effort && (
-                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <div style={{ padding: "10px 18px", background: effortBg, borderRadius: "10px", textAlign: "center", flexShrink: 0 }}>
-                        <div style={{ fontSize: "26px", fontWeight: "900", color: effortColor, lineHeight: 1 }}>{effort}</div>
-                        <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "2px", fontWeight: "600", textTransform: "uppercase" }}>/ 10</div>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", gap: "4px", marginBottom: "6px" }}>
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                                <div key={n} style={{ flex: 1, height: "7px", borderRadius: "3px", background: n <= effort ? effortColor : "#e2e8f0" }} />
-                            ))}
-                        </div>
-                        <div style={{ fontSize: "12px", color: "#64748b" }}>
-                            {effort >= 8 ? "Excellent effort" : effort >= 5 ? "Moderate effort" : "Low effort this shift"}
-                        </div>
-                    </div>
+            {effort && (<div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <div style={{ padding: "10px 18px", background: effortBg, borderRadius: "10px", textAlign: "center", flexShrink: 0 }}>
+                    <div style={{ fontSize: "26px", fontWeight: "900", color: effortColor, lineHeight: 1 }}>{effort}</div>
+                    <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "2px", fontWeight: "600" }}>/ 10</div>
                 </div>
-            )}
+                <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", gap: "4px", marginBottom: "6px" }}>{[1,2,3,4,5,6,7,8,9,10].map(n => <div key={n} style={{ flex: 1, height: "7px", borderRadius: "3px", background: n <= effort ? effortColor : "#e2e8f0" }} />)}</div>
+                    <div style={{ fontSize: "12px", color: "#64748b" }}>{effort >= 8 ? "Excellent effort" : effort >= 5 ? "Moderate effort" : "Low effort this shift"}</div>
+                </div>
+            </div>)}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                {effortReason && (
-                    <div style={{ padding: "11px 13px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-                        <div style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "5px" }}>Why this rating?</div>
-                        <p style={{ margin: 0, fontSize: "12px", color: "#0f172a", lineHeight: 1.5 }}>{effortReason}</p>
-                    </div>
-                )}
-                {workSummary && (
-                    <div style={{ padding: "11px 13px", background: "#f0fdf4", borderRadius: "8px", border: "1px solid #86efac" }}>
-                        <div style={{ fontSize: "10px", fontWeight: "700", color: "#166534", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "5px" }}>Work summary</div>
-                        <p style={{ margin: 0, fontSize: "12px", color: "#0f172a", lineHeight: 1.5 }}>{workSummary}</p>
-                    </div>
-                )}
-                {issues && (
-                    <div style={{ padding: "11px 13px", background: "#fef2f2", borderRadius: "8px", border: "1px solid #fca5a5" }}>
-                        <div style={{ fontSize: "10px", fontWeight: "700", color: "#991b1b", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: "5px" }}>Issues encountered</div>
-                        <p style={{ margin: 0, fontSize: "12px", color: "#0f172a", lineHeight: 1.5 }}>{issues}</p>
-                    </div>
-                )}
+                {effortReason && <div style={{ padding: "11px 13px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}><div style={{ fontSize: "10px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", marginBottom: "5px" }}>Why this rating?</div><p style={{ margin: 0, fontSize: "12px", color: "#0f172a", lineHeight: 1.5 }}>{effortReason}</p></div>}
+                {workSummary && <div style={{ padding: "11px 13px", background: "#f0fdf4", borderRadius: "8px", border: "1px solid #86efac" }}><div style={{ fontSize: "10px", fontWeight: "700", color: "#166534", textTransform: "uppercase", marginBottom: "5px" }}>Work summary</div><p style={{ margin: 0, fontSize: "12px", color: "#0f172a", lineHeight: 1.5 }}>{workSummary}</p></div>}
+                {issues && <div style={{ padding: "11px 13px", background: "#fef2f2", borderRadius: "8px", border: "1px solid #fca5a5" }}><div style={{ fontSize: "10px", fontWeight: "700", color: "#991b1b", textTransform: "uppercase", marginBottom: "5px" }}>Issues encountered</div><p style={{ margin: 0, fontSize: "12px", color: "#0f172a", lineHeight: 1.5 }}>{issues}</p></div>}
             </div>
         </div>
     );
@@ -844,31 +749,23 @@ function ExpensesTable({ expenses }) {
     return (
         <div style={{ ...CARD, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', background: '#fffbeb', borderBottom: '1px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <DollarSign style={{ width: '14px', height: '14px', color: '#b45309' }} />
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#b45309', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Shift Expenses ({expenses.length})</span>
-                </div>
-                <div style={{ display: 'flex', gap: '12px', fontSize: '12px' }}>
-                    <span style={{ fontWeight: '800', color: '#b45309' }}>−${total.toFixed(2)}</span>
-                    {totalPts > 0 && <span style={{ color: '#7c3aed', fontWeight: '700' }}>+{totalPts} pts added</span>}
-                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><DollarSign style={{ width: '14px', height: '14px', color: '#b45309' }} /><span style={{ fontSize: '12px', fontWeight: '700', color: '#b45309', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Shift Expenses ({expenses.length})</span></div>
+                <div style={{ display: 'flex', gap: '12px', fontSize: '12px' }}><span style={{ fontWeight: '800', color: '#b45309' }}>−${total.toFixed(2)}</span>{totalPts > 0 && <span style={{ color: '#7c3aed', fontWeight: '700' }}>+{totalPts} pts added</span>}</div>
             </div>
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead><tr>{['Details', 'Category', 'Game', 'Amount', 'Points Added', 'Payment', 'Notes'].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
-                    <tbody>
-                        {expenses.map(e => (
-                            <tr key={e.id} onMouseEnter={ev => ev.currentTarget.style.background = '#fefce8'} onMouseLeave={ev => ev.currentTarget.style.background = ''}>
-                                <td style={{ ...TD, fontWeight: '600' }}>{e.details}</td>
-                                <td style={TD}><Badge label={e.category?.replace('_', ' ')} bg="#fffbeb" color="#b45309" /></td>
-                                <td style={{ ...TD, fontSize: '12px', color: '#64748b' }}>{e.game?.name || '—'}</td>
-                                <td style={{ ...TD, fontWeight: '700', color: '#b45309' }}>${(e.amount ?? 0).toFixed(2)}</td>
-                                <td style={{ ...TD, color: '#7c3aed' }}>{e.pointsAdded > 0 ? `+${e.pointsAdded} pts` : '—'}</td>
-                                <td style={{ ...TD, color: '#64748b', fontSize: '12px' }}>{e.paymentMade > 0 ? `$${parseFloat(e.paymentMade).toFixed(2)}` : '—'}</td>
-                                <td style={{ ...TD, fontSize: '11px', color: '#94a3b8' }}>{e.notes || '—'}</td>
-                            </tr>
-                        ))}
-                    </tbody>
+                    <tbody>{expenses.map(e => (
+                        <tr key={e.id} onMouseEnter={ev => ev.currentTarget.style.background = '#fefce8'} onMouseLeave={ev => ev.currentTarget.style.background = ''}>
+                            <td style={{ ...TD, fontWeight: '600' }}>{e.details}</td>
+                            <td style={TD}><Badge label={e.category?.replace('_', ' ')} bg="#fffbeb" color="#b45309" /></td>
+                            <td style={{ ...TD, fontSize: '12px', color: '#64748b' }}>{e.game?.name || '—'}</td>
+                            <td style={{ ...TD, fontWeight: '700', color: '#b45309' }}>${(e.amount ?? 0).toFixed(2)}</td>
+                            <td style={{ ...TD, color: '#7c3aed' }}>{e.pointsAdded > 0 ? `+${e.pointsAdded} pts` : '—'}</td>
+                            <td style={{ ...TD, color: '#64748b', fontSize: '12px' }}>{e.paymentMade > 0 ? `$${parseFloat(e.paymentMade).toFixed(2)}` : '—'}</td>
+                            <td style={{ ...TD, fontSize: '11px', color: '#94a3b8' }}>{e.notes || '—'}</td>
+                        </tr>
+                    ))}</tbody>
                 </table>
             </div>
         </div>
@@ -882,49 +779,402 @@ function ProfitTakeoutsTable({ takeouts }) {
     return (
         <div style={{ ...CARD, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', background: '#fff1f2', borderBottom: '1px solid #fecdd3', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <TrendingDown style={{ width: '14px', height: '14px', color: '#991b1b' }} />
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#991b1b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Shift Profit Takeouts ({takeouts.length})</span>
-                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><TrendingDown style={{ width: '14px', height: '14px', color: '#991b1b' }} /><span style={{ fontSize: '12px', fontWeight: '700', color: '#991b1b', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Shift Profit Takeouts ({takeouts.length})</span></div>
                 <span style={{ fontSize: '12px', fontWeight: '800', color: '#991b1b' }}>−${total.toFixed(2)}</span>
             </div>
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead><tr>{['Taken By', 'Method', 'Amount', 'Notes'].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
-                    <tbody>
-                        {takeouts.map(t => (
-                            <tr key={t.id} onMouseEnter={ev => ev.currentTarget.style.background = '#fff5f5'} onMouseLeave={ev => ev.currentTarget.style.background = ''}>
-                                <td style={{ ...TD, fontWeight: '600' }}>{t.takenBy}</td>
-                                <td style={TD}><Badge label={t.method} bg="#fff1f2" color="#991b1b" /></td>
-                                <td style={{ ...TD, fontWeight: '800', color: '#991b1b' }}>${parseFloat(t.amount).toFixed(2)}</td>
-                                <td style={{ ...TD, fontSize: '12px', color: '#64748b' }}>{t.notes || '—'}</td>
-                            </tr>
-                        ))}
-                    </tbody>
+                    <tbody>{takeouts.map(t => (
+                        <tr key={t.id} onMouseEnter={ev => ev.currentTarget.style.background = '#fff5f5'} onMouseLeave={ev => ev.currentTarget.style.background = ''}>
+                            <td style={{ ...TD, fontWeight: '600' }}>{t.takenBy}</td>
+                            <td style={TD}><Badge label={t.method} bg="#fff1f2" color="#991b1b" /></td>
+                            <td style={{ ...TD, fontWeight: '800', color: '#991b1b' }}>${parseFloat(t.amount).toFixed(2)}</td>
+                            <td style={{ ...TD, fontSize: '12px', color: '#64748b' }}>{t.notes || '—'}</td>
+                        </tr>
+                    ))}</tbody>
                 </table>
             </div>
         </div>
     );
 }
 
+// ══════════════════════════════════════════════════════════════
+// NEW: STANDALONE FILTER VIEW COMPONENTS
+// ══════════════════════════════════════════════════════════════
+
+// ── Standalone Expenses Filter View ──────────────────────────
+function ExpensesFilterView({ expenses, rangeMode }) {
+    const [catFilter, setCatFilter] = useState("ALL");
+    if (!expenses?.length) return (
+        <div style={{ ...CARD, padding: "48px", textAlign: "center", color: "#94a3b8" }}>
+            <Receipt style={{ width: "32px", height: "32px", margin: "0 auto 12px", display: "block", opacity: 0.3 }} />
+            <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "4px" }}>No expenses found</div>
+            <div style={{ fontSize: "12px" }}>No expenses recorded in the selected period.</div>
+        </div>
+    );
+
+    const categories = [...new Set(expenses.map(e => e.category || "OTHER"))];
+    const filtered = catFilter === "ALL" ? expenses : expenses.filter(e => (e.category || "OTHER") === catFilter);
+
+    const total = filtered.reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
+    const totalPaid = filtered.reduce((s, e) => s + parseFloat(e.paymentMade ?? 0), 0);
+    const totalPts = filtered.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
+
+    // Category breakdown for summary
+    const byCat = expenses.reduce((acc, e) => {
+        const c = e.category || "OTHER";
+        if (!acc[c]) acc[c] = { count: 0, total: 0 };
+        acc[c].count++;
+        acc[c].total += parseFloat(e.amount ?? 0);
+        return acc;
+    }, {});
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {/* Summary Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "10px" }}>
+                <StatCard label="Total Expense Cost" value={fmtMoney(expenses.reduce((s,e)=>s+parseFloat(e.amount??0),0))} valueColor="#b45309" icon={Receipt} accentColor="#b45309" sub={`${expenses.length} items`} />
+                <StatCard label="Wallet Paid Out" value={fmtMoney(expenses.reduce((s,e)=>s+parseFloat(e.paymentMade??0),0))} valueColor="#dc2626" icon={Wallet} accentColor="#dc2626" />
+                <StatCard label="Points Reloaded" value={`+${expenses.reduce((s,e)=>s+(e.pointsAdded??0),0)} pts`} valueColor="#7c3aed" icon={Gamepad2} accentColor="#7c3aed" />
+                <StatCard label="Categories" value={categories.length} icon={Filter} accentColor="#64748b" />
+            </div>
+
+            {/* Category breakdown pills */}
+            {Object.keys(byCat).length > 0 && (
+                <div style={{ ...CARD, padding: "14px 16px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>By Category</div>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                        {Object.entries(byCat).map(([cat, { count, total }]) => (
+                            <div key={cat} style={{ padding: "6px 12px", borderRadius: "8px", background: "#fffbeb", border: "1px solid #fde68a", fontSize: "12px" }}>
+                                <span style={{ fontWeight: "700", color: "#b45309" }}>{cat.replace(/_/g, " ")}</span>
+                                <span style={{ color: "#64748b", marginLeft: "6px" }}>{count}× · {fmtMoney(total)}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Filter by category */}
+            <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                <span style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase" }}>Filter:</span>
+                {["ALL", ...categories].map(c => (
+                    <button key={c} onClick={() => setCatFilter(c)} style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid", fontSize: "11px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit", background: catFilter === c ? "#b45309" : "#fff", color: catFilter === c ? "#fff" : "#64748b", borderColor: catFilter === c ? "#b45309" : "#e2e8f0" }}>
+                        {c === "ALL" ? "All" : c.replace(/_/g, " ")}
+                    </button>
+                ))}
+            </div>
+
+            {/* Full table */}
+            <div style={{ ...CARD, overflow: "hidden" }}>
+                <div style={{ padding: "12px 16px", background: "#fffbeb", borderBottom: "1px solid #fde68a", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <Receipt style={{ width: "14px", height: "14px", color: "#b45309" }} />
+                        <span style={{ fontSize: "12px", fontWeight: "700", color: "#b45309", textTransform: "uppercase" }}>
+                            All Expenses ({filtered.length}{catFilter !== "ALL" ? ` · ${catFilter.replace(/_/g," ")}` : ""})
+                        </span>
+                    </div>
+                    <div style={{ display: "flex", gap: "16px", fontSize: "12px", flexWrap: "wrap" }}>
+                        <span style={{ fontWeight: "800", color: "#b45309" }}>Cost: −{fmtMoney(total)}</span>
+                        {totalPaid > 0 && <span style={{ fontWeight: "700", color: "#dc2626" }}>Paid: −{fmtMoney(totalPaid)}</span>}
+                        {totalPts > 0 && <span style={{ color: "#7c3aed", fontWeight: "700" }}>+{totalPts} pts</span>}
+                    </div>
+                </div>
+                <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <thead>
+                            <tr>
+                                {[...(rangeMode ? ["Date"] : []), "Time", "Shift", "Details", "Category", "Game", "Amount $", "Pts Added", "Wallet Paid", "Notes"].map(h => (
+                                    <th key={h} style={TH}>{h}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filtered.map((e, i) => (
+                                <tr key={e.id ?? i} onMouseEnter={ev => ev.currentTarget.style.background = "#fefce8"} onMouseLeave={ev => ev.currentTarget.style.background = ""}>
+                                    {rangeMode && <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap", fontWeight: "600" }}>{fmtDateShort(e._date + "T12:00:00")}</td>}
+                                    <td style={{ ...TD, fontSize: "11px", color: "#94a3b8", whiteSpace: "nowrap" }}>{fmtTime(e.createdAt)}</td>
+                                    <td style={TD}><Badge label={ROLE_LABEL[e._teamRole] || e._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
+                                    <td style={{ ...TD, fontWeight: "600" }}>{e.details}</td>
+                                    <td style={TD}><Badge label={(e.category || "—").replace(/_/g, " ")} bg="#fffbeb" color="#b45309" /></td>
+                                    <td style={{ ...TD, fontSize: "12px", color: "#64748b" }}>{e.game?.name || "—"}</td>
+                                    <td style={{ ...TD, fontWeight: "700", color: "#b45309" }}>{fmtMoney(e.amount ?? 0)}</td>
+                                    <td style={{ ...TD, color: "#7c3aed", fontWeight: "600" }}>{(e.pointsAdded ?? 0) > 0 ? `+${e.pointsAdded} pts` : "—"}</td>
+                                    <td style={{ ...TD, fontWeight: "700", color: "#dc2626" }}>{parseFloat(e.paymentMade ?? 0) > 0 ? `−${fmtMoney(e.paymentMade)}` : "—"}</td>
+                                    <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{e.notes || "—"}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                        <tfoot>
+                            <tr style={{ background: "#fef9c3" }}>
+                                <td colSpan={rangeMode ? 6 : 5} style={{ ...TD, fontWeight: "700", fontSize: "12px", color: "#92400e" }}>
+                                    Total ({filtered.length} expense{filtered.length !== 1 ? "s" : ""})
+                                </td>
+                                <td style={{ ...TD, fontWeight: "800", color: "#b45309" }}>{fmtMoney(total)}</td>
+                                <td style={{ ...TD, fontWeight: "700", color: "#7c3aed" }}>{totalPts > 0 ? `+${totalPts} pts` : "—"}</td>
+                                <td style={{ ...TD, fontWeight: "800", color: "#dc2626" }}>{totalPaid > 0 ? `−${fmtMoney(totalPaid)}` : "—"}</td>
+                                <td style={TD} />
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Standalone Profit Takeouts Filter View ────────────────────
+function TakeoutsFilterView({ takeouts, rangeMode }) {
+    const [methodFilter, setMethodFilter] = useState("ALL");
+    if (!takeouts?.length) return (
+        <div style={{ ...CARD, padding: "48px", textAlign: "center", color: "#94a3b8" }}>
+            <PiggyBank style={{ width: "32px", height: "32px", margin: "0 auto 12px", display: "block", opacity: 0.3 }} />
+            <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "4px" }}>No profit takeouts found</div>
+            <div style={{ fontSize: "12px" }}>No profit takeouts recorded in the selected period.</div>
+        </div>
+    );
+
+    const methods = [...new Set(takeouts.map(t => t.method || "Cash"))];
+    const filtered = methodFilter === "ALL" ? takeouts : takeouts.filter(t => (t.method || "Cash") === methodFilter);
+
+    const total = filtered.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+    const byMethod = takeouts.reduce((acc, t) => {
+        const m = t.method || "Cash";
+        if (!acc[m]) acc[m] = { count: 0, total: 0 };
+        acc[m].count++;
+        acc[m].total += parseFloat(t.amount ?? 0);
+        return acc;
+    }, {});
+    const byPerson = takeouts.reduce((acc, t) => {
+        const p = t.takenBy || "Unknown";
+        if (!acc[p]) acc[p] = { count: 0, total: 0 };
+        acc[p].count++;
+        acc[p].total += parseFloat(t.amount ?? 0);
+        return acc;
+    }, {});
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {/* Summary Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "10px" }}>
+                <StatCard label="Total Takeouts" value={fmtMoney(takeouts.reduce((s,t)=>s+parseFloat(t.amount??0),0))} valueColor="#991b1b" icon={PiggyBank} accentColor="#991b1b" sub={`${takeouts.length} records`} />
+                {Object.entries(byMethod).map(([method, { count, total: mt }]) => (
+                    <StatCard key={method} label={method} value={fmtMoney(mt)} valueColor="#991b1b" icon={CreditCard} accentColor="#dc2626" sub={`${count} takeout${count !== 1 ? "s" : ""}`} />
+                ))}
+                <StatCard label="People" value={Object.keys(byPerson).length} icon={Users} accentColor="#64748b" sub="distinct payees" />
+            </div>
+
+            {/* Per-person breakdown */}
+            {Object.keys(byPerson).length > 1 && (
+                <div style={{ ...CARD, padding: "14px 16px" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>By Recipient</div>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                        {Object.entries(byPerson).sort((a,b)=>b[1].total-a[1].total).map(([person, { count, total: pt }]) => (
+                            <div key={person} style={{ padding: "6px 12px", borderRadius: "8px", background: "#fff1f2", border: "1px solid #fecdd3", fontSize: "12px" }}>
+                                <span style={{ fontWeight: "700", color: "#991b1b" }}>{person}</span>
+                                <span style={{ color: "#64748b", marginLeft: "6px" }}>{count}× · {fmtMoney(pt)}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Method filter */}
+            {methods.length > 1 && (
+                <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase" }}>Method:</span>
+                    {["ALL", ...methods].map(m => (
+                        <button key={m} onClick={() => setMethodFilter(m)} style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid", fontSize: "11px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit", background: methodFilter === m ? "#991b1b" : "#fff", color: methodFilter === m ? "#fff" : "#64748b", borderColor: methodFilter === m ? "#991b1b" : "#e2e8f0" }}>
+                            {m === "ALL" ? "All Methods" : m}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* Full detailed table */}
+            <div style={{ ...CARD, overflow: "hidden" }}>
+                <div style={{ padding: "12px 16px", background: "#fff1f2", borderBottom: "1px solid #fecdd3", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <PiggyBank style={{ width: "14px", height: "14px", color: "#991b1b" }} />
+                        <span style={{ fontSize: "12px", fontWeight: "700", color: "#991b1b", textTransform: "uppercase" }}>
+                            All Profit Takeouts ({filtered.length}{methodFilter !== "ALL" ? ` · ${methodFilter}` : ""})
+                        </span>
+                    </div>
+                    <span style={{ fontSize: "12px", fontWeight: "800", color: "#991b1b" }}>Total: −{fmtMoney(total)}</span>
+                </div>
+                <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <thead>
+                            <tr>
+                                {[...(rangeMode ? ["Date"] : []), "Time", "Shift", "Taken By", "Method", "Amount", "Wallet", "Notes"].map(h => (
+                                    <th key={h} style={TH}>{h}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filtered.map((t, i) => (
+                                <tr key={t.id ?? i} onMouseEnter={ev => ev.currentTarget.style.background = "#fff5f5"} onMouseLeave={ev => ev.currentTarget.style.background = ""}>
+                                    {rangeMode && <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap", fontWeight: "600" }}>{fmtDateShort(t._date + "T12:00:00")}</td>}
+                                    <td style={{ ...TD, fontSize: "11px", color: "#94a3b8", whiteSpace: "nowrap" }}>{fmtTime(t.takenAt || t._shiftTime)}</td>
+                                    <td style={TD}><Badge label={ROLE_LABEL[t._teamRole] || t._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
+                                    <td style={{ ...TD, fontWeight: "700" }}>{t.takenBy}</td>
+                                    <td style={TD}><Badge label={t.method || "Cash"} bg="#fff1f2" color="#991b1b" /></td>
+                                    <td style={{ ...TD, fontWeight: "800", color: "#991b1b", fontSize: "14px" }}>−{fmtMoney(t.amount)}</td>
+                                    <td style={{ ...TD, fontSize: "12px", color: "#64748b" }}>{t.walletId ? `Wallet #${t.walletId}` : "—"}</td>
+                                    <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{t.notes || "—"}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                        <tfoot>
+                            <tr style={{ background: "#fee2e2" }}>
+                                <td colSpan={rangeMode ? 5 : 4} style={{ ...TD, fontWeight: "700", fontSize: "12px", color: "#991b1b" }}>
+                                    Total ({filtered.length} takeout{filtered.length !== 1 ? "s" : ""})
+                                </td>
+                                <td style={{ ...TD, fontWeight: "800", color: "#991b1b", fontSize: "14px" }}>−{fmtMoney(total)}</td>
+                                <td colSpan={2} style={TD} />
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Standalone Transactions Filter View ───────────────────────
+function TransactionsFilterView({ transactions, rangeMode }) {
+    const [typeFilter, setTypeFilter] = useState("ALL");
+    const [teamFilter, setTeamFilter] = useState("ALL");
+
+    if (!transactions?.length) return (
+        <div style={{ ...CARD, padding: "48px", textAlign: "center", color: "#94a3b8" }}>
+            <Activity style={{ width: "32px", height: "32px", margin: "0 auto 12px", display: "block", opacity: 0.3 }} />
+            <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "4px" }}>No transactions found</div>
+            <div style={{ fontSize: "12px" }}>No transactions recorded in the selected period.</div>
+        </div>
+    );
+
+    const filtered = transactions.filter(t => {
+        const typeMatch = typeFilter === "ALL" || t.type === typeFilter || t.displayType === typeFilter;
+        const teamMatch = teamFilter === "ALL" || t._teamRole === teamFilter;
+        return typeMatch && teamMatch;
+    });
+
+    const deposits = transactions.filter(t => t.type === "DEPOSIT");
+    const cashouts = transactions.filter(t => t.type === "WITHDRAWAL");
+    const bonuses = transactions.filter(t => t.type === "BONUS");
+    const totalDep = deposits.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+    const totalCash = cashouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+    const totalBonus = bonuses.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+
+    const teams = [...new Set(transactions.map(t => t._teamRole).filter(Boolean))];
+
+    const TYPE_TABS = [
+        { id: "ALL", label: `All (${transactions.length})` },
+        { id: "DEPOSIT", label: `Deposits (${deposits.length})`, color: "#16a34a" },
+        { id: "WITHDRAWAL", label: `Cashouts (${cashouts.length})`, color: "#dc2626" },
+        { id: "BONUS", label: `Bonuses (${bonuses.length})`, color: "#c2410c" },
+    ];
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {/* Summary */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "10px" }}>
+                <StatCard label="Total Deposits" value={fmtMoney(totalDep)} valueColor="#16a34a" icon={ArrowUpRight} accentColor="#16a34a" sub={`${deposits.length} txns`} />
+                <StatCard label="Total Cashouts" value={fmtMoney(totalCash)} valueColor="#dc2626" icon={ArrowDownRight} accentColor="#dc2626" sub={`${cashouts.length} txns`} />
+                <StatCard label="Total Bonuses" value={fmtMoney(totalBonus)} valueColor="#c2410c" icon={Gift} accentColor="#c2410c" sub={`${bonuses.length} txns`} />
+                <StatCard label="Net Profit" value={fmtMoney(totalDep - totalCash)} valueColor={totalDep - totalCash >= 0 ? "#16a34a" : "#dc2626"} icon={TrendingUp} accentColor="#16a34a" sub="Deposits − Cashouts" />
+            </div>
+
+            {/* Filters */}
+            <div style={{ display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: "4px" }}>
+                    {TYPE_TABS.map(({ id, label, color }) => (
+                        <button key={id} onClick={() => setTypeFilter(id)} style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid", fontSize: "11px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit", background: typeFilter === id ? (color || "#0f172a") : "#fff", color: typeFilter === id ? "#fff" : "#64748b", borderColor: typeFilter === id ? (color || "#0f172a") : "#e2e8f0" }}>
+                            {label}
+                        </button>
+                    ))}
+                </div>
+                {teams.length > 1 && (
+                    <div style={{ display: "flex", gap: "4px" }}>
+                        {["ALL", ...teams].map(t => (
+                            <button key={t} onClick={() => setTeamFilter(t)} style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid", fontSize: "11px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit", background: teamFilter === t ? "#475569" : "#fff", color: teamFilter === t ? "#fff" : "#64748b", borderColor: teamFilter === t ? "#475569" : "#e2e8f0" }}>
+                                {t === "ALL" ? "All Teams" : ROLE_LABEL[t] || t}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Table */}
+            <div style={{ ...CARD, overflow: "hidden" }}>
+                <div style={{ padding: "12px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Activity style={{ width: "14px", height: "14px", color: "#64748b" }} />
+                    <span style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a", textTransform: "uppercase" }}>Transactions ({filtered.length})</span>
+                </div>
+                <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <thead>
+                            <tr>
+                                {[...(rangeMode ? ["Date"] : []), "Time", "Shift", "Player", "Type", "Game / Wallet", "Amount", "Fee", "Status"].map(h => (
+                                    <th key={h} style={{ ...TH, textAlign: h === "Amount" || h === "Fee" ? "right" : "left" }}>{h}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filtered.map(t => {
+                                const isDeposit = t.type === "DEPOSIT";
+                                const isCashout = t.type === "WITHDRAWAL";
+                                const isPending = t.status === "PENDING";
+                                const amtColor = isDeposit ? "#16a34a" : isCashout ? "#dc2626" : "#c2410c";
+                                return (
+                                    <tr key={t.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""} style={{ opacity: isPending ? 0.8 : 1 }}>
+                                        {rangeMode && <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap", fontWeight: "600" }}>{fmtDateShort(t._date + "T12:00:00")}</td>}
+                                        <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap" }}>{fmtTime(t.createdAt)}</td>
+                                        <td style={TD}><Badge label={ROLE_LABEL[t._teamRole] || t._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
+                                        <td style={TD}><div style={{ fontWeight: "600", fontSize: "12px" }}>{t.user?.name || t.playerName || `#${t.userId}`}</div></td>
+                                        <td style={TD}><DisplayTypeBadge type={t.displayType || t.type} /></td>
+                                        <td style={{ ...TD, fontSize: "11px" }}>
+                                            {t.gameName && <div style={{ fontWeight: "600" }}>{t.gameName}</div>}
+                                            {t.walletMethod && <div style={{ color: "#64748b" }}>{t.walletMethod}{t.walletName ? ` · ${t.walletName}` : ""}</div>}
+                                            {!t.gameName && !t.walletMethod && <span style={{ color: "#cbd5e1" }}>—</span>}
+                                        </td>
+                                        <td style={{ ...TD, textAlign: "right", fontWeight: "800", color: amtColor }}>{fmtMoney(t.amount)}</td>
+                                        <td style={{ ...TD, textAlign: "right" }}>{t.fee > 0 ? <span style={{ color: "#f59e0b", fontWeight: "700", fontSize: "11px" }}>−{fmtMoney(t.fee)}</span> : <span style={{ color: "#cbd5e1" }}>—</span>}</td>
+                                        <td style={TD}><Badge label={isPending ? "PENDING" : "DONE"} bg={isPending ? "#fef3c7" : "#dcfce7"} color={isPending ? "#b45309" : "#166534"} /></td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                        <tfoot>
+                            <tr style={{ background: "#f8fafc" }}>
+                                <td colSpan={rangeMode ? 6 : 5} style={{ ...TD, fontWeight: "700", fontSize: "12px", color: "#475569" }}>Showing {filtered.length} of {transactions.length}</td>
+                                <td style={{ ...TD, textAlign: "right", fontWeight: "800" }}>
+                                    <div style={{ color: "#16a34a", fontSize: "12px" }}>+{fmtMoney(filtered.filter(t=>t.type==="DEPOSIT").reduce((s,t)=>s+(t.amount??0),0))}</div>
+                                    <div style={{ color: "#dc2626", fontSize: "11px" }}>−{fmtMoney(filtered.filter(t=>t.type==="WITHDRAWAL").reduce((s,t)=>s+(t.amount??0),0))}</div>
+                                </td>
+                                <td colSpan={2} style={TD} />
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ── Single Shift Detail ───────────────────────────────────────
-function ShiftDetail({ shift, index, total, memberName, teamRole }) {
+function ShiftDetail({ shift, index, total }) {
     const [activeTab, setActiveTab] = useState("overview");
     const isLast = index === total - 1;
     const s = shift.stats || {};
-
     let startSnapshot = shift.startSnapshot ?? null;
     let endSnapshot = shift.endSnapshot ?? null;
-    if (!startSnapshot && shift.checkin?.balanceNote) {
-        try { startSnapshot = JSON.parse(shift.checkin.balanceNote); } catch (_) { }
-    }
-    if (!endSnapshot && shift.checkin?.additionalNotes) {
-        try { const p = JSON.parse(shift.checkin.additionalNotes); endSnapshot = p.endSnapshot ?? null; } catch (_) { }
-    }
-
+    if (!startSnapshot && shift.checkin?.balanceNote) { try { startSnapshot = JSON.parse(shift.checkin.balanceNote); } catch (_) { } }
+    if (!endSnapshot && shift.checkin?.additionalNotes) { try { const p = JSON.parse(shift.checkin.additionalNotes); endSnapshot = p.endSnapshot ?? null; } catch (_) { } }
     const hasReconciliation = startSnapshot && endSnapshot;
     const transactions = shift.transactions || [];
-
+    const netProfit = s.netProfit ?? 0;
     const tabs = [
         { id: "overview", label: "Shift Report" },
         { id: "transactions", label: `Transactions (${transactions.length})` },
@@ -932,21 +1182,14 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
         { id: "players", label: `Players Added (${shift.playersAdded?.length || 0})` },
         { id: "bonuses", label: `Bonuses (${shift.bonusesGranted?.length || 0})` },
     ];
-
-    const netProfit = s.netProfit ?? 0;
-
     return (
         <div style={{ borderBottom: isLast ? "none" : "1px solid #e2e8f0" }}>
             <div style={{ padding: "14px 20px", background: shift.isActive ? "#f0fdf4" : "#fafbfc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: shift.isActive ? "#22c55e" : "#94a3b8", flexShrink: 0 }} />
+                    <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: shift.isActive ? "#22c55e" : "#94a3b8" }} />
                     <div>
-                        <div style={{ fontWeight: "700", fontSize: "14px", color: "#0f172a" }}>
-                            {fmtTime(shift.startTime)} — {shift.isActive ? <span style={{ color: "#22c55e" }}>Active Now</span> : fmtTime(shift.endTime)}
-                        </div>
-                        <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "1px" }}>
-                            {shift.duration != null ? `${shift.duration} min` : "Ongoing"}
-                        </div>
+                        <div style={{ fontWeight: "700", fontSize: "14px", color: "#0f172a" }}>{fmtTime(shift.startTime)} — {shift.isActive ? <span style={{ color: "#22c55e" }}>Active Now</span> : fmtTime(shift.endTime)}</div>
+                        <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "1px" }}>{shift.duration != null ? `${shift.duration} min` : "Ongoing"}</div>
                     </div>
                 </div>
                 <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginLeft: "8px" }}>
@@ -972,7 +1215,6 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
                     </button>
                 ))}
             </div>
-
             {activeTab === "overview" && (
                 <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "18px" }}>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))", gap: "10px" }}>
@@ -985,14 +1227,14 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
                     </div>
                     {hasReconciliation && (
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-                            <CashFlowAudit startSnapshot={startSnapshot} endSnapshot={endSnapshot} transactions={transactions} />
+                            <CashFlowAudit startSnapshot={startSnapshot} endSnapshot={endSnapshot} />
                             <GamePointAudit startSnapshot={startSnapshot} endSnapshot={endSnapshot} />
                         </div>
                     )}
                     <ShiftTransactionsTable transactions={transactions} />
                     {shift.expenses?.length > 0 && <ExpensesTable expenses={shift.expenses} />}
                     {shift.profitTakeouts?.length > 0 && <ProfitTakeoutsTable takeouts={shift.profitTakeouts} />}
-                    {hasReconciliation && <AuditVerification endSnapshot={endSnapshot} transactions={transactions} />}
+                    {hasReconciliation && <AuditVerification endSnapshot={endSnapshot} />}
                     <div style={{ ...CARD, overflow: "hidden" }}>
                         <div style={{ padding: "12px 16px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "8px" }}>
                             <MessageSquare style={{ width: "14px", height: "14px", color: "#64748b" }} />
@@ -1002,36 +1244,29 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
                     </div>
                 </div>
             )}
-
             {activeTab === "transactions" && (
                 <div style={{ overflowX: "auto" }}>
-                    {!transactions.length
-                        ? <div style={{ padding: "28px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No transactions this shift</div>
-                        : (
-                            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                                <thead><tr>{["Time", "Player", "Type", "Game", "Amount", "Balance After"].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
-                                <tbody>
-                                    {transactions.map(t => (
-                                        <tr key={t.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
-                                            <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{fmtTime(t.createdAt)}</td>
-                                            <td style={TD}><div style={{ fontWeight: "600", fontSize: "12px" }}>{t.user?.name || `#${t.userId}`}</div></td>
-                                            <td style={TD}><DisplayTypeBadge type={t.displayType || t.type} /></td>
-                                            <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{t.gameName || "—"}</td>
-                                            <td style={{ ...TD, fontWeight: "700", fontSize: "13px", color: t.type === "DEPOSIT" ? "#16a34a" : t.type === "WITHDRAWAL" ? "#dc2626" : "#c2410c" }}>{fmtMoney(t.amount)}</td>
-                                            <td style={{ ...TD, fontSize: "12px", color: "#64748b" }}>{t.balanceAfter != null ? fmtMoney(t.balanceAfter) : "—"}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        )}
+                    {!transactions.length ? <div style={{ padding: "28px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No transactions this shift</div> : (
+                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                            <thead><tr>{["Time", "Player", "Type", "Game", "Amount", "Balance After"].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
+                            <tbody>{transactions.map(t => (
+                                <tr key={t.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
+                                    <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{fmtTime(t.createdAt)}</td>
+                                    <td style={TD}><div style={{ fontWeight: "600", fontSize: "12px" }}>{t.user?.name || `#${t.userId}`}</div></td>
+                                    <td style={TD}><DisplayTypeBadge type={t.displayType || t.type} /></td>
+                                    <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{t.gameName || "—"}</td>
+                                    <td style={{ ...TD, fontWeight: "700", fontSize: "13px", color: t.type === "DEPOSIT" ? "#16a34a" : t.type === "WITHDRAWAL" ? "#dc2626" : "#c2410c" }}>{fmtMoney(t.amount)}</td>
+                                    <td style={{ ...TD, fontSize: "12px", color: "#64748b" }}>{t.balanceAfter != null ? fmtMoney(t.balanceAfter) : "—"}</td>
+                                </tr>
+                            ))}</tbody>
+                        </table>
+                    )}
                 </div>
             )}
-
             {activeTab === "tasks" && (
                 <div style={{ padding: "16px 20px" }}>
-                    {!shift.tasks?.length
-                        ? <div style={{ padding: "20px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No tasks this shift</div>
-                        : <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {!shift.tasks?.length ? <div style={{ padding: "20px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No tasks this shift</div> : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                             {shift.tasks.map(t => (
                                 <div key={t.id} style={{ padding: "12px 16px", border: "1px solid #e2e8f0", borderLeft: `3px solid ${t.status === "COMPLETED" ? "#22c55e" : "#f59e0b"}`, borderRadius: "0 8px 8px 0" }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1040,15 +1275,14 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
                                     </div>
                                 </div>
                             ))}
-                        </div>}
+                        </div>
+                    )}
                 </div>
             )}
-
             {activeTab === "players" && (
                 <div style={{ padding: "16px 20px" }}>
-                    {!shift.playersAdded?.length
-                        ? <div style={{ padding: "20px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No players added this shift</div>
-                        : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "10px" }}>
+                    {!shift.playersAdded?.length ? <div style={{ padding: "20px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No players added this shift</div> : (
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "10px" }}>
                             {shift.playersAdded.map(p => (
                                 <div key={p.id} style={{ padding: "12px 14px", border: "1px solid #ddd6fe", borderRadius: "9px", background: "#f5f3ff" }}>
                                     <div style={{ fontWeight: "700", fontSize: "13px" }}>{p.name}</div>
@@ -1056,41 +1290,36 @@ function ShiftDetail({ shift, index, total, memberName, teamRole }) {
                                     <div style={{ marginTop: "6px" }}><Badge label={p.tier} bg="#fffbeb" color="#92400e" /></div>
                                 </div>
                             ))}
-                        </div>}
+                        </div>
+                    )}
                 </div>
             )}
-
             {activeTab === "bonuses" && (
                 <div style={{ overflowX: "auto" }}>
-                    {!shift.bonusesGranted?.length
-                        ? <div style={{ padding: "28px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No bonuses this shift</div>
-                        : (
-                            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                                <thead><tr>{["Time", "Player", "Game", "Amount"].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
-                                <tbody>
-                                    {shift.bonusesGranted.map(b => (
-                                        <tr key={b.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
-                                            <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{fmtTime(b.createdAt)}</td>
-                                            <td style={{ ...TD, fontSize: "12px", fontWeight: "600" }}>{b.user?.name || "—"}</td>
-                                            <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{b.game?.name || "—"}</td>
-                                            <td style={{ ...TD, fontWeight: "700", color: "#c2410c" }}>{fmtMoney(b.amount)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        )}
+                    {!shift.bonusesGranted?.length ? <div style={{ padding: "28px", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>No bonuses this shift</div> : (
+                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                            <thead><tr>{["Time", "Player", "Game", "Amount"].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
+                            <tbody>{shift.bonusesGranted.map(b => (
+                                <tr key={b.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
+                                    <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{fmtTime(b.createdAt)}</td>
+                                    <td style={{ ...TD, fontSize: "12px", fontWeight: "600" }}>{b.user?.name || "—"}</td>
+                                    <td style={{ ...TD, fontSize: "11px", color: "#94a3b8" }}>{b.game?.name || "—"}</td>
+                                    <td style={{ ...TD, fontWeight: "700", color: "#c2410c" }}>{fmtMoney(b.amount)}</td>
+                                </tr>
+                            ))}</tbody>
+                        </table>
+                    )}
                 </div>
             )}
         </div>
     );
 }
 
-// ── Member Section (collapsible) ──────────────────────────────
+// ── Member Section ────────────────────────────────────────────
 function MemberShiftSection({ team }) {
     const [expanded, setExpanded] = useState(true);
     const rc = ROLE_COLORS[team.role] || ROLE_COLORS.TEAM1;
     const memberName = team.member?.name || team.shifts[0]?.displayMember?.name || team.shifts[0]?.checkin?.user?.name || "Unassigned";
-
     const aggr = team.shifts.reduce((acc, s) => {
         const st = s.stats || {};
         acc.deposits += st.totalDeposits || 0;
@@ -1098,13 +1327,11 @@ function MemberShiftSection({ team }) {
         acc.bonuses += st.totalBonuses || 0;
         acc.profit += st.netProfit || 0;
         acc.players += st.playersAdded || 0;
-        acc.tasks += st.tasksCompleted || 0;
         acc.duration += s.duration || 0;
         acc.expenses += st.totalExpenses || 0;
         acc.takeouts += st.totalTakeouts || 0;
         return acc;
-    }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, players: 0, tasks: 0, duration: 0, expenses: 0, takeouts: 0 });
-
+    }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, players: 0, duration: 0, expenses: 0, takeouts: 0 });
     return (
         <div style={{ ...CARD, overflow: "hidden" }}>
             <div onClick={() => setExpanded(v => !v)} style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: "14px", cursor: "pointer", background: "#fafbfc", borderBottom: expanded ? "1px solid #e2e8f0" : "none", flexWrap: "wrap" }}>
@@ -1115,9 +1342,7 @@ function MemberShiftSection({ team }) {
                     <div>
                         <div style={{ fontWeight: "700", fontSize: "15px", color: "#0f172a" }}>{memberName}</div>
                         <div style={{ display: "flex", gap: "6px", marginTop: "3px", alignItems: "center" }}>
-                            <span style={{ padding: "2px 8px", borderRadius: "5px", fontSize: "11px", fontWeight: "700", background: rc.bg, color: rc.text, border: `1px solid ${rc.border}` }}>
-                                {ROLE_LABEL[team.role] || team.role}
-                            </span>
+                            <span style={{ padding: "2px 8px", borderRadius: "5px", fontSize: "11px", fontWeight: "700", background: rc.bg, color: rc.text, border: `1px solid ${rc.border}` }}>{ROLE_LABEL[team.role] || team.role}</span>
                             <span style={{ fontSize: "11px", color: "#94a3b8" }}>{team.shifts.length} shift{team.shifts.length !== 1 ? "s" : ""} · {aggr.duration} min</span>
                         </div>
                     </div>
@@ -1140,38 +1365,29 @@ function MemberShiftSection({ team }) {
                 </div>
             </div>
             {expanded && team.shifts.map((shift, si) => (
-                <ShiftDetail key={shift.id} shift={shift} index={si} total={team.shifts.length} memberName={shift.displayMember?.name} teamRole={team.role} />
+                <ShiftDetail key={shift.id} shift={shift} index={si} total={team.shifts.length} />
             ))}
         </div>
     );
 }
 
-// ── Day Report Block (used in range view) ─────────────────────
+// ── Day Report Block ──────────────────────────────────────────
 function DayReportBlock({ report, defaultExpanded = false }) {
     const [expanded, setExpanded] = useState(defaultExpanded);
     const s = report.summary || {};
     const dayLabel = fmtDate(report.date + "T12:00:00");
-
-    // Aggregate day-level data
     const dayExpenses = aggregateDayExpenses(report);
     const dayTakeouts = aggregateDayTakeouts(report);
     const dayGameChanges = aggregateDayGameChanges(report);
     const dayWalletChanges = aggregateDayWalletChanges(report);
-
     const totalExpenses = dayExpenses.reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
     const totalTakeouts = dayTakeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
     const totalPtsReloaded = dayExpenses.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
-
     return (
         <div style={{ ...CARD, overflow: "hidden" }}>
-            <div
-                onClick={() => setExpanded(v => !v)}
-                style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: "14px", cursor: "pointer", background: "#f8fafc", borderBottom: expanded ? "1px solid #e2e8f0" : "none", flexWrap: "wrap" }}
-            >
+            <div onClick={() => setExpanded(v => !v)} style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: "14px", cursor: "pointer", background: "#f8fafc", borderBottom: expanded ? "1px solid #e2e8f0" : "none", flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0 }}>
-                    <div style={{ width: "38px", height: "38px", borderRadius: "10px", background: "#eff6ff", border: "1px solid #bfdbfe", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <Calendar style={{ width: "17px", height: "17px", color: "#2563eb" }} />
-                    </div>
+                    <div style={{ width: "38px", height: "38px", borderRadius: "10px", background: "#eff6ff", border: "1px solid #bfdbfe", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Calendar style={{ width: "17px", height: "17px", color: "#2563eb" }} /></div>
                     <div>
                         <div style={{ fontWeight: "800", fontSize: "15px", color: "#0f172a" }}>{dayLabel}</div>
                         <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>
@@ -1186,7 +1402,6 @@ function DayReportBlock({ report, defaultExpanded = false }) {
                     {[
                         { label: "Deposits", val: fmtMoney(s.totalDeposits), color: "#16a34a", bg: "#f0fdf4" },
                         { label: "Cashouts", val: fmtMoney(s.totalCashouts), color: "#dc2626", bg: "#fee2e2" },
-                        { label: "Bonuses", val: fmtMoney(s.totalBonuses), color: "#c2410c", bg: "#fff7ed" },
                         { label: "Profit", val: fmtMoney(s.netProfit), color: (s.netProfit ?? 0) >= 0 ? "#16a34a" : "#dc2626", bg: (s.netProfit ?? 0) >= 0 ? "#f0fdf4" : "#fee2e2" },
                         ...(totalExpenses > 0 ? [{ label: "Expenses", val: fmtMoney(totalExpenses), color: "#b45309", bg: "#fffbeb" }] : []),
                         ...(totalTakeouts > 0 ? [{ label: "Takeouts", val: fmtMoney(totalTakeouts), color: "#991b1b", bg: "#fff1f2" }] : []),
@@ -1199,91 +1414,35 @@ function DayReportBlock({ report, defaultExpanded = false }) {
                     {expanded ? <ChevronUp style={{ width: "15px", height: "15px", color: "#94a3b8" }} /> : <ChevronDown style={{ width: "15px", height: "15px", color: "#94a3b8" }} />}
                 </div>
             </div>
-
             {expanded && (
                 <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
-                    {/* Day Summary Cards */}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(155px, 1fr))", gap: "10px" }}>
                         <StatCard label="Total Deposits" value={fmtMoney(s.totalDeposits)} valueColor="#16a34a" icon={ArrowUpRight} accentColor="#16a34a" />
                         <StatCard label="Total Cashouts" value={fmtMoney(s.totalCashouts)} valueColor="#dc2626" icon={ArrowDownRight} accentColor="#dc2626" />
                         <StatCard label="Total Bonuses" value={fmtMoney(s.totalBonuses)} valueColor="#c2410c" icon={Gift} accentColor="#c2410c" />
                         <StatCard label="Net Profit" value={fmtMoney(s.netProfit)} valueColor={(s.netProfit ?? 0) >= 0 ? "#16a34a" : "#dc2626"} icon={(s.netProfit ?? 0) >= 0 ? TrendingUp : TrendingDown} accentColor={(s.netProfit ?? 0) >= 0 ? "#16a34a" : "#dc2626"} />
-                        {totalExpenses > 0 && <StatCard label="Total Expenses" value={fmtMoney(totalExpenses)} valueColor="#b45309" icon={Receipt} accentColor="#b45309" sub={`${dayExpenses.length} items · ${totalPtsReloaded > 0 ? `+${totalPtsReloaded} pts` : ""}`} />}
+                        {totalExpenses > 0 && <StatCard label="Total Expenses" value={fmtMoney(totalExpenses)} valueColor="#b45309" icon={Receipt} accentColor="#b45309" sub={`${dayExpenses.length} items`} />}
                         {totalTakeouts > 0 && <StatCard label="Profit Takeouts" value={fmtMoney(totalTakeouts)} valueColor="#991b1b" icon={PiggyBank} accentColor="#991b1b" sub={`${dayTakeouts.length} takeout${dayTakeouts.length !== 1 ? "s" : ""}`} />}
                         <StatCard label="Tasks Done" value={s.tasksCompleted ?? 0} icon={CheckCircle} accentColor="#16a34a" />
                         <StatCard label="Transactions" value={s.transactionCount ?? 0} icon={Activity} accentColor="#2563eb" />
                         <StatCard label="Shifts" value={s.totalShifts ?? 0} sub={`${s.activeShifts ?? 0} active`} icon={Clock} accentColor="#475569" />
                     </div>
-
-                    {/* Game & Wallet Changes */}
-                    {(dayGameChanges.length > 0 || dayWalletChanges.length > 0) && (
-                        <DayGameChangesSection gameChanges={dayGameChanges} wallets={dayWalletChanges} />
-                    )}
-
-                    {/* Day-level Expenses */}
+                    {(dayGameChanges.length > 0 || dayWalletChanges.length > 0) && <DayGameChangesSection gameChanges={dayGameChanges} wallets={dayWalletChanges} />}
                     {dayExpenses.length > 0 && <DayExpensesSection expenses={dayExpenses} />}
-
-                    {/* Day-level Profit Takeouts */}
                     {dayTakeouts.length > 0 && <DayTakeoutsSection takeouts={dayTakeouts} />}
-
-                    {/* Team Shifts */}
                     <div>
-                        <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
-                            <Users style={{ width: "12px", height: "12px" }} /> Team Shifts
-                        </div>
+                        <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}><Users style={{ width: "12px", height: "12px" }} /> Team Shifts</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                             {(report.teams || []).map(team => <MemberShiftSection key={team.role} team={team} />)}
                         </div>
                     </div>
-
-                    {/* Tasks */}
-                    {report.dayTasks?.length > 0 && (
-                        <div style={{ ...CARD, overflow: "hidden" }}>
-                            <div style={{ padding: "12px 16px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "8px" }}>
-                                <CheckCircle style={{ width: "14px", height: "14px", color: "#64748b" }} />
-                                <span style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a", textTransform: "uppercase" }}>Tasks ({report.dayTasks.length})</span>
-                            </div>
-                            <div style={{ overflowX: "auto" }}>
-                                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                                    <thead><tr>{["Task", "Type", "Assigned To", "Status", "Priority"].map(h => <th key={h} style={TH}>{h}</th>)}</tr></thead>
-                                    <tbody>
-                                        {report.dayTasks.map(t => (
-                                            <tr key={t.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""}>
-                                                <td style={TD}><div style={{ fontWeight: "600" }}>{t.title}</div></td>
-                                                <td style={TD}><TaskTypeBadge taskType={t.taskType} /></td>
-                                                <td style={{ ...TD, fontSize: "12px" }}>{t.assignToAll ? <Badge label="All Members" bg="#f5f3ff" color="#7c3aed" /> : t.assignedTo?.name || "—"}</td>
-                                                <td style={TD}><Badge label={t.status?.replace("_", " ")} bg={t.status === "COMPLETED" ? "#dcfce7" : "#eff6ff"} color={t.status === "COMPLETED" ? "#166634" : "#1d4ed8"} /></td>
-                                                <td style={TD}><PriorityBadge priority={t.priority} /></td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Wallets */}
-                    {report.wallets?.length > 0 && (
-                        <div style={{ ...CARD, padding: "16px 20px" }}>
-                            <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>Wallet Balances (End of Day)</div>
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "10px" }}>
-                                {report.wallets.map(w => (
-                                    <div key={w.id} style={{ padding: "12px 14px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fafbfc" }}>
-                                        <div style={{ fontSize: "10px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.4px", fontWeight: "700" }}>{w.method}</div>
-                                        <div style={{ fontSize: "16px", fontWeight: "800", color: "#0f172a", marginTop: "3px" }}>{fmtMoney(w.balance)}</div>
-                                        <div style={{ fontSize: "11px", color: "#64748b" }}>{w.name}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
                 </div>
             )}
         </div>
     );
 }
 
-// ── Range Aggregated Summary ──────────────────────────────────
+// ── Range Summary Cards ───────────────────────────────────────
 function RangeSummaryCards({ reports }) {
     const totals = reports.reduce((acc, r) => {
         const s = r.summary || {};
@@ -1294,7 +1453,6 @@ function RangeSummaryCards({ reports }) {
         acc.shifts += s.totalShifts || 0;
         acc.transactions += s.transactionCount || 0;
         acc.tasks += s.tasksCompleted || 0;
-        // Expenses & takeouts from shifts
         const dayExp = aggregateDayExpenses(r);
         const dayTake = aggregateDayTakeouts(r);
         acc.expenses += dayExp.reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
@@ -1302,7 +1460,6 @@ function RangeSummaryCards({ reports }) {
         acc.ptsReloaded += dayExp.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
         return acc;
     }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, shifts: 0, transactions: 0, tasks: 0, expenses: 0, takeouts: 0, ptsReloaded: 0 });
-
     return (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(175px, 1fr))", gap: "10px" }}>
             <StatCard label="Total Deposits" value={fmtMoney(totals.deposits)} valueColor="#16a34a" icon={ArrowUpRight} accentColor="#16a34a" sub={`across ${reports.length} days`} />
@@ -1319,16 +1476,16 @@ function RangeSummaryCards({ reports }) {
     );
 }
 
-// ── printReport (single day) ──────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// PDF PRINT FUNCTIONS
+// ══════════════════════════════════════════════════════════════
+
 function printReport(report, date) {
     const win = window.open("", "_blank");
     const { summary, teams, wallets, dayTasks } = report;
     const s = summary || {};
-
     const dayExpenses = aggregateDayExpenses(report);
     const dayTakeouts = aggregateDayTakeouts(report);
-    const dayGameChanges = aggregateDayGameChanges(report);
-    const dayWalletChanges = aggregateDayWalletChanges(report);
     const totalExpenses = dayExpenses.reduce((sum, e) => sum + parseFloat(e.amount ?? 0), 0);
     const totalTakeouts = dayTakeouts.reduce((sum, t) => sum + parseFloat(t.amount ?? 0), 0);
     const totalPtsReloaded = dayExpenses.reduce((sum, e) => sum + (e.pointsAdded ?? 0), 0);
@@ -1373,20 +1530,17 @@ function printReport(report, date) {
         <td><strong>${t.takenBy}</strong></td>
         <td>${t.method || "Cash"}</td>
         <td style="color:#991b1b;font-weight:800">${fmtMoney(t.amount)}</td>
+        <td>${t.walletId ? `Wallet #${t.walletId}` : "—"}</td>
         <td style="color:#94a3b8;font-size:10px">${t.notes || "—"}</td>
     </tr>`).join("");
 
-    const gameChangeRows = dayGameChanges.map(g => `<tr>
-        <td><strong>${g.name}</strong></td>
-        <td style="text-align:right">${g.shifts}</td>
-        <td style="text-align:right;font-weight:800;color:${g.totalDelta <= 0 ? "#16a34a" : "#dc2626"}">${g.totalDelta >= 0 ? "+" : ""}${g.totalDelta.toFixed(0)} pts</td>
-    </tr>`).join("");
-
-    const walletChangeRows = dayWalletChanges.map(w => `<tr>
-        <td><strong>${w.method || w.name}</strong>${w.name !== w.method ? `<br/><span style="font-size:10px;color:#94a3b8">${w.name}</span>` : ""}</td>
-        <td style="text-align:right">${fmtMoney(w.end)}</td>
-        <td style="text-align:right;font-weight:800;color:${w.totalDelta >= 0 ? "#16a34a" : "#dc2626"}">${w.totalDelta >= 0 ? "+" : ""}${fmtMoney(Math.abs(w.totalDelta))}</td>
-    </tr>`).join("");
+    // Build per-method takeout summary
+    const takeoutByMethod = dayTakeouts.reduce((acc, t) => {
+        const m = t.method || "Cash";
+        acc[m] = (acc[m] || 0) + parseFloat(t.amount ?? 0);
+        return acc;
+    }, {});
+    const takeoutMethodSummary = Object.entries(takeoutByMethod).map(([m, a]) => `${m}: <strong style="color:#991b1b">−${fmtMoney(a)}</strong>`).join(" &nbsp;|&nbsp; ");
 
     const currentWalletRows = (wallets || []).map(w => `<tr>
         <td><strong>${w.method}</strong></td>
@@ -1397,33 +1551,36 @@ function printReport(report, date) {
     win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/>
 <title>Operations Report — ${date}</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}body{font-family:"Segoe UI",Arial,sans-serif;font-size:12px;color:#0f172a;padding:28px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI",Arial,sans-serif;font-size:12px;color:#0f172a;padding:28px;line-height:1.5}
   h1{font-size:20px;font-weight:800;margin-bottom:3px}
-  h2{font-size:13px;font-weight:700;margin:24px 0 10px;color:#374151;border-bottom:2px solid #e2e8f0;padding-bottom:5px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+  h2{font-size:12px;font-weight:700;margin:24px 0 10px;color:#374151;border-bottom:2px solid #e2e8f0;padding-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
   .meta{font-size:11px;color:#64748b;margin-bottom:20px}
-  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
-  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-  .box{border:1px solid #e2e8f0;border-radius:7px;padding:12px 14px}
-  .val{font-size:18px;font-weight:800}.lbl{font-size:9px;color:#64748b;margin-top:1px;text-transform:uppercase}
-  .green{color:#16a34a}.red{color:#dc2626}.amber{color:#b45309}.purple{color:#7c3aed}
-  table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:18px}
-  th{background:#f8fafc;text-align:left;padding:7px 10px;font-weight:700;color:#64748b;font-size:10px;text-transform:uppercase;border-bottom:2px solid #e2e8f0}
-  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+  .box{border:1px solid #e2e8f0;border-radius:7px;padding:12px 14px;background:#fafbfc}
+  .val{font-size:18px;font-weight:800;line-height:1.2}
+  .lbl{font-size:9px;color:#64748b;margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+  .green{color:#16a34a}.red{color:#dc2626}.amber{color:#b45309}.purple{color:#7c3aed}.navy{color:#991b1b}
+  table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px}
+  th{background:#f8fafc;text-align:left;padding:7px 10px;font-weight:700;color:#64748b;font-size:10px;text-transform:uppercase;border-bottom:2px solid #e2e8f0;letter-spacing:.4px}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
   tfoot td{background:#f8fafc;font-weight:700;border-top:2px solid #e2e8f0}
-  .section-exp{background:#fffbeb;border:1px solid #fde68a;border-radius:7px;overflow:hidden;margin-bottom:18px}
-  .section-exp-hdr{padding:8px 12px;background:#fef9c3;font-weight:700;color:#b45309;font-size:11px;text-transform:uppercase}
-  .section-take{background:#fff1f2;border:1px solid #fecdd3;border-radius:7px;overflow:hidden;margin-bottom:18px}
-  .section-take-hdr{padding:8px 12px;background:#fee2e2;font-weight:700;color:#991b1b;font-size:11px;text-transform:uppercase}
-  .section-game{background:#f5f3ff;border:1px solid #e9d5ff;border-radius:7px;overflow:hidden;margin-bottom:18px}
-  .section-game-hdr{padding:8px 12px;background:#ede9fe;font-weight:700;color:#6d28d9;font-size:11px;text-transform:uppercase}
-  .section-wallet{background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;overflow:hidden;margin-bottom:18px}
-  .section-wallet-hdr{padding:8px 12px;background:#dbeafe;font-weight:700;color:#1d4ed8;font-size:11px;text-transform:uppercase}
+  .section-exp{border:1px solid #fde68a;border-radius:8px;overflow:hidden;margin-bottom:18px}
+  .section-exp-hdr{padding:9px 14px;background:#fef9c3;font-weight:700;color:#92400e;font-size:11px;text-transform:uppercase;border-bottom:1px solid #fde68a}
+  .section-take{border:1px solid #fecdd3;border-radius:8px;overflow:hidden;margin-bottom:18px}
+  .section-take-hdr{padding:9px 14px;background:#fee2e2;font-weight:700;color:#991b1b;font-size:11px;text-transform:uppercase;border-bottom:1px solid #fecdd3;display:flex;justify-content:space-between;align-items:center}
+  .section-wallet{border:1px solid #bfdbfe;border-radius:8px;overflow:hidden;margin-bottom:18px}
+  .section-wallet-hdr{padding:9px 14px;background:#dbeafe;font-weight:700;color:#1d4ed8;font-size:11px;text-transform:uppercase;border-bottom:1px solid #bfdbfe}
+  .divider{border:none;border-top:1px solid #e2e8f0;margin:20px 0}
   button{padding:9px 18px;background:#0f172a;color:#fff;border:none;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer}
   @media print{button{display:none}body{padding:16px}}
 </style></head><body>
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-    <div><h1>Daily Operations Report</h1><p class="meta">Generated ${new Date().toLocaleString("en-US", { timeZone: "America/Chicago" })} · Report Date: ${fmtDate(date + "T12:00:00")}</p></div>
+    <div>
+      <h1>Daily Operations Report</h1>
+      <p class="meta">Generated ${new Date().toLocaleString("en-US", { timeZone: "America/Chicago" })} CDT &nbsp;·&nbsp; Report Date: ${fmtDate(date + "T12:00:00")} &nbsp;·&nbsp; <strong>CONFIDENTIAL</strong></p>
+    </div>
     <button onclick="window.print()">🖨 Print / Save PDF</button>
   </div>
 
@@ -1434,7 +1591,7 @@ function printReport(report, date) {
     <div class="box"><div class="val" style="color:#c2410c">${fmtMoney(s.totalBonuses)}</div><div class="lbl">Total Bonuses</div></div>
     <div class="box"><div class="val ${(s.netProfit || 0) >= 0 ? "green" : "red"}">${fmtMoney(s.netProfit)}</div><div class="lbl">Net Profit</div></div>
     <div class="box"><div class="val amber">${fmtMoney(totalExpenses)}</div><div class="lbl">Total Expenses (${dayExpenses.length})</div></div>
-    <div class="box"><div class="val red">${fmtMoney(totalTakeouts)}</div><div class="lbl">Profit Takeouts (${dayTakeouts.length})</div></div>
+    <div class="box"><div class="val navy">${fmtMoney(totalTakeouts)}</div><div class="lbl">Profit Takeouts (${dayTakeouts.length})</div></div>
     <div class="box"><div class="val">${s.totalShifts}</div><div class="lbl">Shifts Logged</div></div>
     <div class="box"><div class="val">${s.tasksCompleted}</div><div class="lbl">Tasks Completed</div></div>
     <div class="box"><div class="val">${s.transactionCount}</div><div class="lbl">Transactions</div></div>
@@ -1447,19 +1604,19 @@ function printReport(report, date) {
     <th>Deposits</th><th>Cashouts</th><th>Bonuses</th><th>Net Profit</th>
     <th>Expenses</th><th>Takeouts</th><th>Players</th><th>Effort</th>
   </tr></thead>
-    <tbody>${memberRows || '<tr><td colspan="13" style="text-align:center;color:#94a3b8;padding:16px">No shifts today</td></tr>'}</tbody>
+  <tbody>${memberRows || '<tr><td colspan="13" style="text-align:center;color:#94a3b8;padding:16px">No shifts today</td></tr>'}</tbody>
   </table>
 
   ${dayExpenses.length > 0 ? `
   <div class="section-exp">
-    <div class="section-exp-hdr">🧾 Expenses — ${dayExpenses.length} item${dayExpenses.length !== 1 ? "s" : ""} · Total: ${fmtMoney(totalExpenses)}${totalPtsReloaded > 0 ? ` · +${totalPtsReloaded} pts reloaded` : ""}</div>
+    <div class="section-exp-hdr">🧾 Expenses — ${dayExpenses.length} item${dayExpenses.length !== 1 ? "s" : ""} &nbsp;·&nbsp; Total Cost: <strong>−${fmtMoney(totalExpenses)}</strong>${totalPtsReloaded > 0 ? ` &nbsp;·&nbsp; +${totalPtsReloaded} pts reloaded` : ""}</div>
     <table style="margin:0"><thead><tr>
       <th>Time</th><th>Shift</th><th>Details</th><th>Category</th><th>Game</th>
-      <th>Amount</th><th>Pts Added</th><th>Wallet Paid</th><th>Notes</th>
+      <th>Expense $</th><th>Pts Added</th><th>Wallet Paid</th><th>Notes</th>
     </tr></thead>
     <tbody>${expenseRows}</tbody>
     <tfoot><tr>
-      <td colspan="5"><strong>Total (${dayExpenses.length} expenses)</strong></td>
+      <td colspan="5"><strong>Total (${dayExpenses.length} expense${dayExpenses.length !== 1 ? "s" : ""})</strong></td>
       <td style="color:#b45309;font-weight:800">${fmtMoney(totalExpenses)}</td>
       <td style="color:#7c3aed">${totalPtsReloaded > 0 ? `+${totalPtsReloaded} pts` : "—"}</td>
       <td colspan="2"></td>
@@ -1469,52 +1626,40 @@ function printReport(report, date) {
 
   ${dayTakeouts.length > 0 ? `
   <div class="section-take">
-    <div class="section-take-hdr">💸 Profit Takeouts — ${dayTakeouts.length} takeout${dayTakeouts.length !== 1 ? "s" : ""} · Total: ${fmtMoney(totalTakeouts)}</div>
+    <div class="section-take-hdr">
+      <span>💸 Profit Takeouts — ${dayTakeouts.length} record${dayTakeouts.length !== 1 ? "s" : ""}</span>
+      <span>${takeoutMethodSummary} &nbsp;|&nbsp; <strong>Total: −${fmtMoney(totalTakeouts)}</strong></span>
+    </div>
     <table style="margin:0"><thead><tr>
-      <th>Time</th><th>Shift</th><th>Taken By</th><th>Method</th><th>Amount</th><th>Notes</th>
+      <th>Time</th><th>Shift</th><th>Taken By</th><th>Method</th><th>Amount</th><th>Wallet</th><th>Notes</th>
     </tr></thead>
     <tbody>${takeoutRows}</tbody>
     <tfoot><tr>
-      <td colspan="4"><strong>Total (${dayTakeouts.length} takeouts)</strong></td>
-      <td style="color:#991b1b;font-weight:800">${fmtMoney(totalTakeouts)}</td>
-      <td></td>
+      <td colspan="4"><strong>Total (${dayTakeouts.length} takeout${dayTakeouts.length !== 1 ? "s" : ""})</strong></td>
+      <td style="color:#991b1b;font-weight:800">−${fmtMoney(totalTakeouts)}</td>
+      <td colspan="2"></td>
     </tr></tfoot>
-    </table>
-  </div>` : ""}
-
-  ${dayGameChanges.length > 0 ? `
-  <div class="section-game">
-    <div class="section-game-hdr">🎮 Game Point Balance Changes</div>
-    <table style="margin:0"><thead><tr><th>Game</th><th style="text-align:right">Shifts Tracked</th><th style="text-align:right">Net Pts Change</th></tr></thead>
-    <tbody>${gameChangeRows}</tbody>
     </table>
   </div>` : ""}
 
   ${wallets?.length > 0 ? `
   <div class="section-wallet">
-    <div class="section-wallet-hdr">💳 Wallet Balances (End of Day)</div>
+    <div class="section-wallet-hdr">💳 Wallet Balances (Current / End of Day)</div>
     <table style="margin:0"><thead><tr><th>Method</th><th>Account Name</th><th style="text-align:right">Balance</th></tr></thead>
     <tbody>${currentWalletRows}</tbody>
+    <tfoot><tr><td colspan="2"><strong>Total</strong></td><td style="text-align:right;font-weight:800">${fmtMoney((wallets || []).reduce((s,w) => s + parseFloat(w.balance || 0), 0))}</td></tr></tfoot>
     </table>
   </div>` : ""}
 
-  ${dayWalletChanges.length > 0 ? `
-  <div class="section-wallet">
-    <div class="section-wallet-hdr">📈 Wallet Balance Changes (Shift Snapshots)</div>
-    <table style="margin:0"><thead><tr><th>Wallet</th><th style="text-align:right">End Balance</th><th style="text-align:right">Net Change</th></tr></thead>
-    <tbody>${walletChangeRows}</tbody>
-    </table>
-  </div>` : ""}
-
-  <p style="margin-top:28px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:12px">Confidential · Generated by Operations Dashboard · ${new Date().toISOString()}</p>
+  <p style="margin-top:32px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:12px">
+    Confidential · Generated by Operations Dashboard · ${new Date().toISOString()}
+  </p>
 </body></html>`);
     win.document.close();
 }
 
-// ── printRangeReport (multi-day) ──────────────────────────────
 function printRangeReport(reports, startDate, endDate) {
     const win = window.open("", "_blank");
-
     const totals = reports.reduce((acc, r) => {
         const s = r.summary || {};
         acc.deposits += s.totalDeposits || 0;
@@ -1541,7 +1686,7 @@ function printRangeReport(reports, startDate, endDate) {
         const expTotal = dayExp.reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
         const takeTotal = dayTake.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
         return `<tr>
-          <td><b>${fmtDate(r.date + "T12:00:00")}</b></td>
+          <td><b>${fmtDateShort(r.date + "T12:00:00")}</b></td>
           <td style="color:#16a34a;font-weight:700">${fmtMoney(s.totalDeposits)}</td>
           <td style="color:#dc2626;font-weight:700">${fmtMoney(s.totalCashouts)}</td>
           <td style="color:#c2410c;font-weight:700">${fmtMoney(s.totalBonuses)}</td>
@@ -1554,7 +1699,6 @@ function printRangeReport(reports, startDate, endDate) {
         </tr>`;
     }).join("");
 
-    // All expenses across range
     const allExpenses = reports.flatMap(r => aggregateDayExpenses(r).map(e => ({ ...e, _date: r.date })));
     const allTakeouts = reports.flatMap(r => aggregateDayTakeouts(r).map(t => ({ ...t, _date: r.date })));
 
@@ -1577,35 +1721,45 @@ function printRangeReport(reports, startDate, endDate) {
         <td><strong>${t.takenBy}</strong></td>
         <td>${t.method || "Cash"}</td>
         <td style="color:#991b1b;font-weight:800">${fmtMoney(t.amount)}</td>
+        <td>${t.walletId ? `Wallet #${t.walletId}` : "—"}</td>
         <td style="color:#94a3b8;font-size:10px">${t.notes || "—"}</td>
     </tr>`).join("");
+
+    // Takeout method summary for range
+    const takeoutByMethod = allTakeouts.reduce((acc, t) => {
+        const m = t.method || "Cash";
+        acc[m] = (acc[m] || 0) + parseFloat(t.amount ?? 0);
+        return acc;
+    }, {});
+    const takeoutMethodSummary = Object.entries(takeoutByMethod).map(([m, a]) => `${m}: <strong style="color:#991b1b">−${fmtMoney(a)}</strong>`).join(" &nbsp;|&nbsp; ");
 
     win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/>
 <title>Range Report — ${startDate} to ${endDate}</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}body{font-family:"Segoe UI",Arial,sans-serif;font-size:12px;color:#0f172a;padding:28px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI",Arial,sans-serif;font-size:12px;color:#0f172a;padding:28px;line-height:1.5}
   h1{font-size:20px;font-weight:800;margin-bottom:3px}
-  h2{font-size:13px;font-weight:700;margin:24px 0 10px;color:#374151;border-bottom:2px solid #e2e8f0;padding-bottom:5px;text-transform:uppercase}
+  h2{font-size:12px;font-weight:700;margin:24px 0 10px;color:#374151;border-bottom:2px solid #e2e8f0;padding-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
   .meta{font-size:11px;color:#64748b;margin-bottom:20px}
-  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
-  .box{border:1px solid #e2e8f0;border-radius:7px;padding:12px 14px}
-  .val{font-size:18px;font-weight:800}.lbl{font-size:9px;color:#64748b;margin-top:1px;text-transform:uppercase}
-  .green{color:#16a34a}.red{color:#dc2626}.amber{color:#b45309}.purple{color:#7c3aed}
-  table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:18px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+  .box{border:1px solid #e2e8f0;border-radius:7px;padding:12px 14px;background:#fafbfc}
+  .val{font-size:18px;font-weight:800;line-height:1.2}.lbl{font-size:9px;color:#64748b;margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+  .green{color:#16a34a}.red{color:#dc2626}.amber{color:#b45309}.purple{color:#7c3aed}.navy{color:#991b1b}
+  table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px}
   th{background:#f8fafc;text-align:left;padding:7px 10px;font-weight:700;color:#64748b;font-size:10px;text-transform:uppercase;border-bottom:2px solid #e2e8f0}
-  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
   .total-row td{background:#f8fafc;font-weight:700;border-top:2px solid #e2e8f0}
-  .section-exp{background:#fffbeb;border:1px solid #fde68a;border-radius:7px;overflow:hidden;margin-bottom:18px}
-  .section-exp-hdr{padding:8px 12px;background:#fef9c3;font-weight:700;color:#b45309;font-size:11px;text-transform:uppercase}
-  .section-take{background:#fff1f2;border:1px solid #fecdd3;border-radius:7px;overflow:hidden;margin-bottom:18px}
-  .section-take-hdr{padding:8px 12px;background:#fee2e2;font-weight:700;color:#991b1b;font-size:11px;text-transform:uppercase}
+  .section-exp{border:1px solid #fde68a;border-radius:8px;overflow:hidden;margin-bottom:18px}
+  .section-exp-hdr{padding:9px 14px;background:#fef9c3;font-weight:700;color:#92400e;font-size:11px;text-transform:uppercase;border-bottom:1px solid #fde68a}
+  .section-take{border:1px solid #fecdd3;border-radius:8px;overflow:hidden;margin-bottom:18px}
+  .section-take-hdr{padding:9px 14px;background:#fee2e2;font-weight:700;color:#991b1b;font-size:11px;text-transform:uppercase;border-bottom:1px solid #fecdd3;display:flex;justify-content:space-between;align-items:center}
   button{padding:9px 18px;background:#0f172a;color:#fff;border:none;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer}
   @media print{button{display:none}body{padding:16px}}
 </style></head><body>
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
     <div>
       <h1>Range Operations Report</h1>
-      <p class="meta">Generated ${new Date().toLocaleString("en-US", { timeZone: "America/Chicago" })} · ${fmtDateShort(startDate + "T12:00:00")} – ${fmtDateShort(endDate + "T12:00:00")} (${reports.length} days)</p>
+      <p class="meta">Generated ${new Date().toLocaleString("en-US", { timeZone: "America/Chicago" })} CDT &nbsp;·&nbsp; ${fmtDateShort(startDate + "T12:00:00")} – ${fmtDateShort(endDate + "T12:00:00")} &nbsp;·&nbsp; ${reports.length} days &nbsp;·&nbsp; <strong>CONFIDENTIAL</strong></p>
     </div>
     <button onclick="window.print()">🖨 Print / Save PDF</button>
   </div>
@@ -1616,8 +1770,8 @@ function printRangeReport(reports, startDate, endDate) {
     <div class="box"><div class="val red">${fmtMoney(totals.cashouts)}</div><div class="lbl">Total Cashouts</div></div>
     <div class="box"><div class="val" style="color:#c2410c">${fmtMoney(totals.bonuses)}</div><div class="lbl">Total Bonuses</div></div>
     <div class="box"><div class="val ${totals.profit >= 0 ? "green" : "red"}">${fmtMoney(totals.profit)}</div><div class="lbl">Net Profit</div></div>
-    <div class="box"><div class="val amber">${fmtMoney(totals.expenses)}</div><div class="lbl">Total Expenses (${totals.expenseCount})</div></div>
-    <div class="box"><div class="val red">${fmtMoney(totals.takeouts)}</div><div class="lbl">Profit Takeouts (${totals.takeoutCount})</div></div>
+    <div class="box"><div class="val amber">${fmtMoney(totals.expenses)}</div><div class="lbl">Expenses (${totals.expenseCount})</div></div>
+    <div class="box"><div class="val navy">${fmtMoney(totals.takeouts)}</div><div class="lbl">Profit Takeouts (${totals.takeoutCount})</div></div>
     <div class="box"><div class="val">${totals.shifts}</div><div class="lbl">Total Shifts</div></div>
     <div class="box"><div class="val">${totals.transactions}</div><div class="lbl">Total Transactions</div></div>
     <div class="box"><div class="val">${totals.tasks}</div><div class="lbl">Tasks Completed</div></div>
@@ -1627,10 +1781,7 @@ function printRangeReport(reports, startDate, endDate) {
 
   <h2>📅 Day-by-Day Breakdown</h2>
   <table>
-    <thead><tr>
-      <th>Date</th><th>Deposits</th><th>Cashouts</th><th>Bonuses</th><th>Net Profit</th>
-      <th>Expenses</th><th>Takeouts</th><th>Shifts</th><th>Transactions</th><th>Tasks</th>
-    </tr></thead>
+    <thead><tr><th>Date</th><th>Deposits</th><th>Cashouts</th><th>Bonuses</th><th>Net Profit</th><th>Expenses</th><th>Takeouts</th><th>Shifts</th><th>Txns</th><th>Tasks</th></tr></thead>
     <tbody>${dayRows}</tbody>
     <tfoot>
       <tr class="total-row">
@@ -1639,25 +1790,22 @@ function printRangeReport(reports, startDate, endDate) {
         <td style="color:#dc2626;font-weight:800">${fmtMoney(totals.cashouts)}</td>
         <td style="color:#c2410c;font-weight:800">${fmtMoney(totals.bonuses)}</td>
         <td style="font-weight:800;color:${totals.profit >= 0 ? "#16a34a" : "#dc2626"}">${fmtMoney(totals.profit)}</td>
-        <td style="color:#b45309;font-weight:800">${fmtMoney(totals.expenses)}</td>
-        <td style="color:#991b1b;font-weight:800">${fmtMoney(totals.takeouts)}</td>
-        <td>${totals.shifts}</td>
-        <td>${totals.transactions}</td>
-        <td>${totals.tasks}</td>
+        <td style="color:#b45309;font-weight:800">${totals.expenses > 0 ? fmtMoney(totals.expenses) : "—"}</td>
+        <td style="color:#991b1b;font-weight:800">${totals.takeouts > 0 ? fmtMoney(totals.takeouts) : "—"}</td>
+        <td>${totals.shifts}</td><td>${totals.transactions}</td><td>${totals.tasks}</td>
       </tr>
     </tfoot>
   </table>
 
   ${allExpenses.length > 0 ? `
   <div class="section-exp">
-    <div class="section-exp-hdr">🧾 All Expenses — ${allExpenses.length} items · Total: ${fmtMoney(totals.expenses)}${totals.ptsReloaded > 0 ? ` · +${totals.ptsReloaded} pts reloaded` : ""}</div>
+    <div class="section-exp-hdr">🧾 All Expenses — ${allExpenses.length} items &nbsp;·&nbsp; Total: <strong>−${fmtMoney(totals.expenses)}</strong>${totals.ptsReloaded > 0 ? ` &nbsp;·&nbsp; +${totals.ptsReloaded} pts reloaded` : ""}</div>
     <table style="margin:0"><thead><tr>
-      <th>Date</th><th>Time</th><th>Shift</th><th>Details</th><th>Category</th>
-      <th>Game</th><th>Amount</th><th>Pts Added</th><th>Notes</th>
+      <th>Date</th><th>Time</th><th>Shift</th><th>Details</th><th>Category</th><th>Game</th><th>Amount</th><th>Pts Added</th><th>Notes</th>
     </tr></thead>
     <tbody>${allExpenseRows}</tbody>
     <tfoot><tr>
-      <td colspan="6"><strong>Total (${allExpenses.length} expenses across ${reports.length} days)</strong></td>
+      <td colspan="6"><strong>Total (${allExpenses.length} expenses / ${reports.length} days)</strong></td>
       <td style="color:#b45309;font-weight:800">${fmtMoney(totals.expenses)}</td>
       <td style="color:#7c3aed">${totals.ptsReloaded > 0 ? `+${totals.ptsReloaded} pts` : "—"}</td>
       <td></td>
@@ -1667,20 +1815,25 @@ function printRangeReport(reports, startDate, endDate) {
 
   ${allTakeouts.length > 0 ? `
   <div class="section-take">
-    <div class="section-take-hdr">💸 All Profit Takeouts — ${allTakeouts.length} takeouts · Total: ${fmtMoney(totals.takeouts)}</div>
+    <div class="section-take-hdr">
+      <span>💸 All Profit Takeouts — ${allTakeouts.length} records</span>
+      <span>${takeoutMethodSummary} &nbsp;|&nbsp; <strong>Total: −${fmtMoney(totals.takeouts)}</strong></span>
+    </div>
     <table style="margin:0"><thead><tr>
-      <th>Date</th><th>Time</th><th>Shift</th><th>Taken By</th><th>Method</th><th>Amount</th><th>Notes</th>
+      <th>Date</th><th>Time</th><th>Shift</th><th>Taken By</th><th>Method</th><th>Amount</th><th>Wallet</th><th>Notes</th>
     </tr></thead>
     <tbody>${allTakeoutRows}</tbody>
     <tfoot><tr>
-      <td colspan="5"><strong>Total (${allTakeouts.length} takeouts across ${reports.length} days)</strong></td>
-      <td style="color:#991b1b;font-weight:800">${fmtMoney(totals.takeouts)}</td>
-      <td></td>
+      <td colspan="5"><strong>Total (${allTakeouts.length} takeouts / ${reports.length} days)</strong></td>
+      <td style="color:#991b1b;font-weight:800">−${fmtMoney(totals.takeouts)}</td>
+      <td colspan="2"></td>
     </tr></tfoot>
     </table>
   </div>` : ""}
 
-  <p style="margin-top:28px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:12px">Confidential · Generated by Operations Dashboard · ${new Date().toISOString()}</p>
+  <p style="margin-top:32px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:12px">
+    Confidential · Generated by Operations Dashboard · ${new Date().toISOString()}
+  </p>
 </body></html>`);
     win.document.close();
 }
@@ -1700,6 +1853,7 @@ export default function AdminReportPage() {
     const [rangeReports, setRangeReports] = useState([]);
     const [loading, setLoading] = useState(false);
     const [teamFilter, setTeamFilter] = useState("ALL");
+    const [viewMode, setViewMode] = useState("report"); // "report" | "expenses" | "takeouts" | "transactions"
 
     const fetchSingleReport = useCallback(async (date, role) => {
         setLoading(true);
@@ -1717,31 +1871,16 @@ export default function AdminReportPage() {
     }, []);
 
     const fetchRangeReports = useCallback(async (start, end, role) => {
-        if (!start || !end || start > end) {
-            toast("Please select a valid date range (start ≤ end)", "error");
-            return;
-        }
+        if (!start || !end || start > end) { toast("Please select a valid date range (start ≤ end)", "error"); return; }
         const dates = [];
         const cur = new Date(start + "T12:00:00");
         const last = new Date(end + "T12:00:00");
-        while (cur <= last) {
-            dates.push(toDateInput(cur));
-            cur.setDate(cur.getDate() + 1);
-        }
-        if (dates.length > 31) {
-            toast("Date range cannot exceed 31 days", "error");
-            return;
-        }
+        while (cur <= last) { dates.push(toDateInput(cur)); cur.setDate(cur.getDate() + 1); }
+        if (dates.length > 31) { toast("Date range cannot exceed 31 days", "error"); return; }
         setLoading(true);
         setReport(null);
         try {
-            const results = await Promise.all(
-                dates.map(date => {
-                    const opts = { date };
-                    if (role && role !== "ALL") opts.teamRole = role;
-                    return api.reports.getDailyReport(opts).catch(() => null);
-                })
-            );
+            const results = await Promise.all(dates.map(date => { const opts = { date }; if (role && role !== "ALL") opts.teamRole = role; return api.reports.getDailyReport(opts).catch(() => null); }));
             const valid = results.filter(Boolean).sort((a, b) => a.date > b.date ? 1 : -1);
             setRangeReports(valid);
         } catch (e) {
@@ -1767,9 +1906,23 @@ export default function AdminReportPage() {
     };
 
     const canExport = mode === "single" ? !!report : rangeReports.length > 0;
+    const hasData = mode === "single" ? !!report : rangeReports.length > 0;
+    const isRangeMode = mode === "range";
     const s = report?.summary || {};
 
-    // Day-level aggregates for single day view
+    // Derive aggregated data for filter views
+    const allFilterExpenses = mode === "single" && report
+        ? aggregateDayExpenses(report)
+        : rangeReports.flatMap(r => aggregateDayExpenses(r).map(e => ({ ...e, _date: r.date })));
+
+    const allFilterTakeouts = mode === "single" && report
+        ? aggregateDayTakeouts(report)
+        : rangeReports.flatMap(r => aggregateDayTakeouts(r).map(t => ({ ...t, _date: r.date })));
+
+    const allFilterTransactions = mode === "single" && report
+        ? aggregateDayTransactions(report)
+        : rangeReports.flatMap(r => aggregateDayTransactions(r).map(t => ({ ...t, _date: r.date })));
+
     const dayExpenses = report ? aggregateDayExpenses(report) : [];
     const dayTakeouts = report ? aggregateDayTakeouts(report) : [];
     const dayGameChanges = report ? aggregateDayGameChanges(report) : [];
@@ -1778,16 +1931,20 @@ export default function AdminReportPage() {
     const totalTakeouts = dayTakeouts.reduce((sum, t) => sum + parseFloat(t.amount ?? 0), 0);
     const totalPtsReloaded = dayExpenses.reduce((sum, e) => sum + (e.pointsAdded ?? 0), 0);
 
-    const headerSubtitle = loading
-        ? "Loading…"
-        : mode === "single"
-            ? (report ? fmtDate(report.date + "T12:00:00") : "—")
-            : rangeReports.length > 0
-                ? `${fmtDateShort(startDate + "T12:00:00")} – ${fmtDateShort(endDate + "T12:00:00")} (${rangeReports.length} days)`
-                : "Select a date range";
+    const headerSubtitle = loading ? "Loading…"
+        : mode === "single" ? (report ? fmtDate(report.date + "T12:00:00") : "—")
+        : rangeReports.length > 0 ? `${fmtDateShort(startDate + "T12:00:00")} – ${fmtDateShort(endDate + "T12:00:00")} (${rangeReports.length} days)`
+        : "Select a date range";
+
+    const VIEW_TABS = [
+        { id: "report", label: "Full Report", icon: FileText },
+        { id: "transactions", label: `Transactions${hasData ? ` (${allFilterTransactions.length})` : ""}`, icon: Activity },
+        { id: "expenses", label: `Expenses${hasData ? ` (${allFilterExpenses.length})` : ""}`, icon: Receipt },
+        { id: "takeouts", label: `Profit Takeouts${hasData ? ` (${allFilterTakeouts.length})` : ""}`, icon: PiggyBank },
+    ];
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
             {/* ── Page header ── */}
             <div style={{ ...CARD, padding: "18px 24px" }}>
@@ -1801,20 +1958,15 @@ export default function AdminReportPage() {
                             <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>{headerSubtitle}</p>
                         </div>
                     </div>
-
                     <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
                         {/* Mode Toggle */}
                         <div style={{ display: "flex", border: "1px solid #e2e8f0", borderRadius: "8px", overflow: "hidden", background: "#f8fafc" }}>
-                            {[
-                                { id: "single", label: "Single Day", icon: Calendar },
-                                { id: "range", label: "Date Range", icon: CalendarRange },
-                            ].map(({ id, label, icon: Icon }) => (
-                                <button key={id} onClick={() => setMode(id)} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 13px", border: "none", fontSize: "12px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit", background: mode === id ? "#0f172a" : "transparent", color: mode === id ? "#fff" : "#64748b", transition: "all .15s" }}>
+                            {[{ id: "single", label: "Single Day", icon: Calendar }, { id: "range", label: "Date Range", icon: CalendarRange }].map(({ id, label, icon: Icon }) => (
+                                <button key={id} onClick={() => setMode(id)} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 13px", border: "none", fontSize: "12px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit", background: mode === id ? "#0f172a" : "transparent", color: mode === id ? "#fff" : "#64748b" }}>
                                     <Icon style={{ width: "13px", height: "13px" }} />{label}
                                 </button>
                             ))}
                         </div>
-
                         {/* Date Inputs */}
                         {mode === "single" ? (
                             <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 11px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff" }}>
@@ -1825,11 +1977,10 @@ export default function AdminReportPage() {
                             <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 11px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff" }}>
                                 <CalendarRange style={{ width: "13px", height: "13px", color: "#64748b" }} />
                                 <input type="date" value={startDate} max={endDate} onChange={e => setStartDate(e.target.value)} style={{ border: "none", outline: "none", fontSize: "12px", color: "#0f172a", fontFamily: "inherit", background: "transparent" }} />
-                                <span style={{ fontSize: "12px", color: "#94a3b8", margin: "0 2px" }}>→</span>
+                                <span style={{ fontSize: "12px", color: "#94a3b8" }}>→</span>
                                 <input type="date" value={endDate} min={startDate} max={todayStr} onChange={e => setEndDate(e.target.value)} style={{ border: "none", outline: "none", fontSize: "12px", color: "#0f172a", fontFamily: "inherit", background: "transparent" }} />
                             </div>
                         )}
-
                         {/* Team filter */}
                         <div style={{ position: "relative" }}>
                             <select value={teamFilter} onChange={e => setTeamFilter(e.target.value)} style={{ padding: "8px 30px 8px 11px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", fontSize: "12px", color: "#0f172a", fontFamily: "inherit", cursor: "pointer", appearance: "none" }}>
@@ -1841,11 +1992,9 @@ export default function AdminReportPage() {
                             </select>
                             <ChevronDown style={{ position: "absolute", right: "9px", top: "50%", transform: "translateY(-50%)", width: "13px", height: "13px", color: "#94a3b8", pointerEvents: "none" }} />
                         </div>
-
                         <button onClick={handleRefresh} disabled={loading} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 13px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", color: "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
                             <RefreshCw style={{ width: "13px", height: "13px", animation: loading ? "spin 1s linear infinite" : "none" }} /> Refresh
                         </button>
-
                         <button onClick={handleExport} disabled={!canExport || loading} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "9px 16px", border: "none", borderRadius: "8px", background: "#0ea5e9", color: "#fff", fontSize: "12px", fontWeight: "700", cursor: canExport ? "pointer" : "not-allowed", opacity: canExport ? 1 : 0.5 }}>
                             <Download style={{ width: "13px", height: "13px" }} />
                             {mode === "range" ? "Export Range PDF" : "Export PDF"}
@@ -1854,7 +2003,35 @@ export default function AdminReportPage() {
                 </div>
             </div>
 
-            {/* Loading */}
+            {/* ── View Mode Tabs ── */}
+            {hasData && !loading && (
+                <div style={{ ...CARD, overflow: "hidden" }}>
+                    <div style={{ display: "flex", borderBottom: "1px solid #e2e8f0", background: "#f8fafc", overflowX: "auto" }}>
+                        {VIEW_TABS.map(({ id, label, icon: Icon }) => {
+                            const isActive = viewMode === id;
+                            const accentColors = { report: "#0ea5e9", transactions: "#2563eb", expenses: "#b45309", takeouts: "#991b1b" };
+                            const accent = accentColors[id] || "#0f172a";
+                            return (
+                                <button key={id} onClick={() => setViewMode(id)} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "12px 20px", border: "none", fontSize: "12px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit", background: isActive ? "#fff" : "transparent", color: isActive ? accent : "#94a3b8", borderBottom: `2px solid ${isActive ? accent : "transparent"}`, whiteSpace: "nowrap", transition: "all .15s" }}>
+                                    <Icon style={{ width: "13px", height: "13px" }} />
+                                    {label}
+                                </button>
+                            );
+                        })}
+                        <div style={{ flex: 1 }} />
+                        {viewMode !== "report" && (
+                            <div style={{ display: "flex", alignItems: "center", padding: "0 16px", gap: "6px" }}>
+                                <Filter style={{ width: "12px", height: "12px", color: "#94a3b8" }} />
+                                <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: "600" }}>
+                                    {isRangeMode ? `${rangeReports.length}-day range` : fmtDateShort(selectedDate + "T12:00:00")}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Loading ── */}
             {loading && (
                 <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize: "13px" }}>
                     <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "spin .8s linear infinite" }} />
@@ -1863,11 +2040,23 @@ export default function AdminReportPage() {
             )}
 
             {/* ══════════════════════════════════════════════════════ */}
-            {/* SINGLE DAY VIEW                                        */}
+            {/* FILTER VIEWS (Expenses / Takeouts / Transactions)      */}
             {/* ══════════════════════════════════════════════════════ */}
-            {!loading && mode === "single" && report && (
+            {!loading && hasData && viewMode === "expenses" && (
+                <ExpensesFilterView expenses={allFilterExpenses} rangeMode={isRangeMode} />
+            )}
+            {!loading && hasData && viewMode === "takeouts" && (
+                <TakeoutsFilterView takeouts={allFilterTakeouts} rangeMode={isRangeMode} />
+            )}
+            {!loading && hasData && viewMode === "transactions" && (
+                <TransactionsFilterView transactions={allFilterTransactions} rangeMode={isRangeMode} />
+            )}
+
+            {/* ══════════════════════════════════════════════════════ */}
+            {/* SINGLE DAY VIEW — Full Report                         */}
+            {/* ══════════════════════════════════════════════════════ */}
+            {!loading && mode === "single" && report && viewMode === "report" && (
                 <>
-                    {/* Day Summary Stats */}
                     <div>
                         <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
                             <BarChart2 style={{ width: "12px", height: "12px" }} /> Day Summary
@@ -1877,21 +2066,14 @@ export default function AdminReportPage() {
                             <StatCard label="Total Cashouts" value={fmtMoney(s.totalCashouts)} valueColor="#dc2626" icon={ArrowDownRight} accentColor="#dc2626" />
                             <StatCard label="Total Bonuses" value={fmtMoney(s.totalBonuses)} valueColor="#c2410c" icon={Gift} accentColor="#c2410c" />
                             <StatCard label="Net Profit" value={fmtMoney(s.netProfit)} valueColor={s.netProfit >= 0 ? "#16a34a" : "#dc2626"} icon={s.netProfit >= 0 ? TrendingUp : TrendingDown} accentColor={s.netProfit >= 0 ? "#16a34a" : "#dc2626"} />
-                            {totalExpenses > 0 && (
-                                <StatCard label="Total Expenses" value={fmtMoney(totalExpenses)} valueColor="#b45309" icon={Receipt} accentColor="#b45309"
-                                    sub={`${dayExpenses.length} item${dayExpenses.length !== 1 ? "s" : ""}${totalPtsReloaded > 0 ? ` · +${totalPtsReloaded} pts` : ""}`} />
-                            )}
-                            {totalTakeouts > 0 && (
-                                <StatCard label="Profit Takeouts" value={fmtMoney(totalTakeouts)} valueColor="#991b1b" icon={PiggyBank} accentColor="#991b1b"
-                                    sub={`${dayTakeouts.length} takeout${dayTakeouts.length !== 1 ? "s" : ""}`} />
-                            )}
+                            {totalExpenses > 0 && <StatCard label="Total Expenses" value={fmtMoney(totalExpenses)} valueColor="#b45309" icon={Receipt} accentColor="#b45309" sub={`${dayExpenses.length} item${dayExpenses.length !== 1 ? "s" : ""}${totalPtsReloaded > 0 ? ` · +${totalPtsReloaded} pts` : ""}`} />}
+                            {totalTakeouts > 0 && <StatCard label="Profit Takeouts" value={fmtMoney(totalTakeouts)} valueColor="#991b1b" icon={PiggyBank} accentColor="#991b1b" sub={`${dayTakeouts.length} takeout${dayTakeouts.length !== 1 ? "s" : ""}`} />}
                             <StatCard label="Tasks Completed" value={s.tasksCompleted} icon={CheckCircle} accentColor="#16a34a" />
                             <StatCard label="Transactions" value={s.transactionCount} icon={Activity} accentColor="#2563eb" />
                             <StatCard label="Shifts Logged" value={s.totalShifts} sub={`${s.activeShifts} active`} icon={Clock} accentColor="#475569" />
                         </div>
                     </div>
 
-                    {/* Game & Wallet Changes */}
                     {(dayGameChanges.length > 0 || dayWalletChanges.length > 0) && (
                         <div>
                             <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1901,7 +2083,6 @@ export default function AdminReportPage() {
                         </div>
                     )}
 
-                    {/* Day-level Expenses */}
                     {dayExpenses.length > 0 && (
                         <div>
                             <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1911,7 +2092,6 @@ export default function AdminReportPage() {
                         </div>
                     )}
 
-                    {/* Day-level Profit Takeouts */}
                     {dayTakeouts.length > 0 && (
                         <div>
                             <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1921,7 +2101,6 @@ export default function AdminReportPage() {
                         </div>
                     )}
 
-                    {/* Team Shift Reports */}
                     <div>
                         <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
                             <Users style={{ width: "12px", height: "12px" }} /> Team Shift Reports
@@ -1931,7 +2110,6 @@ export default function AdminReportPage() {
                         </div>
                     </div>
 
-                    {/* All Tasks Today */}
                     {report.dayTasks?.length > 0 && (
                         <div style={{ ...CARD, overflow: "hidden" }}>
                             <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1958,7 +2136,6 @@ export default function AdminReportPage() {
                         </div>
                     )}
 
-                    {/* Current Wallet Balances */}
                     {report.wallets?.length > 0 && (
                         <div style={{ ...CARD, overflow: "hidden" }}>
                             <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1980,9 +2157,9 @@ export default function AdminReportPage() {
             )}
 
             {/* ══════════════════════════════════════════════════════ */}
-            {/* DATE RANGE VIEW                                        */}
+            {/* DATE RANGE VIEW — Full Report                         */}
             {/* ══════════════════════════════════════════════════════ */}
-            {!loading && mode === "range" && rangeReports.length > 0 && (
+            {!loading && mode === "range" && rangeReports.length > 0 && viewMode === "report" && (
                 <>
                     <div>
                         <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1991,7 +2168,6 @@ export default function AdminReportPage() {
                         <RangeSummaryCards reports={rangeReports} />
                     </div>
 
-                    {/* Day-by-day table */}
                     <div style={{ ...CARD, overflow: "hidden" }}>
                         <div style={{ padding: "14px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "10px" }}>
                             <CalendarRange style={{ width: "15px", height: "15px", color: "#64748b" }} />
@@ -2000,11 +2176,9 @@ export default function AdminReportPage() {
                         <div style={{ overflowX: "auto" }}>
                             <table style={{ width: "100%", borderCollapse: "collapse" }}>
                                 <thead>
-                                    <tr>
-                                        {["Date", "Deposits", "Cashouts", "Bonuses", "Net Profit", "Expenses", "Takeouts", "Shifts", "Transactions", "Tasks"].map(h => (
-                                            <th key={h} style={{ ...TH, textAlign: h === "Date" ? "left" : "right" }}>{h}</th>
-                                        ))}
-                                    </tr>
+                                    <tr>{["Date", "Deposits", "Cashouts", "Bonuses", "Net Profit", "Expenses", "Takeouts", "Shifts", "Transactions", "Tasks"].map(h => (
+                                        <th key={h} style={{ ...TH, textAlign: h === "Date" ? "left" : "right" }}>{h}</th>
+                                    ))}</tr>
                                 </thead>
                                 <tbody>
                                     {rangeReports.map(r => {
@@ -2037,31 +2211,24 @@ export default function AdminReportPage() {
                                                 const s = r.summary || {};
                                                 const dayExp = aggregateDayExpenses(r);
                                                 const dayTake = aggregateDayTakeouts(r);
-                                                acc.deposits += s.totalDeposits || 0;
-                                                acc.cashouts += s.totalCashouts || 0;
-                                                acc.bonuses += s.totalBonuses || 0;
-                                                acc.profit += s.netProfit || 0;
+                                                acc.deposits += s.totalDeposits || 0; acc.cashouts += s.totalCashouts || 0; acc.bonuses += s.totalBonuses || 0; acc.profit += s.netProfit || 0;
                                                 acc.expenses += dayExp.reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
                                                 acc.takeouts += dayTake.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
-                                                acc.shifts += s.totalShifts || 0;
-                                                acc.transactions += s.transactionCount || 0;
-                                                acc.tasks += s.tasksCompleted || 0;
+                                                acc.shifts += s.totalShifts || 0; acc.transactions += s.transactionCount || 0; acc.tasks += s.tasksCompleted || 0;
                                                 return acc;
                                             }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, expenses: 0, takeouts: 0, shifts: 0, transactions: 0, tasks: 0 });
-                                            return (
-                                                <>
-                                                    <td style={{ ...TD, fontWeight: "700", color: "#475569" }}>TOTAL ({rangeReports.length} days)</td>
-                                                    <td style={{ ...TD, textAlign: "right", color: "#16a34a", fontWeight: "800" }}>{fmtMoney(t.deposits)}</td>
-                                                    <td style={{ ...TD, textAlign: "right", color: "#dc2626", fontWeight: "800" }}>{fmtMoney(t.cashouts)}</td>
-                                                    <td style={{ ...TD, textAlign: "right", color: "#c2410c", fontWeight: "800" }}>{fmtMoney(t.bonuses)}</td>
-                                                    <td style={{ ...TD, textAlign: "right", fontWeight: "800", color: t.profit >= 0 ? "#16a34a" : "#dc2626" }}>{fmtMoney(t.profit)}</td>
-                                                    <td style={{ ...TD, textAlign: "right", color: "#b45309", fontWeight: "800" }}>{t.expenses > 0 ? fmtMoney(t.expenses) : "—"}</td>
-                                                    <td style={{ ...TD, textAlign: "right", color: "#991b1b", fontWeight: "800" }}>{t.takeouts > 0 ? fmtMoney(t.takeouts) : "—"}</td>
-                                                    <td style={{ ...TD, textAlign: "right", fontWeight: "700" }}>{t.shifts}</td>
-                                                    <td style={{ ...TD, textAlign: "right", fontWeight: "700" }}>{t.transactions}</td>
-                                                    <td style={{ ...TD, textAlign: "right", fontWeight: "700" }}>{t.tasks}</td>
-                                                </>
-                                            );
+                                            return (<>
+                                                <td style={{ ...TD, fontWeight: "700", color: "#475569" }}>TOTAL ({rangeReports.length} days)</td>
+                                                <td style={{ ...TD, textAlign: "right", color: "#16a34a", fontWeight: "800" }}>{fmtMoney(t.deposits)}</td>
+                                                <td style={{ ...TD, textAlign: "right", color: "#dc2626", fontWeight: "800" }}>{fmtMoney(t.cashouts)}</td>
+                                                <td style={{ ...TD, textAlign: "right", color: "#c2410c", fontWeight: "800" }}>{fmtMoney(t.bonuses)}</td>
+                                                <td style={{ ...TD, textAlign: "right", fontWeight: "800", color: t.profit >= 0 ? "#16a34a" : "#dc2626" }}>{fmtMoney(t.profit)}</td>
+                                                <td style={{ ...TD, textAlign: "right", color: "#b45309", fontWeight: "800" }}>{t.expenses > 0 ? fmtMoney(t.expenses) : "—"}</td>
+                                                <td style={{ ...TD, textAlign: "right", color: "#991b1b", fontWeight: "800" }}>{t.takeouts > 0 ? fmtMoney(t.takeouts) : "—"}</td>
+                                                <td style={{ ...TD, textAlign: "right", fontWeight: "700" }}>{t.shifts}</td>
+                                                <td style={{ ...TD, textAlign: "right", fontWeight: "700" }}>{t.transactions}</td>
+                                                <td style={{ ...TD, textAlign: "right", fontWeight: "700" }}>{t.tasks}</td>
+                                            </>);
                                         })()}
                                     </tr>
                                 </tfoot>
@@ -2069,7 +2236,6 @@ export default function AdminReportPage() {
                         </div>
                     </div>
 
-                    {/* Per-day collapsible detailed reports */}
                     <div>
                         <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
                             <FileText style={{ width: "12px", height: "12px" }} /> Detailed Daily Reports (click to expand)
