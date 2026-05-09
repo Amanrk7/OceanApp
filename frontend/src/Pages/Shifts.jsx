@@ -1020,20 +1020,40 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
   //   !gameIdsWithTxns.has(String(g.id))
   // );
 
-  const manuallyEditedWallets = walletRows.filter(w =>
-    !w.isNew && !w.isRemoved &&
-    Math.abs(w.delta) > 0.01 &&
-    !walletIdsWithTxns.has(String(w.id)) &&
-    !crossWalletInfo[String(w.id)]   // ← cross-store activity explains it; NOT an admin edit
-  );
+  // const manuallyEditedWallets = walletRows.filter(w =>
+  //   !w.isNew && !w.isRemoved &&
+  //   Math.abs(w.delta) > 0.01 &&
+  //   !walletIdsWithTxns.has(String(w.id)) &&
+  //   !crossWalletInfo[String(w.id)]   // ← cross-store activity explains it; NOT an admin edit
+  // );
+  const manuallyEditedWallets = walletRows.filter(w => {
+    if (w.isNew || w.isRemoved || Math.abs(w.delta) <= 0.01) return false;
+    if (walletIdsWithTxns.has(String(w.id))) return false;
+    const ci = crossWalletInfo[String(w.id)];
+    if (!ci) return true; // not a shared wallet, no cross-store txns → admin edit
+    // Shared wallet: delta should equal myChange + otherChange if fully explained by txns.
+    // If there's residual beyond what transactions account for, it's an admin direct edit.
+    const txnExplained = r2(ci.myChange + ci.otherChange);
+    return Math.abs(r2(w.delta - txnExplained)) > 0.02;
+  });
 
-  const manuallyEditedGames = gameRows.filter(g =>
-    !g.isNew && !g.isRemoved &&
-    Math.abs(g.delta) > 0 &&
-    !gameIdsWithTxns.has(String(g.id)) &&
-    !crossGameInfo[String(g.id)]     // ← cross-store activity explains it; NOT an admin edit
-  );
-
+  // const manuallyEditedGames = gameRows.filter(g =>
+  //   !g.isNew && !g.isRemoved &&
+  //   Math.abs(g.delta) > 0 &&
+  //   !gameIdsWithTxns.has(String(g.id)) &&
+  //   !crossGameInfo[String(g.id)]     // ← cross-store activity explains it; NOT an admin edit
+  // );
+const manuallyEditedGames = gameRows.filter(g => {
+    if (g.isNew || g.isRemoved || Math.abs(g.delta) <= 0) return false;
+    if (gameIdsWithTxns.has(String(g.id))) return false;
+    const ci = crossGameInfo[String(g.id)];
+    if (!ci) return true; // not a shared game, no cross-store txns → admin edit
+    // Shared game: myPts + otherPts = total pts deducted via transactions (positive = deducted).
+    // Expected stock delta from txns alone = -(myPts + otherPts).
+    // If actual delta differs, there's an unexplained change (admin edit or reload).
+    const txnExplainedDelta = -Math.round(ci.myPts + ci.otherPts);
+    return Math.abs(g.delta - txnExplainedDelta) > 1;
+  });
   // How much of the discrepancy is explained by manual edits
   const manualWalletAdj = r2(manuallyEditedWallets.reduce((s, w) => s + w.delta, 0));
   const manualGameAdj = Math.round(manuallyEditedGames.reduce((s, g) => s + g.delta, 0));
@@ -1147,7 +1167,8 @@ const CheckoutModal = ({ shift, startSnapshot, onSubmit, onCancel }) => {
           ) : activeTab === 'reconciliation' ? (
             <>
               {/* Mid-shift banners */}
-              {(newWalletsDuringShift.length > 0 || newGamesDuringShift.length > 0) && (
+              {/* /* {(newWalletsDuringShift.length > 0 || newGamesDuringShift.length > 0) && ( */ */}
+              {hasStartSnapshot && (newWalletsDuringShift.length > 0 || newGamesDuringShift.length > 0) && (
                 <div style={{ border: '1px solid #bfdbfe', borderRadius: '10px', overflow: 'hidden' }}>
                   <div style={{ padding: '10px 14px', background: '#eff6ff', borderBottom: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '14px' }}>🆕</span>
