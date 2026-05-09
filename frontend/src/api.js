@@ -755,11 +755,7 @@ export const playerEditRequestsAPI = {
     }),
 };
 
-// Add to the api object:
-export const api = {
-  // ... existing entries ...
-  editRequests: playerEditRequestsAPI,
-};
+
 // ═══════════════════════════════════════════════════════════════
 // CONSOLIDATED API EXPORT
 // ═══════════════════════════════════════════════════════════════
