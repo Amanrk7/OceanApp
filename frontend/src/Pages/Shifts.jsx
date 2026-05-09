@@ -1171,7 +1171,7 @@ const manuallyEditedGames = gameRows.filter(g => {
             <>
               {/* Mid-shift banners */}
               {hasStartSnapshot && (newWalletsDuringShift.length > 0 || newGamesDuringShift.length > 0) && (
-                <div style={{ border: '1px solid #bfdbfe', borderRadius: '10px', overflow: 'hidden' }}>
+                <div style={{ border: '1px solid #bfdbfe', borderRadius: '10px'}}>
                   <div style={{ padding: '10px 14px', background: '#eff6ff', borderBottom: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '14px' }}>🆕</span>
                     <span style={{ fontWeight: '700', fontSize: '12.5px', color: '#1e40af' }}>
