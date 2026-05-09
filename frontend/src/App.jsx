@@ -15,7 +15,7 @@ import {
   Invoice03Icon, AddMoneyCircleIcon, GiftIcon, AnalysisTextLinkIcon,
   BitcoinWalletIcon, ManagerIcon, Logout01Icon, TaskEdit01Icon,
   CheckListIcon, Moon02Icon, Sun03Icon, FolderOpenIcon, DollarCircleIcon,
-  ArrowDataTransferDiagonalIcon,
+  ArrowDataTransferDiagonalIcon, UserEditIcon
 } from '@hugeicons/core-free-icons';
 
 // ── Page imports ──────────────────────────────────────────────────────────
