@@ -546,98 +546,117 @@ function DiscrepancyPanel({ recon, manualAdjBalanced }) {
     statusIcon = '⚠️'; statusLabel = `Discrepancy — ${parts.join(' · ')}`; statusSub = 'The numbers don\'t add up. Check the formula below to identify the source.';
   }
 
-  // ── Receipt rows
-  const partialPayments = bd.partialPayments ?? 0;
-  const crossPtsReloaded = bd.crossPointsReloaded ?? 0;
-  const crossWalletExpense = bd.crossWalletExpensePaid ?? 0;
-  const crossWalletTakeout = bd.crossWalletTakeoutPaid ?? 0;
+// ── Variables (replace everything from "const partialPayments" to "const crossAdminGameEdit") ──
+const partialPayments       = bd.partialPayments          ?? 0;
+const crossPtsReloaded      = bd.crossPointsReloaded      ?? 0;
+const crossWalletExpense    = recon.crossExpenseWallet     ?? bd.crossWalletExpensePaid  ?? 0;
+const crossWalletTakeout    = recon.crossTakeoutWallet     ?? bd.crossWalletTakeoutPaid  ?? 0;
+const crossAdminWalletEdit  = recon.crossAdminWalletEdit  ?? 0;
+const crossAdminGameEdit    = recon.crossAdminGameEdit    ?? 0;
 
-  const receiptRows = [
-    {
-      label: 'Deposits',
-      wallet: `+$${(bd.deposits ?? 0).toFixed(2)}`,
-      pts: `−${Math.round(bd.deposits ?? 0)} pts`,
-      wc: '#16a34a', gc: '#7c3aed',
-    },
-    {
-      label: 'Cashouts (completed)',
-      wallet: `−$${(bd.completedCashouts ?? 0).toFixed(2)}`,
-      pts: `+${Math.round(bd.completedCashouts ?? 0)} pts`,
-      wc: '#dc2626', gc: '#16a34a',
-    },
-    ...(partialPayments > 0 ? [{
-      label: `Partial payments (${(bd.partiallyPaidCashouts ?? []).length} cashouts)`,
-      wallet: `−$${partialPayments.toFixed(2)}`,
-      pts: `+${Math.round(partialPayments)} pts`,
-      wc: '#dc2626', gc: '#16a34a',
-      info: true,
-    }] : []),
-    ...(bd.totalFees > 0.001 ? [{
-      label: 'Fees',
-      wallet: `−$${(bd.totalFees ?? 0).toFixed(2)}`,
-      pts: '—',
-      wc: '#f59e0b', gc: '#94a3b8',
-    }] : []),
-    ...(bd.bonuses > 0.001 ? [{
-      label: 'Bonuses granted',
-      wallet: '—',
-      pts: `−${Math.round(bd.bonuses ?? 0)} pts`,
-      wc: '#94a3b8', gc: '#c2410c',
-    }] : []),
-    ...(bd.pointsReloaded > 0.001 ? [{
-      label: 'Points reloaded (this store)',
-      wallet: '—',
-      pts: `+${Math.round(bd.pointsReloaded ?? 0)} pts`,
-      wc: '#94a3b8', gc: '#16a34a',
-    }] : []),
-    ...(crossPtsReloaded > 0 ? [{
-      label: 'Points reloaded (other stores — shared game)',
-      wallet: '—',
-      pts: `+${crossPtsReloaded} pts`,
-      wc: '#94a3b8', gc: '#7c3aed',
-      cross: true,
-    }] : []),
-    ...(bd.expenseWalletPaid > 0.001 ? [{
-      label: 'Expense payments (this store)',
-      wallet: `−$${(bd.expenseWalletPaid ?? 0).toFixed(2)}`,
-      pts: '—',
-      wc: '#b45309', gc: '#94a3b8',
-    }] : []),
-    ...(crossWalletExpense > 0 ? [{
-      label: 'Expense payments (other stores — shared wallet)',
-      wallet: `−$${crossWalletExpense.toFixed(2)}`,
-      pts: '—',
-      wc: '#b45309', gc: '#94a3b8',
-      cross: true,
-    }] : []),
-    ...(bd.takeoutWalletPaid > 0.001 ? [{
-      label: 'Profit takeouts (this store)',
-      wallet: `−$${(bd.takeoutWalletPaid ?? 0).toFixed(2)}`,
-      pts: '—',
-      wc: '#991b1b', gc: '#94a3b8',
-    }] : []),
-    ...(crossWalletTakeout > 0 ? [{
-      label: 'Profit takeouts (other stores — shared wallet)',
-      wallet: `−$${crossWalletTakeout.toFixed(2)}`,
-      pts: '—',
-      wc: '#991b1b', gc: '#94a3b8',
-      cross: true,
-    }] : []),
-    ...(hasCrossStore && Math.abs(totalCrossWalletAmt) > 0.01 ? [{
-      label: 'Other store transactions (shared wallets)',
-      wallet: `${totalCrossWalletAmt >= 0 ? '+' : ''}$${Math.abs(totalCrossWalletAmt).toFixed(2)}`,
-      pts: '—',
-      wc: '#7c3aed', gc: '#94a3b8',
-      cross: true,
-    }] : []),
-    ...(hasCrossStore && Math.abs(totalCrossGamePts) >= 1 ? [{
-      label: 'Other store transactions (shared games)',
-      wallet: '—',
-      pts: `−${Math.round(totalCrossGamePts)} pts`,
-      wc: '#94a3b8', gc: '#7c3aed',
-      cross: true,
-    }] : []),
-  ];
+// ── receiptRows ───────────────────────────────────────────────────────────────
+const receiptRows = [
+  {
+    label: 'Deposits',
+    wallet: `+$${(bd.deposits ?? 0).toFixed(2)}`,
+    pts: `−${Math.round(bd.deposits ?? 0)} pts`,
+    wc: '#16a34a', gc: '#7c3aed',
+  },
+  {
+    label: 'Cashouts (completed)',
+    wallet: `−$${(bd.completedCashouts ?? 0).toFixed(2)}`,
+    pts: `+${Math.round(bd.completedCashouts ?? 0)} pts`,
+    wc: '#dc2626', gc: '#16a34a',
+  },
+  ...(partialPayments > 0 ? [{
+    label: `Partial payments (${(bd.partiallyPaidCashouts ?? []).length} cashouts)`,
+    wallet: `−$${partialPayments.toFixed(2)}`,
+    pts: `+${Math.round(partialPayments)} pts`,
+    wc: '#dc2626', gc: '#16a34a',
+    info: true,
+  }] : []),
+  ...(bd.totalFees > 0.001 ? [{
+    label: 'Fees',
+    wallet: `−$${(bd.totalFees ?? 0).toFixed(2)}`,
+    pts: '—',
+    wc: '#f59e0b', gc: '#94a3b8',
+  }] : []),
+  ...(bd.bonuses > 0.001 ? [{
+    label: 'Bonuses granted',
+    wallet: '—',
+    pts: `−${Math.round(bd.bonuses ?? 0)} pts`,
+    wc: '#94a3b8', gc: '#c2410c',
+  }] : []),
+  ...(bd.pointsReloaded > 0.001 ? [{
+    label: 'Points reloaded (this store)',
+    wallet: '—',
+    pts: `+${Math.round(bd.pointsReloaded ?? 0)} pts`,
+    wc: '#94a3b8', gc: '#16a34a',
+  }] : []),
+  ...(crossPtsReloaded > 0 ? [{
+    label: 'Points reloaded (other stores — shared game)',
+    wallet: '—',
+    pts: `+${crossPtsReloaded} pts`,
+    wc: '#94a3b8', gc: '#7c3aed',
+    cross: true,
+  }] : []),
+  ...(bd.expenseWalletPaid > 0.001 ? [{
+    label: 'Expense payments (this store)',
+    wallet: `−$${(bd.expenseWalletPaid ?? 0).toFixed(2)}`,
+    pts: '—',
+    wc: '#b45309', gc: '#94a3b8',
+  }] : []),
+  ...(crossWalletExpense > 0 ? [{   // ← single, consolidated row
+    label: 'Expense payments (other stores — shared wallet)',
+    wallet: `−$${crossWalletExpense.toFixed(2)}`,
+    pts: '—',
+    wc: '#b45309', gc: '#94a3b8',
+    cross: true,
+  }] : []),
+  ...(bd.takeoutWalletPaid > 0.001 ? [{
+    label: 'Profit takeouts (this store)',
+    wallet: `−$${(bd.takeoutWalletPaid ?? 0).toFixed(2)}`,
+    pts: '—',
+    wc: '#991b1b', gc: '#94a3b8',
+  }] : []),
+  ...(crossWalletTakeout > 0 ? [{   // ← single, consolidated row
+    label: 'Profit takeouts (other stores — shared wallet)',
+    wallet: `−$${crossWalletTakeout.toFixed(2)}`,
+    pts: '—',
+    wc: '#991b1b', gc: '#94a3b8',
+    cross: true,
+  }] : []),
+  ...(hasCrossStore && Math.abs(totalCrossWalletAmt) > 0.01 ? [{
+    label: 'Other store transactions (shared wallets)',
+    wallet: `${totalCrossWalletAmt >= 0 ? '+' : ''}$${Math.abs(totalCrossWalletAmt).toFixed(2)}`,
+    pts: '—',
+    wc: '#7c3aed', gc: '#94a3b8',
+    cross: true,
+  }] : []),
+  ...(hasCrossStore && Math.abs(totalCrossGamePts) >= 1 ? [{
+    label: 'Other store transactions (shared games)',
+    wallet: '—',
+    pts: `−${Math.round(totalCrossGamePts)} pts`,
+    wc: '#94a3b8', gc: '#7c3aed',
+    cross: true,
+  }] : []),
+  ...(crossAdminWalletEdit !== 0 ? [{
+    label: 'Direct balance edit (admin — shared wallet)',
+    wallet: `${crossAdminWalletEdit >= 0 ? '+' : '−'}$${Math.abs(crossAdminWalletEdit).toFixed(2)}`,
+    pts: '—',
+    wc: '#7c3aed', gc: '#94a3b8',
+    cross: true,
+    adminEdit: true,
+  }] : []),
+  ...(crossAdminGameEdit !== 0 ? [{
+    label: 'Direct stock edit (admin — shared game)',
+    wallet: '—',
+    pts: `${crossAdminGameEdit >= 0 ? '+' : ''}${crossAdminGameEdit} pts`,
+    wc: '#94a3b8', gc: '#7c3aed',
+    cross: true,
+    adminEdit: true,
+  }] : []),
+];
 
   const expTotal = (bd.expenseWalletPaid ?? 0) + (bd.takeoutWalletPaid ?? 0);
   const hasExpDetail = (bd.expenses?.length > 0 || bd.takeouts?.length > 0);
