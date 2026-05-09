@@ -1167,7 +1167,6 @@ const manuallyEditedGames = gameRows.filter(g => {
           ) : activeTab === 'reconciliation' ? (
             <>
               {/* Mid-shift banners */}
-              {/* /* {(newWalletsDuringShift.length > 0 || newGamesDuringShift.length > 0) && ( */ */}
               {hasStartSnapshot && (newWalletsDuringShift.length > 0 || newGamesDuringShift.length > 0) && (
                 <div style={{ border: '1px solid #bfdbfe', borderRadius: '10px', overflow: 'hidden' }}>
                   <div style={{ padding: '10px 14px', background: '#eff6ff', borderBottom: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', gap: '8px' }}>
