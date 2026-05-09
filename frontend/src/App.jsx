@@ -796,7 +796,7 @@ function AdminDashboard({ user }) {
       case "memberDashboard": return <TeamDashboard user={user} />;
       case "players": return <Players />;
       case "dailyCheckups": return <MissingPlayersPage currentUser={user} />;
-      case "playerEditRequests": return <PlayerEditRequests />;
+      case "playerEditRequests": return <PlayerEditRequestPanel />;
       case "playTime": return <Playtimepage />;
       case "attendance": return <Attendance />;
       case "games": return <Games user={user} />;
