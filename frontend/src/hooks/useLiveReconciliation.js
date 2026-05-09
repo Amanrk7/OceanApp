@@ -46,7 +46,6 @@ function computeCrossStoreAdjustments(reconData, crossStoreData) {
     const crossExpenseWallet  = summary.totalCrossWalletExpenses  ?? 0;
     const crossTakeoutWallet  = summary.totalCrossWalletTakeouts  ?? 0;
     const crossPtsReloaded    = summary.totalCrossPointsReloaded  ?? 0;
-    const rawCrossWalletAmt = totalCrossWalletAmt; 
 
     // These reduce shared wallet balances and game stock — include in adjustment
     totalCrossWalletAmt -= (crossExpenseWallet + crossTakeoutWallet);
@@ -87,7 +86,6 @@ function computeCrossStoreAdjustments(reconData, crossStoreData) {
     hasCrossStore,
     totalCrossGamePts,
     totalCrossWalletAmt,
-    rawCrossWalletAmt,
     crossGameInfo,
     crossWalletInfo,
     crossAdjWalletDisc,
