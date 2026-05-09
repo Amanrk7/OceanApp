@@ -171,6 +171,8 @@ export default function EditPlayer({ player, onClose, onSaved }) {
     const [friendResults, setFriendResults] = useState([]);
     const [friendSearchOpen, setFriendSearchOpen] = useState(false);
     const [currentUserRole, setCurrentUserRole] = useState(null);
+    const [pendingMsg, setPendingMsg] = useState('');
+
     const friendSearchRef = useRef(null);
 
     useEffect(() => {
@@ -224,42 +226,61 @@ export default function EditPlayer({ player, onClose, onSaved }) {
         setForm(p => ({ ...p, tier, cashoutLimit: String(TIER_CASHOUT[tier] ?? 250) }));
     };
 
+    // const handleSubmit = async (e) => {
+    //     e.preventDefault();
+    //     if (!form.name.trim()) return toast("Name is required.", "error");
+    //     try {
+    //         setLoading(true);
+    //         await api.players.updatePlayer(player.id, {
+    //             name: form.name.trim(),
+    //             email: form.email.trim() || null,
+    //             phone: form.phone.trim() || null,
+    //             tier: form.tier,
+    //             status: form.status,
+    //             balance: parseFloat(form.balance) || 0,
+    //             cashoutLimit: parseFloat(form.cashoutLimit) || TIER_CASHOUT[form.tier],
+    //             currentStreak: parseInt(form.currentStreak, 10) || 0,
+    //             totalBonusEarned: parseFloat(form.totalBonusEarned) || 0,
+    //             facebook: form.facebook.trim() || null,
+    //             telegram: form.telegram.trim() || null,
+    //             instagram: form.instagram.trim() || null,
+    //             x: form.x.trim() || null,
+    //             snapchat: form.snapchat.trim() || null,
+    //             chimeTag: form.chimeTag.trim() || null,
+    //             cashappTag: form.cashappTag.trim() || null,
+    //             paypalEmail: form.paypalEmail.trim() || null,
+    //             source: form.source.trim() || null,
+    //             referredById: referredByPlayer?.id ?? null,
+    //             friendIds: friendsList.map(f => f.id),
+    //         });
+    //         toast('Player updated!', 'success');
+    //         setTimeout(() => { onSaved(); onClose(); }, 700);
+    //     } catch (err) {
+    //         toast(err.message || 'Failed to update player.', 'error');
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!form.name.trim()) return toast("Name is required.", "error");
         try {
             setLoading(true);
-            await api.players.updatePlayer(player.id, {
-                name: form.name.trim(),
-                email: form.email.trim() || null,
-                phone: form.phone.trim() || null,
-                tier: form.tier,
-                status: form.status,
-                balance: parseFloat(form.balance) || 0,
-                cashoutLimit: parseFloat(form.cashoutLimit) || TIER_CASHOUT[form.tier],
-                currentStreak: parseInt(form.currentStreak, 10) || 0,
-                totalBonusEarned: parseFloat(form.totalBonusEarned) || 0,
-                facebook: form.facebook.trim() || null,
-                telegram: form.telegram.trim() || null,
-                instagram: form.instagram.trim() || null,
-                x: form.x.trim() || null,
-                snapchat: form.snapchat.trim() || null,
-                chimeTag: form.chimeTag.trim() || null,
-                cashappTag: form.cashappTag.trim() || null,
-                paypalEmail: form.paypalEmail.trim() || null,
-                source: form.source.trim() || null,
-                referredById: referredByPlayer?.id ?? null,
-                friendIds: friendsList.map(f => f.id),
-            });
-            toast('Player updated!', 'success');
-            setTimeout(() => { onSaved(); onClose(); }, 700);
+            const result = await api.players.updatePlayer(player.id, formData);
+
+            if (result.pending) {
+                // Team member — show pending state, don't close modal
+                setPendingMsg(result.message);
+            } else {
+                // Admin — applied immediately
+                toast('Player updated successfully', 'success');
+                onSaved();
+            }
         } catch (err) {
-            toast(err.message || 'Failed to update player.', 'error');
+            toast(err.message || 'Update failed', 'error');
         } finally {
             setLoading(false);
         }
     };
-
     if (!player) return null;
 
     const socialFields = [
@@ -515,6 +536,22 @@ export default function EditPlayer({ player, onClose, onSaved }) {
                         flex: 1, padding: '11px', background: C.white, border: `1px solid ${C.border}`,
                         borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px', color: C.slate,
                     }}>Cancel</button>
+                    {pendingMsg && (
+                        <div style={{
+                            padding: '12px 16px',
+                            background: '#fffbeb',
+                            border: '1px solid #fde68a',
+                            borderRadius: 8,
+                            color: '#92400e',
+                            fontSize: 13,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                        }}>
+                            <span>⏳</span>
+                            <span>{pendingMsg} An admin will review your changes shortly.</span>
+                        </div>
+                    )}
                     <button type="submit" form="edit-form" disabled={loading} style={{
                         flex: 2, padding: '11px',
                         background: loading ? '#e2e8f0' : C.sky,
