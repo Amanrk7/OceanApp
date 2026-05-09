@@ -42,7 +42,7 @@ import PendingTransactionsBanner from "./Components/Pendingtransactionsbanner.js
 import ProfitTakeoutsPage from "./Pages/ProfitTakeoutsPage.jsx";
 import AddNewPlayer from "./Pages/AddNewPlayer.jsx";
 import { setStoreId } from './api';
-import PlayerEditRequestPanel from "./Pages/PlayerEditRequestPanel.jsx";
+import PlayerEditRequestPanel from "./Pages/PlayerEditRequestsPanel.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────
 const SIDEBAR_W = 62;
