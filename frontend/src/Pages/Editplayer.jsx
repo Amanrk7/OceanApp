@@ -266,6 +266,18 @@ export default function EditPlayer({ player, onClose, onSaved }) {
         try {
             setLoading(true);
             const result = await api.players.updatePlayer(player.id, formData);
+            const result = await api.players.updatePlayer(player.id, payload);
+
+if (result?.pending) {
+  // Team member — request queued for admin approval
+  toast('Edit submitted for admin approval ✓', 'success');
+  onClose();
+  return;
+}
+
+// Admin — applied immediately
+toast('Player updated successfully ✓', 'success');
+onSaved();
 
             if (result.pending) {
                 // Team member — show pending state, don't close modal
