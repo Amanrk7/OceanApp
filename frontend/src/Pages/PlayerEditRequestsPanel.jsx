@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import { useToast } from '../Context/toastContext';
 
@@ -11,6 +11,7 @@ export default function PlayerEditRequestsPanel() {
   const [loading, setLoading]   = useState(true);
   const [reviewNote, setNote]    = useState({});
   const { add: toast }           = useToast();
+  const eventSourceRef           = useRef(null);
 
   const load = async () => {
     try {
@@ -20,14 +21,39 @@ export default function PlayerEditRequestsPanel() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  // ── SSE: refresh whenever a new edit request comes in or is reviewed ──
+  useEffect(() => {
+    load();
+
+    const token = localStorage.getItem('authToken');
+    const url = token
+      ? `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/tasks/events?token=${encodeURIComponent(token)}`
+      : `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/tasks/events`;
+
+    const es = new EventSource(url, { withCredentials: true });
+    eventSourceRef.current = es;
+
+    es.onmessage = (e) => {
+      try {
+        const { type } = JSON.parse(e.data);
+        if (['edit_request_created', 'edit_request_updated', 'edit_request_reviewed'].includes(type)) {
+          load(); // lightweight re-fetch — only pending requests
+        }
+      } catch (_) {}
+    };
+
+    return () => { es.close(); };
+  }, []);
 
   const handle = async (id, action) => {
     try {
       const note = reviewNote[id] || '';
       if (action === 'approve') await api.editRequests.approve(id, note);
       else                       await api.editRequests.reject(id, note);
-      toast(action === 'approve' ? 'Changes applied ✓' : 'Request rejected', action === 'approve' ? 'success' : 'error');
+      toast(
+        action === 'approve' ? 'Changes applied ✓' : 'Request rejected',
+        action === 'approve' ? 'success' : 'error'
+      );
       load();
     } catch (err) { toast(err.message, 'error'); }
   };
@@ -49,13 +75,10 @@ export default function PlayerEditRequestsPanel() {
           borderRadius: 12,
           padding: '16px 20px',
         }}>
-          {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
             <div>
               <span style={{ fontWeight: 700, fontSize: 14 }}>{r.player?.name}</span>
-              <span style={{ color: '#94a3b8', fontSize: 12, marginLeft: 8 }}>
-                @{r.player?.username}
-              </span>
+              <span style={{ color: '#94a3b8', fontSize: 12, marginLeft: 8 }}>@{r.player?.username}</span>
             </div>
             <div style={{ fontSize: 11, color: '#94a3b8' }}>
               {r.requester?.name} ({r.requester?.role}) ·{' '}
@@ -63,7 +86,6 @@ export default function PlayerEditRequestsPanel() {
             </div>
           </div>
 
-          {/* Changed fields */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
@@ -85,7 +107,6 @@ export default function PlayerEditRequestsPanel() {
             ))}
           </div>
 
-          {/* Review note */}
           <input
             placeholder="Optional note to member…"
             value={reviewNote[r.id] || ''}
@@ -97,7 +118,6 @@ export default function PlayerEditRequestsPanel() {
             }}
           />
 
-          {/* Actions */}
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               onClick={() => handle(r.id, 'approve')}
