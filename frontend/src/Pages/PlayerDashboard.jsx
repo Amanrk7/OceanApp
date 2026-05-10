@@ -1699,9 +1699,30 @@ export default function PlayerDashboard() {
                                                 {txId}
                                                 {isCashout && isPending && <div style={{ marginTop: '3px' }}><span style={{ fontSize: '9px', padding: '1px 5px', background: '#fef3c7', color: '#92400e', borderRadius: '4px', fontWeight: '700' }}>⏳ AWAITING</span></div>}
                                             </td>
-                                            <td style={{ padding: '11px 14px' }}>
+                                            {/* <td style={{ padding: '11px 14px' }}>
                                                 <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', background: t.bg, color: t.color, whiteSpace: 'nowrap' }}>{t.label}</span>
-                                            </td>
+                                            </td> */}
+                                            <td style={{ padding: '11px 14px' }}>
+    <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', background: t.bg, color: t.color, whiteSpace: 'nowrap' }}>{t.label}</span>
+    {(() => {
+        // For referral bonuses, extract the counterpart player name from description
+        if ((tx.type || '').toLowerCase().includes('referral')) {
+            const desc = tx.description || '';
+            // Referrer (A) side: "Referral Bonus from Game — PlayerB deposited $X"
+            const referrerMatch = desc.match(/—\s+(.+?)\s+deposited/i);
+            // Referred (B) side: "Referral Bonus from Game — referred by PlayerA"
+            const referredMatch = desc.match(/—\s+referred by\s+(.+)/i);
+            const name = referrerMatch?.[1] || referredMatch?.[1];
+            const label = referrerMatch ? 'via' : 'by';
+            if (name) return (
+                <div style={{ fontSize: '10px', color: '#16a34a', fontWeight: '600', marginTop: '3px', whiteSpace: 'nowrap' }}>
+                    👤 {label} {name}
+                </div>
+            );
+        }
+        return null;
+    })()}
+</td>
                                             <td style={{ padding: '11px 14px', fontWeight: '800', fontSize: '14px', color: isCashout ? C.red : '#10b981', whiteSpace: 'nowrap' }}>{isCashout ? '−' : '+'}${depositAmt.toFixed(2)}</td>
                                             <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
                                                 {feeVal > 0 ? <span style={{ fontWeight: '700', fontSize: '12px', color: '#f59e0b' }}>−${feeVal.toFixed(2)}</span> : <span style={{ color: C.border, fontSize: '12px' }}>—</span>}
