@@ -757,6 +757,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 // ADMIN DASHBOARD — reads store from context
 // ══════════════════════════════════════════════════════════════
 function AdminDashboard({ user }) {
+  const isAdmin = ADMIN_USERNAMES.includes(user?.username);
   const { currentStoreId } = useContext(App2Context);
   const { setAddPlayer } = useContext(AddPlayerContext);
   const { setUsr } = useContext(CurrentUserContext);
