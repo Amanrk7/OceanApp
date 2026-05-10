@@ -36,8 +36,8 @@ const STREAK_TIERS = [
     { days: 5, bonus: 5, label: "On A Roll", color: "#8b5cf6", bg: "#faf5ff", border: "#ddd6fe", ring: "#a78bfa" },
     { days: 7, bonus: 7, label: "Hot Streak", color: "#f59e0b", bg: "#fffbeb", border: "#fde68a", ring: "#fbbf24" },
     { days: 10, bonus: 15, label: "Fire", color: "#f97316", bg: "#fff7ed", border: "#fdba74", ring: "#fb923c" },
-    { days: 15, bonus: 28, label: "Blazing", color: "#ef4444", bg: "#fef2f2", border: "#fca5a5", ring: "#f87171" },
-    { days: 20, bonus: 20, label: "Inferno", color: "#f97316", bg: "#fff7ed", border: "#fdba74", ring: "#fb923c" },
+    { days: 15, bonus: 20, label: "Blazing", color: "#ef4444", bg: "#fef2f2", border: "#fca5a5", ring: "#f87171" },
+    // { days: 20, bonus: 20, label: "Inferno", color: "#f97316", bg: "#fff7ed", border: "#fdba74", ring: "#fb923c" },
     { days: 30, bonus: 30, label: "LEGEND", color: "#10b981", bg: "#f0fdf4", border: "#86efac", ring: "#34d399", special: true },
 ];
 function Card({ children, style = {}, accent }) {
