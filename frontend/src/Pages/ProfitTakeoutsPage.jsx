@@ -183,10 +183,30 @@ function TakeoutForm({ initial, wallets, onSubmit, onCancel, loading, error }) {
         takenAt: initial?.takenAt ? fmtDateInput(initial.takenAt) : todayInput(),
     });
 
+    // ✅ Flatten all sub-accounts for balance lookup
+    const flatWallets = wallets.flatMap(g =>
+        g.subAccounts.filter(s => s.isLive !== false).map(s => ({
+            id: s.id,
+            label: `${g.method} — ${s.name} ($${Number(s.balance || 0).toFixed(2)})`,
+            balance: Number(s.balance || 0),
+        }))
+    );
+
+    // ✅ Live balance of the selected wallet
+    const selectedWallet = flatWallets.find(w => String(w.id) === String(form.walletId));
+    const amountNum = parseFloat(form.amount) || 0;
+    const insufficientFunds = form.walletId && selectedWallet && amountNum > selectedWallet.balance;
+
     const handleChange = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        // ✅ Client-side balance guard — prevents negative wallet balances
+        if (form.walletId && selectedWallet && amountNum > selectedWallet.balance) {
+            return; // button is already disabled; this is a safety net
+        }
+
         onSubmit({
             amount: parseFloat(form.amount),
             takenBy: form.takenBy.trim(),
@@ -196,12 +216,6 @@ function TakeoutForm({ initial, wallets, onSubmit, onCancel, loading, error }) {
             takenAt: form.takenAt ? new Date(form.takenAt).toISOString() : new Date().toISOString(),
         });
     };
-
-    const flatWallets = wallets.flatMap(g =>
-        g.subAccounts.filter(s => s.isLive !== false).map(s => ({
-            id: s.id, label: `${g.method} — ${s.name} ($${Number(s.balance || 0).toFixed(2)})`,
-        }))
-    );
 
     return (
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -225,10 +239,34 @@ function TakeoutForm({ initial, wallets, onSubmit, onCancel, loading, error }) {
                 </div>
                 <div>
                     <label style={LABEL}>Deduct from Wallet</label>
-                    <FocusInput as="select" value={form.walletId} onChange={handleChange('walletId')}>
+                    <FocusInput
+                        as="select"
+                        value={form.walletId}
+                        onChange={handleChange('walletId')}
+                        style={insufficientFunds ? { borderColor: '#ef4444', background: '#fff1f2' } : {}}>
                         <option value="">— None / Manual —</option>
                         {flatWallets.map(w => <option key={w.id} value={w.id}>{w.label}</option>)}
                     </FocusInput>
+
+                    {/* ✅ Inline insufficient-funds warning under the wallet dropdown */}
+                    {insufficientFunds && (
+                        <div style={{ marginTop: '5px', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: '700', color: '#dc2626' }}>
+                            <AlertCircle style={{ width: '11px', height: '11px', flexShrink: 0 }} />
+                            Insufficient funds — wallet has {fmtMoney(selectedWallet.balance)}
+                        </div>
+                    )}
+
+                    {/* ✅ Available balance hint when wallet is selected and balance is sufficient */}
+                    {form.walletId && selectedWallet && !insufficientFunds && (
+                        <div style={{ marginTop: '5px', fontSize: '11px', color: '#64748b' }}>
+                            Available: <strong>{fmtMoney(selectedWallet.balance)}</strong>
+                            {amountNum > 0 && (
+                                <span style={{ color: '#22c55e', marginLeft: '6px' }}>
+                                    → {fmtMoney(selectedWallet.balance - amountNum)} after
+                                </span>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -242,7 +280,8 @@ function TakeoutForm({ initial, wallets, onSubmit, onCancel, loading, error }) {
                 <FocusInput as="textarea" rows={2} placeholder="Reason, purpose, context…" value={form.notes} onChange={handleChange('notes')} style={{ resize: 'none', lineHeight: '1.6' }} />
             </div>
 
-
+            {/* Show API-level errors */}
+            {error && <AlertBanner type="error" message={error} />}
 
             <div style={{ display: 'flex', gap: '10px', paddingTop: '4px', borderTop: '1px solid #f1f5f9', marginTop: '4px' }}>
                 <button type="button" onClick={onCancel}
@@ -251,9 +290,17 @@ function TakeoutForm({ initial, wallets, onSubmit, onCancel, loading, error }) {
                     onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}>
                     Cancel
                 </button>
-                <button type="submit" disabled={loading}
-                    style={{ flex: 1, padding: '11px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '9px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer', fontSize: '13px', opacity: loading ? 0.7 : 1 }}>
-                    {loading ? 'Saving…' : initial ? 'Save Changes' : 'Record Takeout'}
+                {/* ✅ Submit button disabled when wallet has insufficient funds */}
+                <button type="submit" disabled={loading || insufficientFunds}
+                    style={{
+                        flex: 1, padding: '11px',
+                        background: insufficientFunds ? '#fca5a5' : loading ? '#fca5a5' : '#dc2626',
+                        color: '#fff', border: 'none', borderRadius: '9px', fontWeight: '700',
+                        cursor: (loading || insufficientFunds) ? 'not-allowed' : 'pointer',
+                        fontSize: '13px', opacity: (loading || insufficientFunds) ? 0.7 : 1,
+                        transition: 'background .15s',
+                    }}>
+                    {loading ? 'Saving…' : insufficientFunds ? 'Insufficient Funds' : initial ? 'Save Changes' : 'Record Takeout'}
                 </button>
             </div>
         </form>
@@ -296,8 +343,7 @@ export default function ProfitTakeoutsPage() {
             setRecords(res.data || []);
             setWallets(wRes.data || []);
         } catch (err) {
-            toast(err.message || 'Failed to load records', "error");
-
+            toast(err.message || 'Failed to load records', 'error');
         } finally {
             setLoading(false);
         }
@@ -378,14 +424,10 @@ export default function ProfitTakeoutsPage() {
             await api.profitTakeouts.remove(deleteRecord.id);
             await load();
             setDeleteRecord(null);
-            toast('Record deleted.', "success");
-
+            toast('Record deleted.', 'success');
         } catch (err) {
-            toast(err.message || 'Delete failed', "error");
-
-
-        }
-        finally { setDeletingId(null); }
+            toast(err.message || 'Delete failed', 'error');
+        } finally { setDeletingId(null); }
     };
 
     // ── Per-person summary ─────────────────────────────────────────────────────
@@ -478,7 +520,7 @@ export default function ProfitTakeoutsPage() {
                             style={{ ...INPUT_BASE, width: '210px', padding: '8px 12px', fontSize: '13px' }}
                         />
                         <button onClick={load} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 13px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', color: '#64748b', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
-                            <RefreshCw style={{ width: '12px', height: '12px', animation: loading ? 'spin 1s linear infinite' : 'none' }} /> Refresh
+                            <RefreshCw style={{ width: '12px', height: '12px', animation: loading ? 'smartSpin 1s linear infinite' : 'none' }} /> Refresh
                         </button>
                         <button onClick={() => { setFormError(''); setShowAdd(true); }} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '9px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
                             onMouseEnter={e => e.currentTarget.style.background = '#b91c1c'}
@@ -526,11 +568,8 @@ export default function ProfitTakeoutsPage() {
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={7} style={{ padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
-                                    {/* <div style={{ width: '28px', height: '28px', border: '3px solid #e2e8f0', borderTopColor: '#dc2626', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 10px' }} />
-                                    Loading records… */}
-
-                                    <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
-                                        <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "spin .8s linear infinite" }} />
+                                    <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>
+                                        <RefreshCw style={{ width: 14, height: 14, margin: '0 auto 8px', display: 'block', animation: 'smartSpin .8s linear infinite' }} />
                                         Loading records…
                                     </div>
                                 </td></tr>
@@ -647,7 +686,7 @@ export default function ProfitTakeoutsPage() {
             />
 
             <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes smartSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: #f8fafc; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
