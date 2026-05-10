@@ -421,8 +421,8 @@ const NAV_ITEMS = [
   { id: "expenses", label: "Expenses", icon: Invoice03Icon, adminsOnly: true },
   { id: "profitTakeouts", label: "Profit Takeouts", icon: DollarCircleIcon, adminsOnly: true },
   { id: "addTasks", label: "Add Tasks", icon: TaskEdit01Icon, adminsOnly: true },
-  { id: "addTransactions", label: "Add Transaction", icon: AddMoneyCircleIcon, adminsOnly: false },
-  { id: "addBonus", label: "Add Bonus", icon: GiftIcon, adminsOnly: false },
+  { id: "addTransactions", label: "Add Transaction", icon: AddMoneyCircleIcon, membersOnly: true },
+  { id: "addBonus", label: "Add Bonus", icon: GiftIcon, membersOnly: true },
   { id: "manageWallets", label: "Manage Wallets", icon: BitcoinWalletIcon, adminsOnly: true },
   { id: "shifts", label: "Shifts", icon: ManagerIcon, dividerAfter: true },
   { id: "adminReports", label: "Admin Reports", icon: AnalysisTextLinkIcon, adminsOnly: true },
@@ -689,7 +689,9 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 
         <nav className="ob-nav">
           {NAV_ITEMS.map(item => {
-            const hidden = item.adminsOnly && !isAdmin;
+            // const hidden = item.adminsOnly && !isAdmin;
+      const hidden = (item.adminsOnly && !isAdmin) || (item.membersOnly && isAdmin);
+
 
             return (
               <div key={item.id} style={{ display: hidden ? 'none' : undefined }}>
@@ -834,6 +836,7 @@ function AdminDashboard({ user }) {
                 Store {currentStoreId}
               </span>
             </h1>
+            {!isAdmin && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <button onClick={() => handleNavigate('addTransactions')} style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -863,7 +866,8 @@ function AdminDashboard({ user }) {
                 </svg>
                 Add Bonus
               </button>
-            </div>
+            </div>)}
+
           </div>
           {renderPage()}
         </div>
