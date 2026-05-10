@@ -261,38 +261,83 @@ export default function EditPlayer({ player, onClose, onSaved }) {
     //         setLoading(false);
     //     }
     // };
+//     const handleSubmit = async (e) => {
+//         e.preventDefault();
+//         try {
+//             setLoading(true);
+//             const result = await api.players.updatePlayer(player.id, formData);
+//             const result = await api.players.updatePlayer(player.id, payload);
+
+// if (result?.pending) {
+//   // Team member — request queued for admin approval
+//   toast('Edit submitted for admin approval ✓', 'success');
+//   onClose();
+//   return;
+// }
+
+// // Admin — applied immediately
+// toast('Player updated successfully ✓', 'success');
+// onSaved();
+
+//             if (result.pending) {
+//                 // Team member — show pending state, don't close modal
+//                 setPendingMsg(result.message);
+//             } else {
+//                 // Admin — applied immediately
+//                 toast('Player updated successfully', 'success');
+//                 onSaved();
+//             }
+//         } catch (err) {
+//             toast(err.message || 'Update failed', 'error');
+//         } finally {
+//             setLoading(false);
+//         }
+//     };
+
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            setLoading(true);
-            const result = await api.players.updatePlayer(player.id, formData);
-            const result = await api.players.updatePlayer(player.id, payload);
+    e.preventDefault();
+    if (!form.name.trim()) return toast('Name is required.', 'error');
+    try {
+        setLoading(true);
+        const result = await api.players.updatePlayer(player.id, {
+            name: form.name.trim(),
+            email: form.email.trim() || null,
+            phone: form.phone.trim() || null,
+            tier: form.tier,
+            status: form.status,
+            balance: parseFloat(form.balance) || 0,
+            cashoutLimit: parseFloat(form.cashoutLimit) || TIER_CASHOUT[form.tier],
+            currentStreak: parseInt(form.currentStreak, 10) || 0,
+            totalBonusEarned: parseFloat(form.totalBonusEarned) || 0,
+            facebook: form.facebook.trim() || null,
+            telegram: form.telegram.trim() || null,
+            instagram: form.instagram.trim() || null,
+            x: form.x.trim() || null,
+            snapchat: form.snapchat.trim() || null,
+            chimeTag: form.chimeTag.trim() || null,
+            cashappTag: form.cashappTag.trim() || null,
+            paypalEmail: form.paypalEmail.trim() || null,
+            source: form.source.trim() || null,
+            referredById: referredByPlayer?.id ?? null,
+            friendIds: friendsList.map(f => f.id),
+        });
 
-if (result?.pending) {
-  // Team member — request queued for admin approval
-  toast('Edit submitted for admin approval ✓', 'success');
-  onClose();
-  return;
-}
-
-// Admin — applied immediately
-toast('Player updated successfully ✓', 'success');
-onSaved();
-
-            if (result.pending) {
-                // Team member — show pending state, don't close modal
-                setPendingMsg(result.message);
-            } else {
-                // Admin — applied immediately
-                toast('Player updated successfully', 'success');
-                onSaved();
-            }
-        } catch (err) {
-            toast(err.message || 'Update failed', 'error');
-        } finally {
-            setLoading(false);
+        if (result?.pending) {
+            // Team member — request queued for admin approval
+            setPendingMsg(result.message);
+            toast('Edit submitted for admin approval ✓', 'success');
+        } else {
+            // Admin — applied immediately
+            toast('Player updated successfully ✓', 'success');
+            onSaved();
+            onClose();
         }
-    };
+    } catch (err) {
+        toast(err.message || 'Update failed', 'error');
+    } finally {
+        setLoading(false);
+    }
+};
     if (!player) return null;
 
     const socialFields = [
