@@ -77,6 +77,7 @@ function FocusInput({ as: Tag = 'input', style, ...props }) {
 
 // ─── Add / Edit Issue Modal ───────────────────────────────────────────────────
 function AddIssueModal({ onClose, onCreated }) {
+  const { add: toast } = useToast(); // ✅ Fix 1: moved useToast into this component
   const [form, setForm] = useState({ title: '', description: '', playerName: '', priority: 'MEDIUM' });
   const [loading, setLoading] = useState(false);
 
@@ -85,24 +86,23 @@ function AddIssueModal({ onClose, onCreated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title.trim()) {
-      toast(e.message || 'Issue title is required', "error");
+      toast('Issue title is required', 'error');
       return;
     }
     if (!form.description.trim()) {
-      toast('Description is required', "error");
-
+      toast('Description is required', 'error');
       return;
     }
     try {
       setLoading(true);
       await api.issues.issues.createIssue({ title: form.title, description: form.description, playerName: form.playerName || null, priority: form.priority });
-      toast('Issue submitted!', "success");
-
-      setTimeout(() => onCreated?.(), 900);
+      toast('Issue submitted!', 'success');
+      onCreated?.(); // ✅ Fix 2: call immediately — no setTimeout delay
     } catch (err) {
-      toast(err.message || 'Failed to submit', "error");
+      toast(err.message || 'Failed to submit', 'error');
+    } finally {
+      setLoading(false);
     }
-    finally { setLoading(false); }
   };
 
   return (
@@ -247,10 +247,10 @@ export default function Issues() {
       const data = await api.issues.issues.getIssues(true);
       setIssues(data.data || []);
     } catch (e) {
-      toast(e.message || 'Failed to load issues', "error");
-
+      toast(e.message || 'Failed to load issues', 'error');
+    } finally {
+      setLoading(false);
     }
-    finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, []);
@@ -260,12 +260,12 @@ export default function Issues() {
       setResolving(id);
       await api.issues.issues.resolveIssue(id);
       setIssues(prev => prev.map(i => i.id === id ? { ...i, status: 'RESOLVED' } : i));
-      toast('Issue marked as resolved.', "success");
+      toast('Issue marked as resolved.', 'success');
     } catch (e) {
-      toast(e.message || 'Failed to resolve issue', "error");
-
+      toast(e.message || 'Failed to resolve issue', 'error');
+    } finally {
+      setResolving(null);
     }
-    finally { setResolving(null); }
   };
 
   const isResolved = (issue) => issue.status === 'RESOLVED' || issue.status === 'Resolved';
@@ -336,7 +336,7 @@ export default function Issues() {
 
           <button onClick={load} disabled={loading}
             style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer', color: '#64748b', fontSize: '12px', fontWeight: '600', flexShrink: 0 }}>
-            <RefreshCw style={{ width: '12px', height: '12px', animation: loading ? 'spin 1s linear infinite' : 'none' }} /> Refresh
+            <RefreshCw style={{ width: '12px', height: '12px', animation: loading ? 'smartSpin 1s linear infinite' : 'none' }} /> Refresh
           </button>
 
           <button onClick={() => setShowAdd(true)}
@@ -365,13 +365,9 @@ export default function Issues() {
         {/* Issue list */}
         <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '65vh', overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f8fafc' }}>
           {loading ? (
-            // <div style={{ padding: '60px', textAlign: 'center' }}>
-            //   <div style={{ width: '30px', height: '30px', border: '3px solid #e2e8f0', borderTopColor: '#0ea5e9', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 10px' }} />
-            //   <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>Loading issues…</p>
-            // </div>
-            <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
-              <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "smartSpin .8s linear infinite" }} />
-              Loading tasks…
+            <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>
+              <RefreshCw style={{ width: 14, height: 14, margin: '0 auto 8px', display: 'block', animation: 'smartSpin .8s linear infinite' }} />
+              Loading issues…
             </div>
           ) : filtered.length === 0 ? (
             <div style={{ padding: '60px', textAlign: 'center' }}>
@@ -411,8 +407,9 @@ export default function Issues() {
         <AddIssueModal
           onClose={() => setShowAdd(false)}
           onCreated={() => {
-            setShowAdd(false); load();
-            toast('Issue submitted successfully!', "success");
+            setShowAdd(false);
+            load(); // ✅ auto-refreshes the list immediately after submission
+            toast('Issue submitted successfully!', 'success');
           }}
         />
       )}
