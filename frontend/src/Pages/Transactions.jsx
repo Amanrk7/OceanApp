@@ -8,6 +8,8 @@ import { api } from '../api';
 import { useNavigate } from 'react-router-dom';
 import { ShiftStatusContext } from '../Context/membershiftStatus';
 import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
+import { useToast } from '../Context/toastContext';
+
 
 // ─── Design tokens (mirrors PlaytimePage) ────────────────────────────────────
 const CARD = {
@@ -125,8 +127,12 @@ function PartialPayPanel({ tx, onClose, onSuccess, onError }) {
     try {
       setSubmitting(true);
       await api.transactions.partialPayment(String(tx.id).replace(/\D/g, ''), { amount: payAmt });
-      onSuccess(`Partial payment of ${fmt(payAmt)} recorded for #${tx.id}.`);
-    } catch (err) { onError(err.message || 'Partial payment failed.'); }
+
+      toast(`Partial payment of ${fmt(payAmt)} recorded for #${tx.id}.`, 'success');
+
+    } catch (err) {
+      toast(err.message || 'Partial payment failed.', "error");
+    }
     finally { setSubmitting(false); }
   };
 
@@ -332,8 +338,15 @@ function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess
           <td colSpan={12} style={{ padding: 0 }}>
             <PartialPayPanel tx={tx}
               onClose={() => setShowPartial(false)}
-              onSuccess={msg => { setShowPartial(false); onPartialSuccess(msg); }}
-              onError={msg => { setShowPartial(false); onError(msg); }} />
+              onSuccess={msg => {
+                setShowPartial(false);
+                toast(`${msg}`, 'success');
+
+              }}
+              onError={msg => {
+                setShowPartial(false);
+                toast(msg, "error");
+              }} />
           </td>
         </tr>
       )}
@@ -368,6 +381,7 @@ function LockedScreen() {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Transactions() {
   // const { shiftActive } = useContext(ShiftStatusContext);
+  const { add: toast } = useToast();
   const { shiftActive, shiftLoading } = useContext(ShiftStatusContext);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -390,7 +404,9 @@ export default function Transactions() {
       setLoading(true);
       const status = tab === 'pending' ? 'PENDING' : tab === 'completed' ? 'COMPLETED' : '';
       setData(await api.transactions.getTransactions(page, LIMIT, '', status, force));
-    } catch (e) { showBanner('error', e.message || 'Failed to load'); }
+    } catch (e) {
+      toast(e.message || 'Failed to load', "error");
+    }
     finally { setLoading(false); }
   }, [currentPage, filterTab]);
 
@@ -412,8 +428,11 @@ export default function Transactions() {
       await api.transactions.undoTransaction(numId);
       api.clearCache?.();
       await load(currentPage, filterTab, true);
-      showBanner('success', `Transaction #${id} reversed.`);
-    } catch (e) { showBanner('error', e.message || 'Undo failed.'); }
+      toast(`Transaction #${id} reversed.`, 'success');
+
+    } catch (e) {
+      toast(e.message || 'Undo failed', "error");
+    }
     finally { setUndoingId(null); }
   };
 
@@ -424,8 +443,11 @@ export default function Transactions() {
       await api.transactions.approveCashout(numId);
       api.clearCache?.();
       await load(currentPage, filterTab, true);
-      showBanner('success', `Cashout #${id} completed.`);
-    } catch (e) { showBanner('error', e.message || 'Approval failed.'); }
+      toast(`Cashout #${id} completed.`, 'success');
+
+    } catch (e) {
+      toast(e.message || 'Approval failed', "error");
+    }
     finally { setApprovingId(null); }
   };
 
@@ -583,8 +605,12 @@ export default function Transactions() {
                   <TxRow key={tx.id} tx={tx}
                     undoingId={undoingId} approvingId={approvingId}
                     onUndo={handleUndo} onApprove={handleApprove}
-                    onPartialSuccess={async msg => { api.clearCache?.(); await load(currentPage, filterTab, true); showBanner('success', msg); }}
-                    onError={msg => showBanner('error', msg)} />
+                    onPartialSuccess={async msg => {
+                      api.clearCache?.(); await load(currentPage, filterTab, true);
+                      toast(msg, 'success');
+
+                    }}
+                    onError={msg => { toast(msg || 'An error occurred', "error"); }} />
                 )) : (
                   <tr><td colSpan={COLS.length} style={{ padding: '60px', textAlign: 'center', color: '#94a3b8' }}>No transactions found</td></tr>
                 )}
