@@ -428,7 +428,7 @@ const NAV_ITEMS = [
   { id: "adminReports", label: "Admin Reports", icon: AnalysisTextLinkIcon, adminsOnly: true },
 ];
 
-const ADMIN_USERNAMES = ["admin", "superadmin"];
+// const ADMIN_USERNAMES = ["admin", "superadmin"];
 
 // ══════════════════════════════════════════════════════════════
 // STORE SWITCHER — popover showing all accessible stores
@@ -649,7 +649,9 @@ function StoreSwitcher({ user, onSwitch }) {
 // ══════════════════════════════════════════════════════════════
 export function Sidebar({ user, activePage, onNavigate, onLogout }) {
   const { currentStoreId, setCurrentStoreId } = useContext(App2Context);
-  const isAdmin = ADMIN_USERNAMES.includes(user?.username);
+  // const isAdmin = ADMIN_USERNAMES.includes(user?.username);
+  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role);
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const [tooltip, setTooltip] = useState({ visible: false, label: '', y: 0 });
@@ -757,7 +759,9 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 // ADMIN DASHBOARD — reads store from context
 // ══════════════════════════════════════════════════════════════
 function AdminDashboard({ user }) {
-  const isAdmin = ADMIN_USERNAMES.includes(user?.username);
+  // const isAdmin = ADMIN_USERNAMES.includes(user?.username);
+  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role);
+
   const { currentStoreId } = useContext(App2Context);
   const { setAddPlayer } = useContext(AddPlayerContext);
   const { setUsr } = useContext(CurrentUserContext);
@@ -964,7 +968,9 @@ function ShiftsWithSidebar({ user }) {
 // ══════════════════════════════════════════════════════════════
 function LoginPage() {
   const { currentStoreId } = useContext(App2Context);
-  const [username, setUsername] = useState("admin");
+  // const [username, setUsername] = useState("admin");
+  const [username, setUsername] = useState("");
+
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
