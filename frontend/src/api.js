@@ -160,13 +160,17 @@ export const authAPI = {
   //   return data;
   // },
   login: async (username, password) => {
-  cache.clearAll();  // ← ADD THIS — wipe any previous user's cache
+  cache.clearAll();
   const data = await fetchAPI('/login', {
     method: 'POST',
     body: JSON.stringify({ username, password })
   });
   if (data.token) localStorage.setItem('authToken', data.token);
-  cache.set('user', data.user, 30 * 60 * 1000);
+  
+  // ← ADD THIS — handle both response shapes
+  const userToCache = data.user || (data.role ? data : null);
+  if (userToCache) cache.set('user', userToCache, 30 * 60 * 1000);
+  
   return data;
 },
 
