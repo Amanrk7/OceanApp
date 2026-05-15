@@ -651,6 +651,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
   const { currentStoreId, setCurrentStoreId } = useContext(App2Context);
   // const isAdmin = ADMIN_USERNAMES.includes(user?.username);
   const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role);
+  console.log('Sidebar user:', user?.role, 'isAdmin:', isAdmin);  // ← add this
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
