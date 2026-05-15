@@ -1248,8 +1248,12 @@ export default function App() {
 api.auth.getUser()
   .then(u => {
     // /api/user returns user directly, not wrapped
-    const userData = u?.role ? u : (u?.data || u?.user || u);
-    console.log('USER OBJECT:', userData);
+    // const userData = u?.role ? u : (u?.data || u?.user || u);
+        const userData = u?.role ? u : (u?.data || u?.user || u);
+
+    // console.log('USER OBJECT:', userData);
+        console.warn('APP USER:', userData?.role, userData?.id);
+
     setUser(userData);
     
     const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(userData?.role);
