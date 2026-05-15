@@ -1225,24 +1225,50 @@ export default function App() {
   const [showStoreSelect, setShowStoreSelect] = useState(false);
 
   useEffect(() => {
-    api.auth.getUser()
-      .then(u => {
-        console.log('USER OBJECT:', u);  // ← add this line
-        setUser(u);
-        const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(u?.role);
-        const stores = isAdmin ? [1, 2, 3] : (Array.isArray(u?.storeAccess) ? u.storeAccess : [1]);
-        if (stores.length > 1) {
-          setShowStoreSelect(true); // show popup
-        } else {
-          const s = stores[0] || 1;
-          setCurrentStoreId(s);
-          setActiveStoreIds([s]);
-          setStoreId(s);
-          setStoreSelectionDone(true);
-        }
-      })
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    // api.auth.getUser()
+    //   .then(u => {
+    //     console.log('USER OBJECT:', u);  // ← add this line
+    //     setUser(u);
+    //     const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(u?.role);
+    //     const stores = isAdmin ? [1, 2, 3] : (Array.isArray(u?.storeAccess) ? u.storeAccess : [1]);
+    //     if (stores.length > 1) {
+    //       setShowStoreSelect(true); // show popup
+    //     } else {
+    //       const s = stores[0] || 1;
+    //       setCurrentStoreId(s);
+    //       setActiveStoreIds([s]);
+    //       setStoreId(s);
+    //       setStoreSelectionDone(true);
+    //     }
+    //   })
+    //   .catch(() => setUser(null))
+    //   .finally(() => setLoading(false));
+    // In App.jsx — make the isAdmin check more defensive
+api.auth.getUser()
+  .then(u => {
+    // /api/user returns user directly, not wrapped
+    const userData = u?.role ? u : (u?.data || u?.user || u);
+    console.log('USER OBJECT:', userData);
+    setUser(userData);
+    
+    const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(userData?.role);
+    const rawAccess = userData?.storeAccess;
+    const stores = isAdmin
+      ? [1, 2]
+      : Array.isArray(rawAccess) ? rawAccess : [1];
+    
+    if (stores.length > 1) {
+      setShowStoreSelect(true);
+    } else {
+      const s = stores[0] || 1;
+      setCurrentStoreId(s);
+      setActiveStoreIds([s]);
+      setStoreId(s);
+      setStoreSelectionDone(true);
+    }
+  })
+  .catch(() => setUser(null))
+  .finally(() => setLoading(false));
   }, []);
 
   const handleStoreConfirm = (selectedIds, primaryId) => {
