@@ -150,15 +150,25 @@ function buildQueryString(params) {
 // ═══════════════════════════════════════════════════════════════
 
 export const authAPI = {
+  // login: async (username, password) => {
+  //   const data = await fetchAPI('/login', {
+  //     method: 'POST',
+  //     body: JSON.stringify({ username, password })
+  //   });
+  //   if (data.token) localStorage.setItem('authToken', data.token);
+  //   cache.set('user', data.user, 30 * 60 * 1000);
+  //   return data;
+  // },
   login: async (username, password) => {
-    const data = await fetchAPI('/login', {
-      method: 'POST',
-      body: JSON.stringify({ username, password })
-    });
-    if (data.token) localStorage.setItem('authToken', data.token);
-    cache.set('user', data.user, 30 * 60 * 1000);
-    return data;
-  },
+  cache.clearAll();  // ← ADD THIS — wipe any previous user's cache
+  const data = await fetchAPI('/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password })
+  });
+  if (data.token) localStorage.setItem('authToken', data.token);
+  cache.set('user', data.user, 30 * 60 * 1000);
+  return data;
+},
 
   logout: async () => {
     localStorage.removeItem('authToken');
