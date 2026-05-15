@@ -1227,6 +1227,7 @@ export default function App() {
   useEffect(() => {
     api.auth.getUser()
       .then(u => {
+        console.log('USER OBJECT:', u);  // ← add this line
         setUser(u);
         const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(u?.role);
         const stores = isAdmin ? [1, 2, 3] : (Array.isArray(u?.storeAccess) ? u.storeAccess : [1]);
