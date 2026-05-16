@@ -780,12 +780,18 @@ function MemberShiftSection({ team }) {
     const [expanded, setExpanded] = useState(true);
     const rc = ROLE_COLORS[team.role] || ROLE_COLORS.TEAM1;
     // const memberName = team.member?.name || team.shifts[0]?.displayMember?.name || team.shifts[0]?.checkin?.user?.name || "Unassigned";
-    const performer = team.shifts[0]?.displayMember;
-const isCrossStore = (performer?.storeAccess?.length ?? 0) > 1;
+//     const performer = team.shifts[0]?.displayMember;
+// const isCrossStore = (performer?.storeAccess?.length ?? 0) > 1;
 
-const memberName = isCrossStore
-  ? "Cross Store Member"
-  : (team.member?.name || performer?.name || team.shifts[0]?.checkin?.user?.name || "Unassigned");
+// const memberName = isCrossStore
+//   ? "Cross Store Member"
+//   : (team.member?.name || performer?.name || team.shifts[0]?.checkin?.user?.name || "Unassigned");
+
+    const performer = team.shifts[0]?.displayMember;
+const memberName = team.member?.name 
+  || performer?.name 
+  || team.shifts[0]?.checkin?.user?.name 
+  || "Unassigned";
     const aggr = team.shifts.reduce((acc, s) => {
         const st = s.stats || {};
         acc.deposits += st.totalDeposits || 0;
