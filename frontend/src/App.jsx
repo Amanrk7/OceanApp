@@ -651,7 +651,9 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
   const { currentStoreId, setCurrentStoreId } = useContext(App2Context);
   // const isAdmin = ADMIN_USERNAMES.includes(user?.username);
   const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role);
-  console.log('Sidebar user:', user?.role, 'isAdmin:', isAdmin);  // ← add this
+  // ✅ KEEP THIS LOG until confirmed working
+  console.warn('🔐 Sidebar role check:', user?.role, '→ isAdmin:', isAdmin);
+  // console.log('Sidebar user:', user?.role, 'isAdmin:', isAdmin);  // ← add this
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -766,7 +768,11 @@ function AdminDashboard({ user }) {
   const { currentStoreId } = useContext(App2Context);
   const { setAddPlayer } = useContext(AddPlayerContext);
   const { setUsr } = useContext(CurrentUserContext);
-  setUsr(user);
+  // setUsr(user);
+// ✅ FIX: Move setUsr out of render body into useEffect
+  useEffect(() => {
+    if (user) setUsr(user);
+  }, [user]);
 
   const location = useLocation();
   const [page, setPage] = useState(() => {
@@ -888,7 +894,11 @@ function AdminDashboard({ user }) {
 function PlayerDashboardWithSidebar({ user }) {
   const { setUsr } = useContext(CurrentUserContext);
   const { setCurrentStoreId } = useContext(App2Context);
-  setUsr(user);
+  // setUsr(user);
+   // ✅ FIX: useEffect instead of render body
+  useEffect(() => {
+    if (user) setUsr(user);
+  }, [user]);
   const navigate = useNavigate();
 
   return (
@@ -911,7 +921,11 @@ function PlayerDashboardWithSidebar({ user }) {
 // ══════════════════════════════════════════════════════════════
 function AddNewPlayerWithSidebar({ user }) {
   const { setUsr } = useContext(CurrentUserContext);
-  setUsr(user);
+  // setUsr(user);
+   // ✅ FIX
+  useEffect(() => {
+    if (user) setUsr(user);
+  }, [user]);
   const navigate = useNavigate();
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--color-bg)", width: "100vw" }}>
@@ -931,7 +945,11 @@ function AddNewPlayerWithSidebar({ user }) {
 // ══════════════════════════════════════════════════════════════════════════
 function ShiftsWithSidebar({ user }) {
   const { setUsr } = useContext(CurrentUserContext);
-  setUsr(user);
+  // setUsr(user);
+    // ✅ FIX
+  useEffect(() => {
+    if (user) setUsr(user);
+  }, [user]);
   const navigate = useNavigate();
   const { setIsStore2 } = useContext(App2Context);
   const [loading, setLoading] = useState(false);
