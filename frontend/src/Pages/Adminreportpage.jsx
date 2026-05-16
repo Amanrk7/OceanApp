@@ -40,12 +40,16 @@ const TD = {
     verticalAlign: "middle",
 };
 
-const ROLE_LABEL = { TEAM1: "Team 1", TEAM2: "Team 2", TEAM3: "Team 3", TEAM4: "Team 4" };
+const ROLE_LABEL = { TEAM1: "Team 1", TEAM2: "Team 2", TEAM3: "Team 3", TEAM4: "Team 4", TEAM5: "Team 5", TEAM6: "Team 6", TEAM7: "Team 7", TEAM8: "Team 8", };
 const ROLE_COLORS = {
     TEAM1: { bg: "#eff6ff", text: "#1d4ed8", border: "#bfdbfe" },
     TEAM2: { bg: "#f0fdf4", text: "#15803d", border: "#86efac" },
     TEAM3: { bg: "#fffbeb", text: "#b45309", border: "#fde68a" },
     TEAM4: { bg: "#fdf4ff", text: "#7e22ce", border: "#e9d5ff" },
+    TEAM5: { bg: "#fff1f2", text: "#be123c", border: "#fecdd3" },
+  TEAM6: { bg: "#f0fdfa", text: "#0f766e", border: "#99f6e4" },
+  TEAM7: { bg: "#fefce8", text: "#a16207", border: "#fef08a" },
+  TEAM8: { bg: "#f0f9ff", text: "#0369a1", border: "#bae6fd" },
 };
 
 // ── Formatters ────────────────────────────────────────────────
@@ -1844,6 +1848,11 @@ export default function AdminReportPage() {
                                 <option value="TEAM2">Team 2</option>
                                 <option value="TEAM3">Team 3</option>
                                 <option value="TEAM4">Team 4</option>
+                                <option value="TEAM5">Team 5</option>
+<option value="TEAM6">Team 6</option>
+<option value="TEAM7">Team 7</option>
+<option value="TEAM8">Team 8</option>
+
                             </select>
                             <ChevronDown style={{ position: "absolute", right: "9px", top: "50%", transform: "translateY(-50%)", width: "13px", height: "13px", color: "#94a3b8", pointerEvents: "none" }} />
                         </div>
