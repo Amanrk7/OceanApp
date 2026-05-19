@@ -48,6 +48,8 @@ import PlayerEditRequestPanel from "./Pages/PlayerEditRequestsPanel.jsx";
 const SIDEBAR_W = 62;
 const STORE_NAMES = { 1: 'LILLY', 2: 'OCEAN' };
 const storeName = (id) => STORE_NAMES[id] || `Store ${id}`;
+const STORE_NAMES = { 1: 'LILLY', 2: 'OCEAN' };
+const STORE_IDS = Object.keys(STORE_NAMES).map(Number); // [1, 2]
 const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
 
 // ══════════════════════════════════════════════════════════════
