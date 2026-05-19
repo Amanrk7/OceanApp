@@ -5,6 +5,8 @@ import { AddPlayerContext } from "../Context/addPlayer";
 import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { useToast } from '../Context/toastContext';
 import { api } from "../api";
+import { CurrentUserContext } from "../Context/currentUser";
+
 
 // ─── Inline SVG icons ─────────────────────────────────────────────────────────
 const Ico = ({ d, size = 15, stroke = 'currentColor', sw = 2 }) => (
@@ -459,8 +461,10 @@ export default function AddNewPlayer({ onIssueCreated }) {
     const { setAddPlayer } = useContext(AddPlayerContext);
     // ── Pull shiftLoading so we don't flash the locked screen while checking ──
     const { shiftActive, shiftLoading } = useContext(ShiftStatusContext);
+    const { usr } = useContext(CurrentUserContext); 
     const { add: toast } = useToast();
     const navigate = useNavigate();
+     const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(usr?.role);
 
     const goToPlayers = () => {
         setAddPlayer(false);
@@ -625,7 +629,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
 
     // ── While the provider is still fetching shift status, show a neutral skeleton
     // instead of the locked screen — avoids the false-locked flash on page load.
-    if (shiftLoading) {
+    if (shiftLoading && !isAdmin) {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{
@@ -650,7 +654,7 @@ export default function AddNewPlayer({ onIssueCreated }) {
     }
 
     // ── No active shift ─────────────────────────────────────────────────────────
-    if (!shiftActive) {
+    if (!shiftActive && !isAdmin) {
         return (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <button onClick={() => navigate('/shifts')} style={{ alignSelf: "flex-start", padding: "9px 18px", background: "var(--color-background-info)", color: "var(--color-text-info)", border: "0.5px solid var(--color-border-info)", borderRadius: "var(--border-radius-md)", fontWeight: "500", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
