@@ -46,6 +46,8 @@ import PlayerEditRequestPanel from "./Pages/PlayerEditRequestsPanel.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────
 const SIDEBAR_W = 62;
+const STORE_NAMES = { 1: 'LILLY', 2: 'OCEAN' };
+const storeName = (id) => STORE_NAMES[id] || `Store ${id}`;
 const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
 
 // ══════════════════════════════════════════════════════════════
@@ -428,8 +430,6 @@ const NAV_ITEMS = [
   { id: "adminReports", label: "Admin Reports", icon: AnalysisTextLinkIcon, adminsOnly: true },
 ];
 
-// const ADMIN_USERNAMES = ["admin", "superadmin"];
-
 // ══════════════════════════════════════════════════════════════
 // STORE SWITCHER — popover showing all accessible stores
 // ══════════════════════════════════════════════════════════════
@@ -469,54 +469,13 @@ function StoreSwitcher({ user, onSwitch }) {
 
   const otherStores = accessibleStores.filter(id => id !== currentStoreId);
 
-  // const handleSwitch = async (targetStoreId) => {
-  //   setError('');
-  //   setSwitching(true);
-  //   setOpen(false);
-  //   try {
-  //     // Auto-end active shift on current store for team members
-  //     if (TEAM_ROLES.includes(user?.role)) {
-  //       const token = localStorage.getItem('authToken');
-  //       const activeRes = await fetch(
-  //         `${import.meta.env.VITE_API_URL}/shifts/active/${user.role}`,
-  //         {
-  //           credentials: 'include',
-  //           headers: {
-  //             Authorization: `Bearer ${token}`,
-  //             'X-Store-Id': String(currentStoreId),
-  //           },
-  //         }
-  //       );
-  //       const activeData = await activeRes.json();
-  //       if (activeData?.data?.id) {
-  //         await fetch(
-  //           `${import.meta.env.VITE_API_URL}/shifts/${activeData.data.id}/end`,
-  //           {
-  //             method: 'PATCH',
-  //             credentials: 'include',
-  //             headers: {
-  //               Authorization: `Bearer ${token}`,
-  //               'X-Store-Id': String(currentStoreId),
-  //             },
-  //           }
-  //         );
-  //       }
-  //     }
-  //     onSwitch(targetStoreId);
-  //   } catch (err) {
-  //     setError('Store switch failed — try again.');
-  //   } finally {
-  //     setSwitching(false);
-  //   }
-  // };
-
   const handleSwitch = async (targetStoreId) => {
     setError('');
     setSwitching(true);
     setOpen(false);
     try {
       api.clearCache();
-      setStoreId(targetStoreId);   // ← sync api.js module-level _currentStoreId
+      setStoreId(targetStoreId);
       onSwitch(targetStoreId);
     } catch (err) {
       setError('Store switch failed — try again.');
@@ -530,7 +489,7 @@ function StoreSwitcher({ user, onSwitch }) {
       {/* ── Trigger button ── */}
       <div
         className="ob-nav-item"
-        title={`Store ${currentStoreId} — click to switch`}
+        title={`${storeName(currentStoreId)} — click to switch`}
       >
         <button
           className="ob-navlink store-switch"
@@ -584,8 +543,9 @@ function StoreSwitcher({ user, onSwitch }) {
               fontSize: 11, fontWeight: 800, flexShrink: 0,
             }}>{currentStoreId}</span>
             <div>
+              {/* ✅ CHANGE 1: Use storeName() instead of "Store ${currentStoreId}" */}
               <div style={{ fontSize: 13, fontWeight: 600, color: '#38bdf8' }}>
-                Store {currentStoreId}
+                {storeName(currentStoreId)}
               </div>
               <div style={{ fontSize: 10, color: '#38bdf8', opacity: 0.7 }}>
                 Currently active
@@ -619,8 +579,9 @@ function StoreSwitcher({ user, onSwitch }) {
                 fontSize: 11, fontWeight: 800, flexShrink: 0,
               }}>{storeId}</span>
               <div style={{ textAlign: 'left' }}>
+                {/* ✅ CHANGE 2: Use storeName() instead of "Store ${storeId}" */}
                 <div style={{ fontSize: 13, fontWeight: 500, color: '#94a3b8' }}>
-                  Store {storeId}
+                  {storeName(storeId)}
                 </div>
                 <div style={{ fontSize: 10, color: '#64748b' }}>
                   Click to switch
@@ -649,11 +610,8 @@ function StoreSwitcher({ user, onSwitch }) {
 // ══════════════════════════════════════════════════════════════
 export function Sidebar({ user, activePage, onNavigate, onLogout }) {
   const { currentStoreId, setCurrentStoreId } = useContext(App2Context);
-  // const isAdmin = ADMIN_USERNAMES.includes(user?.username);
   const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role);
-  // ✅ KEEP THIS LOG until confirmed working
   console.warn('🔐 Sidebar role check:', user?.role, '→ isAdmin:', isAdmin);
-  // console.log('Sidebar user:', user?.role, 'isAdmin:', isAdmin);  // ← add this
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -694,9 +652,7 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 
         <nav className="ob-nav">
           {NAV_ITEMS.map(item => {
-            // const hidden = item.adminsOnly && !isAdmin;
-      const hidden = (item.adminsOnly && !isAdmin) || (item.membersOnly && isAdmin);
-
+            const hidden = (item.adminsOnly && !isAdmin) || (item.membersOnly && isAdmin);
 
             return (
               <div key={item.id} style={{ display: hidden ? 'none' : undefined }}>
@@ -762,14 +718,12 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 // ADMIN DASHBOARD — reads store from context
 // ══════════════════════════════════════════════════════════════
 function AdminDashboard({ user }) {
-  // const isAdmin = ADMIN_USERNAMES.includes(user?.username);
   const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role);
 
   const { currentStoreId } = useContext(App2Context);
   const { setAddPlayer } = useContext(AddPlayerContext);
   const { setUsr } = useContext(CurrentUserContext);
-  // setUsr(user);
-// ✅ FIX: Move setUsr out of render body into useEffect
+
   useEffect(() => {
     if (user) setUsr(user);
   }, [user]);
@@ -780,18 +734,11 @@ function AdminDashboard({ user }) {
     return params.get('page') || 'dashboard';
   });
 
-  // useEffect(() => {
-  //   const params = new URLSearchParams(location.search);
-  //   const urlPage = params.get('page') || 'dashboard';
-  //   setPage(urlPage);
-  //   if (urlPage !== 'players') setAddPlayer(false);
-  // }, [location.search]);
-
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const urlPage = params.get('page') || 'dashboard';
     setPage(urlPage);
-    setAddPlayer(false); // ← always reset, remove the conditional
+    setAddPlayer(false);
   }, [location.search]);
 
   const handleLogout = async () => {
@@ -839,13 +786,14 @@ function AdminDashboard({ user }) {
             <h1>
               {page.charAt(0).toUpperCase() + page.slice(1).replace(/([A-Z])/g, ' $1')}
               {' '}
+              {/* ✅ CHANGE 5: Use storeName() instead of "Store {currentStoreId}" */}
               <span style={{
                 fontSize: 11, fontWeight: 700, padding: '2px 8px',
                 borderRadius: 6, background: 'rgba(14,165,233,0.12)',
                 color: '#38bdf8', border: '1px solid rgba(14,165,233,0.25)',
                 verticalAlign: 'middle',
               }}>
-                Store {currentStoreId}
+                {storeName(currentStoreId)}
               </span>
             </h1>
             {!isAdmin && (
@@ -894,8 +842,6 @@ function AdminDashboard({ user }) {
 function PlayerDashboardWithSidebar({ user }) {
   const { setUsr } = useContext(CurrentUserContext);
   const { setCurrentStoreId } = useContext(App2Context);
-  // setUsr(user);
-   // ✅ FIX: useEffect instead of render body
   useEffect(() => {
     if (user) setUsr(user);
   }, [user]);
@@ -921,8 +867,6 @@ function PlayerDashboardWithSidebar({ user }) {
 // ══════════════════════════════════════════════════════════════
 function AddNewPlayerWithSidebar({ user }) {
   const { setUsr } = useContext(CurrentUserContext);
-  // setUsr(user);
-   // ✅ FIX
   useEffect(() => {
     if (user) setUsr(user);
   }, [user]);
@@ -945,8 +889,6 @@ function AddNewPlayerWithSidebar({ user }) {
 // ══════════════════════════════════════════════════════════════════════════
 function ShiftsWithSidebar({ user }) {
   const { setUsr } = useContext(CurrentUserContext);
-  // setUsr(user);
-    // ✅ FIX
   useEffect(() => {
     if (user) setUsr(user);
   }, [user]);
@@ -987,9 +929,7 @@ function ShiftsWithSidebar({ user }) {
 // ══════════════════════════════════════════════════════════════
 function LoginPage() {
   const { currentStoreId } = useContext(App2Context);
-  // const [username, setUsername] = useState("admin");
   const [username, setUsername] = useState("");
-
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1031,7 +971,7 @@ function LoginPage() {
                   background: 'rgba(14,165,233,0.1)', color: '#0ea5e9',
                   border: '1px solid rgba(14,165,233,0.2)', fontSize: 11, fontWeight: 700,
                 }}>
-                  Store {currentStoreId}
+                  {storeName(currentStoreId)}
                 </span>
               )}
             </div>
@@ -1054,10 +994,8 @@ function LoginPage() {
   );
 }
 
-// ── CORRECTED StoreSelectionModal ──────────────────────────────
+// ── StoreSelectionModal ──────────────────────────────
 function StoreSelectionModal({ user, onConfirm }) {
-  const STORE_IDS = [1, 2]; // only 2 stores
-
   const accessibleStores = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role)
     ? STORE_IDS
     : Array.isArray(user?.storeAccess)
@@ -1068,16 +1006,13 @@ function StoreSelectionModal({ user, onConfirm }) {
     accessibleStores.length > 0 ? accessibleStores : [1]
   );
 
-  // ✅ HOOKS MUST BE BEFORE ANY CONDITIONAL RETURN
   useEffect(() => {
-    // If only one store accessible, auto-confirm — no popup needed
     if (accessibleStores.length <= 1) {
       const s = accessibleStores[0] || 1;
       onConfirm([s], s);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Now safe to return early after hooks
   if (accessibleStores.length <= 1) return null;
 
   const toggle = (id) =>
@@ -1085,14 +1020,9 @@ function StoreSelectionModal({ user, onConfirm }) {
       prev.includes(id)
         ? prev.length > 1
           ? prev.filter(x => x !== id)
-          : prev // keep at least 1 selected
+          : prev
         : [...prev, id]
     );
-
-  const storeLabels = {
-    1: 'Main Store',
-    2: 'Second Store',
-  };
 
   return (
     <div style={{
@@ -1156,19 +1086,12 @@ function StoreSelectionModal({ user, onConfirm }) {
                 }}>{storeId}</span>
 
                 <div style={{ flex: 1 }}>
+                  {/* ✅ CHANGE 3: Use storeName() instead of "Store ${storeId}" */}
                   <div style={{
                     fontWeight: 700, fontSize: 15,
                     color: 'var(--color-text)',
                   }}>
-                    Store {storeId}
-                    {storeLabels[storeId] && (
-                      <span style={{
-                        marginLeft: 8, fontSize: 11, fontWeight: 600,
-                        color: 'var(--color-text-muted)',
-                      }}>
-                        — {storeLabels[storeId]}
-                      </span>
-                    )}
+                    {storeName(storeId)}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
                     {isSelected ? '✓ Selected for this session' : 'Click to include'}
@@ -1205,7 +1128,7 @@ function StoreSelectionModal({ user, onConfirm }) {
           </div>
         )}
 
-        {/* Confirm button */}
+        {/* ✅ CHANGE 4: Use storeName() in confirm button text */}
         <button
           onClick={() => onConfirm(selected, selected[0])}
           disabled={selected.length === 0}
@@ -1219,8 +1142,7 @@ function StoreSelectionModal({ user, onConfirm }) {
             transition: 'opacity .15s',
           }}
         >
-          Start on Store{selected.length > 1 ? 's' : ''}{' '}
-          {selected.map(id => id).join(' & ')} →
+          Start on {selected.map(id => storeName(id)).join(' & ')} →
         </button>
 
         <p style={{
@@ -1244,54 +1166,31 @@ export default function App() {
   const [showStoreSelect, setShowStoreSelect] = useState(false);
 
   useEffect(() => {
-    // api.auth.getUser()
-    //   .then(u => {
-    //     console.log('USER OBJECT:', u);  // ← add this line
-    //     setUser(u);
-    //     const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(u?.role);
-    //     const stores = isAdmin ? [1, 2, 3] : (Array.isArray(u?.storeAccess) ? u.storeAccess : [1]);
-    //     if (stores.length > 1) {
-    //       setShowStoreSelect(true); // show popup
-    //     } else {
-    //       const s = stores[0] || 1;
-    //       setCurrentStoreId(s);
-    //       setActiveStoreIds([s]);
-    //       setStoreId(s);
-    //       setStoreSelectionDone(true);
-    //     }
-    //   })
-    //   .catch(() => setUser(null))
-    //   .finally(() => setLoading(false));
-    // In App.jsx — make the isAdmin check more defensive
-api.auth.getUser()
-  .then(u => {
-    // /api/user returns user directly, not wrapped
-    // const userData = u?.role ? u : (u?.data || u?.user || u);
+    api.auth.getUser()
+      .then(u => {
         const userData = u?.role ? u : (u?.data || u?.user || u);
-
-    // console.log('USER OBJECT:', userData);
         console.warn('APP USER:', userData?.role, userData?.id);
 
-    setUser(userData);
-    
-    const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(userData?.role);
-    const rawAccess = userData?.storeAccess;
-    const stores = isAdmin
-      ? [1, 2]
-      : Array.isArray(rawAccess) ? rawAccess : [1];
-    
-    if (stores.length > 1) {
-      setShowStoreSelect(true);
-    } else {
-      const s = stores[0] || 1;
-      setCurrentStoreId(s);
-      setActiveStoreIds([s]);
-      setStoreId(s);
-      setStoreSelectionDone(true);
-    }
-  })
-  .catch(() => setUser(null))
-  .finally(() => setLoading(false));
+        setUser(userData);
+
+        const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(userData?.role);
+        const rawAccess = userData?.storeAccess;
+        const stores = isAdmin
+          ? [1, 2]
+          : Array.isArray(rawAccess) ? rawAccess : [1];
+
+        if (stores.length > 1) {
+          setShowStoreSelect(true);
+        } else {
+          const s = stores[0] || 1;
+          setCurrentStoreId(s);
+          setActiveStoreIds([s]);
+          setStoreId(s);
+          setStoreSelectionDone(true);
+        }
+      })
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleStoreConfirm = (selectedIds, primaryId) => {
@@ -1315,7 +1214,6 @@ api.auth.getUser()
 
   return (
     <ToastProvider>
-
       <ThemeProvider>
         <CurrentUserProvider>
           <ShiftStatusProvider>
@@ -1328,11 +1226,9 @@ api.auth.getUser()
                   <StoreSelectionModal user={user} onConfirm={handleStoreConfirm} />
                 )}
                 <Router>
-
                   <Routes>
                     <Route path="/" element={
                       user
-                        // ? <ShiftStartGate><AdminDashboard user={user} /></ShiftStartGate>
                         ? <AdminDashboard user={user} />
                         : <LoginPage />
                     } />
@@ -1353,6 +1249,5 @@ api.auth.getUser()
         </CurrentUserProvider>
       </ThemeProvider>
     </ToastProvider>
-
   );
 }
