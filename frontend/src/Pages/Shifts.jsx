@@ -2610,8 +2610,14 @@ export const ShiftsPage = () => {
 
   return (
     <>
-      {showCheckin && <CheckinModal onConfirm={handleCheckinConfirm} onCancel={() => setShowCheckin(false)} />}
-      {showCheckout && activeShift && (
+      {/* /* {!isAdmin && showCheckin && <CheckinModal onConfirm={handleCheckinConfirm} onCancel={() => setShowCheckin(false)} />} */ */}
+      {!isAdmin && showCheckin && (
+        <CheckinModal onConfirm={handleCheckinConfirm} onCancel={() => setShowCheckin(false)} />
+      )}
+      {/* /* {showCheckout && activeShift && (
+        <CheckoutModal shift={activeShift} startSnapshot={startSnapshot} onSubmit={handleCheckoutSubmit} onCancel={() => setShowCheckout(false)} />
+      )} */ */}
+      {!isAdmin && showCheckout && activeShift && (
         <CheckoutModal shift={activeShift} startSnapshot={startSnapshot} onSubmit={handleCheckoutSubmit} onCancel={() => setShowCheckout(false)} />
       )}
       {ratingModal && (
@@ -2631,6 +2637,7 @@ export const ShiftsPage = () => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
         {/* ── Status Banner ── */}
+        {!isAdmin && (
         <div style={{
           padding: '14px 18px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px',
           background: shiftActive ? '#f0fdf4' : '#fffbeb',
@@ -2648,20 +2655,23 @@ export const ShiftsPage = () => {
                 : 'Click "Start Shift" to log your opening balances'}
             </p>
           </div>
-        </div>
+        </div> 
+      )}
 
-        {success && (
+        {!isAdmin && success && (
           <div style={{ padding: '11px 14px', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '8px', color: '#166534', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'center' }}>
             <CheckCircle size={14} style={{ flexShrink: 0 }} /> {success}
           </div>
         )}
-        {error && (
+        {!isAdmin && error && (
           <div style={{ padding: '11px 14px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', color: '#991b1b', fontSize: '13px', display: 'flex', gap: '8px', alignItems: 'center' }}>
             <AlertCircle size={14} style={{ flexShrink: 0 }} /> {error}
           </div>
         )}
 
         {/* ── Shift Control Card ── */}
+                {!isAdmin && (
+
         <div style={T.card}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -2686,11 +2696,12 @@ export const ShiftsPage = () => {
             )}
           </div>
         </div>
+      )}
 
         {/* ══════════════════════════════════════════════════════
             ACTIVE TASKS — Enhanced with filters (like MemberDashboard)
         ══════════════════════════════════════════════════════ */}
-        {tasks.length > 0 && (
+        {!isAdmin && tasks.length > 0 && (
           <div style={{ ...T.card, padding: 0, overflow: 'hidden' }}>
 
             {/* Header */}
@@ -2764,13 +2775,24 @@ export const ShiftsPage = () => {
                         onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
-                        {isAdmin && (
+                        {/* /* {isAdmin && (
                           <td style={T.TD}>
                             <span style={{ padding: '2px 8px', background: '#f1f5f9', borderRadius: '6px', fontSize: '11px', fontWeight: '700', color: '#475569' }}>
                               {shift.teamRole?.replace('TEAM', 'T')}
                             </span>
                           </td>
-                        )}
+                        )} */ */}
+                        {/* // AFTER — show real name with role as a subtle sub-line: */}
+{isAdmin && (
+  <td style={T.TD}>
+    <p style={{ margin: '0 0 1px', fontWeight: '600', fontSize: '13px', color: '#0f172a' }}>
+      {shift.performer?.name || shift.memberName || shift.teamRole}
+    </p>
+    <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8' }}>
+      {shift.teamRole}
+    </p>
+  </td>
+)}
                         {/* Date + time combined */}
                         <td style={T.TD}>
                           <p style={{ margin: '0 0 1px', fontWeight: '600', fontSize: '13px', color: '#0f172a' }}>{fmtDate(shift.startTime)}</p>
