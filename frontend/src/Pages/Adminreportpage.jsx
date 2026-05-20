@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { useToast } from '../Context/toastContext';
 import { api } from "../api";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // ── Design tokens ─────────────────────────────────────────────
 const CARD = {
@@ -47,9 +49,9 @@ const ROLE_COLORS = {
     TEAM3: { bg: "#fffbeb", text: "#b45309", border: "#fde68a" },
     TEAM4: { bg: "#fdf4ff", text: "#7e22ce", border: "#e9d5ff" },
     TEAM5: { bg: "#fff1f2", text: "#be123c", border: "#fecdd3" },
-  TEAM6: { bg: "#f0fdfa", text: "#0f766e", border: "#99f6e4" },
-  TEAM7: { bg: "#fefce8", text: "#a16207", border: "#fef08a" },
-  TEAM8: { bg: "#f0f9ff", text: "#0369a1", border: "#bae6fd" },
+    TEAM6: { bg: "#f0fdfa", text: "#0f766e", border: "#99f6e4" },
+    TEAM7: { bg: "#fefce8", text: "#a16207", border: "#fef08a" },
+    TEAM8: { bg: "#f0f9ff", text: "#0369a1", border: "#bae6fd" },
 };
 
 // ── Formatters ────────────────────────────────────────────────
@@ -506,7 +508,7 @@ function FeedbackPanel({ shift }) {
                         <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "2px", fontWeight: "600" }}>/ 10</div>
                     </div>
                     <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", gap: "4px", marginBottom: "6px" }}>{[1,2,3,4,5,6,7,8,9,10].map(n => <div key={n} style={{ flex: 1, height: "7px", borderRadius: "3px", background: n <= effort ? effortColor : "#e2e8f0" }} />)}</div>
+                        <div style={{ display: "flex", gap: "4px", marginBottom: "6px" }}>{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <div key={n} style={{ flex: 1, height: "7px", borderRadius: "3px", background: n <= effort ? effortColor : "#e2e8f0" }} />)}</div>
                         <div style={{ fontSize: "12px", color: "#64748b" }}>{effort >= 8 ? "Excellent effort" : effort >= 5 ? "Moderate effort" : "Low effort this shift"}</div>
                     </div>
                 </div>
@@ -784,18 +786,18 @@ function MemberShiftSection({ team }) {
     const [expanded, setExpanded] = useState(true);
     const rc = ROLE_COLORS[team.role] || ROLE_COLORS.TEAM1;
     // const memberName = team.member?.name || team.shifts[0]?.displayMember?.name || team.shifts[0]?.checkin?.user?.name || "Unassigned";
-//     const performer = team.shifts[0]?.displayMember;
-// const isCrossStore = (performer?.storeAccess?.length ?? 0) > 1;
+    //     const performer = team.shifts[0]?.displayMember;
+    // const isCrossStore = (performer?.storeAccess?.length ?? 0) > 1;
 
-// const memberName = isCrossStore
-//   ? "Cross Store Member"
-//   : (team.member?.name || performer?.name || team.shifts[0]?.checkin?.user?.name || "Unassigned");
+    // const memberName = isCrossStore
+    //   ? "Cross Store Member"
+    //   : (team.member?.name || performer?.name || team.shifts[0]?.checkin?.user?.name || "Unassigned");
 
     const performer = team.shifts[0]?.displayMember;
-const memberName = team.member?.name 
-  || performer?.name 
-  || team.shifts[0]?.checkin?.user?.name 
-  || "Unassigned";
+    const memberName = team.member?.name
+        || performer?.name
+        || team.shifts[0]?.checkin?.user?.name
+        || "Unassigned";
     const aggr = team.shifts.reduce((acc, s) => {
         const st = s.stats || {};
         acc.deposits += st.totalDeposits || 0;
@@ -995,9 +997,9 @@ function ExpensesFilterView({ expenses, rangeMode }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             {/* Summary */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "10px" }}>
-                <StatCard label="Total Expense Cost" value={fmtMoney(expenses.reduce((s,e)=>s+parseFloat(e.amount??0),0))} valueColor="#b45309" icon={Receipt} accentColor="#b45309" sub={`${expenses.length} items total`} />
-                <StatCard label="Wallet Paid Out" value={fmtMoney(expenses.reduce((s,e)=>s+parseFloat(e.paymentMade??0),0))} valueColor="#dc2626" icon={Wallet} accentColor="#dc2626" />
-                <StatCard label="Points Reloaded" value={`+${expenses.reduce((s,e)=>s+(e.pointsAdded??0),0)} pts`} valueColor="#7c3aed" icon={Gamepad2} accentColor="#7c3aed" />
+                <StatCard label="Total Expense Cost" value={fmtMoney(expenses.reduce((s, e) => s + parseFloat(e.amount ?? 0), 0))} valueColor="#b45309" icon={Receipt} accentColor="#b45309" sub={`${expenses.length} items total`} />
+                <StatCard label="Wallet Paid Out" value={fmtMoney(expenses.reduce((s, e) => s + parseFloat(e.paymentMade ?? 0), 0))} valueColor="#dc2626" icon={Wallet} accentColor="#dc2626" />
+                <StatCard label="Points Reloaded" value={`+${expenses.reduce((s, e) => s + (e.pointsAdded ?? 0), 0)} pts`} valueColor="#7c3aed" icon={Gamepad2} accentColor="#7c3aed" />
                 <StatCard label="Categories" value={categories.length} icon={Filter} accentColor="#64748b" />
             </div>
 
@@ -1035,7 +1037,7 @@ function ExpensesFilterView({ expenses, rangeMode }) {
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <Receipt style={{ width: "14px", height: "14px", color: "#b45309" }} />
                         <span style={{ fontSize: "12px", fontWeight: "700", color: "#b45309", textTransform: "uppercase" }}>
-                            Expenses ({filtered.length}{catFilter !== "ALL" ? ` · ${catFilter.replace(/_/g," ")}` : ""}{(subFrom || subTo) ? " · Filtered" : ""})
+                            Expenses ({filtered.length}{catFilter !== "ALL" ? ` · ${catFilter.replace(/_/g, " ")}` : ""}{(subFrom || subTo) ? " · Filtered" : ""})
                         </span>
                     </div>
                     <div style={{ display: "flex", gap: "16px", fontSize: "12px", flexWrap: "wrap" }}>
@@ -1136,7 +1138,7 @@ function TakeoutsFilterView({ takeouts, rangeMode }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             {/* Summary */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "10px" }}>
-                <StatCard label="Total Takeouts" value={fmtMoney(takeouts.reduce((s,t)=>s+parseFloat(t.amount??0),0))} valueColor="#991b1b" icon={PiggyBank} accentColor="#991b1b" sub={`${takeouts.length} records total`} />
+                <StatCard label="Total Takeouts" value={fmtMoney(takeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0))} valueColor="#991b1b" icon={PiggyBank} accentColor="#991b1b" sub={`${takeouts.length} records total`} />
                 {Object.entries(byMethod).map(([method, { count, total: mt }]) => (
                     <StatCard key={method} label={method} value={fmtMoney(mt)} valueColor="#991b1b" icon={CreditCard} accentColor="#dc2626" sub={`${count} takeout${count !== 1 ? "s" : ""}`} />
                 ))}
@@ -1148,7 +1150,7 @@ function TakeoutsFilterView({ takeouts, rangeMode }) {
                 <div style={{ ...CARD, padding: "14px 16px" }}>
                     <div style={{ fontSize: "11px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>By Recipient</div>
                     <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                        {Object.entries(byPerson).sort((a,b)=>b[1].total-a[1].total).map(([person, { count, total: pt }]) => (
+                        {Object.entries(byPerson).sort((a, b) => b[1].total - a[1].total).map(([person, { count, total: pt }]) => (
                             <div key={person} style={{ padding: "6px 12px", borderRadius: "8px", background: "#fff1f2", border: "1px solid #fecdd3", fontSize: "12px" }}>
                                 <span style={{ fontWeight: "700", color: "#991b1b" }}>{person}</span>
                                 <span style={{ color: "#64748b", marginLeft: "6px" }}>{count}× · {fmtMoney(pt)}</span>
@@ -1199,7 +1201,7 @@ function TakeoutsFilterView({ takeouts, rangeMode }) {
                             <tbody>
                                 {filtered.map((t, i) => (
                                     <tr key={t.id ?? i} onMouseEnter={ev => ev.currentTarget.style.background = "#fff5f5"} onMouseLeave={ev => ev.currentTarget.style.background = ""}>
-                                        {rangeMode && <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap", fontWeight: "600" }}>{fmtDateShort((t._date || (t.takenAt||"").split("T")[0] || "") + "T12:00:00")}</td>}
+                                        {rangeMode && <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap", fontWeight: "600" }}>{fmtDateShort((t._date || (t.takenAt || "").split("T")[0] || "") + "T12:00:00")}</td>}
                                         <td style={{ ...TD, fontSize: "11px", color: "#94a3b8", whiteSpace: "nowrap" }}>{fmtTime(t.takenAt || t._shiftTime)}</td>
                                         <td style={TD}><Badge label={ROLE_LABEL[t._teamRole] || t._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
                                         <td style={{ ...TD, fontWeight: "700" }}>{t.takenBy}</td>
@@ -1325,7 +1327,7 @@ function TransactionsFilterView({ transactions, rangeMode }) {
                                     const amtColor = isDeposit ? "#16a34a" : isCashout ? "#dc2626" : "#c2410c";
                                     return (
                                         <tr key={t.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""} style={{ opacity: isPending ? 0.8 : 1 }}>
-                                            {rangeMode && <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap", fontWeight: "600" }}>{fmtDateShort((t._date || (t.createdAt||"").split("T")[0] || "") + "T12:00:00")}</td>}
+                                            {rangeMode && <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap", fontWeight: "600" }}>{fmtDateShort((t._date || (t.createdAt || "").split("T")[0] || "") + "T12:00:00")}</td>}
                                             <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap" }}>{fmtTime(t.createdAt)}</td>
                                             <td style={TD}><Badge label={ROLE_LABEL[t._teamRole] || t._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
                                             <td style={TD}><div style={{ fontWeight: "600", fontSize: "12px" }}>{t.user?.name || t.playerName || `#${t.userId}`}</div></td>
@@ -1348,8 +1350,8 @@ function TransactionsFilterView({ transactions, rangeMode }) {
                                         Showing {filtered.length} of {transactions.length}
                                     </td>
                                     <td style={{ ...TD, textAlign: "right", fontWeight: "800" }}>
-                                        <div style={{ color: "#16a34a", fontSize: "12px" }}>+{fmtMoney(filtered.filter(t=>t.type==="DEPOSIT").reduce((s,t)=>s+(t.amount??0),0))}</div>
-                                        <div style={{ color: "#dc2626", fontSize: "11px" }}>−{fmtMoney(filtered.filter(t=>t.type==="WITHDRAWAL").reduce((s,t)=>s+(t.amount??0),0))}</div>
+                                        <div style={{ color: "#16a34a", fontSize: "12px" }}>+{fmtMoney(filtered.filter(t => t.type === "DEPOSIT").reduce((s, t) => s + (t.amount ?? 0), 0))}</div>
+                                        <div style={{ color: "#dc2626", fontSize: "11px" }}>−{fmtMoney(filtered.filter(t => t.type === "WITHDRAWAL").reduce((s, t) => s + (t.amount ?? 0), 0))}</div>
                                     </td>
                                     <td colSpan={2} style={TD} />
                                 </tr>
@@ -1367,319 +1369,302 @@ function TransactionsFilterView({ transactions, rangeMode }) {
 // ══════════════════════════════════════════════════════════════
 
 function printReport(report, date) {
-    const win = window.open("", "_blank");
-    if (!win) return;
-    const { summary, teams, wallets, dayTasks } = report;
-    const s = summary || {};
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const s = report.summary || {};
     const dayExpenses = aggregateDayExpenses(report);
     const dayTakeouts = aggregateDayTakeouts(report);
     const totalExpenses = dayExpenses.reduce((sum, e) => sum + parseFloat(e.amount ?? 0), 0);
     const totalTakeouts = dayTakeouts.reduce((sum, t) => sum + parseFloat(t.amount ?? 0), 0);
-    const totalPtsReloaded = dayExpenses.reduce((sum, e) => sum + (e.pointsAdded ?? 0), 0);
+    const totalPts = dayExpenses.reduce((sum, e) => sum + (e.pointsAdded ?? 0), 0);
+    const W = doc.internal.pageSize.width;
 
-    const memberRows = (teams || []).flatMap(team =>
-        team.shifts.map(shift => {
-            const st = shift.stats || {};
-            const effort = shift.checkin?.effortRating ?? null;
-            return `<tr>
-              <td><strong>${shift.displayMember?.name || "—"}</strong><br/><span style="font-size:10px;color:#64748b">${ROLE_LABEL[team.role] || team.role}</span></td>
-              <td>${fmtTime(shift.startTime)}</td>
-              <td>${shift.isActive ? "<span style='color:#16a34a;font-weight:700'>ACTIVE</span>" : fmtTime(shift.endTime)}</td>
-              <td>${shift.duration != null ? shift.duration + " min" : "—"}</td>
-              <td>${st.transactionCount ?? 0}</td>
-              <td style="color:#16a34a;font-weight:700">${fmtMoney(st.totalDeposits)}</td>
-              <td style="color:#dc2626;font-weight:700">${fmtMoney(st.totalCashouts)}</td>
-              <td style="color:#c2410c;font-weight:700">${fmtMoney(st.totalBonuses)}</td>
-              <td style="font-weight:800;color:${(st.netProfit || 0) >= 0 ? "#16a34a" : "#dc2626"}">${fmtMoney(st.netProfit)}</td>
-              <td style="color:#b45309;font-weight:700">${st.totalExpenses > 0 ? fmtMoney(st.totalExpenses) : "—"}</td>
-              <td style="color:#991b1b;font-weight:700">${st.totalTakeouts > 0 ? fmtMoney(st.totalTakeouts) : "—"}</td>
-              <td>${st.playersAdded ?? 0}</td>
-              <td style="font-weight:700;color:${effort >= 8 ? "#16a34a" : effort >= 5 ? "#d97706" : "#dc2626"}">${effort != null ? `${effort}/10` : "—"}</td>
-            </tr>`;
-        })
-    ).join("");
+    // ── Header ──────────────────────────────────────────────────
+    doc.setFontSize(18); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
+    doc.text('Daily Operations Report', 14, 18);
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+    doc.text(`${fmtDate(date + 'T12:00:00')} · Generated ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })} CDT · CONFIDENTIAL`, 14, 25);
 
-    const expenseRows = dayExpenses.map(e => `<tr>
-        <td>${fmtTime(e.createdAt)}</td>
-        <td>${ROLE_LABEL[e._teamRole] || e._teamRole || "—"}</td>
-        <td><strong>${e.details}</strong></td>
-        <td>${(e.category || "").replace(/_/g, " ")}</td>
-        <td>${e.game?.name || "—"}</td>
-        <td style="color:#b45309;font-weight:700">${fmtMoney(e.amount ?? 0)}</td>
-        <td style="color:#7c3aed">${(e.pointsAdded ?? 0) > 0 ? `+${e.pointsAdded} pts` : "—"}</td>
-        <td style="color:#dc2626">${parseFloat(e.paymentMade ?? 0) > 0 ? `−${fmtMoney(e.paymentMade)}` : "—"}</td>
-        <td style="color:#94a3b8;font-size:10px">${e.notes || "—"}</td>
-    </tr>`).join("");
+    // ── KPI boxes ───────────────────────────────────────────────
+    const kpis = [
+        { label: 'Deposits', val: fmtMoney(s.totalDeposits), color: [22, 163, 74] },
+        { label: 'Cashouts', val: fmtMoney(s.totalCashouts), color: [220, 38, 38] },
+        { label: 'Bonuses', val: fmtMoney(s.totalBonuses), color: [194, 65, 12] },
+        { label: 'Net Profit', val: fmtMoney(s.netProfit), color: (s.netProfit ?? 0) >= 0 ? [22, 163, 74] : [220, 38, 38] },
+        { label: 'Expenses', val: fmtMoney(totalExpenses), color: [180, 83, 9] },
+        { label: 'Takeouts', val: fmtMoney(totalTakeouts), color: [153, 27, 27] },
+        { label: 'Shifts', val: String(s.totalShifts ?? 0), color: [71, 85, 105] },
+        { label: 'Transactions', val: String(s.transactionCount ?? 0), color: [37, 99, 235] },
+    ];
+    kpis.forEach(({ label, val, color }, i) => {
+        const x = 14 + (i % 4) * 66, y = i < 4 ? 30 : 49;
+        doc.setFillColor(248, 250, 252); doc.roundedRect(x, y, 62, 14, 2, 2, 'F');
+        doc.setTextColor(...color); doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+        doc.text(val, x + 31, y + 8, { align: 'center' });
+        doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+        doc.text(label.toUpperCase(), x + 31, y + 12, { align: 'center' });
+    });
 
-    const takeoutRows = dayTakeouts.map(t => `<tr>
-        <td>${fmtTime(t.takenAt || t._shiftTime)}</td>
-        <td>${ROLE_LABEL[t._teamRole] || t._teamRole || "—"}</td>
-        <td><strong>${t.takenBy}</strong></td>
-        <td>${t.method || "Cash"}</td>
-        <td style="color:#991b1b;font-weight:800">−${fmtMoney(t.amount)}</td>
-        <td>${t.walletId ? `Wallet #${t.walletId}` : "—"}</td>
-        <td style="color:#94a3b8;font-size:10px">${t.notes || "—"}</td>
-    </tr>`).join("");
+    let y = 68;
 
-    const takeoutByMethod = dayTakeouts.reduce((acc, t) => {
-        const m = t.method || "Cash"; acc[m] = (acc[m] || 0) + parseFloat(t.amount ?? 0); return acc;
-    }, {});
-    const takeoutMethodSummary = Object.entries(takeoutByMethod).map(([m, a]) => `${m}: <strong style="color:#991b1b">−${fmtMoney(a)}</strong>`).join(" | ");
+    // ── Member shift summary ────────────────────────────────────
+    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
+    doc.text('Member Shift Summary', 14, y); y += 4;
 
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/>
-<title>Operations Report — ${date}</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:"Segoe UI",Arial,sans-serif;font-size:12px;color:#0f172a;padding:28px;line-height:1.5}
-  h1{font-size:20px;font-weight:800;margin-bottom:3px}
-  h2{font-size:12px;font-weight:700;margin:24px 0 10px;color:#374151;border-bottom:2px solid #e2e8f0;padding-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
-  .meta{font-size:11px;color:#64748b;margin-bottom:20px}
-  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-  .box{border:1px solid #e2e8f0;border-radius:7px;padding:12px 14px;background:#fafbfc}
-  .val{font-size:18px;font-weight:800;line-height:1.2}
-  .lbl{font-size:9px;color:#64748b;margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
-  .green{color:#16a34a}.red{color:#dc2626}.amber{color:#b45309}.navy{color:#991b1b}.purple{color:#7c3aed}
-  table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px}
-  th{background:#f8fafc;text-align:left;padding:7px 10px;font-weight:700;color:#64748b;font-size:10px;text-transform:uppercase;border-bottom:2px solid #e2e8f0;letter-spacing:.4px}
-  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
-  tfoot td{background:#f8fafc;font-weight:700;border-top:2px solid #e2e8f0}
-  .section{border-radius:8px;overflow:hidden;margin-bottom:18px}
-  .section-exp{border:1px solid #fde68a}.section-exp-hdr{padding:9px 14px;background:#fef9c3;font-weight:700;color:#92400e;font-size:11px;text-transform:uppercase;border-bottom:1px solid #fde68a}
-  .section-take{border:1px solid #fecdd3}.section-take-hdr{padding:9px 14px;background:#fee2e2;font-weight:700;color:#991b1b;font-size:11px;text-transform:uppercase;border-bottom:1px solid #fecdd3;display:flex;justify-content:space-between;align-items:center}
-  .section-wallet{border:1px solid #bfdbfe}.section-wallet-hdr{padding:9px 14px;background:#dbeafe;font-weight:700;color:#1d4ed8;font-size:11px;text-transform:uppercase;border-bottom:1px solid #bfdbfe}
-  button{padding:9px 18px;background:#0f172a;color:#fff;border:none;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer}
-  @media print{button{display:none}body{padding:16px}}
-</style></head><body>
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-    <div>
-      <h1>Daily Operations Report</h1>
-      <p class="meta">Generated ${new Date().toLocaleString("en-US", { timeZone: "America/Chicago" })} CDT · Report Date: ${fmtDate(date + "T12:00:00")} · <strong>CONFIDENTIAL</strong></p>
-    </div>
-    <button onclick="window.print()">🖨 Print / Save PDF</button>
-  </div>
-  <h2>📊 Day Summary</h2>
-  <div class="grid">
-    <div class="box"><div class="val green">${fmtMoney(s.totalDeposits)}</div><div class="lbl">Total Deposits</div></div>
-    <div class="box"><div class="val red">${fmtMoney(s.totalCashouts)}</div><div class="lbl">Total Cashouts</div></div>
-    <div class="box"><div class="val" style="color:#c2410c">${fmtMoney(s.totalBonuses)}</div><div class="lbl">Total Bonuses</div></div>
-    <div class="box"><div class="val ${(s.netProfit || 0) >= 0 ? "green" : "red"}">${fmtMoney(s.netProfit)}</div><div class="lbl">Net Profit</div></div>
-    <div class="box"><div class="val amber">${fmtMoney(totalExpenses)}</div><div class="lbl">Total Expenses (${dayExpenses.length})</div></div>
-    <div class="box"><div class="val navy">${fmtMoney(totalTakeouts)}</div><div class="lbl">Profit Takeouts (${dayTakeouts.length})</div></div>
-    <div class="box"><div class="val">${s.totalShifts ?? 0}</div><div class="lbl">Shifts Logged</div></div>
-    <div class="box"><div class="val">${s.tasksCompleted ?? 0}</div><div class="lbl">Tasks Completed</div></div>
-    <div class="box"><div class="val">${s.transactionCount ?? 0}</div><div class="lbl">Transactions</div></div>
-    ${totalPtsReloaded > 0 ? `<div class="box"><div class="val purple">+${totalPtsReloaded}</div><div class="lbl">Points Reloaded</div></div>` : ""}
-  </div>
-  <h2>👥 Member Shift Summary</h2>
-  <table><thead><tr>
-    <th>Member</th><th>Start</th><th>End</th><th>Duration</th><th>Txns</th>
-    <th>Deposits</th><th>Cashouts</th><th>Bonuses</th><th>Net Profit</th>
-    <th>Expenses</th><th>Takeouts</th><th>Players</th><th>Effort</th>
-  </tr></thead>
-  <tbody>${memberRows || '<tr><td colspan="13" style="text-align:center;color:#94a3b8;padding:16px">No shifts today</td></tr>'}</tbody>
-  </table>
-  ${dayExpenses.length > 0 ? `
-  <div class="section section-exp">
-    <div class="section-exp-hdr">🧾 Expenses — ${dayExpenses.length} item${dayExpenses.length !== 1 ? "s" : ""} · Total Cost: <strong>−${fmtMoney(totalExpenses)}</strong>${totalPtsReloaded > 0 ? ` · +${totalPtsReloaded} pts reloaded` : ""}</div>
-    <table style="margin:0"><thead><tr>
-      <th>Time</th><th>Shift</th><th>Details</th><th>Category</th><th>Game</th>
-      <th>Expense $</th><th>Pts Added</th><th>Wallet Paid</th><th>Notes</th>
-    </tr></thead>
-    <tbody>${expenseRows}</tbody>
-    <tfoot><tr>
-      <td colspan="5"><strong>Total (${dayExpenses.length} expense${dayExpenses.length !== 1 ? "s" : ""})</strong></td>
-      <td style="color:#b45309;font-weight:800">${fmtMoney(totalExpenses)}</td>
-      <td style="color:#7c3aed">${totalPtsReloaded > 0 ? `+${totalPtsReloaded} pts` : "—"}</td>
-      <td colspan="2"></td>
-    </tr></tfoot>
-    </table>
-  </div>` : ""}
-  ${dayTakeouts.length > 0 ? `
-  <div class="section section-take">
-    <div class="section-take-hdr">
-      <span>💸 Profit Takeouts — ${dayTakeouts.length} record${dayTakeouts.length !== 1 ? "s" : ""}</span>
-      <span>${takeoutMethodSummary || ""} &nbsp;|&nbsp; <strong>Total: −${fmtMoney(totalTakeouts)}</strong></span>
-    </div>
-    <table style="margin:0"><thead><tr>
-      <th>Time</th><th>Shift</th><th>Taken By</th><th>Method</th><th>Amount</th><th>Wallet</th><th>Notes</th>
-    </tr></thead>
-    <tbody>${takeoutRows}</tbody>
-    <tfoot><tr>
-      <td colspan="4"><strong>Total (${dayTakeouts.length} takeout${dayTakeouts.length !== 1 ? "s" : ""})</strong></td>
-      <td style="color:#991b1b;font-weight:800">−${fmtMoney(totalTakeouts)}</td>
-      <td colspan="2"></td>
-    </tr></tfoot>
-    </table>
-  </div>` : ""}
-  ${(wallets?.length > 0) ? `
-  <div class="section section-wallet">
-    <div class="section-wallet-hdr">💳 Wallet Balances (End of Day)</div>
-    <table style="margin:0"><thead><tr><th>Method</th><th>Account Name</th><th style="text-align:right">Balance</th></tr></thead>
-    <tbody>${wallets.map(w => `<tr><td><strong>${w.method}</strong></td><td>${w.name}</td><td style="text-align:right;font-weight:800">${fmtMoney(w.balance)}</td></tr>`).join("")}</tbody>
-    <tfoot><tr><td colspan="2"><strong>Total</strong></td><td style="text-align:right;font-weight:800">${fmtMoney(wallets.reduce((s,w) => s + parseFloat(w.balance || 0), 0))}</td></tr></tfoot>
-    </table>
-  </div>` : ""}
-  <p style="margin-top:32px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:12px">
-    Confidential · Generated by Operations Dashboard · ${new Date().toISOString()}
-  </p>
-</body></html>`);
-    win.document.close();
+    autoTable(doc, {
+        startY: y,
+        head: [['Member', 'Role', 'Start', 'End', 'Duration', 'Txns', 'Deposits', 'Cashouts', 'Net Profit', 'Bonuses', 'Expenses', 'Effort']],
+        body: (report.teams || []).flatMap(team =>
+            (team.shifts || []).map(shift => {
+                const st = shift.stats || {};
+                const name = shift.displayMember?.name || team.member?.name || '—';
+                const effort = shift.checkin?.effortRating ?? null;
+                return [
+                    name, ROLE_LABEL[team.role] || team.role,
+                    fmtTime(shift.startTime), shift.isActive ? 'ACTIVE' : fmtTime(shift.endTime),
+                    shift.duration != null ? `${shift.duration}m` : '—',
+                    st.transactionCount ?? 0,
+                    `$${(st.totalDeposits || 0).toFixed(2)}`,
+                    `$${(st.totalCashouts || 0).toFixed(2)}`,
+                    `$${(st.netProfit || 0).toFixed(2)}`,
+                    `$${(st.totalBonuses || 0).toFixed(2)}`,
+                    st.totalExpenses > 0 ? `$${st.totalExpenses.toFixed(2)}` : '—',
+                    effort != null ? `${effort}/10` : '—',
+                ];
+            })
+        ),
+        styles: { fontSize: 7.5, cellPadding: 2.5 },
+        headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 6: { textColor: [22, 163, 74] }, 7: { textColor: [220, 38, 38] } },
+    });
+
+    // ── Expenses table ──────────────────────────────────────────
+    if (dayExpenses.length > 0) {
+        doc.addPage();
+        doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(180, 83, 9);
+        doc.text(`Expenses — ${dayExpenses.length} items · Total: ${fmtMoney(totalExpenses)}${totalPts > 0 ? ` · +${totalPts} pts reloaded` : ''}`, 14, 16);
+        autoTable(doc, {
+            startY: 22,
+            head: [['Time', 'Shift', 'Details', 'Category', 'Game', 'Amount', 'Pts Added', 'Wallet Paid', 'Notes']],
+            body: dayExpenses.map(e => [
+                fmtTime(e.createdAt),
+                ROLE_LABEL[e._teamRole] || e._teamRole || '—',
+                e.details || '—',
+                (e.category || '—').replace(/_/g, ' '),
+                e.game?.name || '—',
+                `$${(e.amount ?? 0).toFixed(2)}`,
+                (e.pointsAdded ?? 0) > 0 ? `+${e.pointsAdded} pts` : '—',
+                parseFloat(e.paymentMade ?? 0) > 0 ? `-$${parseFloat(e.paymentMade).toFixed(2)}` : '—',
+                e.notes || '—',
+            ]),
+            styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'ellipsize' },
+            headStyles: { fillColor: [180, 83, 9], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+            alternateRowStyles: { fillColor: [255, 251, 235] },
+            foot: [[
+                { content: `Total (${dayExpenses.length} expenses)`, colSpan: 5, styles: { fontStyle: 'bold' } },
+                { content: fmtMoney(totalExpenses), styles: { textColor: [180, 83, 9], fontStyle: 'bold' } },
+                { content: totalPts > 0 ? `+${totalPts} pts` : '—', styles: { textColor: [124, 58, 237] } },
+                { content: `−${fmtMoney(dayExpenses.reduce((s, e) => s + parseFloat(e.paymentMade ?? 0), 0))}`, styles: { textColor: [220, 38, 38], fontStyle: 'bold' } },
+                '',
+            ]],
+            footStyles: { fillColor: [254, 249, 195], textColor: [15, 23, 42] },
+        });
+    }
+
+    // ── Takeouts table ──────────────────────────────────────────
+    if (dayTakeouts.length > 0) {
+        doc.addPage();
+        doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(153, 27, 27);
+        doc.text(`Profit Takeouts — ${dayTakeouts.length} records · Total: −${fmtMoney(totalTakeouts)}`, 14, 16);
+        autoTable(doc, {
+            startY: 22,
+            head: [['Time', 'Shift', 'Taken By', 'Method', 'Amount', 'Wallet', 'Notes']],
+            body: dayTakeouts.map(t => [
+                fmtTime(t.takenAt || t._shiftTime),
+                ROLE_LABEL[t._teamRole] || t._teamRole || '—',
+                t.takenBy, t.method || 'Cash',
+                `-$${parseFloat(t.amount ?? 0).toFixed(2)}`,
+                t.walletId ? `Wallet #${t.walletId}` : '—',
+                t.notes || '—',
+            ]),
+            styles: { fontSize: 7.5, cellPadding: 2.5 },
+            headStyles: { fillColor: [153, 27, 27], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+            alternateRowStyles: { fillColor: [255, 241, 242] },
+            foot: [[
+                { content: `Total (${dayTakeouts.length} takeouts)`, colSpan: 4, styles: { fontStyle: 'bold' } },
+                { content: `-${fmtMoney(totalTakeouts)}`, styles: { textColor: [153, 27, 27], fontStyle: 'bold' } },
+                '', '',
+            ]],
+            footStyles: { fillColor: [254, 226, 226] },
+        });
+    }
+
+    // ── Footer every page ───────────────────────────────────────
+    const total = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= total; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
+        doc.text(`Confidential · Daily Report · ${date} · Page ${i} of ${total}`, W / 2, doc.internal.pageSize.height - 6, { align: 'center' });
+    }
+
+    doc.save(`report-${date}.pdf`);
 }
 
 function printRangeReport(reports, startDate, endDate) {
-    const win = window.open("", "_blank");
-    if (!win) return;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const W = doc.internal.pageSize.width;
+
     const totals = reports.reduce((acc, r) => {
         const s = r.summary || {};
         acc.deposits += s.totalDeposits || 0; acc.cashouts += s.totalCashouts || 0;
         acc.bonuses += s.totalBonuses || 0; acc.profit += s.netProfit || 0;
         acc.shifts += s.totalShifts || 0; acc.transactions += s.transactionCount || 0;
         acc.tasks += s.tasksCompleted || 0;
-        const dayExp = aggregateDayExpenses(r); const dayTake = aggregateDayTakeouts(r);
-        acc.expenses += dayExp.reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
-        acc.takeouts += dayTake.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
-        acc.ptsReloaded += dayExp.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
-        acc.expenseCount += dayExp.length; acc.takeoutCount += dayTake.length;
+        const exp = aggregateDayExpenses(r); const take = aggregateDayTakeouts(r);
+        acc.expenses += exp.reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
+        acc.takeouts += take.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+        acc.ptsReloaded += exp.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
         return acc;
-    }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, shifts: 0, transactions: 0, tasks: 0, expenses: 0, takeouts: 0, ptsReloaded: 0, expenseCount: 0, takeoutCount: 0 });
+    }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, shifts: 0, transactions: 0, tasks: 0, expenses: 0, takeouts: 0, ptsReloaded: 0 });
 
-    const dayRows = reports.map(r => {
-        const s = r.summary || {};
-        const dayExp = aggregateDayExpenses(r); const dayTake = aggregateDayTakeouts(r);
-        const expTotal = dayExp.reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
-        const takeTotal = dayTake.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
-        return `<tr>
-          <td><b>${fmtDateShort(r.date + "T12:00:00")}</b></td>
-          <td style="color:#16a34a;font-weight:700">${fmtMoney(s.totalDeposits)}</td>
-          <td style="color:#dc2626;font-weight:700">${fmtMoney(s.totalCashouts)}</td>
-          <td style="color:#c2410c;font-weight:700">${fmtMoney(s.totalBonuses)}</td>
-          <td style="font-weight:800;color:${(s.netProfit || 0) >= 0 ? "#16a34a" : "#dc2626"}">${fmtMoney(s.netProfit)}</td>
-          <td style="color:#b45309;font-weight:700">${expTotal > 0 ? fmtMoney(expTotal) : "—"}</td>
-          <td style="color:#991b1b;font-weight:700">${takeTotal > 0 ? `−${fmtMoney(takeTotal)}` : "—"}</td>
-          <td>${s.totalShifts ?? 0}</td><td>${s.transactionCount ?? 0}</td><td>${s.tasksCompleted ?? 0}</td>
-        </tr>`;
-    }).join("");
+    // ── Header ──────────────────────────────────────────────────
+    doc.setFontSize(18); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
+    doc.text('Range Operations Report', 14, 18);
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+    doc.text(
+        `${fmtDateShort(startDate + 'T12:00:00')} – ${fmtDateShort(endDate + 'T12:00:00')} · ${reports.length} days · ` +
+        `Generated ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })} CDT · CONFIDENTIAL`,
+        14, 25
+    );
 
+    // ── KPI strip ───────────────────────────────────────────────
+    const kpis = [
+        { label: 'Deposits', val: fmtMoney(totals.deposits), color: [22, 163, 74] },
+        { label: 'Cashouts', val: fmtMoney(totals.cashouts), color: [220, 38, 38] },
+        { label: 'Bonuses', val: fmtMoney(totals.bonuses), color: [194, 65, 12] },
+        { label: 'Net Profit', val: fmtMoney(totals.profit), color: totals.profit >= 0 ? [22, 163, 74] : [220, 38, 38] },
+        { label: 'Expenses', val: fmtMoney(totals.expenses), color: [180, 83, 9] },
+        { label: 'Takeouts', val: fmtMoney(totals.takeouts), color: [153, 27, 27] },
+        { label: 'Shifts', val: String(totals.shifts), color: [71, 85, 105] },
+        { label: 'Transactions', val: String(totals.transactions), color: [37, 99, 235] },
+        { label: 'Days', val: String(reports.length), color: [124, 58, 237] },
+        { label: 'Tasks Done', val: String(totals.tasks), color: [22, 163, 74] },
+    ];
+    kpis.forEach(({ label, val, color }, i) => {
+        const x = 14 + (i % 5) * 53, y = i < 5 ? 30 : 49;
+        doc.setFillColor(248, 250, 252); doc.roundedRect(x, y, 49, 14, 2, 2, 'F');
+        doc.setTextColor(...color); doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+        doc.text(val, x + 24.5, y + 8, { align: 'center' });
+        doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+        doc.text(label.toUpperCase(), x + 24.5, y + 12, { align: 'center' });
+    });
+
+    // ── Day-by-day summary table ─────────────────────────────────
+    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
+    doc.text('Day-by-Day Breakdown', 14, 70);
+
+    autoTable(doc, {
+        startY: 74,
+        head: [['Date', 'Deposits', 'Cashouts', 'Bonuses', 'Net Profit', 'Expenses', 'Takeouts', 'Shifts', 'Txns', 'Tasks']],
+        body: [
+            ...reports.map(r => {
+                const s = r.summary || {};
+                const exp = aggregateDayExpenses(r).reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
+                const take = aggregateDayTakeouts(r).reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+                return [
+                    fmtDateShort(r.date + 'T12:00:00'),
+                    `$${(s.totalDeposits || 0).toFixed(2)}`,
+                    `$${(s.totalCashouts || 0).toFixed(2)}`,
+                    `$${(s.totalBonuses || 0).toFixed(2)}`,
+                    `$${(s.netProfit || 0).toFixed(2)}`,
+                    exp > 0 ? `$${exp.toFixed(2)}` : '—',
+                    take > 0 ? `-$${take.toFixed(2)}` : '—',
+                    s.totalShifts ?? 0, s.transactionCount ?? 0, s.tasksCompleted ?? 0,
+                ];
+            }),
+        ],
+        foot: [[
+            `TOTAL (${reports.length} days)`,
+            `$${totals.deposits.toFixed(2)}`, `$${totals.cashouts.toFixed(2)}`,
+            `$${totals.bonuses.toFixed(2)}`, `$${totals.profit.toFixed(2)}`,
+            totals.expenses > 0 ? `$${totals.expenses.toFixed(2)}` : '—',
+            totals.takeouts > 0 ? `-$${totals.takeouts.toFixed(2)}` : '—',
+            totals.shifts, totals.transactions, totals.tasks,
+        ]],
+        styles: { fontSize: 7.5, cellPadding: 2.5 },
+        headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        footStyles: { fillColor: [241, 245, 249], fontStyle: 'bold', textColor: [15, 23, 42] },
+        columnStyles: {
+            1: { textColor: [22, 163, 74] }, 2: { textColor: [220, 38, 38] },
+            4: { fontStyle: 'bold' },
+        },
+    });
+
+    // ── All expenses (page 2+) ───────────────────────────────────
     const allExpenses = reports.flatMap(r => aggregateDayExpenses(r).map(e => ({ ...e, _date: r.date })));
+    if (allExpenses.length > 0) {
+        doc.addPage();
+        const expTotal = allExpenses.reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
+        doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(180, 83, 9);
+        doc.text(`All Expenses — ${allExpenses.length} items · Total: ${fmtMoney(expTotal)}`, 14, 16);
+        autoTable(doc, {
+            startY: 22,
+            head: [['Date', 'Time', 'Shift', 'Details', 'Category', 'Game', 'Amount', 'Pts Added', 'Notes']],
+            body: allExpenses.map(e => [
+                fmtDateShort((e._date || '') + 'T12:00:00'),
+                fmtTime(e.createdAt),
+                ROLE_LABEL[e._teamRole] || e._teamRole || '—',
+                e.details || '—',
+                (e.category || '—').replace(/_/g, ' '),
+                e.game?.name || '—',
+                `$${(e.amount ?? 0).toFixed(2)}`,
+                (e.pointsAdded ?? 0) > 0 ? `+${e.pointsAdded} pts` : '—',
+                e.notes || '—',
+            ]),
+            styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'ellipsize' },
+            headStyles: { fillColor: [180, 83, 9], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+            alternateRowStyles: { fillColor: [255, 251, 235] },
+        });
+    }
+
+    // ── All takeouts ─────────────────────────────────────────────
     const allTakeouts = reports.flatMap(r => aggregateDayTakeouts(r).map(t => ({ ...t, _date: r.date })));
+    if (allTakeouts.length > 0) {
+        doc.addPage();
+        const takeTotal = allTakeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+        doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(153, 27, 27);
+        doc.text(`All Profit Takeouts — ${allTakeouts.length} records · Total: −${fmtMoney(takeTotal)}`, 14, 16);
+        autoTable(doc, {
+            startY: 22,
+            head: [['Date', 'Time', 'Shift', 'Taken By', 'Method', 'Amount', 'Wallet', 'Notes']],
+            body: allTakeouts.map(t => [
+                fmtDateShort((t._date || '') + 'T12:00:00'),
+                fmtTime(t.takenAt || t._shiftTime),
+                ROLE_LABEL[t._teamRole] || t._teamRole || '—',
+                t.takenBy, t.method || 'Cash',
+                `-$${parseFloat(t.amount ?? 0).toFixed(2)}`,
+                t.walletId ? `Wallet #${t.walletId}` : '—',
+                t.notes || '—',
+            ]),
+            styles: { fontSize: 7.5, cellPadding: 2.5 },
+            headStyles: { fillColor: [153, 27, 27], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+            alternateRowStyles: { fillColor: [255, 241, 242] },
+        });
+    }
 
-    const allExpenseRows = allExpenses.map(e => `<tr>
-        <td>${fmtDateShort(e._date + "T12:00:00")}</td><td>${fmtTime(e.createdAt)}</td>
-        <td>${ROLE_LABEL[e._teamRole] || e._teamRole || "—"}</td>
-        <td><strong>${e.details}</strong></td><td>${(e.category || "").replace(/_/g, " ")}</td>
-        <td>${e.game?.name || "—"}</td>
-        <td style="color:#b45309;font-weight:700">${fmtMoney(e.amount ?? 0)}</td>
-        <td style="color:#7c3aed">${(e.pointsAdded ?? 0) > 0 ? `+${e.pointsAdded} pts` : "—"}</td>
-        <td style="color:#94a3b8;font-size:10px">${e.notes || "—"}</td>
-    </tr>`).join("");
+    // ── Footer every page ────────────────────────────────────────
+    const total = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= total; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
+        doc.text(
+            `Confidential · Range Report · ${startDate} to ${endDate} · Page ${i} of ${total}`,
+            W / 2, doc.internal.pageSize.height - 6, { align: 'center' }
+        );
+    }
 
-    const allTakeoutRows = allTakeouts.map(t => `<tr>
-        <td>${fmtDateShort(t._date + "T12:00:00")}</td><td>${fmtTime(t.takenAt || t._shiftTime)}</td>
-        <td>${ROLE_LABEL[t._teamRole] || t._teamRole || "—"}</td>
-        <td><strong>${t.takenBy}</strong></td><td>${t.method || "Cash"}</td>
-        <td style="color:#991b1b;font-weight:800">−${fmtMoney(t.amount)}</td>
-        <td>${t.walletId ? `Wallet #${t.walletId}` : "—"}</td>
-        <td style="color:#94a3b8;font-size:10px">${t.notes || "—"}</td>
-    </tr>`).join("");
-
-    const takeoutByMethod = allTakeouts.reduce((acc, t) => { const m = t.method || "Cash"; acc[m] = (acc[m] || 0) + parseFloat(t.amount ?? 0); return acc; }, {});
-    const takeoutMethodSummary = Object.entries(takeoutByMethod).map(([m, a]) => `${m}: <strong style="color:#991b1b">−${fmtMoney(a)}</strong>`).join(" | ");
-
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/>
-<title>Range Report — ${startDate} to ${endDate}</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:"Segoe UI",Arial,sans-serif;font-size:12px;color:#0f172a;padding:28px;line-height:1.5}
-  h1{font-size:20px;font-weight:800;margin-bottom:3px}
-  h2{font-size:12px;font-weight:700;margin:24px 0 10px;color:#374151;border-bottom:2px solid #e2e8f0;padding-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
-  .meta{font-size:11px;color:#64748b;margin-bottom:20px}
-  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-  .box{border:1px solid #e2e8f0;border-radius:7px;padding:12px 14px;background:#fafbfc}
-  .val{font-size:18px;font-weight:800;line-height:1.2}.lbl{font-size:9px;color:#64748b;margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
-  .green{color:#16a34a}.red{color:#dc2626}.amber{color:#b45309}.navy{color:#991b1b}.purple{color:#7c3aed}
-  table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:16px}
-  th{background:#f8fafc;text-align:left;padding:7px 10px;font-weight:700;color:#64748b;font-size:10px;text-transform:uppercase;border-bottom:2px solid #e2e8f0}
-  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
-  .total-row td{background:#f8fafc;font-weight:700;border-top:2px solid #e2e8f0}
-  .section{border-radius:8px;overflow:hidden;margin-bottom:18px}
-  .section-exp{border:1px solid #fde68a}.section-exp-hdr{padding:9px 14px;background:#fef9c3;font-weight:700;color:#92400e;font-size:11px;text-transform:uppercase;border-bottom:1px solid #fde68a}
-  .section-take{border:1px solid #fecdd3}.section-take-hdr{padding:9px 14px;background:#fee2e2;font-weight:700;color:#991b1b;font-size:11px;text-transform:uppercase;border-bottom:1px solid #fecdd3;display:flex;justify-content:space-between;align-items:center}
-  button{padding:9px 18px;background:#0f172a;color:#fff;border:none;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer}
-  @media print{button{display:none}body{padding:16px}}
-</style></head><body>
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-    <div>
-      <h1>Range Operations Report</h1>
-      <p class="meta">Generated ${new Date().toLocaleString("en-US", { timeZone: "America/Chicago" })} CDT · ${fmtDateShort(startDate + "T12:00:00")} – ${fmtDateShort(endDate + "T12:00:00")} · ${reports.length} days · <strong>CONFIDENTIAL</strong></p>
-    </div>
-    <button onclick="window.print()">🖨 Print / Save PDF</button>
-  </div>
-  <h2>📊 Range Totals</h2>
-  <div class="grid">
-    <div class="box"><div class="val green">${fmtMoney(totals.deposits)}</div><div class="lbl">Total Deposits</div></div>
-    <div class="box"><div class="val red">${fmtMoney(totals.cashouts)}</div><div class="lbl">Total Cashouts</div></div>
-    <div class="box"><div class="val" style="color:#c2410c">${fmtMoney(totals.bonuses)}</div><div class="lbl">Total Bonuses</div></div>
-    <div class="box"><div class="val ${totals.profit >= 0 ? "green" : "red"}">${fmtMoney(totals.profit)}</div><div class="lbl">Net Profit</div></div>
-    <div class="box"><div class="val amber">${fmtMoney(totals.expenses)}</div><div class="lbl">Expenses (${totals.expenseCount})</div></div>
-    <div class="box"><div class="val navy">−${fmtMoney(totals.takeouts)}</div><div class="lbl">Profit Takeouts (${totals.takeoutCount})</div></div>
-    <div class="box"><div class="val">${totals.shifts}</div><div class="lbl">Total Shifts</div></div>
-    <div class="box"><div class="val">${totals.transactions}</div><div class="lbl">Total Transactions</div></div>
-    <div class="box"><div class="val">${totals.tasks}</div><div class="lbl">Tasks Completed</div></div>
-    <div class="box"><div class="val purple">${reports.length}</div><div class="lbl">Days Covered</div></div>
-    ${totals.ptsReloaded > 0 ? `<div class="box"><div class="val purple">+${totals.ptsReloaded}</div><div class="lbl">Pts Reloaded</div></div>` : ""}
-  </div>
-  <h2>📅 Day-by-Day Breakdown</h2>
-  <table>
-    <thead><tr><th>Date</th><th>Deposits</th><th>Cashouts</th><th>Bonuses</th><th>Net Profit</th><th>Expenses</th><th>Takeouts</th><th>Shifts</th><th>Txns</th><th>Tasks</th></tr></thead>
-    <tbody>${dayRows}</tbody>
-    <tfoot>
-      <tr class="total-row">
-        <td><b>TOTAL (${reports.length} days)</b></td>
-        <td style="color:#16a34a;font-weight:800">${fmtMoney(totals.deposits)}</td>
-        <td style="color:#dc2626;font-weight:800">${fmtMoney(totals.cashouts)}</td>
-        <td style="color:#c2410c;font-weight:800">${fmtMoney(totals.bonuses)}</td>
-        <td style="font-weight:800;color:${totals.profit >= 0 ? "#16a34a" : "#dc2626"}">${fmtMoney(totals.profit)}</td>
-        <td style="color:#b45309;font-weight:800">${totals.expenses > 0 ? fmtMoney(totals.expenses) : "—"}</td>
-        <td style="color:#991b1b;font-weight:800">${totals.takeouts > 0 ? `−${fmtMoney(totals.takeouts)}` : "—"}</td>
-        <td>${totals.shifts}</td><td>${totals.transactions}</td><td>${totals.tasks}</td>
-      </tr>
-    </tfoot>
-  </table>
-  ${allExpenses.length > 0 ? `
-  <div class="section section-exp">
-    <div class="section-exp-hdr">🧾 All Expenses — ${allExpenses.length} items · Total: <strong>−${fmtMoney(totals.expenses)}</strong>${totals.ptsReloaded > 0 ? ` · +${totals.ptsReloaded} pts` : ""}</div>
-    <table style="margin:0"><thead><tr>
-      <th>Date</th><th>Time</th><th>Shift</th><th>Details</th><th>Category</th><th>Game</th><th>Amount</th><th>Pts Added</th><th>Notes</th>
-    </tr></thead>
-    <tbody>${allExpenseRows}</tbody>
-    <tfoot><tr>
-      <td colspan="6"><strong>Total (${allExpenses.length} expenses / ${reports.length} days)</strong></td>
-      <td style="color:#b45309;font-weight:800">${fmtMoney(totals.expenses)}</td>
-      <td style="color:#7c3aed">${totals.ptsReloaded > 0 ? `+${totals.ptsReloaded} pts` : "—"}</td><td></td>
-    </tr></tfoot>
-    </table>
-  </div>` : ""}
-  ${allTakeouts.length > 0 ? `
-  <div class="section section-take">
-    <div class="section-take-hdr">
-      <span>💸 All Profit Takeouts — ${allTakeouts.length} records</span>
-      <span>${takeoutMethodSummary} | <strong>Total: −${fmtMoney(totals.takeouts)}</strong></span>
-    </div>
-    <table style="margin:0"><thead><tr>
-      <th>Date</th><th>Time</th><th>Shift</th><th>Taken By</th><th>Method</th><th>Amount</th><th>Wallet</th><th>Notes</th>
-    </tr></thead>
-    <tbody>${allTakeoutRows}</tbody>
-    <tfoot><tr>
-      <td colspan="5"><strong>Total (${allTakeouts.length} takeouts / ${reports.length} days)</strong></td>
-      <td style="color:#991b1b;font-weight:800">−${fmtMoney(totals.takeouts)}</td><td colspan="2"></td>
-    </tr></tfoot>
-    </table>
-  </div>` : ""}
-  <p style="margin-top:32px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:12px">
-    Confidential · Generated by Operations Dashboard · ${new Date().toISOString()}
-  </p>
-</body></html>`);
-    win.document.close();
+    doc.save(`range-report-${startDate}-to-${endDate}.pdf`);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1790,8 +1775,8 @@ export default function AdminReportPage() {
 
     const headerSubtitle = loading ? "Loading…"
         : mode === "single" ? (report ? fmtDate(report.date + "T12:00:00") : "—")
-        : rangeReports.length > 0 ? `${fmtDateShort(startDate + "T12:00:00")} – ${fmtDateShort(endDate + "T12:00:00")} (${rangeReports.length} days)`
-        : "Select a date range";
+            : rangeReports.length > 0 ? `${fmtDateShort(startDate + "T12:00:00")} – ${fmtDateShort(endDate + "T12:00:00")} (${rangeReports.length} days)`
+                : "Select a date range";
 
     const VIEW_TABS = [
         { id: "report", label: "Full Report", icon: FileText },
@@ -1849,9 +1834,9 @@ export default function AdminReportPage() {
                                 <option value="TEAM3">Team 3</option>
                                 <option value="TEAM4">Team 4</option>
                                 <option value="TEAM5">Team 5</option>
-<option value="TEAM6">Team 6</option>
-<option value="TEAM7">Team 7</option>
-<option value="TEAM8">Team 8</option>
+                                <option value="TEAM6">Team 6</option>
+                                <option value="TEAM7">Team 7</option>
+                                <option value="TEAM8">Team 8</option>
 
                             </select>
                             <ChevronDown style={{ position: "absolute", right: "9px", top: "50%", transform: "translateY(-50%)", width: "13px", height: "13px", color: "#94a3b8", pointerEvents: "none" }} />
