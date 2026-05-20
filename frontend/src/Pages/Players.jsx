@@ -10,6 +10,7 @@ import { FaFacebookF, FaInstagram, FaSnapchatGhost, FaTelegramPlane } from "reac
 import { SiGmail, SiX } from "react-icons/si";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { downloadPlayersPDF } from './pdfExports';
 
 const C = {
     sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
