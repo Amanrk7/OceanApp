@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { ShiftStatusContext } from '../Context/membershiftStatus';
 import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
 import { useToast } from '../Context/toastContext';
+import { CurrentUserContext } from "../Context/currentUser";
 
 
 // ─── Design tokens (mirrors PlaytimePage) ────────────────────────────────────
@@ -383,6 +384,8 @@ export default function Transactions() {
   // const { shiftActive } = useContext(ShiftStatusContext);
   const { add: toast } = useToast();
   const { shiftActive, shiftLoading } = useContext(ShiftStatusContext);
+  const { usr } = useContext(CurrentUserContext);
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filterTab, setFilterTab] = useState(() => {
@@ -396,6 +399,7 @@ export default function Transactions() {
   const [approvingId, setApprovingId] = useState(null);
   const [banner, setBanner] = useState({ type: '', msg: '' });
   const LIMIT = 15;
+  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(usr?.role);
 
   const showBanner = (type, msg) => { setBanner({ type, msg }); setTimeout(() => setBanner({ type: '', msg: '' }), 4000); };
 
@@ -465,7 +469,7 @@ export default function Transactions() {
 
   const COLS = ['ID', 'Player', 'Type', 'Amount', 'Fee', 'Received / Paid', 'Game', 'Wallet', 'Points', 'Status', 'Date', 'Actions'];
 
-  if (shiftLoading) {
+  if (shiftLoading && !isAdmin) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <div
@@ -502,7 +506,7 @@ export default function Transactions() {
       </div>
     );
   }
-  if (!shiftActive) return <LockedScreen />;
+  if (!shiftActive && !isAdmin) return <LockedScreen />;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
