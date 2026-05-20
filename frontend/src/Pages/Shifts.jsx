@@ -2775,21 +2775,15 @@ export const ShiftsPage = () => {
                         onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
-                         /* {isAdmin && (
-                          <td style={T.TD}>
-                            <span style={{ padding: '2px 8px', background: '#f1f5f9', borderRadius: '6px', fontSize: '11px', fontWeight: '700', color: '#475569' }}>
-                              {shift.teamRole?.replace('TEAM', 'T')}
-                            </span>
-                          </td>
-                        )} */
+y
                         {/* // AFTER — show real name with role as a subtle sub-line: */}
                         {isAdmin && (
-  <td style={T.TD}>
-    <p style={{ margin: 0, fontWeight: '600', fontSize: '13px', color: '#0f172a' }}>
-      {shift.performer?.name || shift.memberName || shift.teamRole}
-    </p>
-  </td>
-)}
+                          <td style={T.TD}>
+                            <p style={{ margin: 0, fontWeight: '600', fontSize: '13px', color: '#0f172a' }}>
+                              {shift.performer?.name || shift.memberName || shift.teamRole}
+                            </p>
+                          </td>
+                        )}
                         {/* Date + time combined */}
                         <td style={T.TD}>
                           <p style={{ margin: '0 0 1px', fontWeight: '600', fontSize: '13px', color: '#0f172a' }}>{fmtDate(shift.startTime)}</p>
