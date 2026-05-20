@@ -332,7 +332,7 @@ export default function Players() {
                 <th style={TH}>Socials</th>
                 <th style={TH}>Status</th>
                 {/* ── NEW COLUMN ── */}
-                <th style={{ ...TH, color: C.sky, background: '#f0f9ff' }}>Added by</th>
+                <th style={{ ...TH }}>Added by</th>
                 <th style={{ ...TH, textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
