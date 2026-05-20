@@ -1429,6 +1429,8 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
   const [search, setSearch] = useState("");
   const [resolvedUser, setResolvedUser] = useState(null);
   const [activeTab, setActiveTab] = useState("tasks"); // tasks | analytics | shifts | rating
+  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(usr?.role);
+
   const sseRef = useRef(null);
 
   useEffect(() => {
