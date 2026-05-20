@@ -2740,7 +2740,7 @@ export const ShiftsPage = () => {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
                   <tr>
-                    {isAdmin && <th style={T.TH}>Team</th>}
+                    {isAdmin && <th style={T.TH}>Members</th>}
                     <th style={T.TH}>Date & Time</th>
                     <th style={T.TH}>P&L</th>
                     <th style={T.TH}>Activity</th>
@@ -2784,15 +2784,12 @@ export const ShiftsPage = () => {
                         )} */
                         {/* // AFTER — show real name with role as a subtle sub-line: */}
                         {isAdmin && (
-                          <td style={T.TD}>
-                            <p style={{ margin: '0 0 1px', fontWeight: '600', fontSize: '13px', color: '#0f172a' }}>
-                              {shift.performer?.name || shift.memberName || shift.teamRole}
-                            </p>
-                            <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8' }}>
-                              {shift.teamRole}
-                            </p>
-                          </td>
-                        )}
+  <td style={T.TD}>
+    <p style={{ margin: 0, fontWeight: '600', fontSize: '13px', color: '#0f172a' }}>
+      {shift.performer?.name || shift.memberName || shift.teamRole}
+    </p>
+  </td>
+)}
                         {/* Date + time combined */}
                         <td style={T.TD}>
                           <p style={{ margin: '0 0 1px', fontWeight: '600', fontSize: '13px', color: '#0f172a' }}>{fmtDate(shift.startTime)}</p>
