@@ -12,7 +12,7 @@ import { useToast } from '../Context/toastContext';
 import { api } from "../api";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { downloadPlayersPDF, printDailyReport, printRangeReport } from './pdfExports';
+import { downloadPlayersPDF, printReport, printRangeReport } from './pdfExports';
 
 // ── Design tokens ─────────────────────────────────────────────
 const CARD = {
