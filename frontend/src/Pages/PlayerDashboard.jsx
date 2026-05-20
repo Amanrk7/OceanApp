@@ -1134,6 +1134,19 @@ export default function PlayerDashboard() {
                             <span style={{ ...pill(status.bg, status.text), display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                                 <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: status.dot }} />{status.label}
                             </span>
+                            {player.addedBy && (
+  <span style={{
+    display: 'inline-flex', alignItems: 'center', gap: '4px',
+    padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700',
+    background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd',
+  }}>
+    <span style={{ fontSize: '10px' }}>➕</span>
+    Added by {player.addedBy.name}
+    <span style={{ fontSize: '10px', opacity: 0.7 }}>
+      · {player.addedBy.role.replace('TEAM', 'T').replace('_ADMIN', '')}
+    </span>
+  </span>
+)}
                             {sourceTags.map((src, i) => <span key={i} style={pill('#f1f5f9', C.gray)}>📍 {src}</span>)}
                         </div>
                         {player.referredBy && (
