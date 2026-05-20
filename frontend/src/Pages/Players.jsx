@@ -118,8 +118,8 @@ function AddedByBadge({ addedBy }) {
       style={{
         display: 'inline-flex', alignItems: 'center', gap: '4px',
         padding: '2px 7px 2px 5px', borderRadius: '99px',
-        background: style.bg, border: `1px solid ${style.border}`,
-        fontSize: '10px', fontWeight: '700', color: style.text,
+        border: `1px solid ${style.border}`,
+        fontSize: '10px', fontWeight: '700', 
         marginTop: '3px', cursor: 'default',
       }}
     >
