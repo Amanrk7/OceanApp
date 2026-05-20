@@ -611,7 +611,7 @@ export default function Transactions() {
                       textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.5px',
                       borderBottom: '2px solid #e2e8f0', whiteSpace: 'nowrap', background: '#f8fafc',
                       // Highlight the new column header
-                      ...(h === 'By' ? { color: '#0ea5e9', background: '#f0f9ff' } : {}),
+                      ...(h === 'By' ? {} : {}),
                     }}>{h}</th>
                   ))}
                 </tr>
