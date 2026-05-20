@@ -12,7 +12,7 @@ import { useToast } from '../Context/toastContext';
 import { api } from "../api";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { downloadPlayersPDF, printReport, printRangeReport } from './pdfExports';
+import { downloadPlayersPDF, printDailyReport, printRangeReport } from './pdfExports';
 
 // ── Design tokens ─────────────────────────────────────────────
 const CARD = {
@@ -1741,7 +1741,7 @@ export default function AdminReportPage() {
     };
 
     const handleExport = () => {
-        if (mode === "single" && report) printReport(report, report.date);
+        if (mode === "single" && report) printDailyReport(report, report.date);
         else if (mode === "range" && rangeReports.length > 0) printRangeReport(rangeReports, startDate, endDate);
     };
 
