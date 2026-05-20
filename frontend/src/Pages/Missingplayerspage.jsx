@@ -9,6 +9,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { ShiftStatusContext } from "../Context/membershiftStatus";
 import { api } from '../api';
+import { CurrentUserContext } from "../Context/currentUser";
+
 
 // ─── Config ────────────────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -298,7 +300,8 @@ function InlineAdminAssign({ player, task, teamMembers, onAssigned, assigning })
           <option value="">— Assign to member —</option>
           {teamMembers.map(m => (
             <option key={m.id} value={String(m.id)}>
-              {m.name || m.username} ({m.role})
+              {/* {m.name || m.username} ({m.role}) */}
+              {m.name || m.username} ({m.role?.replace('TEAM', 'T')})
             </option>
           ))}
         </select>
@@ -608,6 +611,8 @@ function StatCard({ label, value, color, bg, border, icon: Icon }) {
 export default function MissingPlayersPage() {
   // const { shiftActive } = useContext(ShiftStatusContext);
   const { shiftActive, shiftLoading } = useContext(ShiftStatusContext);
+  const { usr } = useContext(CurrentUserContext);
+
   const navigate = useNavigate();
   const { toasts, addToast, dismiss } = useToast();
 
@@ -627,6 +632,7 @@ export default function MissingPlayersPage() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [refreshKey, setRefreshKey] = useState(0);
+  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(usr?.role);
 
   const sseRef = useRef(null);
 
@@ -875,7 +881,7 @@ export default function MissingPlayersPage() {
     return matchSearch && matchFilter;
   });
 
-  const isAdmin = isAdminRole(userRole);
+  // const isAdmin = isAdminRole(userRole);
   const isMember = isMemberRole(userRole);
 
   const FILTERS = [
@@ -891,7 +897,8 @@ export default function MissingPlayersPage() {
 
   // ── Shift gate ────────────────────────────────────────────────
 
-  if (shiftLoading) {
+  if (shiftLoading && !isAdmin) {
+
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <div
@@ -928,7 +935,8 @@ export default function MissingPlayersPage() {
       </div>
     );
   }
-  if (!shiftActive) {
+  if (!shiftActive && !isAdmin) {
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <button
@@ -1003,7 +1011,12 @@ export default function MissingPlayersPage() {
           {userRole && (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--color-border)', background: isAdmin ? 'var(--color-background-warning)' : 'var(--color-background-info)', flexShrink: 0 }}>
               <ShieldCheck style={{ width: 12, height: 12, color: isAdmin ? 'var(--amber)' : 'var(--brand)' }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: isAdmin ? 'var(--amber)' : 'var(--brand)' }}>{isAdmin ? 'Admin' : userRole}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: isAdmin ? 'var(--amber)' : 'var(--brand)' }}>
+                {/* {isAdmin ? 'Admin' : userRole} */}
+
+                {isAdmin ? 'Admin' : (userRole?.replace('TEAM', 'Team ') || userRole)}
+
+              </span>
             </div>
           )}
 
