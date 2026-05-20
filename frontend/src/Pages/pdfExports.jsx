@@ -1219,7 +1219,9 @@ export function printRangeReport(reports, startDate, endDate) {
  */
 export async function printShiftPDF(shift) {
   // ── API helper (mirrors fj() from ShiftsPage) ─────────────────────────────
-  const API_BASE = (typeof import !== 'undefined' && (import.meta?.env?.VITE_API_URL)) || 'http://localhost:3001/api';
+  // const API_BASE = (typeof import !== 'undefined' && (import.meta?.env?.VITE_API_URL)) || 'http://localhost:3001/api';
+  const API_BASE = import.meta?.env?.VITE_API_URL || 'http://localhost:3001/api';
+
   const fetchAPI = async (path) => {
     const token = localStorage.getItem('authToken');
     const storeId = localStorage.getItem('__obStoreId') || '1';
