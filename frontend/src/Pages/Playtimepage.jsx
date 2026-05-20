@@ -814,6 +814,8 @@ function PlayerRow({ player, depositGames, gamesLoading, onRedeem, onFreezeActio
 export default function PlaytimePage() {
     // const { shiftActive } = useContext(ShiftStatusContext);
     const { shiftActive, shiftLoading } = useContext(ShiftStatusContext);
+    const { usr } = useContext(CurrentUserContext);
+
     const navigate = useNavigate();
     const [players, setPlayers] = useState([]);
     const [total, setTotal] = useState(0);
@@ -833,6 +835,8 @@ export default function PlaytimePage() {
     const [guideOpen, setGuideOpen] = useState(true);
     const [autoRefresh, setAutoRefresh] = useState(true);
     const [lastRefresh, setLastRefresh] = useState(new Date());
+    const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(usr?.role);
+
 
     // Freeze modal state
     const [freezeModal, setFreezeModal] = useState(null); // { mode, player, currentFreeze }
@@ -1039,7 +1043,7 @@ export default function PlaytimePage() {
     };
 
 
-    if (shiftLoading) {
+    if (shiftLoading && !isAdmin) {
         return (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div
@@ -1077,7 +1081,7 @@ export default function PlaytimePage() {
         );
     }
 
-    if (!shiftActive) {
+    if (!shiftActive && !isAdmin) {
         return (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <button onClick={() => navigate('/shifts')} style={{ alignSelf: "flex-start", padding: "9px 18px", background: "var(--color-background-info)", color: "var(--color-text-info)", border: "0.5px solid var(--color-border-info)", borderRadius: "var(--border-radius-md)", fontWeight: "500", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
