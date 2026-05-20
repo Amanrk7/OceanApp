@@ -2775,7 +2775,6 @@ export const ShiftsPage = () => {
                         onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
-y
                         {/* // AFTER — show real name with role as a subtle sub-line: */}
                         {isAdmin && (
                           <td style={T.TD}>
