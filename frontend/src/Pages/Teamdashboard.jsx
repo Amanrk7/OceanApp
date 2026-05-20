@@ -1412,7 +1412,9 @@ function TaskGroup({ title, tasks, color, defaultOpen = true, renderTask }) {
 // ══════════════════════════════════════════════════════════════
 // ── MAIN COMPONENT ────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════
-export default function TeamDashboard({ currentUser, isAdmin = false, viewingMember = null }) {
+// export default function TeamDashboard({ currentUser, isAdmin = false, viewingMember = null }) {
+  export default function TeamDashboard({ currentUser, viewingMember = null }) {
+
   // const { shiftActive } = useContext(ShiftStatusContext);
   const { shiftActive, shiftLoading } = useContext(ShiftStatusContext);
   const { usr } = useContext(CurrentUserContext);
