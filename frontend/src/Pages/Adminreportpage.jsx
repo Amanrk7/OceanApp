@@ -12,6 +12,7 @@ import { useToast } from '../Context/toastContext';
 import { api } from "../api";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { downloadPlayersPDF, printDailyReport, printRangeReport } from './pdfExports';
 
 // ── Design tokens ─────────────────────────────────────────────
 const CARD = {
@@ -1368,304 +1369,304 @@ function TransactionsFilterView({ transactions, rangeMode }) {
 // PDF EXPORT FUNCTIONS
 // ══════════════════════════════════════════════════════════════
 
-function printReport(report, date) {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const s = report.summary || {};
-    const dayExpenses = aggregateDayExpenses(report);
-    const dayTakeouts = aggregateDayTakeouts(report);
-    const totalExpenses = dayExpenses.reduce((sum, e) => sum + parseFloat(e.amount ?? 0), 0);
-    const totalTakeouts = dayTakeouts.reduce((sum, t) => sum + parseFloat(t.amount ?? 0), 0);
-    const totalPts = dayExpenses.reduce((sum, e) => sum + (e.pointsAdded ?? 0), 0);
-    const W = doc.internal.pageSize.width;
+// function printReport(report, date) {
+//     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+//     const s = report.summary || {};
+//     const dayExpenses = aggregateDayExpenses(report);
+//     const dayTakeouts = aggregateDayTakeouts(report);
+//     const totalExpenses = dayExpenses.reduce((sum, e) => sum + parseFloat(e.amount ?? 0), 0);
+//     const totalTakeouts = dayTakeouts.reduce((sum, t) => sum + parseFloat(t.amount ?? 0), 0);
+//     const totalPts = dayExpenses.reduce((sum, e) => sum + (e.pointsAdded ?? 0), 0);
+//     const W = doc.internal.pageSize.width;
 
-    // ── Header ──────────────────────────────────────────────────
-    doc.setFontSize(18); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
-    doc.text('Daily Operations Report', 14, 18);
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
-    doc.text(`${fmtDate(date + 'T12:00:00')} · Generated ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })} CDT · CONFIDENTIAL`, 14, 25);
+//     // ── Header ──────────────────────────────────────────────────
+//     doc.setFontSize(18); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
+//     doc.text('Daily Operations Report', 14, 18);
+//     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+//     doc.text(`${fmtDate(date + 'T12:00:00')} · Generated ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })} CDT · CONFIDENTIAL`, 14, 25);
 
-    // ── KPI boxes ───────────────────────────────────────────────
-    const kpis = [
-        { label: 'Deposits', val: fmtMoney(s.totalDeposits), color: [22, 163, 74] },
-        { label: 'Cashouts', val: fmtMoney(s.totalCashouts), color: [220, 38, 38] },
-        { label: 'Bonuses', val: fmtMoney(s.totalBonuses), color: [194, 65, 12] },
-        { label: 'Net Profit', val: fmtMoney(s.netProfit), color: (s.netProfit ?? 0) >= 0 ? [22, 163, 74] : [220, 38, 38] },
-        { label: 'Expenses', val: fmtMoney(totalExpenses), color: [180, 83, 9] },
-        { label: 'Takeouts', val: fmtMoney(totalTakeouts), color: [153, 27, 27] },
-        { label: 'Shifts', val: String(s.totalShifts ?? 0), color: [71, 85, 105] },
-        { label: 'Transactions', val: String(s.transactionCount ?? 0), color: [37, 99, 235] },
-    ];
-    kpis.forEach(({ label, val, color }, i) => {
-        const x = 14 + (i % 4) * 66, y = i < 4 ? 30 : 49;
-        doc.setFillColor(248, 250, 252); doc.roundedRect(x, y, 62, 14, 2, 2, 'F');
-        doc.setTextColor(...color); doc.setFontSize(13); doc.setFont('helvetica', 'bold');
-        doc.text(val, x + 31, y + 8, { align: 'center' });
-        doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
-        doc.text(label.toUpperCase(), x + 31, y + 12, { align: 'center' });
-    });
+//     // ── KPI boxes ───────────────────────────────────────────────
+//     const kpis = [
+//         { label: 'Deposits', val: fmtMoney(s.totalDeposits), color: [22, 163, 74] },
+//         { label: 'Cashouts', val: fmtMoney(s.totalCashouts), color: [220, 38, 38] },
+//         { label: 'Bonuses', val: fmtMoney(s.totalBonuses), color: [194, 65, 12] },
+//         { label: 'Net Profit', val: fmtMoney(s.netProfit), color: (s.netProfit ?? 0) >= 0 ? [22, 163, 74] : [220, 38, 38] },
+//         { label: 'Expenses', val: fmtMoney(totalExpenses), color: [180, 83, 9] },
+//         { label: 'Takeouts', val: fmtMoney(totalTakeouts), color: [153, 27, 27] },
+//         { label: 'Shifts', val: String(s.totalShifts ?? 0), color: [71, 85, 105] },
+//         { label: 'Transactions', val: String(s.transactionCount ?? 0), color: [37, 99, 235] },
+//     ];
+//     kpis.forEach(({ label, val, color }, i) => {
+//         const x = 14 + (i % 4) * 66, y = i < 4 ? 30 : 49;
+//         doc.setFillColor(248, 250, 252); doc.roundedRect(x, y, 62, 14, 2, 2, 'F');
+//         doc.setTextColor(...color); doc.setFontSize(13); doc.setFont('helvetica', 'bold');
+//         doc.text(val, x + 31, y + 8, { align: 'center' });
+//         doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+//         doc.text(label.toUpperCase(), x + 31, y + 12, { align: 'center' });
+//     });
 
-    let y = 68;
+//     let y = 68;
 
-    // ── Member shift summary ────────────────────────────────────
-    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
-    doc.text('Member Shift Summary', 14, y); y += 4;
+//     // ── Member shift summary ────────────────────────────────────
+//     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
+//     doc.text('Member Shift Summary', 14, y); y += 4;
 
-    autoTable(doc, {
-        startY: y,
-        head: [['Member', 'Role', 'Start', 'End', 'Duration', 'Txns', 'Deposits', 'Cashouts', 'Net Profit', 'Bonuses', 'Expenses', 'Effort']],
-        body: (report.teams || []).flatMap(team =>
-            (team.shifts || []).map(shift => {
-                const st = shift.stats || {};
-                const name = shift.displayMember?.name || team.member?.name || '—';
-                const effort = shift.checkin?.effortRating ?? null;
-                return [
-                    name, ROLE_LABEL[team.role] || team.role,
-                    fmtTime(shift.startTime), shift.isActive ? 'ACTIVE' : fmtTime(shift.endTime),
-                    shift.duration != null ? `${shift.duration}m` : '—',
-                    st.transactionCount ?? 0,
-                    `$${(st.totalDeposits || 0).toFixed(2)}`,
-                    `$${(st.totalCashouts || 0).toFixed(2)}`,
-                    `$${(st.netProfit || 0).toFixed(2)}`,
-                    `$${(st.totalBonuses || 0).toFixed(2)}`,
-                    st.totalExpenses > 0 ? `$${st.totalExpenses.toFixed(2)}` : '—',
-                    effort != null ? `${effort}/10` : '—',
-                ];
-            })
-        ),
-        styles: { fontSize: 7.5, cellPadding: 2.5 },
-        headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-        columnStyles: { 6: { textColor: [22, 163, 74] }, 7: { textColor: [220, 38, 38] } },
-    });
+//     autoTable(doc, {
+//         startY: y,
+//         head: [['Member', 'Role', 'Start', 'End', 'Duration', 'Txns', 'Deposits', 'Cashouts', 'Net Profit', 'Bonuses', 'Expenses', 'Effort']],
+//         body: (report.teams || []).flatMap(team =>
+//             (team.shifts || []).map(shift => {
+//                 const st = shift.stats || {};
+//                 const name = shift.displayMember?.name || team.member?.name || '—';
+//                 const effort = shift.checkin?.effortRating ?? null;
+//                 return [
+//                     name, ROLE_LABEL[team.role] || team.role,
+//                     fmtTime(shift.startTime), shift.isActive ? 'ACTIVE' : fmtTime(shift.endTime),
+//                     shift.duration != null ? `${shift.duration}m` : '—',
+//                     st.transactionCount ?? 0,
+//                     `$${(st.totalDeposits || 0).toFixed(2)}`,
+//                     `$${(st.totalCashouts || 0).toFixed(2)}`,
+//                     `$${(st.netProfit || 0).toFixed(2)}`,
+//                     `$${(st.totalBonuses || 0).toFixed(2)}`,
+//                     st.totalExpenses > 0 ? `$${st.totalExpenses.toFixed(2)}` : '—',
+//                     effort != null ? `${effort}/10` : '—',
+//                 ];
+//             })
+//         ),
+//         styles: { fontSize: 7.5, cellPadding: 2.5 },
+//         headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+//         alternateRowStyles: { fillColor: [248, 250, 252] },
+//         columnStyles: { 6: { textColor: [22, 163, 74] }, 7: { textColor: [220, 38, 38] } },
+//     });
 
-    // ── Expenses table ──────────────────────────────────────────
-    if (dayExpenses.length > 0) {
-        doc.addPage();
-        doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(180, 83, 9);
-        doc.text(`Expenses — ${dayExpenses.length} items · Total: ${fmtMoney(totalExpenses)}${totalPts > 0 ? ` · +${totalPts} pts reloaded` : ''}`, 14, 16);
-        autoTable(doc, {
-            startY: 22,
-            head: [['Time', 'Shift', 'Details', 'Category', 'Game', 'Amount', 'Pts Added', 'Wallet Paid', 'Notes']],
-            body: dayExpenses.map(e => [
-                fmtTime(e.createdAt),
-                ROLE_LABEL[e._teamRole] || e._teamRole || '—',
-                e.details || '—',
-                (e.category || '—').replace(/_/g, ' '),
-                e.game?.name || '—',
-                `$${(e.amount ?? 0).toFixed(2)}`,
-                (e.pointsAdded ?? 0) > 0 ? `+${e.pointsAdded} pts` : '—',
-                parseFloat(e.paymentMade ?? 0) > 0 ? `-$${parseFloat(e.paymentMade).toFixed(2)}` : '—',
-                e.notes || '—',
-            ]),
-            styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'ellipsize' },
-            headStyles: { fillColor: [180, 83, 9], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
-            alternateRowStyles: { fillColor: [255, 251, 235] },
-            foot: [[
-                { content: `Total (${dayExpenses.length} expenses)`, colSpan: 5, styles: { fontStyle: 'bold' } },
-                { content: fmtMoney(totalExpenses), styles: { textColor: [180, 83, 9], fontStyle: 'bold' } },
-                { content: totalPts > 0 ? `+${totalPts} pts` : '—', styles: { textColor: [124, 58, 237] } },
-                { content: `−${fmtMoney(dayExpenses.reduce((s, e) => s + parseFloat(e.paymentMade ?? 0), 0))}`, styles: { textColor: [220, 38, 38], fontStyle: 'bold' } },
-                '',
-            ]],
-            footStyles: { fillColor: [254, 249, 195], textColor: [15, 23, 42] },
-        });
-    }
+//     // ── Expenses table ──────────────────────────────────────────
+//     if (dayExpenses.length > 0) {
+//         doc.addPage();
+//         doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(180, 83, 9);
+//         doc.text(`Expenses — ${dayExpenses.length} items · Total: ${fmtMoney(totalExpenses)}${totalPts > 0 ? ` · +${totalPts} pts reloaded` : ''}`, 14, 16);
+//         autoTable(doc, {
+//             startY: 22,
+//             head: [['Time', 'Shift', 'Details', 'Category', 'Game', 'Amount', 'Pts Added', 'Wallet Paid', 'Notes']],
+//             body: dayExpenses.map(e => [
+//                 fmtTime(e.createdAt),
+//                 ROLE_LABEL[e._teamRole] || e._teamRole || '—',
+//                 e.details || '—',
+//                 (e.category || '—').replace(/_/g, ' '),
+//                 e.game?.name || '—',
+//                 `$${(e.amount ?? 0).toFixed(2)}`,
+//                 (e.pointsAdded ?? 0) > 0 ? `+${e.pointsAdded} pts` : '—',
+//                 parseFloat(e.paymentMade ?? 0) > 0 ? `-$${parseFloat(e.paymentMade).toFixed(2)}` : '—',
+//                 e.notes || '—',
+//             ]),
+//             styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'ellipsize' },
+//             headStyles: { fillColor: [180, 83, 9], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+//             alternateRowStyles: { fillColor: [255, 251, 235] },
+//             foot: [[
+//                 { content: `Total (${dayExpenses.length} expenses)`, colSpan: 5, styles: { fontStyle: 'bold' } },
+//                 { content: fmtMoney(totalExpenses), styles: { textColor: [180, 83, 9], fontStyle: 'bold' } },
+//                 { content: totalPts > 0 ? `+${totalPts} pts` : '—', styles: { textColor: [124, 58, 237] } },
+//                 { content: `−${fmtMoney(dayExpenses.reduce((s, e) => s + parseFloat(e.paymentMade ?? 0), 0))}`, styles: { textColor: [220, 38, 38], fontStyle: 'bold' } },
+//                 '',
+//             ]],
+//             footStyles: { fillColor: [254, 249, 195], textColor: [15, 23, 42] },
+//         });
+//     }
 
-    // ── Takeouts table ──────────────────────────────────────────
-    if (dayTakeouts.length > 0) {
-        doc.addPage();
-        doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(153, 27, 27);
-        doc.text(`Profit Takeouts — ${dayTakeouts.length} records · Total: −${fmtMoney(totalTakeouts)}`, 14, 16);
-        autoTable(doc, {
-            startY: 22,
-            head: [['Time', 'Shift', 'Taken By', 'Method', 'Amount', 'Wallet', 'Notes']],
-            body: dayTakeouts.map(t => [
-                fmtTime(t.takenAt || t._shiftTime),
-                ROLE_LABEL[t._teamRole] || t._teamRole || '—',
-                t.takenBy, t.method || 'Cash',
-                `-$${parseFloat(t.amount ?? 0).toFixed(2)}`,
-                t.walletId ? `Wallet #${t.walletId}` : '—',
-                t.notes || '—',
-            ]),
-            styles: { fontSize: 7.5, cellPadding: 2.5 },
-            headStyles: { fillColor: [153, 27, 27], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
-            alternateRowStyles: { fillColor: [255, 241, 242] },
-            foot: [[
-                { content: `Total (${dayTakeouts.length} takeouts)`, colSpan: 4, styles: { fontStyle: 'bold' } },
-                { content: `-${fmtMoney(totalTakeouts)}`, styles: { textColor: [153, 27, 27], fontStyle: 'bold' } },
-                '', '',
-            ]],
-            footStyles: { fillColor: [254, 226, 226] },
-        });
-    }
+//     // ── Takeouts table ──────────────────────────────────────────
+//     if (dayTakeouts.length > 0) {
+//         doc.addPage();
+//         doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(153, 27, 27);
+//         doc.text(`Profit Takeouts — ${dayTakeouts.length} records · Total: −${fmtMoney(totalTakeouts)}`, 14, 16);
+//         autoTable(doc, {
+//             startY: 22,
+//             head: [['Time', 'Shift', 'Taken By', 'Method', 'Amount', 'Wallet', 'Notes']],
+//             body: dayTakeouts.map(t => [
+//                 fmtTime(t.takenAt || t._shiftTime),
+//                 ROLE_LABEL[t._teamRole] || t._teamRole || '—',
+//                 t.takenBy, t.method || 'Cash',
+//                 `-$${parseFloat(t.amount ?? 0).toFixed(2)}`,
+//                 t.walletId ? `Wallet #${t.walletId}` : '—',
+//                 t.notes || '—',
+//             ]),
+//             styles: { fontSize: 7.5, cellPadding: 2.5 },
+//             headStyles: { fillColor: [153, 27, 27], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+//             alternateRowStyles: { fillColor: [255, 241, 242] },
+//             foot: [[
+//                 { content: `Total (${dayTakeouts.length} takeouts)`, colSpan: 4, styles: { fontStyle: 'bold' } },
+//                 { content: `-${fmtMoney(totalTakeouts)}`, styles: { textColor: [153, 27, 27], fontStyle: 'bold' } },
+//                 '', '',
+//             ]],
+//             footStyles: { fillColor: [254, 226, 226] },
+//         });
+//     }
 
-    // ── Footer every page ───────────────────────────────────────
-    const total = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= total; i++) {
-        doc.setPage(i);
-        doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
-        doc.text(`Confidential · Daily Report · ${date} · Page ${i} of ${total}`, W / 2, doc.internal.pageSize.height - 6, { align: 'center' });
-    }
+//     // ── Footer every page ───────────────────────────────────────
+//     const total = doc.internal.getNumberOfPages();
+//     for (let i = 1; i <= total; i++) {
+//         doc.setPage(i);
+//         doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
+//         doc.text(`Confidential · Daily Report · ${date} · Page ${i} of ${total}`, W / 2, doc.internal.pageSize.height - 6, { align: 'center' });
+//     }
 
-    doc.save(`report-${date}.pdf`);
-}
+//     doc.save(`report-${date}.pdf`);
+// }
 
-function printRangeReport(reports, startDate, endDate) {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const W = doc.internal.pageSize.width;
+// function printRangeReport(reports, startDate, endDate) {
+//     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+//     const W = doc.internal.pageSize.width;
 
-    const totals = reports.reduce((acc, r) => {
-        const s = r.summary || {};
-        acc.deposits += s.totalDeposits || 0; acc.cashouts += s.totalCashouts || 0;
-        acc.bonuses += s.totalBonuses || 0; acc.profit += s.netProfit || 0;
-        acc.shifts += s.totalShifts || 0; acc.transactions += s.transactionCount || 0;
-        acc.tasks += s.tasksCompleted || 0;
-        const exp = aggregateDayExpenses(r); const take = aggregateDayTakeouts(r);
-        acc.expenses += exp.reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
-        acc.takeouts += take.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
-        acc.ptsReloaded += exp.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
-        return acc;
-    }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, shifts: 0, transactions: 0, tasks: 0, expenses: 0, takeouts: 0, ptsReloaded: 0 });
+//     const totals = reports.reduce((acc, r) => {
+//         const s = r.summary || {};
+//         acc.deposits += s.totalDeposits || 0; acc.cashouts += s.totalCashouts || 0;
+//         acc.bonuses += s.totalBonuses || 0; acc.profit += s.netProfit || 0;
+//         acc.shifts += s.totalShifts || 0; acc.transactions += s.transactionCount || 0;
+//         acc.tasks += s.tasksCompleted || 0;
+//         const exp = aggregateDayExpenses(r); const take = aggregateDayTakeouts(r);
+//         acc.expenses += exp.reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
+//         acc.takeouts += take.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+//         acc.ptsReloaded += exp.reduce((s, e) => s + (e.pointsAdded ?? 0), 0);
+//         return acc;
+//     }, { deposits: 0, cashouts: 0, bonuses: 0, profit: 0, shifts: 0, transactions: 0, tasks: 0, expenses: 0, takeouts: 0, ptsReloaded: 0 });
 
-    // ── Header ──────────────────────────────────────────────────
-    doc.setFontSize(18); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
-    doc.text('Range Operations Report', 14, 18);
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
-    doc.text(
-        `${fmtDateShort(startDate + 'T12:00:00')} – ${fmtDateShort(endDate + 'T12:00:00')} · ${reports.length} days · ` +
-        `Generated ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })} CDT · CONFIDENTIAL`,
-        14, 25
-    );
+//     // ── Header ──────────────────────────────────────────────────
+//     doc.setFontSize(18); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
+//     doc.text('Range Operations Report', 14, 18);
+//     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+//     doc.text(
+//         `${fmtDateShort(startDate + 'T12:00:00')} – ${fmtDateShort(endDate + 'T12:00:00')} · ${reports.length} days · ` +
+//         `Generated ${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })} CDT · CONFIDENTIAL`,
+//         14, 25
+//     );
 
-    // ── KPI strip ───────────────────────────────────────────────
-    const kpis = [
-        { label: 'Deposits', val: fmtMoney(totals.deposits), color: [22, 163, 74] },
-        { label: 'Cashouts', val: fmtMoney(totals.cashouts), color: [220, 38, 38] },
-        { label: 'Bonuses', val: fmtMoney(totals.bonuses), color: [194, 65, 12] },
-        { label: 'Net Profit', val: fmtMoney(totals.profit), color: totals.profit >= 0 ? [22, 163, 74] : [220, 38, 38] },
-        { label: 'Expenses', val: fmtMoney(totals.expenses), color: [180, 83, 9] },
-        { label: 'Takeouts', val: fmtMoney(totals.takeouts), color: [153, 27, 27] },
-        { label: 'Shifts', val: String(totals.shifts), color: [71, 85, 105] },
-        { label: 'Transactions', val: String(totals.transactions), color: [37, 99, 235] },
-        { label: 'Days', val: String(reports.length), color: [124, 58, 237] },
-        { label: 'Tasks Done', val: String(totals.tasks), color: [22, 163, 74] },
-    ];
-    kpis.forEach(({ label, val, color }, i) => {
-        const x = 14 + (i % 5) * 53, y = i < 5 ? 30 : 49;
-        doc.setFillColor(248, 250, 252); doc.roundedRect(x, y, 49, 14, 2, 2, 'F');
-        doc.setTextColor(...color); doc.setFontSize(12); doc.setFont('helvetica', 'bold');
-        doc.text(val, x + 24.5, y + 8, { align: 'center' });
-        doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
-        doc.text(label.toUpperCase(), x + 24.5, y + 12, { align: 'center' });
-    });
+//     // ── KPI strip ───────────────────────────────────────────────
+//     const kpis = [
+//         { label: 'Deposits', val: fmtMoney(totals.deposits), color: [22, 163, 74] },
+//         { label: 'Cashouts', val: fmtMoney(totals.cashouts), color: [220, 38, 38] },
+//         { label: 'Bonuses', val: fmtMoney(totals.bonuses), color: [194, 65, 12] },
+//         { label: 'Net Profit', val: fmtMoney(totals.profit), color: totals.profit >= 0 ? [22, 163, 74] : [220, 38, 38] },
+//         { label: 'Expenses', val: fmtMoney(totals.expenses), color: [180, 83, 9] },
+//         { label: 'Takeouts', val: fmtMoney(totals.takeouts), color: [153, 27, 27] },
+//         { label: 'Shifts', val: String(totals.shifts), color: [71, 85, 105] },
+//         { label: 'Transactions', val: String(totals.transactions), color: [37, 99, 235] },
+//         { label: 'Days', val: String(reports.length), color: [124, 58, 237] },
+//         { label: 'Tasks Done', val: String(totals.tasks), color: [22, 163, 74] },
+//     ];
+//     kpis.forEach(({ label, val, color }, i) => {
+//         const x = 14 + (i % 5) * 53, y = i < 5 ? 30 : 49;
+//         doc.setFillColor(248, 250, 252); doc.roundedRect(x, y, 49, 14, 2, 2, 'F');
+//         doc.setTextColor(...color); doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+//         doc.text(val, x + 24.5, y + 8, { align: 'center' });
+//         doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+//         doc.text(label.toUpperCase(), x + 24.5, y + 12, { align: 'center' });
+//     });
 
-    // ── Day-by-day summary table ─────────────────────────────────
-    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
-    doc.text('Day-by-Day Breakdown', 14, 70);
+//     // ── Day-by-day summary table ─────────────────────────────────
+//     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
+//     doc.text('Day-by-Day Breakdown', 14, 70);
 
-    autoTable(doc, {
-        startY: 74,
-        head: [['Date', 'Deposits', 'Cashouts', 'Bonuses', 'Net Profit', 'Expenses', 'Takeouts', 'Shifts', 'Txns', 'Tasks']],
-        body: [
-            ...reports.map(r => {
-                const s = r.summary || {};
-                const exp = aggregateDayExpenses(r).reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
-                const take = aggregateDayTakeouts(r).reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
-                return [
-                    fmtDateShort(r.date + 'T12:00:00'),
-                    `$${(s.totalDeposits || 0).toFixed(2)}`,
-                    `$${(s.totalCashouts || 0).toFixed(2)}`,
-                    `$${(s.totalBonuses || 0).toFixed(2)}`,
-                    `$${(s.netProfit || 0).toFixed(2)}`,
-                    exp > 0 ? `$${exp.toFixed(2)}` : '—',
-                    take > 0 ? `-$${take.toFixed(2)}` : '—',
-                    s.totalShifts ?? 0, s.transactionCount ?? 0, s.tasksCompleted ?? 0,
-                ];
-            }),
-        ],
-        foot: [[
-            `TOTAL (${reports.length} days)`,
-            `$${totals.deposits.toFixed(2)}`, `$${totals.cashouts.toFixed(2)}`,
-            `$${totals.bonuses.toFixed(2)}`, `$${totals.profit.toFixed(2)}`,
-            totals.expenses > 0 ? `$${totals.expenses.toFixed(2)}` : '—',
-            totals.takeouts > 0 ? `-$${totals.takeouts.toFixed(2)}` : '—',
-            totals.shifts, totals.transactions, totals.tasks,
-        ]],
-        styles: { fontSize: 7.5, cellPadding: 2.5 },
-        headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-        footStyles: { fillColor: [241, 245, 249], fontStyle: 'bold', textColor: [15, 23, 42] },
-        columnStyles: {
-            1: { textColor: [22, 163, 74] }, 2: { textColor: [220, 38, 38] },
-            4: { fontStyle: 'bold' },
-        },
-    });
+//     autoTable(doc, {
+//         startY: 74,
+//         head: [['Date', 'Deposits', 'Cashouts', 'Bonuses', 'Net Profit', 'Expenses', 'Takeouts', 'Shifts', 'Txns', 'Tasks']],
+//         body: [
+//             ...reports.map(r => {
+//                 const s = r.summary || {};
+//                 const exp = aggregateDayExpenses(r).reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
+//                 const take = aggregateDayTakeouts(r).reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+//                 return [
+//                     fmtDateShort(r.date + 'T12:00:00'),
+//                     `$${(s.totalDeposits || 0).toFixed(2)}`,
+//                     `$${(s.totalCashouts || 0).toFixed(2)}`,
+//                     `$${(s.totalBonuses || 0).toFixed(2)}`,
+//                     `$${(s.netProfit || 0).toFixed(2)}`,
+//                     exp > 0 ? `$${exp.toFixed(2)}` : '—',
+//                     take > 0 ? `-$${take.toFixed(2)}` : '—',
+//                     s.totalShifts ?? 0, s.transactionCount ?? 0, s.tasksCompleted ?? 0,
+//                 ];
+//             }),
+//         ],
+//         foot: [[
+//             `TOTAL (${reports.length} days)`,
+//             `$${totals.deposits.toFixed(2)}`, `$${totals.cashouts.toFixed(2)}`,
+//             `$${totals.bonuses.toFixed(2)}`, `$${totals.profit.toFixed(2)}`,
+//             totals.expenses > 0 ? `$${totals.expenses.toFixed(2)}` : '—',
+//             totals.takeouts > 0 ? `-$${totals.takeouts.toFixed(2)}` : '—',
+//             totals.shifts, totals.transactions, totals.tasks,
+//         ]],
+//         styles: { fontSize: 7.5, cellPadding: 2.5 },
+//         headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+//         alternateRowStyles: { fillColor: [248, 250, 252] },
+//         footStyles: { fillColor: [241, 245, 249], fontStyle: 'bold', textColor: [15, 23, 42] },
+//         columnStyles: {
+//             1: { textColor: [22, 163, 74] }, 2: { textColor: [220, 38, 38] },
+//             4: { fontStyle: 'bold' },
+//         },
+//     });
 
-    // ── All expenses (page 2+) ───────────────────────────────────
-    const allExpenses = reports.flatMap(r => aggregateDayExpenses(r).map(e => ({ ...e, _date: r.date })));
-    if (allExpenses.length > 0) {
-        doc.addPage();
-        const expTotal = allExpenses.reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
-        doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(180, 83, 9);
-        doc.text(`All Expenses — ${allExpenses.length} items · Total: ${fmtMoney(expTotal)}`, 14, 16);
-        autoTable(doc, {
-            startY: 22,
-            head: [['Date', 'Time', 'Shift', 'Details', 'Category', 'Game', 'Amount', 'Pts Added', 'Notes']],
-            body: allExpenses.map(e => [
-                fmtDateShort((e._date || '') + 'T12:00:00'),
-                fmtTime(e.createdAt),
-                ROLE_LABEL[e._teamRole] || e._teamRole || '—',
-                e.details || '—',
-                (e.category || '—').replace(/_/g, ' '),
-                e.game?.name || '—',
-                `$${(e.amount ?? 0).toFixed(2)}`,
-                (e.pointsAdded ?? 0) > 0 ? `+${e.pointsAdded} pts` : '—',
-                e.notes || '—',
-            ]),
-            styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'ellipsize' },
-            headStyles: { fillColor: [180, 83, 9], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
-            alternateRowStyles: { fillColor: [255, 251, 235] },
-        });
-    }
+//     // ── All expenses (page 2+) ───────────────────────────────────
+//     const allExpenses = reports.flatMap(r => aggregateDayExpenses(r).map(e => ({ ...e, _date: r.date })));
+//     if (allExpenses.length > 0) {
+//         doc.addPage();
+//         const expTotal = allExpenses.reduce((s, e) => s + parseFloat(e.amount ?? 0), 0);
+//         doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(180, 83, 9);
+//         doc.text(`All Expenses — ${allExpenses.length} items · Total: ${fmtMoney(expTotal)}`, 14, 16);
+//         autoTable(doc, {
+//             startY: 22,
+//             head: [['Date', 'Time', 'Shift', 'Details', 'Category', 'Game', 'Amount', 'Pts Added', 'Notes']],
+//             body: allExpenses.map(e => [
+//                 fmtDateShort((e._date || '') + 'T12:00:00'),
+//                 fmtTime(e.createdAt),
+//                 ROLE_LABEL[e._teamRole] || e._teamRole || '—',
+//                 e.details || '—',
+//                 (e.category || '—').replace(/_/g, ' '),
+//                 e.game?.name || '—',
+//                 `$${(e.amount ?? 0).toFixed(2)}`,
+//                 (e.pointsAdded ?? 0) > 0 ? `+${e.pointsAdded} pts` : '—',
+//                 e.notes || '—',
+//             ]),
+//             styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'ellipsize' },
+//             headStyles: { fillColor: [180, 83, 9], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+//             alternateRowStyles: { fillColor: [255, 251, 235] },
+//         });
+//     }
 
-    // ── All takeouts ─────────────────────────────────────────────
-    const allTakeouts = reports.flatMap(r => aggregateDayTakeouts(r).map(t => ({ ...t, _date: r.date })));
-    if (allTakeouts.length > 0) {
-        doc.addPage();
-        const takeTotal = allTakeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
-        doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(153, 27, 27);
-        doc.text(`All Profit Takeouts — ${allTakeouts.length} records · Total: −${fmtMoney(takeTotal)}`, 14, 16);
-        autoTable(doc, {
-            startY: 22,
-            head: [['Date', 'Time', 'Shift', 'Taken By', 'Method', 'Amount', 'Wallet', 'Notes']],
-            body: allTakeouts.map(t => [
-                fmtDateShort((t._date || '') + 'T12:00:00'),
-                fmtTime(t.takenAt || t._shiftTime),
-                ROLE_LABEL[t._teamRole] || t._teamRole || '—',
-                t.takenBy, t.method || 'Cash',
-                `-$${parseFloat(t.amount ?? 0).toFixed(2)}`,
-                t.walletId ? `Wallet #${t.walletId}` : '—',
-                t.notes || '—',
-            ]),
-            styles: { fontSize: 7.5, cellPadding: 2.5 },
-            headStyles: { fillColor: [153, 27, 27], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
-            alternateRowStyles: { fillColor: [255, 241, 242] },
-        });
-    }
+//     // ── All takeouts ─────────────────────────────────────────────
+//     const allTakeouts = reports.flatMap(r => aggregateDayTakeouts(r).map(t => ({ ...t, _date: r.date })));
+//     if (allTakeouts.length > 0) {
+//         doc.addPage();
+//         const takeTotal = allTakeouts.reduce((s, t) => s + parseFloat(t.amount ?? 0), 0);
+//         doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(153, 27, 27);
+//         doc.text(`All Profit Takeouts — ${allTakeouts.length} records · Total: −${fmtMoney(takeTotal)}`, 14, 16);
+//         autoTable(doc, {
+//             startY: 22,
+//             head: [['Date', 'Time', 'Shift', 'Taken By', 'Method', 'Amount', 'Wallet', 'Notes']],
+//             body: allTakeouts.map(t => [
+//                 fmtDateShort((t._date || '') + 'T12:00:00'),
+//                 fmtTime(t.takenAt || t._shiftTime),
+//                 ROLE_LABEL[t._teamRole] || t._teamRole || '—',
+//                 t.takenBy, t.method || 'Cash',
+//                 `-$${parseFloat(t.amount ?? 0).toFixed(2)}`,
+//                 t.walletId ? `Wallet #${t.walletId}` : '—',
+//                 t.notes || '—',
+//             ]),
+//             styles: { fontSize: 7.5, cellPadding: 2.5 },
+//             headStyles: { fillColor: [153, 27, 27], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+//             alternateRowStyles: { fillColor: [255, 241, 242] },
+//         });
+//     }
 
-    // ── Footer every page ────────────────────────────────────────
-    const total = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= total; i++) {
-        doc.setPage(i);
-        doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
-        doc.text(
-            `Confidential · Range Report · ${startDate} to ${endDate} · Page ${i} of ${total}`,
-            W / 2, doc.internal.pageSize.height - 6, { align: 'center' }
-        );
-    }
+//     // ── Footer every page ────────────────────────────────────────
+//     const total = doc.internal.getNumberOfPages();
+//     for (let i = 1; i <= total; i++) {
+//         doc.setPage(i);
+//         doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
+//         doc.text(
+//             `Confidential · Range Report · ${startDate} to ${endDate} · Page ${i} of ${total}`,
+//             W / 2, doc.internal.pageSize.height - 6, { align: 'center' }
+//         );
+//     }
 
-    doc.save(`range-report-${startDate}-to-${endDate}.pdf`);
-}
+//     doc.save(`range-report-${startDate}-to-${endDate}.pdf`);
+// }
 
 // ══════════════════════════════════════════════════════════════
 // MAIN PAGE
