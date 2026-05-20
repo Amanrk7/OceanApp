@@ -23,6 +23,8 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
+import { CurrentUserContext } from "../Context/currentUser";
+
 
 // ─── Config ───────────────────────────────────────────────────
 const API = import.meta.env.VITE_API_URL ?? "";
@@ -1413,6 +1415,8 @@ function TaskGroup({ title, tasks, color, defaultOpen = true, renderTask }) {
 export default function TeamDashboard({ currentUser, isAdmin = false, viewingMember = null }) {
   // const { shiftActive } = useContext(ShiftStatusContext);
   const { shiftActive, shiftLoading } = useContext(ShiftStatusContext);
+  const { usr } = useContext(CurrentUserContext);
+
   const navigate = useNavigate();
 
   const [tasks, setTasks] = useState([]);
@@ -1582,7 +1586,7 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
   };
 
   // ── Shift guard ────────────────────────────────────────────
-  if (shiftLoading) {
+  if (shiftLoading && !isAdmin) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <div
@@ -1619,7 +1623,7 @@ export default function TeamDashboard({ currentUser, isAdmin = false, viewingMem
       </div>
     );
   }
-  if (!shiftActive) {
+  if (!shiftActive && !isAdmin) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <button onClick={() => navigate('/shifts')} style={{ alignSelf: "flex-start", padding: "9px 18px", background: "var(--color-background-info)", color: "var(--color-text-info)", border: "0.5px solid var(--color-border-info)", borderRadius: "var(--border-radius-md)", fontWeight: "500", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
