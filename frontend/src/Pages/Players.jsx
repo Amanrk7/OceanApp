@@ -5,7 +5,7 @@ import AddNewPlayer from './AddNewPlayer';
 import EditPlayer from './Editplayer';
 import { AddPlayerContext } from "../Context/addPlayer";
 import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlayerNamecontext';
-import { Search, Plus, RefreshCw, Eye, Pencil, Trash2, ChevronLeft, ChevronRight, Users, TrendingUp, AlertTriangle, UserX } from 'lucide-react';
+import { Search, Plus, RefreshCw, Eye, Pencil, Trash2, ChevronLeft, ChevronRight, Users, TrendingUp, AlertTriangle, UserX, Download  } from 'lucide-react';
 import { FaFacebookF, FaInstagram, FaSnapchatGhost, FaTelegramPlane } from "react-icons/fa";
 import { SiGmail, SiX } from "react-icons/si";
 
@@ -165,7 +165,143 @@ function DeleteModal({ player, onClose, onDeleted }) {
 }
 
 const TH = { padding: '10px 16px', fontWeight: '700', fontSize: '11px', color: C.grayLt, textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left', borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap', background: C.bg };
+async function downloadPlayersPDF(filterTab, searchTerm) {
+  // Fetch all players (no pagination)
+  const result = await api.players.getPlayers(1, 9999, searchTerm, filterTab === 'all' ? '' : filterTab);
+  const players = result?.data || [];
 
+  const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+  const SOCIAL_KEYS = ['email', 'phone', 'facebook', 'telegram', 'instagram', 'x', 'snapchat'];
+
+  const TIER_COLORS = {
+    GOLD:   { bg: '#fef3c7', text: '#92400e' },
+    SILVER: { bg: '#e0e7ff', text: '#3730a3' },
+    BRONZE: { bg: '#fff7ed', text: '#9a3412' },
+  };
+  const STATUS_COLORS = {
+    ACTIVE:          { bg: '#f0fdf4', text: '#15803d' },
+    CRITICAL:        { bg: '#fefce8', text: '#854d0e' },
+    HIGHLY_CRITICAL: { bg: '#fff7ed', text: '#9a3412' },
+    INACTIVE:        { bg: '#fef2f2', text: '#991b1b' },
+    UNREACHABLE:     { bg: '#fdf4ff', text: '#86198f' },
+  };
+
+  const css = `
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; color: #0f172a; background: #fff; padding: 28px 32px; }
+    h1 { font-size: 20px; font-weight: 800; color: #0f172a; }
+    .sub { font-size: 11px; color: #64748b; margin-top: 3px; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+    th { background: #f8fafc; text-align: left; padding: 8px 10px; font-weight: 700; color: #64748b;
+         font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px;
+         border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+    td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    tr:hover td { background: #f8fafc; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; }
+    .social { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; color: #475569;
+              background: #f1f5f9; padding: 1px 6px; border-radius: 4px; margin: 1px; }
+    .missing { color: #94a3b8; font-style: italic; }
+    .mono { font-family: monospace; }
+    button { padding: 9px 18px; background: #0f172a; color: #fff; border: none; border-radius: 7px;
+             font-weight: 700; font-size: 12px; cursor: pointer; }
+    .stats { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .stat { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; min-width: 100px; }
+    .stat-val { font-size: 20px; font-weight: 800; color: #0f172a; }
+    .stat-lbl { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+    @media print { button { display: none; } body { padding: 14px; } }
+  `;
+
+  // Summary stats
+  const totalBalance = players.reduce((s, p) => s + parseFloat(p.balance || 0), 0);
+  const statuses = {};
+  players.forEach(p => { statuses[p.status] = (statuses[p.status] || 0) + 1; });
+
+  const statsHtml = `
+    <div class="stats">
+      <div class="stat"><div class="stat-val">${players.length}</div><div class="stat-lbl">Total Players</div></div>
+      <div class="stat"><div class="stat-val" style="color:#15803d">${statuses.ACTIVE || 0}</div><div class="stat-lbl">Active</div></div>
+      <div class="stat"><div class="stat-val" style="color:#854d0e">${(statuses.CRITICAL || 0) + (statuses.HIGHLY_CRITICAL || 0)}</div><div class="stat-lbl">Critical</div></div>
+      <div class="stat"><div class="stat-val" style="color:#991b1b">${statuses.INACTIVE || 0}</div><div class="stat-lbl">Inactive</div></div>
+      <div class="stat"><div class="stat-val" style="color:#86198f">${statuses.UNREACHABLE || 0}</div><div class="stat-lbl">Unreachable</div></div>
+      <div class="stat"><div class="stat-val" style="color:#10b981">$${totalBalance.toFixed(2)}</div><div class="stat-lbl">Total Balance</div></div>
+    </div>`;
+
+  const rows = players.map((p, i) => {
+    const tier = TIER_COLORS[p.tier] || TIER_COLORS.BRONZE;
+    const status = STATUS_COLORS[p.status] || STATUS_COLORS.ACTIVE;
+    const socials = p.socials || {};
+    const presentSocials = SOCIAL_KEYS.filter(k => socials[k]);
+    const missingSocials = SOCIAL_KEYS.filter(k => !socials[k]);
+
+    return `
+      <tr style="background:${i % 2 === 0 ? '#fff' : '#fcfcfc'}">
+        <td style="font-weight:700">${i + 1}</td>
+        <td>
+          <div style="font-weight:700;font-size:13px">${p.name || '—'}</div>
+          <div style="font-size:10px;color:#94a3b8;margin-top:1px">@${p.username || '—'}</div>
+        </td>
+        <td>
+          <div style="font-size:11px;color:#475569">${socials.email || '<span class="missing">—</span>'}</div>
+          ${socials.phone ? `<div style="font-size:10px;color:#94a3b8;margin-top:1px">${socials.phone}</div>` : ''}
+        </td>
+        <td><span class="badge" style="background:${tier.bg};color:${tier.text}">${p.tier || 'BRONZE'}</span></td>
+        <td><span class="badge" style="background:${status.bg};color:${status.text}">${p.status || 'ACTIVE'}</span></td>
+        <td class="mono" style="font-weight:800;color:#10b981;font-size:13px">$${parseFloat(p.balance || 0).toFixed(2)}</td>
+        <td>
+          <span class="badge" style="background:#f0fdf4;color:#15803d;font-size:10px">$${parseFloat(p.cashoutLimit || 250).toFixed(0)}</span>
+        </td>
+        <td>
+          <div style="display:flex;flex-wrap:wrap;gap:2px">
+            ${presentSocials.map(k => `<span class="social">✓ ${k}</span>`).join('')}
+            ${missingSocials.map(k => `<span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;color:#cbd5e1;border:1px dashed #e2e8f0;margin:1px">${k}</span>`).join('')}
+          </div>
+        </td>
+        <td style="font-size:11px;color:#64748b">${fmtDate(p.createdAt)}</td>
+      </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head>
+    <meta charset="utf-8"/>
+    <title>Players Export — ${new Date().toLocaleDateString()}</title>
+    <style>${css}</style>
+  </head><body>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+      <div>
+        <h1>Players Export</h1>
+        <p class="sub">
+          Generated ${new Date().toLocaleString()}
+          ${filterTab !== 'all' ? ` · Filter: ${filterTab}` : ''}
+          ${searchTerm ? ` · Search: "${searchTerm}"` : ''}
+        </p>
+      </div>
+      <button onclick="window.print()">Print / Save PDF</button>
+    </div>
+    ${statsHtml}
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Player</th>
+          <th>Contact</th>
+          <th>Tier</th>
+          <th>Status</th>
+          <th>Balance</th>
+          <th>Cashout Limit</th>
+          <th>Socials</th>
+          <th>Joined</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <p style="margin-top:20px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:10px">
+      Confidential · Players Export · ${players.length} records · ${new Date().toISOString()}
+    </p>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+}
 export default function Players() {
     const location = useLocation();
     const navigate = useNavigate();
@@ -304,10 +440,15 @@ const loadPlayers = useCallback(async () => {
                         <RefreshCw style={{ width: '13px', height: '13px', animation: loading ? 'spin 1s linear infinite' : 'none' }} />
                         Refresh
                     </button>
-                    <button onClick={() => setAddPlayer(true)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 18px', background: C.sky, color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit' }}>
-                        <Plus style={{ width: '14px', height: '14px' }} /> Add player
-                    </button>
+                    
+                    <button onClick={() => downloadPlayersPDF(filterTab, searchTerm)}
+  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', background: C.white, border: `1px solid ${C.border}`, borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer', color: C.gray, fontFamily: 'inherit' }}>
+  <Download style={{ width: '13px', height: '13px' }} /> Export PDF
+</button>
+<button onClick={() => setAddPlayer(true)}
+  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 18px', background: C.sky, color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit' }}>
+  <Plus style={{ width: '14px', height: '14px' }} /> Add player
+</button>
                 </div>
             </div>
 
