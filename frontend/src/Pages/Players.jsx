@@ -8,6 +8,8 @@ import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlay
 import { Search, Plus, RefreshCw, Eye, Pencil, Trash2, ChevronLeft, ChevronRight, Users, TrendingUp, AlertTriangle, UserX, Download  } from 'lucide-react';
 import { FaFacebookF, FaInstagram, FaSnapchatGhost, FaTelegramPlane } from "react-icons/fa";
 import { SiGmail, SiX } from "react-icons/si";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const C = {
     sky: '#0ea5e9', skyDk: '#0284c7', skyLt: '#f0f9ff',
@@ -165,142 +167,109 @@ function DeleteModal({ player, onClose, onDeleted }) {
 }
 
 const TH = { padding: '10px 16px', fontWeight: '700', fontSize: '11px', color: C.grayLt, textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left', borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap', background: C.bg };
+
+
 async function downloadPlayersPDF(filterTab, searchTerm) {
-  // Fetch all players (no pagination)
   const result = await api.players.getPlayers(1, 9999, searchTerm, filterTab === 'all' ? '' : filterTab);
   const players = result?.data || [];
 
-  const fmtDate = iso => iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-  const SOCIAL_KEYS = ['email', 'phone', 'facebook', 'telegram', 'instagram', 'x', 'snapchat'];
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
-  const TIER_COLORS = {
-    GOLD:   { bg: '#fef3c7', text: '#92400e' },
-    SILVER: { bg: '#e0e7ff', text: '#3730a3' },
-    BRONZE: { bg: '#fff7ed', text: '#9a3412' },
-  };
-  const STATUS_COLORS = {
-    ACTIVE:          { bg: '#f0fdf4', text: '#15803d' },
-    CRITICAL:        { bg: '#fefce8', text: '#854d0e' },
-    HIGHLY_CRITICAL: { bg: '#fff7ed', text: '#9a3412' },
-    INACTIVE:        { bg: '#fef2f2', text: '#991b1b' },
-    UNREACHABLE:     { bg: '#fdf4ff', text: '#86198f' },
-  };
+  // ── Header ─────────────────────────────────────────────────
+  doc.setFontSize(18); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
+  doc.text('Players Export', 14, 18);
 
-  const css = `
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; color: #0f172a; background: #fff; padding: 28px 32px; }
-    h1 { font-size: 20px; font-weight: 800; color: #0f172a; }
-    .sub { font-size: 11px; color: #64748b; margin-top: 3px; margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
-    th { background: #f8fafc; text-align: left; padding: 8px 10px; font-weight: 700; color: #64748b;
-         font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px;
-         border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
-    td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-    tr:hover td { background: #f8fafc; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; }
-    .social { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; color: #475569;
-              background: #f1f5f9; padding: 1px 6px; border-radius: 4px; margin: 1px; }
-    .missing { color: #94a3b8; font-style: italic; }
-    .mono { font-family: monospace; }
-    button { padding: 9px 18px; background: #0f172a; color: #fff; border: none; border-radius: 7px;
-             font-weight: 700; font-size: 12px; cursor: pointer; }
-    .stats { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-    .stat { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; min-width: 100px; }
-    .stat-val { font-size: 20px; font-weight: 800; color: #0f172a; }
-    .stat-lbl { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
-    @media print { button { display: none; } body { padding: 14px; } }
-  `;
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+  doc.text(
+    `Generated: ${new Date().toLocaleString()} · ${players.length} players` +
+    (filterTab !== 'all' ? ` · Filter: ${filterTab}` : '') +
+    (searchTerm ? ` · Search: "${searchTerm}"` : ''),
+    14, 25
+  );
 
-  // Summary stats
-  const totalBalance = players.reduce((s, p) => s + parseFloat(p.balance || 0), 0);
-  const statuses = {};
-  players.forEach(p => { statuses[p.status] = (statuses[p.status] || 0) + 1; });
+  // ── Summary strip ───────────────────────────────────────────
+  const totalBal = players.reduce((s, p) => s + parseFloat(p.balance || 0), 0);
+  const statuses = players.reduce((a, p) => { a[p.status] = (a[p.status] || 0) + 1; return a; }, {});
+  const summaryItems = [
+    ['Total', players.length],
+    ['Active', statuses.ACTIVE || 0],
+    ['Critical', (statuses.CRITICAL || 0) + (statuses.HIGHLY_CRITICAL || 0)],
+    ['Inactive', statuses.INACTIVE || 0],
+    ['Unreachable', statuses.UNREACHABLE || 0],
+    ['Total Balance', `$${totalBal.toFixed(2)}`],
+  ];
+  let sx = 14;
+  summaryItems.forEach(([label, val]) => {
+    doc.setFillColor(248, 250, 252); doc.roundedRect(sx, 29, 40, 14, 2, 2, 'F');
+    doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
+    doc.text(String(val), sx + 20, 38, { align: 'center' });
+    doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+    doc.text(label.toUpperCase(), sx + 20, 41, { align: 'center' });
+    sx += 43;
+  });
 
-  const statsHtml = `
-    <div class="stats">
-      <div class="stat"><div class="stat-val">${players.length}</div><div class="stat-lbl">Total Players</div></div>
-      <div class="stat"><div class="stat-val" style="color:#15803d">${statuses.ACTIVE || 0}</div><div class="stat-lbl">Active</div></div>
-      <div class="stat"><div class="stat-val" style="color:#854d0e">${(statuses.CRITICAL || 0) + (statuses.HIGHLY_CRITICAL || 0)}</div><div class="stat-lbl">Critical</div></div>
-      <div class="stat"><div class="stat-val" style="color:#991b1b">${statuses.INACTIVE || 0}</div><div class="stat-lbl">Inactive</div></div>
-      <div class="stat"><div class="stat-val" style="color:#86198f">${statuses.UNREACHABLE || 0}</div><div class="stat-lbl">Unreachable</div></div>
-      <div class="stat"><div class="stat-val" style="color:#10b981">$${totalBalance.toFixed(2)}</div><div class="stat-lbl">Total Balance</div></div>
-    </div>`;
+  // ── Table ───────────────────────────────────────────────────
+  const SOCIAL_KEYS = ['facebook', 'telegram', 'instagram', 'x', 'snapchat'];
+  autoTable(doc, {
+    startY: 48,
+    head: [['#', 'Name', 'Username', 'Email', 'Phone', 'Tier', 'Status', 'Balance', 'Limit', 'Socials Present', 'Joined']],
+    body: players.map((p, i) => {
+      const soc = p.socials || {};
+      const present = SOCIAL_KEYS.filter(k => soc[k]).join(', ') || '—';
+      return [
+        i + 1,
+        p.name || '—',
+        `@${p.username || '—'}`,
+        soc.email || '—',
+        soc.phone || '—',
+        p.tier || 'BRONZE',
+        p.status || 'ACTIVE',
+        `$${parseFloat(p.balance || 0).toFixed(2)}`,
+        `$${parseFloat(p.cashoutLimit || 250).toFixed(0)}`,
+        present,
+        p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—',
+      ];
+    }),
+    styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'ellipsize' },
+    headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: {
+      0: { cellWidth: 8, halign: 'center' },
+      7: { textColor: [16, 163, 74], fontStyle: 'bold' },
+      5: { cellWidth: 18 },
+      6: { cellWidth: 22 },
+    },
+    didDrawCell(data) {
+      // Color-code status cells
+      if (data.section === 'body' && data.column.index === 6) {
+        const val = data.cell.text[0];
+        const colors = {
+          ACTIVE: [22, 163, 74], CRITICAL: [180, 83, 9], HIGHLY_CRITICAL: [194, 65, 12],
+          INACTIVE: [153, 27, 27], UNREACHABLE: [134, 25, 143],
+        };
+        if (colors[val]) {
+          doc.setTextColor(...colors[val]);
+          doc.setFontSize(7.5);
+          doc.text(val, data.cell.x + data.cell.padding('left'), data.cell.y + data.cell.height / 2 + 2.5);
+        }
+      }
+    },
+  });
 
-  const rows = players.map((p, i) => {
-    const tier = TIER_COLORS[p.tier] || TIER_COLORS.BRONZE;
-    const status = STATUS_COLORS[p.status] || STATUS_COLORS.ACTIVE;
-    const socials = p.socials || {};
-    const presentSocials = SOCIAL_KEYS.filter(k => socials[k]);
-    const missingSocials = SOCIAL_KEYS.filter(k => !socials[k]);
+  // ── Footer on every page ────────────────────────────────────
+  const total = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7.5); doc.setTextColor(148, 163, 184);
+    doc.text(
+      `Confidential · Players Export · ${players.length} records · Page ${i} of ${total}`,
+      doc.internal.pageSize.width / 2,
+      doc.internal.pageSize.height - 6,
+      { align: 'center' }
+    );
+  }
 
-    return `
-      <tr style="background:${i % 2 === 0 ? '#fff' : '#fcfcfc'}">
-        <td style="font-weight:700">${i + 1}</td>
-        <td>
-          <div style="font-weight:700;font-size:13px">${p.name || '—'}</div>
-          <div style="font-size:10px;color:#94a3b8;margin-top:1px">@${p.username || '—'}</div>
-        </td>
-        <td>
-          <div style="font-size:11px;color:#475569">${socials.email || '<span class="missing">—</span>'}</div>
-          ${socials.phone ? `<div style="font-size:10px;color:#94a3b8;margin-top:1px">${socials.phone}</div>` : ''}
-        </td>
-        <td><span class="badge" style="background:${tier.bg};color:${tier.text}">${p.tier || 'BRONZE'}</span></td>
-        <td><span class="badge" style="background:${status.bg};color:${status.text}">${p.status || 'ACTIVE'}</span></td>
-        <td class="mono" style="font-weight:800;color:#10b981;font-size:13px">$${parseFloat(p.balance || 0).toFixed(2)}</td>
-        <td>
-          <span class="badge" style="background:#f0fdf4;color:#15803d;font-size:10px">$${parseFloat(p.cashoutLimit || 250).toFixed(0)}</span>
-        </td>
-        <td>
-          <div style="display:flex;flex-wrap:wrap;gap:2px">
-            ${presentSocials.map(k => `<span class="social">✓ ${k}</span>`).join('')}
-            ${missingSocials.map(k => `<span style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;color:#cbd5e1;border:1px dashed #e2e8f0;margin:1px">${k}</span>`).join('')}
-          </div>
-        </td>
-        <td style="font-size:11px;color:#64748b">${fmtDate(p.createdAt)}</td>
-      </tr>`;
-  }).join('');
-
-  const html = `<!DOCTYPE html><html><head>
-    <meta charset="utf-8"/>
-    <title>Players Export — ${new Date().toLocaleDateString()}</title>
-    <style>${css}</style>
-  </head><body>
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-      <div>
-        <h1>Players Export</h1>
-        <p class="sub">
-          Generated ${new Date().toLocaleString()}
-          ${filterTab !== 'all' ? ` · Filter: ${filterTab}` : ''}
-          ${searchTerm ? ` · Search: "${searchTerm}"` : ''}
-        </p>
-      </div>
-      <button onclick="window.print()">Print / Save PDF</button>
-    </div>
-    ${statsHtml}
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Player</th>
-          <th>Contact</th>
-          <th>Tier</th>
-          <th>Status</th>
-          <th>Balance</th>
-          <th>Cashout Limit</th>
-          <th>Socials</th>
-          <th>Joined</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <p style="margin-top:20px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #f1f5f9;padding-top:10px">
-      Confidential · Players Export · ${players.length} records · ${new Date().toISOString()}
-    </p>
-  </body></html>`;
-
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
+  doc.save(`players-export-${new Date().toISOString().split('T')[0]}.pdf`);
 }
 export default function Players() {
     const location = useLocation();
