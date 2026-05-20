@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useContext } from 'react';
 import {
   RotateCcw, RefreshCw, CheckCircle, DollarSign,
   ChevronDown, ChevronUp, Clock, AlertCircle, Lock,
-  TrendingUp, TrendingDown, Activity, Search, X,
+  TrendingUp, TrendingDown, Activity, Search, X, User,
 } from 'lucide-react';
 import { api } from '../api';
 import { useNavigate } from 'react-router-dom';
@@ -11,8 +11,6 @@ import { PlayerDashboardPlayerNamecontext } from '../Context/playerDashboardPlay
 import { useToast } from '../Context/toastContext';
 import { CurrentUserContext } from "../Context/currentUser";
 
-
-// ─── Design tokens (mirrors PlaytimePage) ────────────────────────────────────
 const CARD = {
   background: '#fff', borderRadius: '14px', border: '1px solid #e2e8f0',
   boxShadow: '0 2px 12px rgba(15,23,42,.07)',
@@ -27,7 +25,6 @@ const INPUT = {
   boxSizing: 'border-box', background: '#fff', color: '#0f172a', outline: 'none',
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
 const fmtDate = (tx) => {
   const raw = tx.timestamp ?? tx.createdAt ?? tx.date ?? null;
@@ -52,7 +49,55 @@ const amtColor = (type) =>
   ['Deposit', 'Win', 'Bonus', 'Match Bonus', 'Special Bonus', 'Streak Bonus', 'Referral Bonus'].includes(type)
     ? '#10b981' : ['Cashout', 'Loss'].includes(type) ? '#ef4444' : '#64748b';
 
-// ─── Stat card ────────────────────────────────────────────────────────────────
+// ── Role badge colours ────────────────────────────────────────────
+const ROLE_STYLE = {
+  ADMIN:       { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' },
+  SUPER_ADMIN: { bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe' },
+  TEAM1:       { bg: '#f0fdf4', text: '#166534', border: '#86efac' },
+  TEAM2:       { bg: '#fefce8', text: '#854d0e', border: '#fde68a' },
+  TEAM3:       { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' },
+  TEAM4:       { bg: '#fdf4ff', text: '#6b21a8', border: '#e879f9' },
+  TEAM5:       { bg: '#eff6ff', text: '#0369a1', border: '#bae6fd' },
+  TEAM6:       { bg: '#f0fdf4', text: '#065f46', border: '#6ee7b7' },
+  TEAM7:       { bg: '#fdf2f8', text: '#9d174d', border: '#f9a8d4' },
+  TEAM8:       { bg: '#fefce8', text: '#713f12', border: '#fde047' },
+};
+
+// ── Performer pill — shows who performed the transaction ──────────
+function PerformerPill({ performer }) {
+  if (!performer) {
+    return (
+      <span style={{
+        fontSize: '11px', color: '#cbd5e1', fontStyle: 'italic',
+        display: 'inline-flex', alignItems: 'center', gap: '3px',
+      }}>
+        <User size={10} /> system
+      </span>
+    );
+  }
+  const style = ROLE_STYLE[performer.role] || { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' };
+  const shortRole = performer.role.replace('TEAM', 'T').replace('_ADMIN', '');
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+      <span style={{
+        fontSize: '12px', fontWeight: '700', color: '#0f172a',
+        display: 'inline-flex', alignItems: 'center', gap: '4px',
+      }}>
+        <User size={11} color="#64748b" />
+        {performer.name}
+      </span>
+      <span style={{
+        display: 'inline-block', padding: '1px 7px', borderRadius: '99px',
+        fontSize: '10px', fontWeight: '700',
+        background: style.bg, color: style.text, border: `1px solid ${style.border}`,
+        letterSpacing: '0.3px',
+      }}>
+        {shortRole}
+      </span>
+    </div>
+  );
+}
+
 function StatCard({ icon: Icon, label, value, sub, color, bg, border }) {
   return (
     <div style={{ ...CARD, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -68,7 +113,6 @@ function StatCard({ icon: Icon, label, value, sub, color, bg, border }) {
   );
 }
 
-// ─── Alert banner ─────────────────────────────────────────────────────────────
 function Banner({ type, msg, onDismiss }) {
   if (!msg) return null;
   const s = type === 'success'
@@ -88,7 +132,6 @@ function Banner({ type, msg, onDismiss }) {
   );
 }
 
-// ─── Payment progress bar ─────────────────────────────────────────────────────
 function PaymentProgress({ paid, total }) {
   const pct = total > 0 ? Math.min((paid / total) * 100, 100) : 0;
   const remaining = Math.max(total - paid, 0);
@@ -106,7 +149,6 @@ function PaymentProgress({ paid, total }) {
   );
 }
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status, paidAmount, totalAmount }) {
   const isPartial = status === 'PENDING' && paidAmount > 0 && paidAmount < totalAmount;
   if (isPartial) return <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', background: '#fef3c7', color: '#92400e' }}>PARTIAL</span>;
@@ -114,7 +156,6 @@ function StatusBadge({ status, paidAmount, totalAmount }) {
   return <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', background: s.bg, color: s.text }}>{status}</span>;
 }
 
-// ─── Partial pay panel ────────────────────────────────────────────────────────
 function PartialPayPanel({ tx, onClose, onSuccess, onError }) {
   const remaining = Math.max((parseFloat(tx.amount) || 0) - (parseFloat(tx.paidAmount) || 0), 0);
   const [amount, setAmount] = useState('');
@@ -122,19 +163,17 @@ function PartialPayPanel({ tx, onClose, onSuccess, onError }) {
   const [markFull, setMarkFull] = useState(false);
   const payAmt = markFull ? remaining : (parseFloat(amount) || 0);
   const invalid = !markFull && (payAmt <= 0 || payAmt > remaining);
+  const { add: toast } = useToast();
 
   const handle = async () => {
     if (invalid && !markFull) return;
     try {
       setSubmitting(true);
       await api.transactions.partialPayment(String(tx.id).replace(/\D/g, ''), { amount: payAmt });
-
       toast(`Partial payment of ${fmt(payAmt)} recorded for #${tx.id}.`, 'success');
-
     } catch (err) {
       toast(err.message || 'Partial payment failed.', "error");
-    }
-    finally { setSubmitting(false); }
+    } finally { setSubmitting(false); }
   };
 
   return (
@@ -168,9 +207,9 @@ function PartialPayPanel({ tx, onClose, onSuccess, onError }) {
   );
 }
 
-// ─── Transaction row ──────────────────────────────────────────────────────────
 function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess, onError }) {
   const { setSelectedPlayer } = useContext(PlayerDashboardPlayerNamecontext);
+  const { add: toast } = useToast();
   const navigate = useNavigate();
   const [showPartial, setShowPartial] = useState(false);
   const [hover, setHover] = useState(false);
@@ -294,6 +333,11 @@ function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess
           })() : <span style={{ color: '#e2e8f0' }}>—</span>}
         </td>
 
+        {/* ── NEW: Performed by ── */}
+        <td style={{ ...TD, minWidth: '120px' }}>
+          <PerformerPill performer={tx.performedBy} />
+        </td>
+
         {/* Status */}
         <td style={TD}>
           <StatusBadge status={tx.status} paidAmount={paidAmount} totalAmount={totalAmount} />
@@ -336,18 +380,11 @@ function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess
 
       {showPartial && (
         <tr style={{ borderBottom: '1px solid #f1f5f9', background: '#fffdf5' }}>
-          <td colSpan={12} style={{ padding: 0 }}>
+          <td colSpan={13} style={{ padding: 0 }}>
             <PartialPayPanel tx={tx}
               onClose={() => setShowPartial(false)}
-              onSuccess={msg => {
-                setShowPartial(false);
-                toast(`${msg}`, 'success');
-
-              }}
-              onError={msg => {
-                setShowPartial(false);
-                toast(msg, "error");
-              }} />
+              onSuccess={msg => { setShowPartial(false); toast(`${msg}`, 'success'); }}
+              onError={msg => { setShowPartial(false); toast(msg, "error"); }} />
           </td>
         </tr>
       )}
@@ -355,7 +392,6 @@ function TxRow({ tx, undoingId, approvingId, onUndo, onApprove, onPartialSuccess
   );
 }
 
-// ─── Locked screen ────────────────────────────────────────────────────────────
 function LockedScreen() {
   const navigate = useNavigate();
   return (
@@ -379,9 +415,7 @@ function LockedScreen() {
   );
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Transactions() {
-  // const { shiftActive } = useContext(ShiftStatusContext);
   const { add: toast } = useToast();
   const { shiftActive, shiftLoading } = useContext(ShiftStatusContext);
   const { usr } = useContext(CurrentUserContext);
@@ -410,8 +444,7 @@ export default function Transactions() {
       setData(await api.transactions.getTransactions(page, LIMIT, '', status, force));
     } catch (e) {
       toast(e.message || 'Failed to load', "error");
-    }
-    finally { setLoading(false); }
+    } finally { setLoading(false); }
   }, [currentPage, filterTab]);
 
   useEffect(() => { load(currentPage, filterTab); }, [currentPage, filterTab]);
@@ -420,7 +453,6 @@ export default function Transactions() {
   const pagination = data?.pagination || { page: 1, limit: LIMIT, total: 0, pages: 1 };
   const pendingCount = transactions.filter(t => isCashout(t) && t.status === 'PENDING').length;
 
-  // Stats for the top strip
   const totalAmt = transactions.reduce((s, t) => s + (t.type === 'Deposit' ? parseFloat(t.amount) : 0), 0);
   const cashoutAmt = transactions.reduce((s, t) => s + (isCashout(t) && t.status === 'COMPLETED' ? parseFloat(t.amount) : 0), 0);
   const bonusAmt = transactions.reduce((s, t) => s + (t.type?.includes('Bonus') && t.status === 'COMPLETED' ? parseFloat(t.amount) : 0), 0);
@@ -433,11 +465,9 @@ export default function Transactions() {
       api.clearCache?.();
       await load(currentPage, filterTab, true);
       toast(`Transaction #${id} reversed.`, 'success');
-
     } catch (e) {
       toast(e.message || 'Undo failed', "error");
-    }
-    finally { setUndoingId(null); }
+    } finally { setUndoingId(null); }
   };
 
   const handleApprove = async (id) => {
@@ -448,17 +478,22 @@ export default function Transactions() {
       api.clearCache?.();
       await load(currentPage, filterTab, true);
       toast(`Cashout #${id} completed.`, 'success');
-
     } catch (e) {
       toast(e.message || 'Approval failed', "error");
-    }
-    finally { setApprovingId(null); }
+    } finally { setApprovingId(null); }
   };
 
   const filtered = transactions.filter(t => {
     if (!search.trim()) return true;
     const s = search.toLowerCase();
-    return String(t.id)?.toLowerCase().includes(s) || t.playerName?.toLowerCase().includes(s) || t.email?.toLowerCase().includes(s) || t.gameName?.toLowerCase().includes(s) || t.walletMethod?.toLowerCase().includes(s);
+    return (
+      String(t.id)?.toLowerCase().includes(s) ||
+      t.playerName?.toLowerCase().includes(s) ||
+      t.email?.toLowerCase().includes(s) ||
+      t.gameName?.toLowerCase().includes(s) ||
+      t.walletMethod?.toLowerCase().includes(s) ||
+      t.performedBy?.name?.toLowerCase().includes(s)   // ← search by performer name
+    );
   });
 
   const TABS = [
@@ -467,40 +502,15 @@ export default function Transactions() {
     { id: 'completed', label: 'Completed', badge: null },
   ];
 
-  const COLS = ['ID', 'Player', 'Type', 'Amount', 'Fee', 'Received / Paid', 'Game', 'Wallet', 'Points', 'Status', 'Date', 'Actions'];
+  // Updated: added "By" column
+  const COLS = ['ID', 'Player', 'Type', 'Amount', 'Fee', 'Received / Paid', 'Game', 'Wallet', 'Points', 'By', 'Status', 'Date', 'Actions'];
 
   if (shiftLoading && !isAdmin) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <div
-          style={{
-            padding: "60px 24px",
-            textAlign: "center",
-            background: "var(--color-background-primary)",
-            borderRadius: "var(--border-radius-lg)",
-            border: "0.5px solid var(--color-border-tertiary)",
-          }}
-        >
-          <div
-            style={{
-              width: "32px",
-              height: "32px",
-              border: "3px solid var(--color-border-tertiary)",
-              borderTopColor: "#0ea5e9",
-              borderRadius: "50%",
-              margin: "0 auto 12px",
-              animation: "spin 0.8s linear infinite",
-            }}
-          />
-          <p
-            style={{
-              margin: 0,
-              fontSize: "13px",
-              color: "var(--color-text-tertiary)",
-            }}
-          >
-            Checking shift status…
-          </p>
+        <div style={{ padding: "60px 24px", textAlign: "center", background: "var(--color-background-primary)", borderRadius: "var(--border-radius-lg)", border: "0.5px solid var(--color-border-tertiary)" }}>
+          <div style={{ width: "32px", height: "32px", border: "3px solid var(--color-border-tertiary)", borderTopColor: "#0ea5e9", borderRadius: "50%", margin: "0 auto 12px", animation: "spin 0.8s linear infinite" }} />
+          <p style={{ margin: 0, fontSize: "13px", color: "var(--color-text-tertiary)" }}>Checking shift status…</p>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
@@ -511,7 +521,7 @@ export default function Transactions() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
-      {/* ── Stat strip ── */}
+      {/* Stat strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
         <StatCard icon={TrendingUp} label="Deposits (page)" value={fmt(totalAmt)} color="#10b981" bg="#f0fdf4" border="#86efac" />
         <StatCard icon={TrendingDown} label="Cashouts (page)" value={fmt(cashoutAmt)} color="#ef4444" bg="#fee2e2" border="#fca5a5" />
@@ -519,7 +529,7 @@ export default function Transactions() {
         <StatCard icon={Clock} label="Pending cashouts" value={pendingCount} color="#0ea5e9" bg="#f0f9ff" border="#bae6fd" sub="awaiting approval" />
       </div>
 
-      {/* ── Banners ── */}
+      {/* Pending banner */}
       {pendingCount > 0 && filterTab !== 'pending' && (
         <div style={{ padding: '11px 16px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', color: '#92400e', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
@@ -534,21 +544,21 @@ export default function Transactions() {
       )}
       <Banner type={banner.type} msg={banner.msg} onDismiss={() => setBanner({ type: '', msg: '' })} />
 
-      {/* ── Main card ── */}
+      {/* Main card */}
       <div style={{ ...CARD, overflow: 'hidden' }}>
 
         {/* Toolbar */}
         <div style={{ padding: '14px 18px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px', minWidth: 0 }}>
             <div style={{ fontWeight: '800', fontSize: '14px', color: '#0f172a' }}>Transaction Log</div>
-            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>Deposits, cashouts & bonuses · Cashouts are PENDING until approved</div>
+            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>Deposits, cashouts & bonuses · "By" column shows which team member performed each action</div>
           </div>
 
-          {/* Search */}
+          {/* Search — now also searches performer name */}
           <div style={{ position: 'relative', flex: '0 0 auto' }}>
             <Search style={{ position: 'absolute', left: '9px', top: '50%', transform: 'translateY(-50%)', width: '13px', height: '13px', color: '#94a3b8', pointerEvents: 'none' }} />
-            <input type="text" placeholder="Player, game, wallet…" value={search} onChange={e => { setSearch(e.target.value); setCurrPage(1); }}
-              style={{ ...INPUT, paddingLeft: '30px', paddingRight: search ? '28px' : '12px', width: '190px', padding: '8px 28px 8px 30px', fontSize: '12px' }} />
+            <input type="text" placeholder="Player, team member, game…" value={search} onChange={e => { setSearch(e.target.value); setCurrPage(1); }}
+              style={{ ...INPUT, paddingLeft: '30px', paddingRight: search ? '28px' : '12px', width: '210px', padding: '8px 28px 8px 30px', fontSize: '12px' }} />
             {search && (
               <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '7px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex' }}>
                 <X style={{ width: '12px', height: '12px' }} />
@@ -573,7 +583,7 @@ export default function Transactions() {
           ))}
         </div>
 
-        {/* Pending workflow hint */}
+        {/* Pending hint */}
         {filterTab === 'pending' && (
           <div style={{ padding: '10px 18px', background: '#f8fafc', borderBottom: '1px solid #f1f5f9', fontSize: '12px', color: '#475569', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span>1️⃣ Cashout recorded → <strong>PENDING</strong></span>
@@ -586,13 +596,9 @@ export default function Transactions() {
 
         {/* Table */}
         {loading ? (
-          // <div style={{ padding: '60px', textAlign: 'center' }}>
-          //   <div style={{ width: '30px', height: '30px', border: '3px solid #e2e8f0', borderTopColor: '#0ea5e9', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 10px' }} />
-          //   <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>Loading transactions…</p>
-          // </div>
           <div style={{ padding: "40px 0", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: 13 }}>
             <RefreshCw style={{ width: 14, height: 14, margin: "0 auto 8px", display: "block", animation: "smartSpin .8s linear infinite" }} />
-            Loading tasks…
+            Loading transactions…
           </div>
         ) : (
           <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '60vh', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f8fafc' }}>
@@ -600,7 +606,13 @@ export default function Transactions() {
               <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                 <tr>
                   {COLS.map(h => (
-                    <th key={h} style={{ textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.5px', borderBottom: '2px solid #e2e8f0', whiteSpace: 'nowrap', background: '#f8fafc' }}>{h}</th>
+                    <th key={h} style={{
+                      textAlign: 'left', padding: '10px 14px', fontWeight: '700', color: '#64748b',
+                      textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.5px',
+                      borderBottom: '2px solid #e2e8f0', whiteSpace: 'nowrap', background: '#f8fafc',
+                      // Highlight the new column header
+                      ...(h === 'By' ? { color: '#0ea5e9', background: '#f0f9ff' } : {}),
+                    }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -612,7 +624,6 @@ export default function Transactions() {
                     onPartialSuccess={async msg => {
                       api.clearCache?.(); await load(currentPage, filterTab, true);
                       toast(msg, 'success');
-
                     }}
                     onError={msg => { toast(msg || 'An error occurred', "error"); }} />
                 )) : (
@@ -643,7 +654,12 @@ export default function Transactions() {
         )}
       </div>
 
-      <style>{`@keyframes smartSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } ::-webkit-scrollbar { width: 5px; height: 5px; } ::-webkit-scrollbar-track { background: #f8fafc; } ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }`}</style>
+      <style>{`
+        @keyframes smartSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+      `}</style>
     </div>
   );
 }
