@@ -97,27 +97,27 @@ function FieldError({ message }) {
 
 const SOCIAL_RULES = {
   facebook: {
-    pattern: /^[a-zA-Z0-9.]{1,50}$|^https?:\/\/(www\.)?(facebook\.com|fb\.com|m\.facebook\.com)\/.{1,200}$/,
-    hint: 'Handle (1–50 chars) or full facebook.com URL',
+    pattern: /^[a-zA-Z0-9.]{1,50}$|^https?:\/\/(www\.)?(facebook\.com|fb\.com|m\.facebook\.com)\/.+$/i,
+    hint: 'Handle (1–50 chars) or full facebook.com / fb.com URL',
     url: (h) => h.startsWith('http') ? h : `https://facebook.com/${h}`,
   },
   telegram: {
-    pattern: /^[a-zA-Z][a-zA-Z0-9_]{4,31}$|^https?:\/\/t\.me\/.{1,100}$/,
+    pattern: /^[a-zA-Z][a-zA-Z0-9_]{4,31}$|^https?:\/\/(www\.)?t\.me\/.+$/i,
     hint: '5–32 char handle or t.me URL',
     url: (h) => h.startsWith('http') ? h : `https://t.me/${h}`,
   },
   instagram: {
-    pattern: /^[a-zA-Z0-9._]{1,30}$|^https?:\/\/(www\.)?instagram\.com\/.{1,200}$/,
+    pattern: /^[a-zA-Z0-9._]{1,30}$|^https?:\/\/(www\.)?instagram\.com\/.+$/i,
     hint: '1–30 char handle or instagram.com URL',
     url: (h) => h.startsWith('http') ? h : `https://instagram.com/${h}`,
   },
   x: {
-    pattern: /^[a-zA-Z0-9_]{1,15}$|^https?:\/\/(www\.)?(x\.com|twitter\.com)\/.{1,100}$/,
-    hint: '1–15 char handle or x.com/twitter.com URL',
+    pattern: /^[a-zA-Z0-9_]{1,15}$|^https?:\/\/(www\.)?(x\.com|twitter\.com)\/.+$/i,
+    hint: '1–15 char handle or x.com / twitter.com URL',
     url: (h) => h.startsWith('http') ? h : `https://x.com/${h}`,
   },
   snapchat: {
-    pattern: /^[a-zA-Z][a-zA-Z0-9._-]{1,14}$|^https?:\/\/(www\.)?snapchat\.com\/.{1,200}$/,
+    pattern: /^[a-zA-Z][a-zA-Z0-9._-]{1,14}$|^https?:\/\/(www\.)?snapchat\.com\/.+$/i,
     hint: '2–15 char handle or snapchat.com URL',
     url: (h) => h.startsWith('http') ? h : `https://snapchat.com/add/${h}`,
   },
