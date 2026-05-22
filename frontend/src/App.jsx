@@ -428,13 +428,13 @@ const NAV_ITEMS = [
   { id: "transactions", label: "All Transactions", icon: Invoice02Icon },
   { id: "balances", label: "Live Balances", icon: BalanceScaleIcon, dividerAfter: true },
   { id: "expenses", label: "Expenses", icon: Invoice03Icon, adminsOnly: true },
-  { id: "profitTakeouts", label: "Profit Takeouts", icon: DollarCircleIcon, adminsOnly: true },
+  { id: "profitTakeouts", label: "Profit Takeouts", icon: DollarCircleIcon, superAdminsOnly: true },
   { id: "addTasks", label: "Add Tasks", icon: TaskEdit01Icon, adminsOnly: true },
   { id: "addTransactions", label: "Add Transaction", icon: AddMoneyCircleIcon, membersOnly: true },
   { id: "addBonus", label: "Add Bonus", icon: GiftIcon, membersOnly: true },
   { id: "manageWallets", label: "Manage Wallets", icon: BitcoinWalletIcon, adminsOnly: true },
   { id: "shifts", label: "Shifts", icon: ManagerIcon, dividerAfter: true },
-  { id: "adminReports", label: "Admin Reports", icon: AnalysisTextLinkIcon, adminsOnly: true },
+  { id: "adminReports", label: "Admin Reports", icon: AnalysisTextLinkIcon, superAdminsOnly: true },
 ];
 
 // ══════════════════════════════════════════════════════════════
@@ -449,6 +449,7 @@ function StoreSwitcher({ user, onSwitch }) {
   const ref = useRef(null);
 
   const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role);
+  
 
   const rawAccess = user?.storeAccess;
   const accessibleStores = isAdmin
@@ -618,7 +619,9 @@ function StoreSwitcher({ user, onSwitch }) {
 export function Sidebar({ user, activePage, onNavigate, onLogout }) {
   const { currentStoreId, setCurrentStoreId } = useContext(App2Context);
   const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(user?.role);
-  console.warn('🔐 Sidebar role check:', user?.role, '→ isAdmin:', isAdmin);
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+
+  // console.warn('🔐 Sidebar role check:', user?.role, '→ isAdmin:', isAdmin);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -659,7 +662,11 @@ export function Sidebar({ user, activePage, onNavigate, onLogout }) {
 
         <nav className="ob-nav">
           {NAV_ITEMS.map(item => {
-            const hidden = (item.adminsOnly && !isAdmin) || (item.membersOnly && isAdmin);
+            // const hidden = (item.adminsOnly && !isAdmin) || (item.membersOnly && isAdmin);
+      const hidden =
+  (item.adminsOnly && !isAdmin) ||
+  (item.superAdminsOnly && !isSuperAdmin) ||
+  (item.membersOnly && isAdmin);
 
             return (
               <div key={item.id} style={{ display: hidden ? 'none' : undefined }}>
