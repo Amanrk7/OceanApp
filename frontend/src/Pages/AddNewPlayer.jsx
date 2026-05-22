@@ -84,15 +84,46 @@ function FieldError({ message }) {
 }
 
 // ─── Social handle validation rules ──────────────────────────────────────────
+// const SOCIAL_RULES = {
+//     facebook: { pattern: /^[a-zA-Z0-9.]{1,50}$/, hint: '1–50 chars: letters, numbers, dots only', url: (h) => `https://facebook.com/${h}` },
+//     telegram: { pattern: /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/, hint: '5–32 chars, starts with a letter, letters/numbers/underscores', url: (h) => `https://t.me/${h}` },
+//     instagram: { pattern: /^[a-zA-Z0-9._]{1,30}$/, hint: '1–30 chars: letters, numbers, dots, underscores', url: (h) => `https://instagram.com/${h}` },
+//     x: { pattern: /^[a-zA-Z0-9_]{1,15}$/, hint: '1–15 chars: letters, numbers, underscores', url: (h) => `https://x.com/${h}` },
+//     snapchat: { pattern: /^[a-zA-Z][a-zA-Z0-9._-]{1,14}$/, hint: '2–15 chars, starts with a letter', url: (h) => `https://snapchat.com/add/${h}` },
+//     chimeTag: { pattern: /^\$[a-zA-Z0-9._-]{2,20}$|^[a-zA-Z0-9._-]{2,20}$/, hint: 'Chime $tag or username (2–20 chars)', url: null },
+//     cashappTag: { pattern: /^\$[a-zA-Z0-9._-]{1,20}$|^[a-zA-Z0-9._-]{1,20}$/, hint: '$cashtag or username (1–20 chars)', url: (h) => `https://cash.app/${h.startsWith('$') ? h : '$' + h}` },
+//     paypalEmail: { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, hint: 'Valid email address linked to PayPal', url: null },
+// };
+
 const SOCIAL_RULES = {
-    facebook: { pattern: /^[a-zA-Z0-9.]{1,50}$/, hint: '1–50 chars: letters, numbers, dots only', url: (h) => `https://facebook.com/${h}` },
-    telegram: { pattern: /^[a-zA-Z][a-zA-Z0-9_]{4,31}$/, hint: '5–32 chars, starts with a letter, letters/numbers/underscores', url: (h) => `https://t.me/${h}` },
-    instagram: { pattern: /^[a-zA-Z0-9._]{1,30}$/, hint: '1–30 chars: letters, numbers, dots, underscores', url: (h) => `https://instagram.com/${h}` },
-    x: { pattern: /^[a-zA-Z0-9_]{1,15}$/, hint: '1–15 chars: letters, numbers, underscores', url: (h) => `https://x.com/${h}` },
-    snapchat: { pattern: /^[a-zA-Z][a-zA-Z0-9._-]{1,14}$/, hint: '2–15 chars, starts with a letter', url: (h) => `https://snapchat.com/add/${h}` },
-    chimeTag: { pattern: /^\$[a-zA-Z0-9._-]{2,20}$|^[a-zA-Z0-9._-]{2,20}$/, hint: 'Chime $tag or username (2–20 chars)', url: null },
-    cashappTag: { pattern: /^\$[a-zA-Z0-9._-]{1,20}$|^[a-zA-Z0-9._-]{1,20}$/, hint: '$cashtag or username (1–20 chars)', url: (h) => `https://cash.app/${h.startsWith('$') ? h : '$' + h}` },
-    paypalEmail: { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, hint: 'Valid email address linked to PayPal', url: null },
+  facebook: {
+    pattern: /^[a-zA-Z0-9.]{1,50}$|^https?:\/\/(www\.)?(facebook\.com|fb\.com|m\.facebook\.com)\/.{1,200}$/,
+    hint: 'Handle (1–50 chars) or full facebook.com URL',
+    url: (h) => h.startsWith('http') ? h : `https://facebook.com/${h}`,
+  },
+  telegram: {
+    pattern: /^[a-zA-Z][a-zA-Z0-9_]{4,31}$|^https?:\/\/t\.me\/.{1,100}$/,
+    hint: '5–32 char handle or t.me URL',
+    url: (h) => h.startsWith('http') ? h : `https://t.me/${h}`,
+  },
+  instagram: {
+    pattern: /^[a-zA-Z0-9._]{1,30}$|^https?:\/\/(www\.)?instagram\.com\/.{1,200}$/,
+    hint: '1–30 char handle or instagram.com URL',
+    url: (h) => h.startsWith('http') ? h : `https://instagram.com/${h}`,
+  },
+  x: {
+    pattern: /^[a-zA-Z0-9_]{1,15}$|^https?:\/\/(www\.)?(x\.com|twitter\.com)\/.{1,100}$/,
+    hint: '1–15 char handle or x.com/twitter.com URL',
+    url: (h) => h.startsWith('http') ? h : `https://x.com/${h}`,
+  },
+  snapchat: {
+    pattern: /^[a-zA-Z][a-zA-Z0-9._-]{1,14}$|^https?:\/\/(www\.)?snapchat\.com\/.{1,200}$/,
+    hint: '2–15 char handle or snapchat.com URL',
+    url: (h) => h.startsWith('http') ? h : `https://snapchat.com/add/${h}`,
+  },
+  chimeTag:    { pattern: /^\$[a-zA-Z0-9._-]{2,20}$|^[a-zA-Z0-9._-]{2,20}$/, hint: 'Chime $tag or username (2–20 chars)', url: null },
+  cashappTag:  { pattern: /^\$[a-zA-Z0-9._-]{1,20}$|^[a-zA-Z0-9._-]{1,20}$/, hint: '$cashtag or username (1–20 chars)', url: (h) => `https://cash.app/${h.startsWith('$') ? h : '$' + h}` },
+  paypalEmail: { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, hint: 'Valid email address linked to PayPal', url: null },
 };
 
 function validateHandle(platform, handle) {
@@ -350,7 +381,9 @@ function ValidatedField({ platform, label, value, onChange, placeholder, error, 
     const status = validateHandle(platform, value);
     const rule = SOCIAL_RULES[platform];
     const hasVal = value && value.trim().length > 0;
-    const isAt = !['chimeTag', 'cashappTag', 'paypalEmail'].includes(platform);
+    // const isAt = !['chimeTag', 'cashappTag', 'paypalEmail'].includes(platform);
+    const isUrl = value && value.trim().startsWith('http');
+const isAt = !isUrl && !['chimeTag', 'cashappTag', 'paypalEmail'].includes(platform);
 
     const borderColor = error ? C.red
         : !hasVal ? C.border
