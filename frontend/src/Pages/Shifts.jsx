@@ -2419,24 +2419,35 @@ export const ShiftsPage = () => {
 
 
   // Add this helper function near the top of ShiftsPage:
+  // const refreshPastShifts = useCallback(async () => {
+  //   try {
+  //     if (isAdmin) {
+  //       const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
+  //       const results = await Promise.all(
+  //         [...TEAM_ROLES, usr.role].map(r => api.reports.getMyShifts({ role: r, limit: 30 }))
+  //       );
+  //       setPastShifts(
+  //         results
+  //           .flatMap(r => r?.data ?? [])
+  //           .sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
+  //       );
+  //     } else {
+  //       const h = await api.reports.getMyShifts({ role: usr.role, limit: 30 });
+  //       setPastShifts(h?.data ?? []);
+  //     }
+  //   } catch (e) { console.error('Refresh shifts error:', e); }
+  // }, [usr?.role, isAdmin]);
+
   const refreshPastShifts = useCallback(async () => {
-    try {
-      if (isAdmin) {
-        const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
-        const results = await Promise.all(
-          [...TEAM_ROLES, usr.role].map(r => api.reports.getMyShifts({ role: r, limit: 30 }))
-        );
-        setPastShifts(
-          results
-            .flatMap(r => r?.data ?? [])
-            .sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
-        );
-      } else {
-        const h = await api.reports.getMyShifts({ role: usr.role, limit: 30 });
-        setPastShifts(h?.data ?? []);
-      }
-    } catch (e) { console.error('Refresh shifts error:', e); }
-  }, [usr?.role, isAdmin]);
+  try {
+    const res = isAdmin
+      ? await api.reports.getMyShifts({ allMembers: true, limit: 100 })
+      : await api.reports.getMyShifts({ limit: 30 });
+    setPastShifts(
+      (res?.data ?? []).sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
+    );
+  } catch (e) { console.error('Refresh shifts error:', e); }
+}, [usr?.role, isAdmin]);
 
 
   useEffect(() => {
@@ -2448,18 +2459,21 @@ export const ShiftsPage = () => {
 
         const [activeRes, historyRes, tasksRes] = await Promise.all([
           // ✅ Check admin's own active shift too (removed the skip)
-          api.shifts.getActiveShift(usr.role),
-
-          isAdmin
-            ? Promise.all(
-              // ✅ Include admin's own role alongside team roles
-              [...TEAM_ROLES, usr.role].map(r => api.reports.getMyShifts({ role: r, limit: 30 }))
-            ).then(results => ({
-              data: results
-                .flatMap(r => r?.data ?? [])
-                .sort((a, b) => new Date(b.startTime) - new Date(a.startTime)),
-            }))
-            : api.reports.getMyShifts({ role: usr.role, limit: 30 }),
+          // api.shifts.getActiveShift(usr.role),
+          api.shifts.getActiveShift(`SLOT_${usr.teamSlot}`)
+          // isAdmin
+            // ? Promise.all(
+            //   // ✅ Include admin's own role alongside team roles
+            //   [...TEAM_ROLES, usr.role].map(r => api.reports.getMyShifts({ role: r, limit: 30 }))
+            // ).then(results => ({
+            //   data: results
+            //     .flatMap(r => r?.data ?? [])
+            //     .sort((a, b) => new Date(b.startTime) - new Date(a.startTime)),
+            // }))
+            // : api.reports.getMyShifts({ role: usr.role, limit: 30 }),
+        isAdmin
+  ? api.reports.getMyShifts({ allMembers: true, limit: 100 })
+  : api.reports.getMyShifts({ limit: 30 }),
 
           token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
         ]);
