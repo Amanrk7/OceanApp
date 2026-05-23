@@ -139,6 +139,28 @@ function SocialsBadges({ socials }) {
 }
 
 // ── "Added by" badge — shows who created this player account ──────
+// function AddedByBadge({ addedBy }) {
+//   if (!addedBy) return null;
+//   const style = getRoleStyle(addedBy.role, addedBy.teamSlot);
+//   const shortLabel = addedBy.role === 'TEAM_MEMBER'
+//     ? `Team ${addedBy.teamSlot}`
+//     : addedBy.role.replace('_ADMIN', '');
+//   return (
+//     <div
+//       title={`Added by ${addedBy.name} (${addedBy.role})`}
+//       style={{
+//         display: 'inline-flex', alignItems: 'center', gap: '4px',
+//         padding: '2px 7px 2px 5px', borderRadius: '99px',
+//         border: `1px solid ${style.border}`,
+//         fontSize: '10px', fontWeight: '700', 
+//         marginTop: '3px', cursor: 'default',
+//       }}
+//     >
+//       <UserPlus size={9} />
+//       {addedBy.name} · {shortRole}
+//     </div>
+//   );
+// }
 function AddedByBadge({ addedBy }) {
   if (!addedBy) return null;
   const style = getRoleStyle(addedBy.role, addedBy.teamSlot);
@@ -152,16 +174,16 @@ function AddedByBadge({ addedBy }) {
         display: 'inline-flex', alignItems: 'center', gap: '4px',
         padding: '2px 7px 2px 5px', borderRadius: '99px',
         border: `1px solid ${style.border}`,
-        fontSize: '10px', fontWeight: '700', 
+        background: style.bg, color: style.text,
+        fontSize: '10px', fontWeight: '700',
         marginTop: '3px', cursor: 'default',
       }}
     >
       <UserPlus size={9} />
-      {addedBy.name} · {shortRole}
+      {addedBy.name} · {shortLabel}  {/* ← was shortRole, now shortLabel */}
     </div>
   );
 }
-
 function StatCard({ icon: Icon, label, value, color, bg, border, sub }) {
   return (
     <div style={{
