@@ -45,10 +45,10 @@ const TD = {
 
 // const ROLE_LABEL = { TEAM1: "Team 1", TEAM2: "Team 2", TEAM3: "Team 3", TEAM4: "Team 4", TEAM5: "Team 5", TEAM6: "Team 6", TEAM7: "Team 7", TEAM8: "Team 8", };
 
-function getRoleLabel(member) {
-  if (member.teamSlot) return `Team ${member.teamSlot}`;
-  return member.role;
-}
+// function getRoleLabel(member) {
+//   if (member.teamSlot) return `Team ${member.teamSlot}`;
+//   return member.role;
+// }
 // const SLOT_COLORS  = {
 //     { bg: "#eff6ff", text: "#1d4ed8", border: "#bfdbfe" },
 //     { bg: "#f0fdf4", text: "#15803d", border: "#86efac" },
@@ -70,10 +70,26 @@ const SLOT_COLORS = [
 { bg: "#f0f9ff", text: "#0369a1", border: "#bae6fd" },
 ];
 
-function getSlotColor(slot) {
-  return SLOT_COLORS[(slot - 1) % SLOT_COLORS.length];
+// function getSlotColor(slot) {
+//   return SLOT_COLORS[(slot - 1) % SLOT_COLORS.length];
+// }
+function getRoleLabel(teamRole) {
+  if (!teamRole) return '—';
+  if (teamRole.startsWith('SLOT_')) return `Team ${teamRole.replace('SLOT_', '')}`;
+  return teamRole;
 }
 
+// Replace ROLE_COLORS with:
+function getRoleColor(teamRole) {
+  const COLORS = [
+    { bg: "#eff6ff", text: "#1d4ed8", border: "#bfdbfe" },
+    { bg: "#f0fdf4", text: "#15803d", border: "#86efac" },
+    { bg: "#fffbeb", text: "#b45309", border: "#fde68a" },
+    { bg: "#fdf4ff", text: "#7e22ce", border: "#e9d5ff" },
+  ];
+  const num = parseInt(teamRole?.replace('SLOT_', '') || '1', 10);
+  return COLORS[(num - 1) % COLORS.length];
+}
 // ── Formatters ────────────────────────────────────────────────
 const fmtMoney = (n) =>
     `$${(n ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -344,7 +360,7 @@ function DayExpensesSection({ expenses }) {
                                 onMouseEnter={ev => ev.currentTarget.style.background = "#fefce8"}
                                 onMouseLeave={ev => ev.currentTarget.style.background = ""}>
                                 <td style={{ ...TD, fontSize: "11px", color: "#94a3b8", whiteSpace: "nowrap" }}>{fmtTime(e.createdAt)}</td>
-                                <td style={TD}><Badge label={ROLE_LABEL[e._teamRole] || e._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
+                                <td style={TD}><Badge label={getRoleLabel(e._teamRole) || e._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
                                 <td style={{ ...TD, fontWeight: "600" }}>{e.details}</td>
                                 <td style={TD}><Badge label={(e.category || "—").replace(/_/g, " ")} bg="#fffbeb" color="#b45309" /></td>
                                 <td style={{ ...TD, fontSize: "12px", color: "#64748b" }}>{e.game?.name || "—"}</td>
@@ -416,7 +432,7 @@ function DayTakeoutsSection({ takeouts }) {
                                 onMouseEnter={ev => ev.currentTarget.style.background = "#fff5f5"}
                                 onMouseLeave={ev => ev.currentTarget.style.background = ""}>
                                 <td style={{ ...TD, fontSize: "11px", color: "#94a3b8", whiteSpace: "nowrap" }}>{fmtTime(t.takenAt || t._shiftTime)}</td>
-                                <td style={TD}><Badge label={ROLE_LABEL[t._teamRole] || t._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
+                                <td style={TD}><Badge label={getRoleLabel(t._teamRole)|| t._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
                                 <td style={{ ...TD, fontWeight: "600" }}>{t.takenBy}</td>
                                 <td style={TD}><Badge label={t.method || "Cash"} bg="#fff1f2" color="#991b1b" /></td>
                                 <td style={{ ...TD, fontWeight: "800", color: "#991b1b" }}>−{fmtMoney(t.amount)}</td>
@@ -804,7 +820,7 @@ function ShiftDetail({ shift, index, total }) {
 // ── Member Section ────────────────────────────────────────────
 function MemberShiftSection({ team }) {
     const [expanded, setExpanded] = useState(true);
-    const rc = ROLE_COLORS[team.role] || ROLE_COLORS.TEAM1;
+    const rc = getRoleColor(team.role) || ROLE_COLORS.TEAM1;
     // const memberName = team.member?.name || team.shifts[0]?.displayMember?.name || team.shifts[0]?.checkin?.user?.name || "Unassigned";
     //     const performer = team.shifts[0]?.displayMember;
     // const isCrossStore = (performer?.storeAccess?.length ?? 0) > 1;
@@ -840,7 +856,7 @@ function MemberShiftSection({ team }) {
                     <div>
                         <div style={{ fontWeight: "700", fontSize: "15px", color: "#0f172a" }}>{memberName}</div>
                         <div style={{ display: "flex", gap: "6px", marginTop: "3px", alignItems: "center" }}>
-                            <span style={{ padding: "2px 8px", borderRadius: "5px", fontSize: "11px", fontWeight: "700", background: rc.bg, color: rc.text, border: `1px solid ${rc.border}` }}>{ROLE_LABEL[team.role] || team.role}</span>
+                            <span style={{ padding: "2px 8px", borderRadius: "5px", fontSize: "11px", fontWeight: "700", background: rc.bg, color: rc.text, border: `1px solid ${rc.border}` }}>{getRoleLabel(team.role) || team.role}</span>
                             <span style={{ fontSize: "11px", color: "#94a3b8" }}>{team.shifts.length} shift{team.shifts.length !== 1 ? "s" : ""} · {aggr.duration} min</span>
                         </div>
                     </div>
@@ -1083,7 +1099,7 @@ function ExpensesFilterView({ expenses, rangeMode }) {
                                     <tr key={e.id ?? i} onMouseEnter={ev => ev.currentTarget.style.background = "#fefce8"} onMouseLeave={ev => ev.currentTarget.style.background = ""}>
                                         {rangeMode && <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap", fontWeight: "600" }}>{fmtDateShort((e._date || e.createdAt?.split("T")[0] || "") + "T12:00:00")}</td>}
                                         <td style={{ ...TD, fontSize: "11px", color: "#94a3b8", whiteSpace: "nowrap" }}>{fmtTime(e.createdAt)}</td>
-                                        <td style={TD}><Badge label={ROLE_LABEL[e._teamRole] || e._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
+                                        <td style={TD}><Badge label={getRoleLabel(e._teamRole) || e._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
                                         <td style={{ ...TD, fontWeight: "600" }}>{e.details}</td>
                                         <td style={TD}><Badge label={(e.category || "—").replace(/_/g, " ")} bg="#fffbeb" color="#b45309" /></td>
                                         <td style={{ ...TD, fontSize: "12px", color: "#64748b" }}>{e.game?.name || "—"}</td>
@@ -1223,7 +1239,7 @@ function TakeoutsFilterView({ takeouts, rangeMode }) {
                                     <tr key={t.id ?? i} onMouseEnter={ev => ev.currentTarget.style.background = "#fff5f5"} onMouseLeave={ev => ev.currentTarget.style.background = ""}>
                                         {rangeMode && <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap", fontWeight: "600" }}>{fmtDateShort((t._date || (t.takenAt || "").split("T")[0] || "") + "T12:00:00")}</td>}
                                         <td style={{ ...TD, fontSize: "11px", color: "#94a3b8", whiteSpace: "nowrap" }}>{fmtTime(t.takenAt || t._shiftTime)}</td>
-                                        <td style={TD}><Badge label={ROLE_LABEL[t._teamRole] || t._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
+                                        <td style={TD}><Badge label={getRoleLabel(t._teamRole) || t._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
                                         <td style={{ ...TD, fontWeight: "700" }}>{t.takenBy}</td>
                                         <td style={TD}><Badge label={t.method || "Cash"} bg="#fff1f2" color="#991b1b" /></td>
                                         <td style={{ ...TD, fontWeight: "800", color: "#991b1b", fontSize: "14px" }}>−{fmtMoney(t.amount)}</td>
@@ -1312,7 +1328,7 @@ function TransactionsFilterView({ transactions, rangeMode }) {
                     <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
                         {["ALL", ...teams].map(t => (
                             <button key={t} onClick={() => setTeamFilter(t)} style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid", fontSize: "11px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit", background: teamFilter === t ? "#475569" : "#fff", color: teamFilter === t ? "#fff" : "#64748b", borderColor: teamFilter === t ? "#475569" : "#e2e8f0" }}>
-                                {t === "ALL" ? "All Teams" : ROLE_LABEL[t] || t}
+                                {t === "ALL" ? "All Teams" : getRoleLabel(t) || t}
                             </button>
                         ))}
                     </div>
@@ -1349,7 +1365,7 @@ function TransactionsFilterView({ transactions, rangeMode }) {
                                         <tr key={t.id} onMouseEnter={e => e.currentTarget.style.background = "#fafbfc"} onMouseLeave={e => e.currentTarget.style.background = ""} style={{ opacity: isPending ? 0.8 : 1 }}>
                                             {rangeMode && <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap", fontWeight: "600" }}>{fmtDateShort((t._date || (t.createdAt || "").split("T")[0] || "") + "T12:00:00")}</td>}
                                             <td style={{ ...TD, fontSize: "11px", color: "#64748b", whiteSpace: "nowrap" }}>{fmtTime(t.createdAt)}</td>
-                                            <td style={TD}><Badge label={ROLE_LABEL[t._teamRole] || t._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
+                                            <td style={TD}><Badge label={getRoleLabel(t._teamRole) || t._teamRole || "—"} bg="#f8fafc" color="#64748b" /></td>
                                             <td style={TD}><div style={{ fontWeight: "600", fontSize: "12px" }}>{t.user?.name || t.playerName || `#${t.userId}`}</div></td>
                                             <td style={TD}><DisplayTypeBadge type={t.displayType || t.type} /></td>
                                             <td style={{ ...TD, fontSize: "11px" }}>
