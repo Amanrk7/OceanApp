@@ -40,19 +40,32 @@ const STATUS = {
 };
 
 // Role display styles for "added by" pill
-const ROLE_STYLE = {
-  ADMIN:       { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' },
-  SUPER_ADMIN: { bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe' },
-  TEAM1: { bg: '#f0fdf4', text: '#166534', border: '#86efac' },
-  TEAM2: { bg: '#fefce8', text: '#854d0e', border: '#fde68a' },
-  TEAM3: { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' },
-  TEAM4: { bg: '#fdf4ff', text: '#6b21a8', border: '#e879f9' },
-  TEAM5: { bg: '#eff6ff', text: '#0369a1', border: '#bae6fd' },
-  TEAM6: { bg: '#f0fdf4', text: '#065f46', border: '#6ee7b7' },
-  TEAM7: { bg: '#fdf2f8', text: '#9d174d', border: '#f9a8d4' },
-  TEAM8: { bg: '#fefce8', text: '#713f12', border: '#fde047' },
-};
-
+// const ROLE_STYLE = {
+//   ADMIN:       { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' },
+//   SUPER_ADMIN: { bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe' },
+//   TEAM1: { bg: '#f0fdf4', text: '#166534', border: '#86efac' },
+//   TEAM2: { bg: '#fefce8', text: '#854d0e', border: '#fde68a' },
+//   TEAM3: { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' },
+//   TEAM4: { bg: '#fdf4ff', text: '#6b21a8', border: '#e879f9' },
+//   TEAM5: { bg: '#eff6ff', text: '#0369a1', border: '#bae6fd' },
+//   TEAM6: { bg: '#f0fdf4', text: '#065f46', border: '#6ee7b7' },
+//   TEAM7: { bg: '#fdf2f8', text: '#9d174d', border: '#f9a8d4' },
+//   TEAM8: { bg: '#fefce8', text: '#713f12', border: '#fde047' },
+// };
+function getRoleStyle(role, teamSlot) {
+  if (role !== 'TEAM_MEMBER') return ROLE_STYLE[role] || { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' };
+  const PALETTE = [
+    { bg: '#f0fdf4', text: '#166534', border: '#86efac' },
+    { bg: '#fefce8', text: '#854d0e', border: '#fde68a' },
+    { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' },
+    { bg: '#fdf4ff', text: '#6b21a8', border: '#e879f9' },
+{ bg: '#eff6ff', text: '#0369a1', border: '#bae6fd' },
+{ bg: '#f0fdf4', text: '#065f46', border: '#6ee7b7' },
+{ bg: '#fdf2f8', text: '#9d174d', border: '#f9a8d4' },
+{ bg: '#fefce8', text: '#713f12', border: '#fde047' },
+  ];
+  return PALETTE[(teamSlot - 1) % PALETTE.length];
+}
 const SOCIALS = [
   { key: 'email',    icon: SiGmail,         bg: '#4285f4', label: 'Email' },
   { key: 'facebook', icon: FaFacebookF,     bg: '#1877f2', label: 'Facebook' },
