@@ -1673,7 +1673,9 @@ function TaskGroup({ title, tasks, color, defaultOpen = true, renderTask }) {
               <p style={{ margin: 0, fontSize: "16px", fontWeight: "500", color: "var(--color-text-primary)" }}>{memberName}</p>
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "2px" }}>
                 <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#22c55e" }} />
-                <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>Shift active · {memberRole}</span>
+                {/* <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>Shift active · {memberRole}</span> */}
+                <span>Shift active · Team {resolvedUser?.teamSlot ?? memberRole}</span>
+
               </div>
             </div>
           </div>
