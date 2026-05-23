@@ -378,6 +378,21 @@ export const playersAPI = {
   },
 };
 
+
+export const membersAPI = {
+  /** Returns which TEAM slots are free in the current store */
+  getAvailableRoles: () => fetchAPI('/members/available-roles'),
+ 
+  /** Create a new team member (auto-slot) or admin. SUPER_ADMIN only. */
+  createMember: async ({ username, name, email, phone, password, roleType, storeAccess }) => {
+    const data = await fetchAPI('/create-member', {
+      method: 'POST',
+      body: JSON.stringify({ username, name, email, phone, password, roleType, storeAccess }),
+    });
+    cache.clearAll();
+    return data;
+  },
+};
 // ═══════════════════════════════════════════════════════════════
 // TRANSACTIONS API
 // ═══════════════════════════════════════════════════════════════
@@ -792,6 +807,7 @@ export const api = {
   referralBonuses: referralBonusAPI,
   profitTakeouts: profitTakeoutsAPI,
   editRequests: playerEditRequestsAPI,
+  members: membersAPI,
   clearCache: () => cache.clearAll(),
   getCacheStatus: () => ({ items: Object.keys(cache.data).length, keys: Object.keys(cache.data) })
 };
