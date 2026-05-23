@@ -71,7 +71,9 @@ function getNAFields(player) {
 }
 
 function isAdminRole(role) { return ['ADMIN', 'SUPER_ADMIN'].includes(role); }
-function isMemberRole(role) { return ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'].includes(role); }
+// function isMemberRole(role) { return ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'].includes(role); }
+function isMemberRole(role) { return role === 'TEAM_MEMBER'; }
+
 
 function authHeaders(json = false) {
   const token = localStorage.getItem('authToken');
@@ -301,7 +303,9 @@ function InlineAdminAssign({ player, task, teamMembers, onAssigned, assigning })
           {teamMembers.map(m => (
             <option key={m.id} value={String(m.id)}>
               {/* {m.name || m.username} ({m.role}) */}
-              {m.name || m.username} ({m.role?.replace('TEAM', 'T')})
+              /* {m.name || m.username} ({m.role?.replace('TEAM', 'T')}) */
+              {m.name || m.username} {m.role === 'TEAM_MEMBER' ? `(Team ${m.teamSlot})` : `(${m.role})`}
+
             </option>
           ))}
         </select>
