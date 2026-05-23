@@ -52,19 +52,37 @@ const STATUS = {
 //   TEAM7: { bg: '#fdf2f8', text: '#9d174d', border: '#f9a8d4' },
 //   TEAM8: { bg: '#fefce8', text: '#713f12', border: '#fde047' },
 // };
+// function getRoleStyle(role, teamSlot) {
+//   if (role !== 'TEAM_MEMBER') return ROLE_STYLE[role] || { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' };
+//   const PALETTE = [
+//     { bg: '#f0fdf4', text: '#166534', border: '#86efac' },
+//     { bg: '#fefce8', text: '#854d0e', border: '#fde68a' },
+//     { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' },
+//     { bg: '#fdf4ff', text: '#6b21a8', border: '#e879f9' },
+// { bg: '#eff6ff', text: '#0369a1', border: '#bae6fd' },
+// { bg: '#f0fdf4', text: '#065f46', border: '#6ee7b7' },
+// { bg: '#fdf2f8', text: '#9d174d', border: '#f9a8d4' },
+// { bg: '#fefce8', text: '#713f12', border: '#fde047' },
+//   ];
+//   return PALETTE[(teamSlot - 1) % PALETTE.length];
+// }
+const ROLE_STYLE = {
+  ADMIN:       { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' },
+  SUPER_ADMIN: { bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe' },
+  // No TEAM1-TEAM8 needed anymore
+};
+
 function getRoleStyle(role, teamSlot) {
-  if (role !== 'TEAM_MEMBER') return ROLE_STYLE[role] || { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' };
-  const PALETTE = [
-    { bg: '#f0fdf4', text: '#166534', border: '#86efac' },
-    { bg: '#fefce8', text: '#854d0e', border: '#fde68a' },
-    { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' },
-    { bg: '#fdf4ff', text: '#6b21a8', border: '#e879f9' },
-{ bg: '#eff6ff', text: '#0369a1', border: '#bae6fd' },
-{ bg: '#f0fdf4', text: '#065f46', border: '#6ee7b7' },
-{ bg: '#fdf2f8', text: '#9d174d', border: '#f9a8d4' },
-{ bg: '#fefce8', text: '#713f12', border: '#fde047' },
-  ];
-  return PALETTE[(teamSlot - 1) % PALETTE.length];
+  if (role === 'TEAM_MEMBER') {
+    const PALETTE = [
+      { bg: '#f0fdf4', text: '#166534', border: '#86efac' },
+      { bg: '#fefce8', text: '#854d0e', border: '#fde68a' },
+      { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' },
+      { bg: '#fdf4ff', text: '#6b21a8', border: '#e879f9' },
+    ];
+    return PALETTE[(( teamSlot || 1) - 1) % PALETTE.length];
+  }
+  return ROLE_STYLE[role] || { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' };
 }
 const SOCIALS = [
   { key: 'email',    icon: SiGmail,         bg: '#4285f4', label: 'Email' },
@@ -123,8 +141,10 @@ function SocialsBadges({ socials }) {
 // ── "Added by" badge — shows who created this player account ──────
 function AddedByBadge({ addedBy }) {
   if (!addedBy) return null;
-  const style = ROLE_STYLE[addedBy.role] || { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' };
-  const shortRole = addedBy.role.replace('TEAM', 'T').replace('_ADMIN', '');
+  const style = getRoleStyle(addedBy.role, addedBy.teamSlot);
+  const shortLabel = addedBy.role === 'TEAM_MEMBER'
+    ? `Team ${addedBy.teamSlot}`
+    : addedBy.role.replace('_ADMIN', '');
   return (
     <div
       title={`Added by ${addedBy.name} (${addedBy.role})`}
