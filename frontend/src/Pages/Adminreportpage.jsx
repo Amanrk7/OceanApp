@@ -1720,6 +1720,8 @@ export default function AdminReportPage() {
     const [error, setError] = useState(null);
     const [teamFilter, setTeamFilter] = useState("ALL");
     const [viewMode, setViewMode] = useState("report");
+    const [teamMembers, setTeamMembers] = useState([]);
+
 
     const fetchSingleReport = useCallback(async (date, role) => {
         setLoading(true);
@@ -1769,7 +1771,21 @@ export default function AdminReportPage() {
         if (mode === "single") fetchSingleReport(selectedDate, teamFilter);
         else fetchRangeReports(startDate, endDate, teamFilter);
     }, [mode, selectedDate, startDate, endDate, teamFilter]);
-
+// Add this useEffect alongside existing ones:
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL ?? ""}/team-members`, {
+      credentials: 'include',
+      headers: {
+        'X-Store-Id': String(localStorage.getItem('__obStoreId') || '1'),
+        ...(localStorage.getItem('authToken')
+          ? { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
+          : {}),
+      },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data) setTeamMembers(d.data); })
+      .catch(() => {});
+  }, []);
     const handleRefresh = () => {
         if (mode === "single") fetchSingleReport(selectedDate, teamFilter);
         else fetchRangeReports(startDate, endDate, teamFilter);
@@ -1863,7 +1879,7 @@ export default function AdminReportPage() {
 
                         {/* Team filter */}
                         <div style={{ position: "relative" }}>
-                            <select value={teamFilter} onChange={e => setTeamFilter(e.target.value)} style={{ padding: "8px 30px 8px 11px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", fontSize: "12px", color: "#0f172a", fontFamily: "inherit", cursor: "pointer", appearance: "none" }}>
+                            {/* <select value={teamFilter} onChange={e => setTeamFilter(e.target.value)} style={{ padding: "8px 30px 8px 11px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", fontSize: "12px", color: "#0f172a", fontFamily: "inherit", cursor: "pointer", appearance: "none" }}>
                                 <option value="ALL">All Teams</option>
                                 <option value="TEAM1">Team 1</option>
                                 <option value="TEAM2">Team 2</option>
@@ -1874,7 +1890,15 @@ export default function AdminReportPage() {
                                 <option value="TEAM7">Team 7</option>
                                 <option value="TEAM8">Team 8</option>
 
-                            </select>
+                            </select> */}
+                            <select value={teamFilter} onChange={e => setTeamFilter(e.target.value)} style={{ padding: "8px 30px 8px 11px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff", fontSize: "12px", color: "#0f172a", fontFamily: "inherit", cursor: "pointer", appearance: "none" }}>
+  <option value="ALL">All Teams</option>
+  {teamMembers.map(m => (
+    <option key={m.id} value={`SLOT_${m.teamSlot}`}>
+      Team {m.teamSlot} — {m.name}
+    </option>
+  ))}
+</select>
                             <ChevronDown style={{ position: "absolute", right: "9px", top: "50%", transform: "translateY(-50%)", width: "13px", height: "13px", color: "#94a3b8", pointerEvents: "none" }} />
                         </div>
 
