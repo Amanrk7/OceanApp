@@ -94,7 +94,7 @@ const FIELD_LABELS = {
 function TabToggle({ tab, setTab, isSuperAdmin }) {
   const tabs = [
     { id: 'player', icon: '↙', label: 'Add Player' },
-    ...(isSuperAdmin ? [{ id: 'member', icon: '🛡', label: 'Add Member / Admin' }] : []),
+    ...(isSuperAdmin ? [{ id: 'TEAM_MEMBER', icon: '🛡', label: 'Add Member / Admin' }] : []),
   ];
   return (
     <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '10px', padding: '4px', gap: '4px', width: 'fit-content' }}>
