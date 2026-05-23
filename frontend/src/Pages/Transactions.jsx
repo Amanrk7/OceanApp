@@ -64,8 +64,74 @@ const ROLE_STYLE = {
 };
 
 // ── Performer pill — shows who performed the transaction ──────────
-function PerformerPill({ performer }) {
+// function PerformerPill({ performer }) {
   
+//   if (!performer) {
+//     return (
+//       <span style={{
+//         fontSize: '11px', color: '#cbd5e1', fontStyle: 'italic',
+//         display: 'inline-flex', alignItems: 'center', gap: '3px',
+//       }}>
+//         <User size={10} /> system
+//       </span>
+//     );
+//   }
+//   const style = ROLE_STYLE[performer.role] || { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' };
+//   const shortRole = performer.role.replace('TEAM', 'T').replace('_ADMIN', '');
+//   const ROLE_STYLE = {
+//   ADMIN:       { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' },
+//   SUPER_ADMIN: { bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe' },
+// };
+
+// // In PerformerPill:
+// const isTeamMember = performer.role === 'TEAM_MEMBER';
+// const PALETTE = [
+//   { bg: '#f0fdf4', text: '#166534', border: '#86efac' },
+//   { bg: '#fefce8', text: '#854d0e', border: '#fde68a' },
+//   { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' },
+//   { bg: '#fdf4ff', text: '#6b21a8', border: '#e879f9' },
+// ];
+// const style = isTeamMember
+//   ? PALETTE[((performer.teamSlot || 1) - 1) % PALETTE.length]
+//   : ROLE_STYLE[performer.role] || { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' };
+
+// const shortLabel = isTeamMember
+//   ? `Team ${performer.teamSlot}`
+//   : performer.role.replace('_ADMIN', '');
+//   return (
+//     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+//       <span style={{
+//         fontSize: '12px', fontWeight: '700', color: '#0f172a',
+//         display: 'inline-flex', alignItems: 'center', gap: '4px',
+//       }}>
+//         <User size={11} color="#64748b" />
+//         {performer.name}
+//       </span>
+//       <span style={{
+//         display: 'inline-block', padding: '1px 7px', borderRadius: '99px',
+//         fontSize: '10px', fontWeight: '700',
+//         background: style.bg, color: style.text, border: `1px solid ${style.border}`,
+//         letterSpacing: '0.3px',
+//       }}>
+//         {shortRole}
+//       </span>
+//     </div>
+//   );
+// }
+
+// ── Role styles for PerformerPill ─────────────────────────────────
+const PERFORMER_ROLE_STYLES = {
+  ADMIN:       { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' },
+  SUPER_ADMIN: { bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe' },
+};
+const TEAM_PALETTE = [
+  { bg: '#f0fdf4', text: '#166534', border: '#86efac' },
+  { bg: '#fefce8', text: '#854d0e', border: '#fde68a' },
+  { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' },
+  { bg: '#fdf4ff', text: '#6b21a8', border: '#e879f9' },
+];
+
+function PerformerPill({ performer }) {
   if (!performer) {
     return (
       <span style={{
@@ -76,28 +142,16 @@ function PerformerPill({ performer }) {
       </span>
     );
   }
-  const style = ROLE_STYLE[performer.role] || { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' };
-  const shortRole = performer.role.replace('TEAM', 'T').replace('_ADMIN', '');
-  const ROLE_STYLE = {
-  ADMIN:       { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' },
-  SUPER_ADMIN: { bg: '#faf5ff', text: '#6b21a8', border: '#ddd6fe' },
-};
 
-// In PerformerPill:
-const isTeamMember = performer.role === 'TEAM_MEMBER';
-const PALETTE = [
-  { bg: '#f0fdf4', text: '#166534', border: '#86efac' },
-  { bg: '#fefce8', text: '#854d0e', border: '#fde68a' },
-  { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' },
-  { bg: '#fdf4ff', text: '#6b21a8', border: '#e879f9' },
-];
-const style = isTeamMember
-  ? PALETTE[((performer.teamSlot || 1) - 1) % PALETTE.length]
-  : ROLE_STYLE[performer.role] || { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' };
+  const isTeamMember = performer.role === 'TEAM_MEMBER';
+  const style = isTeamMember
+    ? TEAM_PALETTE[((performer.teamSlot || 1) - 1) % TEAM_PALETTE.length]
+    : PERFORMER_ROLE_STYLES[performer.role] || { bg: '#f1f5f9', text: '#475569', border: '#e2e8f0' };
 
-const shortLabel = isTeamMember
-  ? `Team ${performer.teamSlot}`
-  : performer.role.replace('_ADMIN', '');
+  const shortLabel = isTeamMember
+    ? `Team ${performer.teamSlot}`
+    : performer.role.replace('_ADMIN', '');
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
       <span style={{
@@ -113,7 +167,7 @@ const shortLabel = isTeamMember
         background: style.bg, color: style.text, border: `1px solid ${style.border}`,
         letterSpacing: '0.3px',
       }}>
-        {shortRole}
+        {shortLabel}
       </span>
     </div>
   );
