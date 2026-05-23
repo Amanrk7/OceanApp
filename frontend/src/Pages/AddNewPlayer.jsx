@@ -402,9 +402,9 @@ function AddMemberForm({ onSuccess, onCancel }) {
     else if (form.password.length < 6) e.password = 'Password must be at least 6 characters';
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
     if (form.storeAccess.length === 0) e.storeAccess = 'Select at least one store';
-    if (form.roleType === 'TEAM_MEMBER' && slotInfo && !slotInfo.nextSlot) {
-      e.roleType = 'All 8 team slots are filled. Remove a member first.';
-    }
+    // if (form.roleType === 'TEAM_MEMBER' && slotInfo && !slotInfo.nextSlot) {
+    //   e.roleType = 'All 8 team slots are filled. Remove a member first.';
+    // }
     return e;
   };
 
@@ -444,8 +444,12 @@ function AddMemberForm({ onSuccess, onCancel }) {
 
   const nextSlotNum = slotInfo?.nextSlotNumber;
   const usedCount   = slotInfo?.usedCount ?? '…';
-  const totalSlots  = slotInfo?.totalSlots ?? 8;
-  const slotsLeft   = slotInfo ? totalSlots - usedCount : '…';
+  // const totalSlots  = slotInfo?.totalSlots ?? 8;
+  // const slotsLeft   = slotInfo ? totalSlots - usedCount : '…';
+  const usedCount   = slotInfo?.usedCount ?? 0;
+const nextSlotNum = slotInfo?.nextSlotNumber;
+
+// Remove totalSlots and slotsLeft entirely, replace the info text:
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -457,7 +461,8 @@ function AddMemberForm({ onSuccess, onCancel }) {
           <p style={{ fontWeight: '700', margin: '0 0 2px', fontSize: '14px' }}>Add a Member or Admin</p>
           <p style={{ color: C.gray, margin: 0, fontSize: '12px', lineHeight: '1.5' }}>
             Team members are auto-assigned to the next available slot.
-            {slotInfo && <> Currently <strong>{usedCount}/{totalSlots}</strong> slots used — <strong style={{ color: slotsLeft > 0 ? C.green : C.red }}>{slotsLeft} slot{slotsLeft !== 1 ? 's' : ''} free</strong>.</>}
+            /* {slotInfo && <> Currently <strong>{usedCount}/{totalSlots}</strong> slots used — <strong style={{ color: slotsLeft > 0 ? C.green : C.red }}>{slotsLeft} slot{slotsLeft !== 1 ? 's' : ''} free</strong>.</>} */
+            {slotInfo && <> Currently <strong>{usedCount}</strong> member{usedCount !== 1 ? 's' : ''} — next slot will be <strong style={{ color: C.green }}>Team {nextSlotNum}</strong>.</>}
           </p>
         </div>
       </div>
