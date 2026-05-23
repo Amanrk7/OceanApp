@@ -442,12 +442,14 @@ function AddMemberForm({ onSuccess, onCancel }) {
     }
   };
 
+//   const nextSlotNum = slotInfo?.nextSlotNumber;
+//   const usedCount   = slotInfo?.usedCount ?? '…';
+//   // const totalSlots  = slotInfo?.totalSlots ?? 8;
+//   // const slotsLeft   = slotInfo ? totalSlots - usedCount : '…';
+//   const usedCount   = slotInfo?.usedCount ?? 0;
+// const nextSlotNum = slotInfo?.nextSlotNumber;
   const nextSlotNum = slotInfo?.nextSlotNumber;
-  const usedCount   = slotInfo?.usedCount ?? '…';
-  // const totalSlots  = slotInfo?.totalSlots ?? 8;
-  // const slotsLeft   = slotInfo ? totalSlots - usedCount : '…';
-  const usedCount   = slotInfo?.usedCount ?? 0;
-const nextSlotNum = slotInfo?.nextSlotNumber;
+const usedCount   = slotInfo?.usedCount ?? 0;
 
 // Remove totalSlots and slotsLeft entirely, replace the info text:
 
