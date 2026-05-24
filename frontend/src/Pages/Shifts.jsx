@@ -2457,16 +2457,23 @@ export const ShiftsPage = () => {
         const token = localStorage.getItem('authToken');
         const TEAM_ROLES = ['TEAM1', 'TEAM2', 'TEAM3', 'TEAM4'];
 
-        const [activeRes, historyRes, tasksRes] = await Promise.all([
-          // ✅ Check admin's own active shift too (removed the skip)
-          // api.shifts.getActiveShift(usr.role),
-          api.shifts.getActiveShift(`SLOT_${usr.teamSlot}`)
-        isAdmin
-  ? api.reports.getMyShifts({ allMembers: true, limit: 100 })
-  : api.reports.getMyShifts({ limit: 30 }),
+  //       const [activeRes, historyRes, tasksRes] = await Promise.all([
+  //         // ✅ Check admin's own active shift too (removed the skip)
+  //         // api.shifts.getActiveShift(usr.role),
+  //         api.shifts.getActiveShift(`SLOT_${usr.teamSlot}`)
+  //       isAdmin
+  // ? api.reports.getMyShifts({ allMembers: true, limit: 100 })
+  // : api.reports.getMyShifts({ limit: 30 }),
 
-          token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
-        ]);
+  //         token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
+  //       ]);
+        const [activeRes, historyRes, tasksRes] = await Promise.all([
+  api.shifts.getActiveShift(`SLOT_${usr.teamSlot}`),   // ← comma here
+  isAdmin
+    ? api.reports.getMyShifts({ allMembers: true, limit: 100 })
+    : api.reports.getMyShifts({ limit: 30 }),
+  token ? fj('/tasks?myTasks=true') : Promise.resolve({ data: [] }),
+]);
 
         if (activeRes?.data) {
           const sh = activeRes.data;
