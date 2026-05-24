@@ -13,29 +13,63 @@ export function ShiftStatusProvider({ children }) {
   });
   const [shiftLoading, setShiftLoading] = useState(true);
 
-  const checkShift = useCallback(async () => {
-    try {
-      // Get current user's role first
-      const userRes = await api.auth.getUser();
-      const role = userRes?.data?.role || userRes?.role;
-      if (!role) {
-        setShiftActive(false);
-        localStorage.setItem('shiftActive', 'false');
-        return;
-      }
+  // const checkShift = useCallback(async () => {
+  //   try {
+  //     // Get current user's role first
+  //     const userRes = await api.auth.getUser();
+  //     const role = userRes?.data?.role || userRes?.role;
+  //     if (!role) {
+  //       setShiftActive(false);
+  //       localStorage.setItem('shiftActive', 'false');
+  //       return;
+  //     }
 
-      const res = await api.shifts.getActiveShift(role);
-      const isActive = !!res?.data;
-      setShiftActive(isActive);
-      localStorage.setItem('shiftActive', String(isActive));
-    } catch {
-      // On error, trust the cached value rather than locking out
-      const cached = localStorage.getItem('shiftActive');
-      setShiftActive(cached === 'true');
-    } finally {
+  //     const res = await api.shifts.getActiveShift(role);
+  //     const isActive = !!res?.data;
+  //     setShiftActive(isActive);
+  //     localStorage.setItem('shiftActive', String(isActive));
+  //   } catch {
+  //     // On error, trust the cached value rather than locking out
+  //     const cached = localStorage.getItem('shiftActive');
+  //     setShiftActive(cached === 'true');
+  //   } finally {
+  //     setShiftLoading(false);
+  //   }
+  // }, []);
+
+  const checkShift = useCallback(async () => {
+  try {
+    const userRes = await api.auth.getUser();
+    const user = userRes?.data ?? userRes;
+    const role = user?.role;
+
+    // Admins bypass the shift lock entirely
+    if (['ADMIN', 'SUPER_ADMIN'].includes(role)) {
+      setShiftActive(true);
+      localStorage.setItem('shiftActive', 'true');
       setShiftLoading(false);
+      return;
     }
-  }, []);
+
+    // Team members use slot-based role — must match how shifts are created
+    const teamSlot = user?.teamSlot;
+    if (!teamSlot) {
+      setShiftActive(false);
+      localStorage.setItem('shiftActive', 'false');
+      return;
+    }
+
+    const res = await api.shifts.getActiveShift(`SLOT_${teamSlot}`);  // ← the fix
+    const isActive = !!res?.data;
+    setShiftActive(isActive);
+    localStorage.setItem('shiftActive', String(isActive));
+  } catch {
+    const cached = localStorage.getItem('shiftActive');
+    setShiftActive(cached === 'true');
+  } finally {
+    setShiftLoading(false);
+  }
+}, []);
 
   useEffect(() => {
     checkShift();
