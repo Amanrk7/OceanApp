@@ -574,11 +574,7 @@ const usedCount   = slotInfo?.usedCount ?? 0;
                   <div style={{ fontSize: '11px', color: C.grayLt, marginTop: '2px' }}>
                     Can manage players and run shifts. Auto-gets next free team slot.
                   </div>
-                  {slotInfo && slotsLeft === 0 && (
-                    <div style={{ fontSize: '11px', color: C.red, marginTop: '4px', fontWeight: '600' }}>
-                      ⚠ All slots filled — remove a member first
-                    </div>
-                  )}
+                  
                 </div>
               </label>
 
