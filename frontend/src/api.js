@@ -734,12 +734,13 @@ export const reportsAPI = {
     return fetchAPI(`/reports/daily${qs}`);
   },
   getMyShifts: (opts = {}) => {
-    const params = new URLSearchParams();
-    if (opts.role) params.set('role', opts.role);
-    if (opts.limit) params.set('limit', opts.limit);
-    const qs = params.toString() ? `?${params}` : '';
-    return fetchAPI(`/reports/my-shifts${qs}`);
-  },
+  const params = new URLSearchParams();
+  if (opts.role) params.set('role', opts.role);
+  if (opts.limit) params.set('limit', opts.limit);
+  if (opts.allMembers) params.set('allMembers', 'true');   // ← add this
+  const qs = params.toString() ? `?${params}` : '';
+  return fetchAPI(`/reports/my-shifts${qs}`);
+},
 };
 
 export const referralBonusAPI = {
