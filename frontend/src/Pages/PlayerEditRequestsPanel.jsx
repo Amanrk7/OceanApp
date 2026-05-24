@@ -64,7 +64,11 @@ const TEAM_COLORS = {
   TEAM4: '#f59e0b',
 };
 
-function teamColor(role) { return TEAM_COLORS[role] || '#94a3b8'; }
+// function teamColor(role) { return TEAM_COLORS[role] || '#94a3b8'; }
+function teamColor(slot) {
+  const COLORS = ['#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#0ea5e9', '#f97316', '#14b8a6', '#a855f7'];
+  return slot ? COLORS[(slot - 1) % COLORS.length] : '#94a3b8';
+}
 
 function initials(name = '') {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -307,7 +311,8 @@ export default function PlayerEditRequestsPanel() {
         const changes   = r.changes || {};
         const fieldCount = Object.keys(changes).length;
         const groups    = groupChanges(changes);
-        const tc        = teamColor(r.requester?.role);
+        // const tc        = teamColor(r.requester?.role);
+      const tc = teamColor(r.requester?.teamSlot);
 
         return (
           <div key={r.id} style={{ ...CARD, transition: 'box-shadow .15s' }}>
@@ -337,7 +342,8 @@ export default function PlayerEditRequestsPanel() {
                     color: tc, fontSize: 9, fontWeight: 700,
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    {(r.requester?.role || '?').replace('TEAM', 'T')}
+                    {r.requester?.teamSlot ? `T${r.requester.teamSlot}` : '?'}
+
                   </span>
                   <span style={{ fontSize: 11, color: T.muted }}>{r.requester?.name}</span>
                   <span style={{ color: T.border }}>·</span>
