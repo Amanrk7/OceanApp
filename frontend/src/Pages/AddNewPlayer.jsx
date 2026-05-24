@@ -462,10 +462,9 @@ const usedCount   = slotInfo?.usedCount ?? 0;
         <div>
           <p style={{ fontWeight: '700', margin: '0 0 2px', fontSize: '14px' }}>Add a Member or Admin</p>
           <p style={{ color: C.gray, margin: 0, fontSize: '12px', lineHeight: '1.5' }}>
-            Team members are auto-assigned to the next available slot.
-            /* {slotInfo && <> Currently <strong>{usedCount}/{totalSlots}</strong> slots used — <strong style={{ color: slotsLeft > 0 ? C.green : C.red }}>{slotsLeft} slot{slotsLeft !== 1 ? 's' : ''} free</strong>.</>} */
-            {slotInfo && <> Currently <strong>{usedCount}</strong> member{usedCount !== 1 ? 's' : ''} — next slot will be <strong style={{ color: C.green }}>Team {nextSlotNum}</strong>.</>}
-          </p>
+  Team members are auto-assigned to the next available slot.
+  {slotInfo && <> Currently <strong>{usedCount}</strong> member{usedCount !== 1 ? 's' : ''} — next slot will be <strong style={{ color: C.green }}>Team {nextSlotNum}</strong>.</>}
+</p>
         </div>
       </div>
 
