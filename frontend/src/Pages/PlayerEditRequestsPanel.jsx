@@ -65,10 +65,16 @@ const TEAM_COLORS = {
 };
 
 // function teamColor(role) { return TEAM_COLORS[role] || '#94a3b8'; }
+// function teamColor(slot) {
+//   const COLORS = ['#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#0ea5e9', '#f97316', '#14b8a6', '#a855f7'];
+//   return slot ? COLORS[(slot - 1) % COLORS.length] : '#94a3b8';
+// }
 function teamColor(slot) {
-  const COLORS = ['#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#0ea5e9', '#f97316', '#14b8a6', '#a855f7'];
+  const COLORS = ['#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#0ea5e9', '#f97316'];
   return slot ? COLORS[(slot - 1) % COLORS.length] : '#94a3b8';
 }
+
+// And where it's called:
 
 function initials(name = '') {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -313,6 +319,7 @@ export default function PlayerEditRequestsPanel() {
         const groups    = groupChanges(changes);
         // const tc        = teamColor(r.requester?.role);
       const tc = teamColor(r.requester?.teamSlot);
+
 
         return (
           <div key={r.id} style={{ ...CARD, transition: 'box-shadow .15s' }}>
