@@ -2461,16 +2461,6 @@ export const ShiftsPage = () => {
           // ✅ Check admin's own active shift too (removed the skip)
           // api.shifts.getActiveShift(usr.role),
           api.shifts.getActiveShift(`SLOT_${usr.teamSlot}`)
-          // isAdmin
-            // ? Promise.all(
-            //   // ✅ Include admin's own role alongside team roles
-            //   [...TEAM_ROLES, usr.role].map(r => api.reports.getMyShifts({ role: r, limit: 30 }))
-            // ).then(results => ({
-            //   data: results
-            //     .flatMap(r => r?.data ?? [])
-            //     .sort((a, b) => new Date(b.startTime) - new Date(a.startTime)),
-            // }))
-            // : api.reports.getMyShifts({ role: usr.role, limit: 30 }),
         isAdmin
   ? api.reports.getMyShifts({ allMembers: true, limit: 100 })
   : api.reports.getMyShifts({ limit: 30 }),
