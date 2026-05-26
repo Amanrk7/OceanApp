@@ -1,9 +1,9 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useContext } from 'react';
 import {
   TrendingDown, TrendingUp, Users, BarChart3,
   ArrowUpRight, ArrowDownRight, DollarSign, Zap,
   Activity, Target, AlertCircle, CheckCircle2,
-  ChevronRight, Flame, Trophy, Star
+  ChevronRight, Flame, Trophy, Star, Pencil, Check, X
 } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis,
@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { api } from '../api';
 import DashboardClock from './DashboardClock.jsx';
+import { CurrentUserContext } from '../Context/currentUser.jsx';
 
 // ═══════════════════════════════════════════════════════════════
 // DESIGN TOKENS
@@ -110,7 +111,6 @@ const ChartTooltip = ({ active, payload, label }) => {
 
 const StatCard = React.memo(({ title, value, color, icon: Icon, prefix = '$' }) => (
   <Card style={{ position: 'relative', overflow: 'hidden' }}>
-    {/* Decorative accent */}
     <div style={{
       position: 'absolute', top: 0, left: 0, right: 0, height: 3,
       background: color, borderRadius: '16px 16px 0 0',
@@ -163,8 +163,6 @@ const LeaderboardRow = ({ rank, label, value, isLast }) => {
 
 // ═══════════════════════════════════════════════════════════════
 // TOP DEPOSITORS
-// Backend: period_1day | period_7days | period_30days
-// Each item: { id, name, username, totalDeposited }
 // ═══════════════════════════════════════════════════════════════
 
 const TopDepositorsCard = React.memo(({ data: allData }) => {
@@ -183,17 +181,9 @@ const TopDepositorsCard = React.memo(({ data: allData }) => {
       <TabSelector options={['30days', '7days', '1day']} active={period} onChange={setPeriod} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {displayData.slice(0, 5).map((item, idx) => (
-          <LeaderboardRow
-            key={idx} rank={idx + 1}
-            label={item.name || `User ${item.id}`}
-            // Backend field: totalDeposited
-            value={item.totalDeposited ?? 0}
-            isLast={idx === Math.min(4, displayData.length - 1)}
-          />
+          <LeaderboardRow key={idx} rank={idx + 1} label={item.name || `User ${item.id}`} value={item.totalDeposited ?? 0} isLast={idx === Math.min(4, displayData.length - 1)} />
         ))}
-        {!displayData.length && (
-          <p style={{ textAlign: 'center', color: C.slate400, fontSize: 13, padding: '16px 0' }}>No data</p>
-        )}
+        {!displayData.length && <p style={{ textAlign: 'center', color: C.slate400, fontSize: 13, padding: '16px 0' }}>No data</p>}
       </div>
     </Card>
   );
@@ -202,8 +192,6 @@ TopDepositorsCard.displayName = 'TopDepositorsCard';
 
 // ═══════════════════════════════════════════════════════════════
 // TOP CASHOUTS
-// Backend: period_1day | period_7days | period_30days
-// Each item: { id, name, username, totalCashouts }
 // ═══════════════════════════════════════════════════════════════
 
 const TopCashoutsCard = React.memo(({ data: allData }) => {
@@ -222,17 +210,9 @@ const TopCashoutsCard = React.memo(({ data: allData }) => {
       <TabSelector options={['30days', '7days', '1day']} active={period} onChange={setPeriod} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {displayData.slice(0, 5).map((item, idx) => (
-          <LeaderboardRow
-            key={idx} rank={idx + 1}
-            label={item.name || `User ${item.id}`}
-            // Backend field: totalCashouts (user cashouts endpoint)
-            value={item.totalCashouts ?? 0}
-            isLast={idx === Math.min(4, displayData.length - 1)}
-          />
+          <LeaderboardRow key={idx} rank={idx + 1} label={item.name || `User ${item.id}`} value={item.totalCashouts ?? 0} isLast={idx === Math.min(4, displayData.length - 1)} />
         ))}
-        {!displayData.length && (
-          <p style={{ textAlign: 'center', color: C.slate400, fontSize: 13, padding: '16px 0' }}>No data</p>
-        )}
+        {!displayData.length && <p style={{ textAlign: 'center', color: C.slate400, fontSize: 13, padding: '16px 0' }}>No data</p>}
       </div>
     </Card>
   );
@@ -241,8 +221,6 @@ TopCashoutsCard.displayName = 'TopCashoutsCard';
 
 // ═══════════════════════════════════════════════════════════════
 // TOP GAMES BY DEPOSITS
-// Backend: period_1day | period_7days | period_30days
-// Each item: { id, name, totalDeposited }
 // ═══════════════════════════════════════════════════════════════
 
 const TopGamesByDepositsCard = React.memo(({ data: allData }) => {
@@ -259,17 +237,9 @@ const TopGamesByDepositsCard = React.memo(({ data: allData }) => {
       <TabSelector options={['30days', '7days', '1day']} active={period} onChange={setPeriod} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {displayData.slice(0, 5).map((item, idx) => (
-          <LeaderboardRow
-            key={idx} rank={idx + 1}
-            label={item.name || '—'}
-            // Backend field: totalDeposited (from /analytics/top-games-deposits)
-            value={item.totalDeposited ?? 0}
-            isLast={idx === Math.min(4, displayData.length - 1)}
-          />
+          <LeaderboardRow key={idx} rank={idx + 1} label={item.name || '—'} value={item.totalDeposited ?? 0} isLast={idx === Math.min(4, displayData.length - 1)} />
         ))}
-        {!displayData.length && (
-          <p style={{ textAlign: 'center', color: C.slate400, fontSize: 13, padding: '16px 0' }}>No data</p>
-        )}
+        {!displayData.length && <p style={{ textAlign: 'center', color: C.slate400, fontSize: 13, padding: '16px 0' }}>No data</p>}
       </div>
     </Card>
   );
@@ -278,8 +248,6 @@ TopGamesByDepositsCard.displayName = 'TopGamesByDepositsCard';
 
 // ═══════════════════════════════════════════════════════════════
 // TOP GAMES BY CASHOUTS
-// Backend: period_1day | period_7days | period_30days
-// Each item: { id, name, totalCashedOut }
 // ═══════════════════════════════════════════════════════════════
 
 const TopGamesByCashoutsCard = React.memo(({ data: allData }) => {
@@ -296,17 +264,9 @@ const TopGamesByCashoutsCard = React.memo(({ data: allData }) => {
       <TabSelector options={['30days', '7days', '1day']} active={period} onChange={setPeriod} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {displayData.slice(0, 5).map((item, idx) => (
-          <LeaderboardRow
-            key={idx} rank={idx + 1}
-            label={item.name || '—'}
-            // Backend field: totalCashedOut (from /analytics/top-games-cashouts)
-            value={item.totalCashedOut ?? 0}
-            isLast={idx === Math.min(4, displayData.length - 1)}
-          />
+          <LeaderboardRow key={idx} rank={idx + 1} label={item.name || '—'} value={item.totalCashedOut ?? 0} isLast={idx === Math.min(4, displayData.length - 1)} />
         ))}
-        {!displayData.length && (
-          <p style={{ textAlign: 'center', color: C.slate400, fontSize: 13, padding: '16px 0' }}>No data</p>
-        )}
+        {!displayData.length && <p style={{ textAlign: 'center', color: C.slate400, fontSize: 13, padding: '16px 0' }}>No data</p>}
       </div>
     </Card>
   );
@@ -315,7 +275,6 @@ TopGamesByCashoutsCard.displayName = 'TopGamesByCashoutsCard';
 
 // ═══════════════════════════════════════════════════════════════
 // DAILY PROFIT CHART
-// Backend /api/chart/daily-profit → { data: [{day, profit}] }
 // ═══════════════════════════════════════════════════════════════
 
 const DailyProfitChart = React.memo(({ data }) => (
@@ -340,8 +299,6 @@ DailyProfitChart.displayName = 'DailyProfitChart';
 
 // ═══════════════════════════════════════════════════════════════
 // DEPOSITS VS WITHDRAWALS CHART
-// Backend /api/chart/player-deposit-withdrawal →
-//   { period_7days: [{date, deposits, withdrawals}], period_30days: [...] }
 // ═══════════════════════════════════════════════════════════════
 
 const PlayerActivityChart = React.memo(({ data }) => {
@@ -366,11 +323,9 @@ const PlayerActivityChart = React.memo(({ data }) => {
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke={C.slate100} vertical={false} />
-          {/* Backend returns `date` key */}
           <XAxis dataKey="date" stroke={C.slate400} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
           <YAxis stroke={C.slate400} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} width={48} />
           <Tooltip content={<ChartTooltip />} />
-          {/* Backend returns `deposits` and `withdrawals` keys */}
           <Area type="monotone" dataKey="deposits" stroke={C.green} strokeWidth={2} fill="url(#gDeposits)" dot={{ fill: C.green, r: 3, strokeWidth: 0 }} name="Deposits" isAnimationActive={false} />
           <Area type="monotone" dataKey="withdrawals" stroke={C.red} strokeWidth={2} fill="url(#gWithdrawals)" dot={{ fill: C.red, r: 3, strokeWidth: 0 }} name="Withdrawals" isAnimationActive={false} />
         </AreaChart>
@@ -382,7 +337,6 @@ PlayerActivityChart.displayName = 'PlayerActivityChart';
 
 // ═══════════════════════════════════════════════════════════════
 // PLAYER ATTENDANCE
-// Backend /api/attendance → { stats: { total, active, critical, highlyCritical, inactive } }
 // ═══════════════════════════════════════════════════════════════
 
 const PlayerAttendanceCard = React.memo(({ stats }) => (
@@ -407,7 +361,6 @@ PlayerAttendanceCard.displayName = 'PlayerAttendanceCard';
 
 // ═══════════════════════════════════════════════════════════════
 // ISSUE STATUS
-// Backend: dashboardStats.issues → { unresolved, resolved, total, highPriority }
 // ═══════════════════════════════════════════════════════════════
 
 const IssueStatusCard = ({ dashboardStats }) => {
@@ -465,72 +418,175 @@ const IssueStatusCard = ({ dashboardStats }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// TODAY'S PROFIT CARD
-// Uses dashboardStats.daily.{deposits, cashouts}
-// Daily profit goal: fixed $1,000 target (adjustable constant below)
+// TODAY'S PROFIT CARD — with Super Admin goal editing
 // ═══════════════════════════════════════════════════════════════
 
-const DAILY_PROFIT_GOAL = 1000; // fixed daily target — adjust as needed
+const ProfitGoalCard = ({ todaysProfit, deposits, cashouts, progressPercentage, dailyGoal, isSuperAdmin, onGoalSave }) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-const ProfitGoalCard = ({ todaysProfit, deposits, cashouts, progressPercentage }) => (
-  <Card style={{
-    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-    border: 'none', color: '#fff', marginBottom: 20,
-  }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24 }}>
-      <div style={{ flex: 1 }}>
-        {/* Today's ACTUAL profit (deposits − cashouts) */}
-        <Label style={{ color: 'rgba(255,255,255,.5)' }}>Today's Profit</Label>
-        <div style={{
-          fontSize: 'clamp(28px,5vw,44px)', fontWeight: 900, letterSpacing: '-1px', marginBottom: 14,
-          color: todaysProfit >= 0 ? '#fff' : C.red,
-        }}>
-          {todaysProfit < 0 ? '-' : ''}${Math.abs(todaysProfit).toFixed(2)}
-        </div>
-        <div style={{ display: 'flex', gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.green }} />
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontWeight: 500 }}>
-              ${deposits.toLocaleString()} Deposits
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.red }} />
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontWeight: 500 }}>
-              ${cashouts.toLocaleString()} Cashouts
-            </span>
-          </div>
-        </div>
-      </div>
-      <div style={{ flex: 1 }}>
-        {/* Progress toward fixed daily goal */}
-        <div style={{ marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>
-            Goal: ${DAILY_PROFIT_GOAL.toLocaleString()}
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 700 }}>{Math.min(Math.round(progressPercentage), 100)}%</span>
-        </div>
-        <div style={{ height: 8, background: 'rgba(255,255,255,.1)', borderRadius: 99, overflow: 'hidden' }}>
+  const handleEdit = () => {
+    setDraft(String(dailyGoal));
+    setError('');
+    setEditing(true);
+  };
+
+  const handleCancel = () => {
+    setEditing(false);
+    setError('');
+  };
+
+  const handleSave = async () => {
+    const val = parseFloat(draft);
+    if (isNaN(val) || val < 0) { setError('Enter a valid positive number'); return; }
+    setSaving(true);
+    setError('');
+    try {
+      await onGoalSave(val);
+      setEditing(false);
+    } catch (e) {
+      setError(e.message || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') handleSave();
+    if (e.key === 'Escape') handleCancel();
+  };
+
+  return (
+    <Card style={{
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      border: 'none', color: '#fff', marginBottom: 20,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24 }}>
+        {/* Left: today's profit */}
+        <div style={{ flex: 1 }}>
+          <Label style={{ color: 'rgba(255,255,255,.5)' }}>Today's Profit</Label>
           <div style={{
-            height: '100%', borderRadius: 99,
-            background: progressPercentage >= 100
-              ? 'linear-gradient(90deg, #10b981, #06b6d4)'
-              : 'linear-gradient(90deg, #3b82f6, #06b6d4)',
-            width: `${Math.min(progressPercentage, 100)}%`, transition: 'width .5s ease',
-          }} />
+            fontSize: 'clamp(28px,5vw,44px)', fontWeight: 900, letterSpacing: '-1px', marginBottom: 14,
+            color: todaysProfit >= 0 ? '#fff' : C.red,
+          }}>
+            {todaysProfit < 0 ? '-' : ''}${Math.abs(todaysProfit).toFixed(2)}
+          </div>
+          <div style={{ display: 'flex', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.green }} />
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontWeight: 500 }}>
+                ${deposits.toLocaleString()} Deposits
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.red }} />
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontWeight: 500 }}>
+                ${cashouts.toLocaleString()} Cashouts
+              </span>
+            </div>
+          </div>
         </div>
-        <p style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginTop: 5 }}>
-          ${Math.max(todaysProfit, 0).toLocaleString()} / ${DAILY_PROFIT_GOAL.toLocaleString()}
-        </p>
+
+        {/* Right: goal progress */}
+        <div style={{ flex: 1 }}>
+          <div style={{ marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* Goal label — editable for SUPER_ADMIN */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {editing ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>Goal: $</span>
+                  <input
+                    type="number"
+                    value={draft}
+                    onChange={e => setDraft(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    autoFocus
+                    style={{
+                      width: 80, padding: '2px 6px', borderRadius: 6,
+                      border: error ? '1px solid #ef4444' : '1px solid rgba(255,255,255,.3)',
+                      background: 'rgba(255,255,255,.1)', color: '#fff',
+                      fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    style={{
+                      width: 22, height: 22, borderRadius: 5, border: 'none',
+                      background: saving ? 'rgba(255,255,255,.1)' : '#10b981',
+                      color: '#fff', cursor: saving ? 'not-allowed' : 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Check size={12} />
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    style={{
+                      width: 22, height: 22, borderRadius: 5, border: 'none',
+                      background: 'rgba(255,255,255,.1)', color: '#fff',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', fontWeight: 600 }}>
+                    Goal: ${dailyGoal.toLocaleString()}
+                  </span>
+                  {isSuperAdmin && (
+                    <button
+                      onClick={handleEdit}
+                      title="Edit daily goal (Super Admin only)"
+                      style={{
+                        width: 18, height: 18, borderRadius: 4, border: 'none',
+                        background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.5)',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all .15s',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.2)'; e.currentTarget.style.color = '#fff'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.1)'; e.currentTarget.style.color = 'rgba(255,255,255,.5)'; }}
+                    >
+                      <Pencil size={10} />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 700 }}>{Math.min(Math.round(progressPercentage), 100)}%</span>
+          </div>
+
+          {error && (
+            <p style={{ fontSize: 10, color: '#f87171', margin: '0 0 4px 0' }}>{error}</p>
+          )}
+
+          <div style={{ height: 8, background: 'rgba(255,255,255,.1)', borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', borderRadius: 99,
+              background: progressPercentage >= 100
+                ? 'linear-gradient(90deg, #10b981, #06b6d4)'
+                : 'linear-gradient(90deg, #3b82f6, #06b6d4)',
+              width: `${Math.min(progressPercentage, 100)}%`, transition: 'width .5s ease',
+            }} />
+          </div>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginTop: 5 }}>
+            ${Math.max(todaysProfit, 0).toLocaleString()} / ${dailyGoal.toLocaleString()}
+          </p>
+        </div>
       </div>
-    </div>
-  </Card>
-);
+    </Card>
+  );
+};
 
 // ═══════════════════════════════════════════════════════════════
 // ALL-TIME PROFIT CARD
-// Backend dashboardStats.revenue → { deposits, withdrawals, profit }
-// Profit = all-time deposits − all-time withdrawals
 // ═══════════════════════════════════════════════════════════════
 
 const TotalProfitCard = ({ allTimeProfit, depositsDetail, cashoutsDetail, avgDailyProfit }) => (
@@ -538,7 +594,6 @@ const TotalProfitCard = ({ allTimeProfit, depositsDetail, cashoutsDetail, avgDai
     background: 'linear-gradient(135deg, #0284c7 0%, #0891b2 100%)',
     border: 'none', color: '#fff',
   }}>
-    {/* Label accurately reflects all-time data from revenue endpoint */}
     <Label style={{ color: 'rgba(255,255,255,.6)' }}>All-Time Profit</Label>
     <div style={{ fontSize: 'clamp(26px,4vw,40px)', fontWeight: 900, letterSpacing: '-1px', marginBottom: 16 }}>
       ${allTimeProfit?.toLocaleString?.() ?? allTimeProfit}
@@ -550,7 +605,6 @@ const TotalProfitCard = ({ allTimeProfit, depositsDetail, cashoutsDetail, avgDai
       {[
         { label: 'Deposits',    value: depositsDetail },
         { label: 'Cashouts',    value: cashoutsDetail },
-        // Avg daily profit from 7-day bar chart data — more meaningful than avgTx
         { label: 'Avg/Day (7d)', value: avgDailyProfit?.toFixed?.(0) ?? '—' },
       ].map(({ label, value }) => (
         <div key={label}>
@@ -566,7 +620,6 @@ const TotalProfitCard = ({ allTimeProfit, depositsDetail, cashoutsDetail, avgDai
 
 // ═══════════════════════════════════════════════════════════════
 // WEEKLY ACTIVITY MINI CHART
-// Backend /api/chart/player-activity → { data: [{name, deposits}] }
 // ═══════════════════════════════════════════════════════════════
 
 const WeeklyActivityCard = ({ playerActivity, totalDepositsWeek }) => (
@@ -587,10 +640,8 @@ const WeeklyActivityCard = ({ playerActivity, totalDepositsWeek }) => (
               <stop offset="95%" stopColor={C.blue} stopOpacity={0} />
             </linearGradient>
           </defs>
-          {/* Backend returns `name` for the day label */}
           <XAxis dataKey="name" tick={{ fontSize: 10, fill: C.slate400 }} axisLine={false} tickLine={false} />
           <Tooltip content={<ChartTooltip />} />
-          {/* Backend returns `deposits` as the value key */}
           <Area type="monotone" dataKey="deposits" stroke={C.blue} strokeWidth={2} fill="url(#gWeekly)" dot={false} name="Deposits" />
         </AreaChart>
       ) : (
@@ -617,20 +668,24 @@ const Skeleton = ({ h = 20, w = '100%', br = 6 }) => (
 // ═══════════════════════════════════════════════════════════════
 
 export default function Dashboard() {
-  const [dashboardStats, setDashboardStats]             = useState(null);
-  const [playerActivity, setPlayerActivity]             = useState(null);
+  const { usr } = useContext(CurrentUserContext);
+  const isSuperAdmin = usr?.role === 'SUPER_ADMIN';
+
+  const [dashboardStats, setDashboardStats]               = useState(null);
+  const [playerActivity, setPlayerActivity]               = useState(null);
   const [depoVsCashoutActivity, setDepoVsCashoutActivity] = useState(null);
-  const [topDepositors, setTopDepositors]               = useState(null);
-  const [topCashouts, setTopCashouts]                   = useState(null);
-  const [topGamesByDeposits, setTopGamesByDeposits]     = useState(null);
-  const [topGamesByCashouts, setTopGamesByCashouts]     = useState(null);
-  const [loading, setLoading]                           = useState(true);
-  // last30DaysProfit from /api/profit/stats (ProfitStat table).
-  // Falls back to revenue.profit from dashboardStats if no entries exist.
-  const [profitStatsSummary, setProfitStatsSummary]     = useState(null);
-  const [dailyProfitData, setDailyProfitData]           = useState(null);
-  const [totalDepositsWeek, setTotalDepositsWeek]       = useState(0);
-  const [stats, setStats] = useState({ total: 0, active: 0, critical: 0, highlyCritical: 0, inactive: 0 });
+  const [topDepositors, setTopDepositors]                 = useState(null);
+  const [topCashouts, setTopCashouts]                     = useState(null);
+  const [topGamesByDeposits, setTopGamesByDeposits]       = useState(null);
+  const [topGamesByCashouts, setTopGamesByCashouts]       = useState(null);
+  const [loading, setLoading]                             = useState(true);
+  const [profitStatsSummary, setProfitStatsSummary]       = useState(null);
+  const [dailyProfitData, setDailyProfitData]             = useState(null);
+  const [totalDepositsWeek, setTotalDepositsWeek]         = useState(0);
+  const [stats, setStats]                                 = useState({ total: 0, active: 0, critical: 0, highlyCritical: 0, inactive: 0 });
+
+  // ── Daily goal — fetched from API, editable by SUPER_ADMIN ──────────────
+  const [dailyGoal, setDailyGoal] = useState(1000);
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -648,6 +703,7 @@ export default function Dashboard() {
           gameDeposits,
           gameCashouts,
           attendanceResult,
+          goalData,
         ] = await Promise.all([
           api.dashboard.getStats(),
           api.dashboard.getProfitStats(),
@@ -659,14 +715,13 @@ export default function Dashboard() {
           api.dashboard.getTopGamesByDeposits?.()   || Promise.resolve(null),
           api.dashboard.getTopGamesByCashouts?.()   || Promise.resolve(null),
           api.attendance.getAttendance('Active'),
+          api.dashboard.getDailyGoal?.()            || Promise.resolve({ goal: 1000 }),
         ]);
 
         if (attendanceResult?.stats) setStats(attendanceResult.stats);
 
         setDashboardStats(statsData);
-        // /api/profit/stats → { data: [...], summary: { total, average, max, min, daysCount } }
         setProfitStatsSummary(profitStatsData?.summary ?? null);
-        // /api/chart/daily-profit → { data: [{day, profit}] }
         setDailyProfitData(dailyProfit);
         setPlayerActivity(activity);
         setDepoVsCashoutActivity(chart_depoVsCashout);
@@ -674,8 +729,8 @@ export default function Dashboard() {
         setTopCashouts(cashouts);
         setTopGamesByDeposits(gameDeposits);
         setTopGamesByCashouts(gameCashouts);
+        setDailyGoal(goalData?.goal ?? 1000);
 
-        // Weekly deposit total: sum `deposits` from /api/chart/player-activity data array
         const weekTotal = activity?.data?.reduce((sum, d) => sum + (d.deposits || 0), 0) ?? 0;
         setTotalDepositsWeek(weekTotal);
       } catch (err) {
@@ -690,7 +745,13 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // ── useMemo MUST be before any early returns (Rules of Hooks) ──
+  // ── Save goal handler (called from ProfitGoalCard) ─────────────────────
+  const handleGoalSave = useCallback(async (newGoal) => {
+    const result = await api.dashboard.setDailyGoal(newGoal);
+    setDailyGoal(result.goal ?? newGoal);
+  }, []);
+
+  // ── Derived values (hooks always before early returns) ─────────────────
   const avgDailyProfit = useMemo(() => {
     const chartData = dailyProfitData?.data;
     if (!chartData?.length) return 0;
@@ -724,27 +785,21 @@ export default function Dashboard() {
   }
 
   // ── Derived values ─────────────────────────────────────────────
-  // Today's deposits and cashouts from dashboardStats.daily
   const deposits     = dashboardStats?.daily?.deposits  || 0;
   const cashouts     = dashboardStats?.daily?.cashouts  || 0;
   const todaysProfit = deposits - cashouts;
 
-  // Progress toward fixed daily goal
-  const progressPct = DAILY_PROFIT_GOAL > 0
-    ? (Math.max(todaysProfit, 0) / DAILY_PROFIT_GOAL) * 100
+  const progressPct = dailyGoal > 0
+    ? (Math.max(todaysProfit, 0) / dailyGoal) * 100
     : 0;
 
-  // All-time deposits and cashouts from dashboardStats.revenue
   const depositsDetail  = dashboardStats?.revenue?.deposits    || 0;
   const cashoutsDetail  = dashboardStats?.revenue?.withdrawals || 0;
-  // All-time profit: deposits − withdrawals (from revenue endpoint)
   const allTimeProfit   = dashboardStats?.revenue?.profit      || 0;
 
-  // 4 stat cards — all using real backend fields
   const statCards = [
     {
       title: "Today's Profit",
-      // daily.deposits − daily.cashouts
       value: Math.round(todaysProfit),
       color: todaysProfit >= 0 ? C.blue : C.red,
       icon: DollarSign,
@@ -752,7 +807,6 @@ export default function Dashboard() {
     },
     {
       title: 'All-Time Deposits',
-      // revenue.deposits (all-time completed deposits)
       value: Math.round(depositsDetail),
       color: C.green,
       icon: TrendingUp,
@@ -760,7 +814,6 @@ export default function Dashboard() {
     },
     {
       title: 'All-Time Cashouts',
-      // revenue.withdrawals (all-time completed withdrawals)
       value: Math.round(cashoutsDetail),
       color: C.red,
       icon: TrendingDown,
@@ -768,15 +821,13 @@ export default function Dashboard() {
     },
     {
       title: 'New Players (7d)',
-      // players.newThisWeek — actual new player count this week
       value: dashboardStats?.players?.newThisWeek || 0,
       color: C.amber,
       icon: Users,
-      prefix: '',  // not a dollar amount
+      prefix: '',
     },
   ];
 
-  // Attendance stats from /api/attendance → stats.{ active, critical, highlyCritical, inactive }
   const attendanceStats = [
     { label: 'ACTIVE (24H)',          value: stats?.active         || 0, color: C.green   },
     { label: 'CRITICAL (1–3D)',       value: stats?.critical       || 0, color: C.amber   },
@@ -795,63 +846,47 @@ export default function Dashboard() {
         {/* ── LEFT COLUMN ─────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
 
-          {/* Today's profit vs fixed goal */}
           <ProfitGoalCard
             todaysProfit={todaysProfit}
             deposits={deposits}
             cashouts={cashouts}
             progressPercentage={progressPct}
+            dailyGoal={dailyGoal}
+            isSuperAdmin={isSuperAdmin}
+            onGoalSave={handleGoalSave}
           />
 
-          {/* Stat cards — all backed by real API fields */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px,1fr))', gap: 12 }}>
             {statCards.map((s, i) => (
               <StatCard key={i} title={s.title} value={s.value} color={s.color} icon={s.icon} prefix={s.prefix} />
             ))}
           </div>
 
-          {/* All-time profit + weekly activity */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <TotalProfitCard
-              allTimeProfit={allTimeProfit}
-              depositsDetail={depositsDetail}
-              cashoutsDetail={cashoutsDetail}
-              avgDailyProfit={avgDailyProfit}
-            />
+            <TotalProfitCard allTimeProfit={allTimeProfit} depositsDetail={depositsDetail} cashoutsDetail={cashoutsDetail} avgDailyProfit={avgDailyProfit} />
             <WeeklyActivityCard playerActivity={playerActivity} totalDepositsWeek={totalDepositsWeek} />
           </div>
 
-          {/* Top depositors + cashouts */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <TopDepositorsCard data={topDepositors} />
             <TopCashoutsCard data={topCashouts} />
           </div>
 
-          {/* Top games */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <TopGamesByDepositsCard data={topGamesByDeposits} />
             <TopGamesByCashoutsCard data={topGamesByCashouts} />
           </div>
 
-          {/* Daily profit bar chart — uses dailyProfitData.data */}
           <DailyProfitChart data={dailyProfitData?.data} />
-
-          {/* Deposits vs Withdrawals area chart */}
           <PlayerActivityChart data={depoVsCashoutActivity} />
         </div>
 
         {/* ── RIGHT COLUMN ────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-          {/* Clock */}
           <Card style={{ padding: 0, overflow: 'hidden', border: 'none', background: 'var(--color-cards-background)' }}>
             <DashboardClock />
           </Card>
-
-          {/* Issue status — uses dashboardStats.issues */}
           <IssueStatusCard dashboardStats={dashboardStats} />
-
-          {/* Attendance — uses /api/attendance stats */}
           <PlayerAttendanceCard stats={attendanceStats} />
         </div>
 
