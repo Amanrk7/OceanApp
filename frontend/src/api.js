@@ -283,7 +283,25 @@ export const dashboardAPI = {
       cache.set(cacheKey, data, 60 * 1000);
       return data;
     } catch (error) { return { period_1day: [], period_7days: [], period_30days: [] }; }
-  }
+  }, 
+
+  getDailyGoal: async (forceRefresh = false) => {
+  const cacheKey = `${storeKey()}_dailyGoal`;
+  if (!forceRefresh) { const cached = cache.get(cacheKey); if (cached) return cached; }
+  const data = await fetchAPI('/settings/daily-goal');
+  cache.set(cacheKey, data, 5 * 60 * 1000);
+  return data;
+},
+
+setDailyGoal: async (goal) => {
+  const cacheKey = `${storeKey()}_dailyGoal`;
+  const data = await fetchAPI('/settings/daily-goal', {
+    method: 'PATCH',
+    body: JSON.stringify({ goal }),
+  });
+  cache.clear(cacheKey);
+  return data;
+},
 };
 
 // ═══════════════════════════════════════════════════════════════
