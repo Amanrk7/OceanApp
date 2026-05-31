@@ -374,6 +374,7 @@ function AddMemberForm({ onSuccess, onCancel }) {
   const [showPw, setShowPw]   = useState(false);
   const [showCpw, setShowCpw] = useState(false);
   const [slotInfo, setSlotInfo] = useState(null); // { nextSlot, nextSlotNumber, usedCount, totalSlots }
+  const [gameAccountIds, setGameAccountIds] = useState({});
 
   // Fetch available slot info on mount
   useEffect(() => {
@@ -416,6 +417,18 @@ function AddMemberForm({ onSuccess, onCancel }) {
       toast('Please fix the errors before submitting.', 'error');
       return;
     }
+    // After creating the player, link any game account IDs
+const idsToLink = Object.entries(gameAccountIds).filter(([, v]) => v?.trim());
+if (idsToLink.length > 0) {
+  await Promise.all(
+    idsToLink.map(([gameId, remoteAccountId]) =>
+      api.post(`/api/players/${newPlayer.id}/game-accounts`, {
+        gameId,
+        remoteAccountId: remoteAccountId.trim(),
+      }).catch(err => console.error(`Failed to link ${gameId}:`, err))
+    )
+  );
+}
     try {
       setLoading(true);
       const res = await api.members.createMember({
@@ -862,6 +875,41 @@ function AddPlayerForm({ onSuccess, onCancel }) {
         </div>
       </div>
 
+
+      {/* // State at the top of your create-player component */}
+{/* const [gameAccountIds, setGameAccountIds] = useState({}); // { [gameId]: remoteAccountId } */}
+
+{/* // After fetching games (you already have them), render this section: */}
+{games.filter(g => g.provider !== 'NONE').length > 0 && (
+  <div style={{ marginTop: 24 }}>
+    <h4 style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+      Platform Account IDs
+    </h4>
+    <p style={{ fontSize: 12, color: '#94a3b8', marginBottom: 14 }}>
+      Optional — link the player's ID from each gaming platform so transactions sync automatically.
+    </p>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      {games
+        .filter(g => g.provider && g.provider !== 'NONE')
+        .map(g => (
+          <div key={g.id}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+              {g.name} ID
+              <span style={{ marginLeft: 6, fontWeight: 400, textTransform: 'none', color: '#94a3b8' }}>({g.provider})</span>
+            </label>
+            <input
+              type="text"
+              placeholder={`e.g. 14871201 or player_xyz`}
+              value={gameAccountIds[g.id] || ''}
+              onChange={e => setGameAccountIds(prev => ({ ...prev, [g.id]: e.target.value }))}
+              style={{ width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
+            />
+          </div>
+        ))}
+    </div>
+  </div>
+)}
+      
       {/* ── 4 · Payment Handles ── */}
       <div style={{ background: C.white, borderRadius: '14px', border: `1px solid ${C.border}`, boxShadow: '0 2px 12px rgba(15,23,42,.07)', padding: '24px 28px' }}>
         <SectionHead step="4">
