@@ -418,17 +418,7 @@ function AddMemberForm({ onSuccess, onCancel }) {
       return;
     }
     // After creating the player, link any game account IDs
-const idsToLink = Object.entries(gameAccountIds).filter(([, v]) => v?.trim());
-if (idsToLink.length > 0) {
-  await Promise.all(
-    idsToLink.map(([gameId, remoteAccountId]) =>
-      api.post(`/api/players/${newPlayer.id}/game-accounts`, {
-        gameId,
-        remoteAccountId: remoteAccountId.trim(),
-      }).catch(err => console.error(`Failed to link ${gameId}:`, err))
-    )
-  );
-}
+
     try {
       setLoading(true);
       const res = await api.members.createMember({
@@ -440,6 +430,32 @@ if (idsToLink.length > 0) {
         roleType:    form.roleType,
         storeAccess: form.storeAccess,
       });
+      // REMOVE the broken block that has api.post and newPlayer:
+// const idsToLink = Object.entries(gameAccountIds)...
+// await Promise.all(idsToLink.map(([gameId, remoteAccountId]) => api.post(...)))
+
+// REPLACE WITH — put this right after `await api.players.createPlayer(...)` returns:
+// const result = await api.players.createPlayer({ ...payload });
+// const newPlayerId = result?.data?.id;
+
+// if (newPlayerId) {
+//   const idsToLink = Object.entries(gameAccountIds).filter(([, v]) => v?.trim());
+//   if (idsToLink.length > 0) {
+//     await Promise.all(
+//       idsToLink.map(([gameId, remoteAccountId]) =>
+//         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/players/${newPlayerId}/game-accounts`, {
+//           method: 'POST',
+//           credentials: 'include',
+//           headers: {
+//             'Content-Type': 'application/json',
+//             'X-Store-Id': String(api.getStoreId?.() ?? 1),
+//           },
+//           body: JSON.stringify({ gameId, remoteAccountId: remoteAccountId.trim() }),
+//         }).catch(err => console.error(`Failed to link game account ${gameId}:`, err))
+//       )
+//     );
+//   }
+// }
       toast(res.message || 'Member created!', 'success');
       setTimeout(() => onSuccess?.(), 1200);
     } catch (err) {
@@ -675,6 +691,9 @@ const usedCount   = slotInfo?.usedCount ?? 0;
 // ═══════════════════════════════════════════════════════════════
 function AddPlayerForm({ onSuccess, onCancel }) {
   const { add: toast } = useToast();
+  // ADD these two lines near the other useState calls at top of AddPlayerForm:
+const [gameAccountIds, setGameAccountIds] = useState({});
+const [games, setGames] = useState([]);
 
   const EMPTY = {
     name: '', username: '', email: '', phone: '',
@@ -695,7 +714,9 @@ function AddPlayerForm({ onSuccess, onCancel }) {
     set(e.target.name, e.target.value);
     if (fieldErrors[e.target.name]) setFieldErrors(p => ({ ...p, [e.target.name]: '' }));
   };
-
+useEffect(() => {
+  api.games.getGames().then(r => setGames(r?.data || [])).catch(() => {});
+}, []);
   const srcs = {
     add:    () => setForm(p => ({ ...p, sources: [...p.sources, ''] })),
     change: (i, v) => setForm(p => ({ ...p, sources: p.sources.map((x, idx) => idx === i ? v : x) })),
@@ -774,6 +795,28 @@ function AddPlayerForm({ onSuccess, onCancel }) {
         friends:     form.friends.map(p => String(p.id)),
         sources:     form.sources.filter(s => s.trim()),
       });
+// ── Link game accounts if any IDs were entered ──────────────
+  const newPlayerId = result?.data?.id;
+  if (newPlayerId) {
+    const idsToLink = Object.entries(gameAccountIds).filter(([, v]) => v?.trim());
+    if (idsToLink.length > 0) {
+      await Promise.all(
+        idsToLink.map(([gameId, remoteAccountId]) =>
+          fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/players/${newPlayerId}/game-accounts`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Store-Id': String(api.getStoreId?.() ?? 1),
+            },
+            body: JSON.stringify({ gameId, remoteAccountId: remoteAccountId.trim() }),
+          }).catch(err => console.error(`Failed to link ${gameId}:`, err))
+        )
+      );
+    }
+  }
+  // ─────────────────────────────────────────────────────────────
+      
       toast(`Player "${form.name}" created successfully!`, 'success');
       setTimeout(() => onSuccess?.(), 1400);
     } catch (err) {
