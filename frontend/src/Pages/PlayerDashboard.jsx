@@ -68,6 +68,79 @@ function fmtDuration(ms) {
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
+function GameAccountsSection({ playerId, games }) {
+  const [accounts, setAccounts] = useState([]);
+  const [editing, setEditing] = useState(null); // gameId being edited
+  const [value, setValue] = useState('');
+
+  useEffect(() => {
+    fetch(`/api/players/${playerId}/game-accounts`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(r => setAccounts(r.data || []));
+  }, [playerId]);
+
+  const linkedMap = Object.fromEntries(accounts.map(a => [a.gameId, a]));
+
+  const save = async (gameId) => {
+    if (!value.trim()) return;
+    const game = games.find(g => g.id === gameId);
+    await fetch(`/api/players/${playerId}/game-accounts`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId, remoteAccountId: value.trim(), provider: game?.provider }),
+    });
+    const r = await fetch(`/api/players/${playerId}/game-accounts`, { credentials: 'include' });
+    const data = await r.json();
+    setAccounts(data.data || []);
+    setEditing(null); setValue('');
+  };
+
+  const platformGames = games.filter(g => g.provider && g.provider !== 'NONE');
+  if (platformGames.length === 0) return null;
+
+  return (
+    <div style={{ padding: 20, border: '1px solid #e2e8f0', borderRadius: 12, marginTop: 16 }}>
+      <h4 style={{ fontSize: 13, fontWeight: 700, margin: '0 0 14px' }}>Platform Account IDs</h4>
+      {platformGames.map(g => {
+        const linked = linkedMap[g.id];
+        const isEditing = editing === g.id;
+        return (
+          <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, width: 120, color: '#374151' }}>{g.name}</span>
+            <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 4, background: '#f1f5f9', color: '#64748b', fontWeight: 700 }}>{g.provider}</span>
+            {isEditing ? (
+              <>
+                <input
+                  autoFocus
+                  value={value}
+                  onChange={e => setValue(e.target.value)}
+                  placeholder={linked?.remoteAccountId || 'Enter ID…'}
+                  style={{ flex: 1, padding: '6px 10px', border: '1px solid #6366f1', borderRadius: 6, fontSize: 13 }}
+                />
+                <button onClick={() => save(g.id)} style={{ padding: '6px 14px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 12 }}>Save</button>
+                <button onClick={() => { setEditing(null); setValue(''); }} style={{ padding: '6px 10px', background: '#f1f5f9', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>Cancel</button>
+              </>
+            ) : (
+              <>
+                <span style={{ flex: 1, fontSize: 13, color: linked ? '#0f172a' : '#94a3b8', fontFamily: 'monospace' }}>
+                  {linked?.remoteAccountId || '—'}
+                </span>
+                <button
+                  onClick={() => { setEditing(g.id); setValue(linked?.remoteAccountId || ''); }}
+                  style={{ padding: '5px 12px', border: '1px solid #e2e8f0', borderRadius: 6, cursor: 'pointer', fontSize: 12, background: '#fff', color: '#374151' }}
+                >
+                  {linked ? 'Edit' : 'Link'}
+                </button>
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function Avatar({ name = '?', size = 44, fontSize = 15 }) {
